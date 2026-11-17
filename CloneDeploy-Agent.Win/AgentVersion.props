@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <!-- Increment for every agent release. MSI supports release numbers 1 through 65534. -->
-    <AgentReleaseNumber>2</AgentReleaseNumber>
+    <AgentReleaseNumber>3</AgentReleaseNumber>
     <Version>2.0.$(AgentReleaseNumber).0</Version>
   </PropertyGroup>
 </Project>
