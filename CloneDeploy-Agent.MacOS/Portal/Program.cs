@@ -17,6 +17,7 @@ internal static class Program
         {
             if (instance is null) return;
             PortalApp.Instance = instance;
+            PortalApp.OpenAfterRestart = instance.ConsumeRestartRequest();
             AppBuilder.Configure<PortalApp>().UsePlatformDetect().LogToTrace()
                 .With(new MacOSPlatformOptions { ShowInDock = false })
                 .StartWithClassicDesktopLifetime(args, ShutdownMode.OnExplicitShutdown);
@@ -29,6 +30,7 @@ public sealed class PortalApp : Application
 {
     internal static PortalInstance? Instance { get; set; }
     internal static string? RestartPath { get; private set; }
+    internal static bool OpenAfterRestart { get; set; }
     internal void Restart()
     {
         if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
@@ -36,6 +38,7 @@ public sealed class PortalApp : Application
         var path = Environment.ProcessPath;
         if (!OperatingSystem.IsMacOS() || path is null || !File.Exists(path) || Path.GetFileName(path) != "CloneDeploy-Agent.MacOS.Portal")
             throw new IOException(PortalText.Get("Portal.ExecutableUnavailable"));
+        Instance!.RequestRestart();
         RestartPath = path;
         desktop.Shutdown();
     }
@@ -65,6 +68,12 @@ public sealed class PortalApp : Application
                 window.Activate();
             }
             Instance!.OpenRequested += () => Avalonia.Threading.Dispatcher.UIThread.Post(OpenPortal);
+            if (this.TryGetFeature<IActivatableLifetime>() is { } activation)
+                activation.Activated += (_, args) =>
+                {
+                    if (args.Kind == ActivationKind.Reopen)
+                        Avalonia.Threading.Dispatcher.UIThread.Post(OpenPortal);
+                };
             var open = new NativeMenuItem(PortalText.Get("Portal.Open"));
             open.Click += (_, _) => OpenPortal();
             var menu = new NativeMenu(); menu.Items.Add(open);
@@ -73,7 +82,7 @@ public sealed class PortalApp : Application
             tray.Clicked += (_, _) => OpenPortal();
             TrayIcon.SetIcons(this, new TrayIcons { tray });
             desktop.Exit += (_, _) => { window?.Stop(); tray.Dispose(); };
-            if (!(desktop.Args?.Contains("--background") ?? false)) OpenPortal();
+            if (OpenAfterRestart || !(desktop.Args?.Contains("--background") ?? false)) OpenPortal();
         }
         base.OnFrameworkInitializationCompleted();
     }

@@ -6,14 +6,23 @@ internal sealed class PortalInstance : IDisposable
 {
     private readonly FileStream instanceLock;
     private readonly FileSystemWatcher watcher;
+    private readonly string restartRequest;
     public event Action? OpenRequested;
     private PortalInstance(FileStream instanceLock, string directory)
     {
         this.instanceLock = instanceLock;
+        restartRequest = Path.Combine(directory, "restart-open");
         watcher = new FileSystemWatcher(directory, "open") { NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName };
         watcher.Changed += (_, _) => OpenRequested?.Invoke();
         watcher.Created += (_, _) => OpenRequested?.Invoke();
         watcher.EnableRaisingEvents = true;
+    }
+    internal void RequestRestart() => File.WriteAllText(restartRequest, "open");
+    internal bool ConsumeRestartRequest()
+    {
+        if (!File.Exists(restartRequest)) return false;
+        File.Delete(restartRequest);
+        return true;
     }
     public static PortalInstance? Acquire()
     {

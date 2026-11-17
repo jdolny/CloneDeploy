@@ -25,6 +25,7 @@ internal sealed class PortalRemoteDesktop : IDisposable
     private CancellationTokenSource? sessionStop;
     private Task? streamTask;
     private bool polling, deciding, streaming, closingPrompt;
+    private bool screenCapturePermissionRequested;
     internal Control Settings { get; }
 
     public PortalRemoteDesktop(Window owner)
@@ -37,11 +38,17 @@ internal sealed class PortalRemoteDesktop : IDisposable
         panel.Children.Add(error);
         var capture = new Button { Content = PortalText.Get("RemoteSupport.ScreenRecordingPermission") };
         var input = new Button { Content = PortalText.Get("RemoteSupport.AccessibilityPermission") };
-        // Let macOS own the permission prompt; opening Settings as well duplicates its action.
+        // Request once per portal session. macOS may suppress subsequent prompts;
+        // another click must still give the user a way to change the permission.
         capture.Click += (_, _) =>
         {
-            if (MacDesktopNative.CGPreflightScreenCaptureAccess()) OpenPreferences("Privacy_ScreenCapture");
-            else MacDesktopNative.CGRequestScreenCaptureAccess();
+            if (screenCapturePermissionRequested || MacDesktopNative.CGPreflightScreenCaptureAccess())
+                OpenPreferences("Privacy_ScreenCapture");
+            else
+            {
+                screenCapturePermissionRequested = true;
+                MacDesktopNative.CGRequestScreenCaptureAccess();
+            }
         };
         input.Click += (_, _) =>
         {
