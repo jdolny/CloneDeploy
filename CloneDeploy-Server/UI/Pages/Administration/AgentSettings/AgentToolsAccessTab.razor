@@ -1,0 +1,71 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@inject WebHttpsListenerService Service
+@inject AuthenticationStateProvider Authentication
+
+<div class="section-action-bar">
+    <MudButton OnClick="Save" Disabled="@(_busy || _settings?.Available != true)" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+</div>
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert> }
+@if (_settings is not null)
+{
+    <MudPaper Class="pa-4" Outlined="true" Elevation="0">
+        <MudStack Spacing="3">
+            <MudTextField T="string" @bind-Value="_networks" Label="@Loc[LocKeys.Ui.AgentToolsAccessTab.AllowedClientNetworks]" Lines="4" MaxLength="4096" Variant="Variant.Outlined"
+                          Disabled="@(_busy || !_settings.Available)" Placeholder="192.168.10.0/24&#10;10.20.0.0/16"
+                          HelperText="@Loc[LocKeys.Ui.AgentToolsAccessTab.EnterIPv4OrIPv6CIDRsSeparatedByCommasOr]" />
+            @if (string.IsNullOrWhiteSpace(_networks))
+            {
+                <MudAlert Severity="Severity.Warning">@Loc[LocKeys.Ui.AgentToolsAccessTab.AnEmptyListBlocksAllDirectAgentToolsSign]</MudAlert>
+            }
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.AgentToolsAccessTab.ConnectionsThroughASiteServiceUseThatSiteService]</MudText>
+            <MudAlert Severity="Severity.Info">@Loc[LocKeys.Ui.AgentToolsAccessTab.RestartCloneDeployServerAfterSavingToApplyChanges]</MudAlert>
+            @if (_settings.AllowedNetworks != _settings.ActiveNetworks)
+            {
+                <MudAlert Severity="Severity.Warning">@Loc[LocKeys.Ui.AgentToolsAccessTab.TheSavedNetworksDifferFromTheRunningConfigurationRestart]</MudAlert>
+            }
+            @if (!_settings.Available)
+            {
+                <MudAlert Severity="Severity.Warning">@Loc[LocKeys.Ui.AgentToolsAccessTab.EditingIsAvailableOnAnInstalledServerWithServer]</MudAlert>
+            }
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    private AgentToolsAccessDetails? _settings;
+    private string _networks = "";
+    private string? _error;
+    private bool _busy;
+    protected override Task OnInitializedAsync() => Load();
+    private async Task Load()
+    {
+        _busy = true;
+        try
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            var result = await Service.GetAgentToolsAccessAsync(user);
+            _settings = result.Data;
+            _networks = _settings?.AllowedNetworks ?? "";
+            _error = result.Success ? null : Loc[result.Error!.Code, result.Error.Args].Value;
+        }
+        finally { _busy = false; }
+    }
+    private async Task Save()
+    {
+        if (_busy || _settings?.Available != true) return;
+        _busy = true;
+        try
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            var result = await Service.SaveAgentToolsAccessAsync(user, _networks);
+            _error = result.Success ? null : Loc[result.Error!.Code, result.Error.Args].Value;
+            if (result.Success)
+            {
+                _networks = _networks?.Trim() ?? "";
+                _settings = _settings with { AllowedNetworks = _networks };
+                Snackbar.Add(UiText.Get(LocKeys.Ui.AgentToolsAccessTab.AgentToolsNetworksSavedRestartCloneDeployServerToApply), Severity.Success);
+            }
+        }
+        finally { _busy = false; }
+    }
+}

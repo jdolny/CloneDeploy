@@ -1,0 +1,196 @@
+@page "/"
+@page "/dashboard"
+@using System.Globalization
+@inject DashboardService DashboardService
+
+<AppPageTitle Text="@Loc[LocKeys.Dashboard.Title]" />
+<MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Class="mb-4" Spacing="3">
+    <MudToggleGroup T="int" Value="_days" ValueChanged="OnRangeChanged" SelectionMode="SelectionMode.SingleSelection" Color="Color.Primary" Disabled="_loading" CheckMark>
+        <MudToggleItem Value="7" Text="@Loc[LocKeys.Dashboard.SevenDays]" />
+        <MudToggleItem Value="30" Text="@Loc[LocKeys.Dashboard.ThirtyDays]" />
+    </MudToggleGroup>
+</MudStack>
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Class="mb-4" />
+}
+@if (_data is not null)
+{
+    @if (_data.IsAdmin) { <ProfessionalSupportNotice /> }
+    <DashboardAttention Items="_data.Attention" IsAdmin="_data.IsAdmin" />
+    @if (!_data.CanViewDevices && !_data.CanApprove && !_data.CanViewTasks && !_data.CanViewUpdates && !_data.IsAdmin)
+    {
+        <MudPaper Elevation="2" Class="pa-6"><MudText>@Loc[LocKeys.Dashboard.NoAccess]</MudText></MudPaper>
+    }
+    <MudGrid Spacing="3">
+            @if (_data.Fleet is { } fleet)
+            {
+                <DashboardFleet Summary="fleet" AsOf="_data.AsOfUtc" ShowAgents="_data.CanViewDevices" ShowUpdates="_data.CanViewUpdates" IsAdmin="_data.IsAdmin" />
+            }
+
+        @if (_data.CanViewDevices)
+        {
+            <MudItem xs="12" sm="6" lg="3">
+                <DashboardMetric Title="@Loc[LocKeys.Dashboard.Devices]" Description="@Loc[LocKeys.Dashboard.DevicesHint]" Count="_data.DeviceCount"
+                                 Href="@DeviceUrl("all")" Icon="@Icons.Material.Filled.Computer" />
+            </MudItem>
+            <MudItem xs="12" sm="6" lg="3">
+                <DashboardMetric Title="@Loc[LocKeys.Dashboard.Overdue]" Description="@Loc[LocKeys.Dashboard.OverdueHint]" Count="_data.OverdueCount"
+                                 Href="@DeviceUrl("overdue")" Icon="@Icons.Material.Filled.Schedule" Color="Color.Warning" />
+            </MudItem>
+        }
+        @if (_data.CanApprove)
+        {
+            <MudItem xs="12" sm="6" lg="3">
+                <DashboardMetric Title="@Loc[LocKeys.Dashboard.Approvals]" Description="@Loc[LocKeys.Dashboard.ApprovalsHint]" Count="_data.PendingApprovals"
+                                 Href="/devices/approval-and-reset" Icon="@Icons.Material.Filled.HowToReg" />
+            </MudItem>
+        }
+        @if (_data.CanViewTasks)
+        {
+            <MudItem xs="12" sm="6" lg="3">
+                <DashboardMetric Title="@Loc[LocKeys.Dashboard.Failed]" Description="@Loc[LocKeys.Dashboard.FailedHint]" Count="_data.FailedCount"
+                                 Href="@TaskUrl(DeviceTaskStatus.Failed, _data.AsOfUtc.AddHours(-24), _data.AsOfUtc)" Icon="@Icons.Material.Filled.ErrorOutline" Color="Color.Error" />
+            </MudItem>
+            <MudItem xs="12" lg="6">
+                <MudPaper Elevation="2" Class="pa-4" Style="height:100%">
+                    <MudText Typo="Typo.h6">@Loc[LocKeys.Dashboard.Results]</MudText>
+                    <MudText Typo="Typo.caption" Style="display:block">@UiText.Get(LocKeys.Ui.HomePage.SuccessfulAndFailedDeviceTasksByCompletionDateUTC, ((_data.CanViewAllTasks ? UiText.Get(LocKeys.Ui.DeploymentsPage.AllTasks) : UiText.Get(LocKeys.Ui.DeploymentsPage.MyTasks))))</MudText>
+                    @if (_data.Results.All(x => x.Succeeded + x.Failed == 0))
+                    {
+                        <MudText Class="my-6">@Loc[LocKeys.Dashboard.NoResults]</MudText>
+                    }
+                    else
+                    {
+                        <div class="results-legend"><span><i class="succeeded"></i>@Loc[LocKeys.Dashboard.Succeeded]</span><span><i class="failed"></i>@Loc[LocKeys.Dashboard.FailedStatus]</span></div>
+                        <MudText Typo="Typo.caption" Style="display:block">@Loc[LocKeys.Dashboard.ChartScale, MaxResults]</MudText>
+                        <div class="results-scroll">
+                            <div class="results-chart" style="min-width:240px" aria-label="@Loc[LocKeys.Dashboard.Results]">
+                                @foreach (var day in _data.Results)
+                                {
+                                    <div class="result-column" title="@($"{day.Date:MMM d}: {day.Succeeded} {Loc[LocKeys.Dashboard.Succeeded]}, {day.Failed} {Loc[LocKeys.Dashboard.FailedStatus]}")">
+                                        <div class="result-stack">
+                                            @if (day.Failed > 0)
+                                            {
+                                                <a class="result-bar failed" style="@($"height:{Percent(day.Failed, MaxResults)}%")" href="@DayUrl(day.Date, DeviceTaskStatus.Failed)"
+                                                   aria-label="@($"{day.Date:MMM d}: {day.Failed} {Loc[LocKeys.Dashboard.FailedStatus]}")"></a>
+                                            }
+                                            @if (day.Succeeded > 0)
+                                            {
+                                                <a class="result-bar succeeded" style="@($"height:{Percent(day.Succeeded, MaxResults)}%")" href="@DayUrl(day.Date, DeviceTaskStatus.Succeeded)"
+                                                   aria-label="@($"{day.Date:MMM d}: {day.Succeeded} {Loc[LocKeys.Dashboard.Succeeded]}")"></a>
+                                            }
+                                        </div>
+                                        <span class="result-date">@(_days == 7 ? day.Date.ToString("MMM d") : ((int)(day.Date - _data.Results[0].Date).TotalDays % 5 == 0 || day.Date == _data.AsOfUtc.Date ? day.Date.ToString("dd") : string.Empty))</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </MudPaper>
+            </MudItem>
+        }
+        @if (_data.CanViewDevices)
+        {
+            <MudItem xs="12" lg="6">
+                <MudPaper Elevation="2" Class="pa-4" Style="height:100%">
+                    <MudText Typo="Typo.h6">@Loc[LocKeys.Dashboard.Checkins]</MudText>
+                    <MudText Typo="Typo.caption" Style="display:block">@Loc[LocKeys.Dashboard.CheckinsHint]</MudText>
+                    <div class="age-chart">
+                        @foreach (var age in _data.DeviceAges)
+                        {
+                            <a class="age-row" href="@DeviceUrl(age.Bucket)" aria-label="@($"{Loc[$"Dashboard.Age.{age.Bucket}"]}: {age.Count:N0}")">
+                                <span>@Loc[$"Dashboard.Age.{age.Bucket}"]</span>
+                                <span class="age-track"><span class="age-fill" style="@($"width:{Percent(age.Count, _data.DeviceCount)}%")"></span></span>
+                                <strong>@age.Count.ToString("N0")</strong>
+                            </a>
+                        }
+                    </div>
+                </MudPaper>
+            </MudItem>
+        }
+        @if (_data.CanViewTasks)
+        {
+            <MudItem xs="12" lg="7">
+                <MudPaper Elevation="2" Class="pa-4" Style="height:100%">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.h6">@Loc[LocKeys.Dashboard.Deployments]</MudText>
+                        <MudLink Href="/tasks/deployments">@Loc[LocKeys.Dashboard.ViewAll]</MudLink>
+                    </MudStack>
+                    <MudText Typo="Typo.caption" Style="display:block">@Loc[LocKeys.Dashboard.DeploymentsHint]</MudText>
+                    <MudTable T="DashboardDeploymentDto" Items="_data.Deployments" Dense="true" Elevation="0" Breakpoint="Breakpoint.Sm">
+                        <HeaderContent><MudTh>@Loc[LocKeys.Dashboard.Action]</MudTh><MudTh>@Loc[LocKeys.Dashboard.RequestedBy]</MudTh><MudTh>@Loc[LocKeys.Dashboard.Progress]</MudTh><MudTh>@Loc[LocKeys.Dashboard.FailedStatus]</MudTh></HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="@Loc[LocKeys.Dashboard.Action]"><div><MudLink Href="@($"/tasks/deployments/{context.Id}")">@context.Name</MudLink><MudText Typo="Typo.caption" Style="display:block">@context.CreatedAtUtc.ToLocalTime().ToString("g")</MudText></div></MudTd>
+                            <MudTd DataLabel="@Loc[LocKeys.Dashboard.RequestedBy]">@context.RequestedBy</MudTd>
+                            <MudTd DataLabel="@Loc[LocKeys.Dashboard.Progress]"><div style="min-width:120px">
+                                <MudProgressLinear Value="@(context.Total == 0 ? 0 : 100d * (context.Succeeded + context.Failed + context.Cancelled) / context.Total)" Color="Color.Primary" />
+                                <MudText Typo="Typo.caption" Style="display:block">@Loc[LocKeys.Dashboard.Finished, context.Succeeded + context.Failed + context.Cancelled, context.Total]</MudText>
+                                @if (context.Unknown > 0) { <MudText Typo="Typo.caption" Style="display:block" Color="Color.Warning">@Loc[LocKeys.Dashboard.UnknownOutcomes, context.Unknown]</MudText> }
+                            </div></MudTd>
+                            <MudTd DataLabel="@Loc[LocKeys.Dashboard.FailedStatus]">@context.Failed</MudTd>
+                        </RowTemplate>
+                        <NoRecordsContent><MudText>@Loc[LocKeys.Dashboard.NoDeployments]</MudText></NoRecordsContent>
+                    </MudTable>
+                </MudPaper>
+            </MudItem>
+        }
+        @if (_data.IsAdmin)
+        {
+            <MudItem xs="12" lg="5">
+                <MudPaper Elevation="2" Class="pa-4" Style="height:100%">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.h6">@Loc[LocKeys.Dashboard.Scheduler]</MudText>
+                        <MudLink Href="/administration/server/scheduler">@Loc[LocKeys.Dashboard.ViewAll]</MudLink>
+                    </MudStack>
+                    <MudText Typo="Typo.caption" Style="display:block">@Loc[LocKeys.Dashboard.SchedulerHint]</MudText>
+                    <MudTable T="DashboardScheduledTaskDto" Items="_data.Scheduler" Dense="true" Elevation="0" Breakpoint="Breakpoint.Sm">
+                        <HeaderContent><MudTh>@Loc[LocKeys.Dashboard.TaskText]</MudTh><MudTh>@Loc[LocKeys.Dashboard.LastResult]</MudTh><MudTh>@Loc[LocKeys.Dashboard.LastSuccess]</MudTh></HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="@Loc[LocKeys.Dashboard.TaskText]"><div>
+                                <MudLink Href="/administration/server/scheduler">@Loc[$"Dashboard.Task.{context.Type}"]</MudLink>
+                                @if (!context.Enabled) { <MudText Typo="Typo.caption" Style="display:block">@Loc[LocKeys.Dashboard.Disabled]</MudText> }
+                            </div></MudTd>
+                            <MudTd DataLabel="@Loc[LocKeys.Dashboard.LastResult]"><div>
+                                <MudText Color="@(context.Status is ScheduledTaskStatus.Failed or ScheduledTaskStatus.Interrupted ? Color.Error : Color.Default)">@(context.Status is null ? Loc[LocKeys.Dashboard.NeverRun] : Loc[$"Dashboard.Status.{context.Status}"])</MudText>
+                                <MudText Typo="Typo.caption" Style="display:block">@context.LastRun?.ToLocalTime().ToString("g")</MudText>
+                            </div></MudTd>
+                            <MudTd DataLabel="@Loc[LocKeys.Dashboard.LastSuccess]">@(context.LastSuccess?.ToLocalTime().ToString("g") ?? Loc[LocKeys.Dashboard.Never].Value)</MudTd>
+                        </RowTemplate>
+                        <NoRecordsContent><MudText>@Loc[LocKeys.Dashboard.NoTasks]</MudText></NoRecordsContent>
+                    </MudTable>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private DashboardSnapshotDto? _data;
+    private int _days = 7;
+    private bool _loading;
+    private int MaxResults => Math.Max(1, _data!.Results.Max(x => x.Succeeded + x.Failed));
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task OnRangeChanged(int days)
+    {
+        _days = days;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        if (_loading) return;
+        _loading = true;
+        var result = await DashboardService.GetAsync(_days);
+        _data = result.Success ? result.Data : null;
+        if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loading = false;
+    }
+
+    private static string Percent(int value, int total) => (total == 0 ? 0 : 100d * value / total).ToString("0.###", CultureInfo.InvariantCulture);
+    private static string Timestamp(DateTime date) => Uri.EscapeDataString(date.ToString("O", CultureInfo.InvariantCulture));
+    private string DeviceUrl(string bucket) => $"/dashboard/devices/{bucket}?asOf={Timestamp(_data!.AsOfUtc)}";
+    private static string TaskUrl(DeviceTaskStatus status, DateTime from, DateTime to) => $"/dashboard/tasks?status={status}&from={Timestamp(from)}&to={Timestamp(to)}";
+    private string DayUrl(DateTime day, DeviceTaskStatus status) => TaskUrl(status, day, day.Date == _data!.AsOfUtc.Date ? _data.AsOfUtc : day.AddDays(1).AddTicks(-1));
+}

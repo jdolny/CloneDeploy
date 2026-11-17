@@ -1,0 +1,14 @@
+<MudPaper Outlined="true" Elevation="0" Class="pa-4">
+    <MudText Typo="Typo.h6" Class="mb-3">@Title</MudText>
+    @foreach (var item in Items)
+    {
+        <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-3"><MudText Typo="Typo.body2">@item.Label</MudText><MudText Typo="Typo.body2">@item.Count.ToString("N0")</MudText></MudStack>
+        <MudProgressLinear Value="@(100d * item.Count / Math.Max(1, Items.Sum(x => x.Count)))" Color="Color.Primary" aria-label="@($"{item.Label}: {item.Count}")" />
+    }
+    @if (Items.Length == 0) { <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.HelpReportBreakdown.NoMatchingTickets]</MudText> }
+</MudPaper>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public HelpReportCount[] Items { get; set; } = [];
+}

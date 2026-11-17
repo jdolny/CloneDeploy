@@ -1,0 +1,274 @@
+@using StorageProviderModel = CloneDeploy_Server.Backend.Services.StorageProviderDto
+
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@inject StorageProviderService StorageProviderService
+
+@if (!Embedded) { <AppPageTitle Text="@Loc[LocKeys.Common.StorageProviders]" /> }
+
+@if (ActionSectionId is not null)
+{
+    <SectionContent SectionId="ActionSectionId">@NewButton</SectionContent>
+}
+else
+{
+    <div class="section-action-bar">@NewButton</div>
+}
+
+<div style="height: 6px;">
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true"/>
+    }
+</div>
+
+<MudDataGrid T="StorageProviderModel"
+             Items="@_items"
+             Dense="true"
+             Elevation="0"
+             MultiSelection="true"
+             @bind-SelectedItems="_selectedItems"
+             RowsPerPage="@Constants.UI.DefaultPageSize"
+             Filterable="true"
+             FilterMode="DataGridFilterMode.ColumnFilterMenu"
+             ColumnResizeMode="ResizeMode.Column"
+             Hover="true"
+             Class="device-list-grid mb-8" Outlined="true" SelectOnRowClick="false">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.Storage" Color="Color.Primary"/>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Common.StorageProviders]</MudText>
+        <MudSpacer/>
+        <div class="grid-toolbar-actions">
+            <GridSelectionCount Count="_selectedItems.Count"/>
+            @if (_selectedItems.Count > 0)
+        {
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       OnClick="@OnDeleteSelectedClicked"
+                       StartIcon="@Icons.Material.Filled.Delete"
+                      >
+                @Loc[LocKeys.Common.DeleteSelected]
+            </MudButton>
+        }
+        </div>
+    </ToolBarContent>
+
+    <Columns>
+        <SelectColumn T="StorageProviderModel"/>
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]"><CellTemplate><button type="button" class="resource-name-link" @onclick="@(() => OnEditClicked(context.Item))">@context.Item.Name</button></CellTemplate></PropertyColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.StorageProviderTab.DefaultWriteDestination]" Sortable="false" Filterable="false">
+            <CellTemplate>
+                @if (context.Item.IsImagingDefault) { <MudText>@Loc[LocKeys.Device.Imaging]</MudText> }
+                @if (context.Item.IsManagementDefault) { <MudText>@Loc[LocKeys.Ui.StorageProviderDialog.DeviceManagement]</MudText> }
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.StorageProviderDialog.StorageHost]" Sortable="false" Filterable="false">
+            <CellTemplate>
+                @if (context.Item.SiteServiceId is { } siteId)
+                {
+                    <MudLink Href="@($"/settings/site-services/{siteId}/storage")">@context.Item.SiteServiceName</MudLink>
+                }
+                else { <MudText>@Loc[LocKeys.Ui.StorageProviderTab.MainApplication]</MudText> }
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.StorageProviderDialog.Purposes]" Sortable="false" Filterable="false">
+            <CellTemplate>
+                @if (context.Item.Purposes.HasFlag(StoragePurpose.Imaging)) { <MudText>@Loc[LocKeys.Device.Imaging]</MudText> }
+                @if (context.Item.Purposes.HasFlag(StoragePurpose.DeviceManagement)) { <MudText>@Loc[LocKeys.Ui.StorageProviderDialog.DeviceManagement]</MudText> }
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.PreferredClientNetworks" Title="@Loc[LocKeys.Ui.StorageProviderDialog.PreferredClientNetworks]" />
+        <PropertyColumn Property="x => x.Type" Title="@Loc[LocKeys.StorageProvider.Type]"/>
+        <PropertyColumn Property="x => x.Path" Title="@Loc[LocKeys.StorageProvider.Path]"/>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.StorageProviderTab.MountStatus]" Sortable="false" Filterable="false">
+            <CellTemplate>
+                @if (_mounts.TryGetValue(context.Item.Id, out var mount))
+                {
+                    <MudText Color="@(mount.State == "Ready" ? Color.Success : Color.Default)">@UiText.Label(mount.State)</MudText>
+                    <MudText Typo="Typo.caption">@mount.MountPath</MudText>
+                    <MudText Typo="Typo.caption">@mount.Message</MudText>
+                    <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.StorageProviderTab.Checked0, (mount.CheckedAtUtc.ToLocalTime()))</MudText>
+                }
+                else { <MudText>@Loc[LocKeys.Ui.StorageProviderTab.NotCheckedYet]</MudText> }
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.StorageProvider.Enabled]">
+            <CellTemplate>
+                <MudIcon Icon="@(context.Item.IsEnabled ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)"
+                         Color="@(context.Item.IsEnabled ? Color.Success : Color.Error)"/>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Common.ManagedCredentials]">
+            <CellTemplate>
+                @(context.Item.ManagedCredentialName ?? string.Empty)
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+            <CellTemplate>
+
+                <div style="display: inline-flex; align-items: center; white-space: nowrap;">
+                <MudTooltip Text="@(_checkingProviders.Contains(context.Item.Id) ? UiText.Get(LocKeys.Ui.StorageProviderTab.Testing) : UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.Test))" Placement="Placement.Left" Arrow="true" Delay="200">
+                    <MudIconButton Size="Size.Medium" Color="Color.Primary" Icon="@Icons.Material.Filled.Refresh"
+                                   aria-label="@Loc[LocKeys.Ui.ManageOuNamingRulePage.Test]"
+                                   Disabled="@_checkingProviders.Contains(context.Item.Id)"
+                                   OnClick="@(() => OnTestClicked(context.Item.Id))" />
+                </MudTooltip>
+                <MudTooltip Text="@($"{Loc[LocKeys.Common.Delete]} - {context.Item.Name}")" Placement="Placement.Left"
+                            Arrow="true" Delay="200">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Medium"
+                                   Color="Color.Primary"
+                                   OnClick="@(() => OnDeleteClicked(context.Item))"/>
+                </MudTooltip>
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager T="StorageProviderModel"/>
+    </PagerContent>
+
+    <NoRecordsContent>
+        <MudText>@Loc[LocKeys.StorageProvider.NoStorageProvidersFound]</MudText>
+    </NoRecordsContent>
+</MudDataGrid>
+
+@code {
+    [Parameter] public object? ActionSectionId { get; set; }
+    private RenderFragment NewButton => @<MudButton Variant="Variant.Filled" Color="Color.Primary"
+        OnClick="OnNewClicked" StartIcon="@Icons.Material.Filled.Add">@Loc[LocKeys.StorageProvider.NewStorageProvider]</MudButton>;
+    [Parameter] public bool Embedded { get; set; }
+    [Parameter] public Guid? SiteServiceId { get; set; }
+    private List<StorageProviderModel> _items = [];
+    private HashSet<StorageProviderModel> _selectedItems = [];
+    private bool _isLoading = true;
+    private readonly HashSet<int> _checkingProviders = [];
+    private Dictionary<int, StorageMountStatusDto> _mounts = [];
+    private async Task OnTestClicked(int id)
+    {
+        if (!_checkingProviders.Add(id)) return;
+        try
+        {
+            var result = await StorageProviderService.CheckMountAsync(id);
+            if (result.Success)
+                _mounts = result.Data!.ToDictionary(x => x.ProviderId);
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _checkingProviders.Remove(id); }
+    }
+
+    private async Task RefreshMountsAsync()
+    {
+        var result = await StorageProviderService.GetMountsAsync(check: true);
+        if (result.Success) _mounts = result.Data!.ToDictionary(x => x.ProviderId);
+        else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        var result = await StorageProviderService.GetAsync();
+        if (result.Success) _items = (result.Data ?? []).Where(x => !SiteServiceId.HasValue || x.SiteServiceId == SiteServiceId).ToList();
+        else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _selectedItems.Clear();
+        var mountResult = await StorageProviderService.GetMountsAsync();
+        if (mountResult.Success) _mounts = mountResult.Data!.ToDictionary(x => x.ProviderId);
+
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task OnNewClicked()
+    {
+        var parameters = new DialogParameters<StorageProviderDialog> { { x => x.InitialSiteServiceId, SiteServiceId } };
+        var dialog = await Dialog.ShowAsync<StorageProviderDialog>(parameters, Constants.UI.StandardDialogBox);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: true })
+        {
+            await LoadAsync();
+            await RefreshMountsAsync();
+        }
+    }
+
+    private async Task OnEditClicked(StorageProviderModel item)
+    {
+        var parameters = new DialogParameters<StorageProviderDialog>
+        {
+            { x => x.StorageProvider, item }
+        };
+
+        var dialog = await Dialog.ShowAsync<StorageProviderDialog>(parameters, Constants.UI.StandardDialogBox);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: true })
+        {
+            await LoadAsync();
+            await RefreshMountsAsync();
+        }
+    }
+
+    private async Task OnDeleteClicked(StorageProviderModel item)
+    {
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, Loc[LocKeys.StorageProvider.ConfirmDelete, item.Name] },
+            { x => x.ButtonText, Loc[LocKeys.Common.Delete] },
+            { x => x.Color, Color.Error }
+        };
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        var dialogResult = await dialog.Result;
+
+        if (dialogResult is { Canceled: false, Data: true })
+        {
+            var result = await StorageProviderService.DeleteAsync(item.Id);
+
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[LocKeys.Common.Deleted, item.Name], Severity.Success);
+                await LoadAsync();
+                await RefreshMountsAsync();
+            }
+            else
+            {
+                Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+            }
+        }
+    }
+
+    private async Task OnDeleteSelectedClicked()
+    {
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, Loc[LocKeys.StorageProvider.ConfirmDeleteMany] },
+            { x => x.ButtonText, Loc[LocKeys.Common.Delete] },
+            { x => x.Color, Color.Error }
+        };
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        var dialogResult = await dialog.Result;
+
+        if (dialogResult is { Canceled: false, Data: true })
+        {
+            var result = await StorageProviderService.DeleteManyAsync(_selectedItems.Select(x => x.Id).ToList());
+
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[LocKeys.Common.DeletedMany], Severity.Success);
+                await LoadAsync();
+                await RefreshMountsAsync();
+            }
+            else
+            {
+                Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+            }
+        }
+    }
+}

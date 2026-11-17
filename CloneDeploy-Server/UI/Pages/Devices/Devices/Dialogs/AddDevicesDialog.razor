@@ -1,0 +1,39 @@
+@inject DeviceService Devices
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.AddDevicesDialog.EnterOneDeviceNameOrPasteAListOne]</MudText>
+            <MudTextField T="string" @bind-Value="_names" Label="@Loc[LocKeys.Ui.AddDevicesDialog.DeviceNames]" Lines="10" MaxLength="65000"
+                          Variant="Variant.Outlined" Immediate="true" Disabled="_busy"
+                          HelperText="@Loc[LocKeys.Ui.AddDevicesDialog.UpTo500NamesDuplicateNamesAndExistingRecords]" />
+            </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())" Disabled="_busy">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _busy || string.IsNullOrWhiteSpace(_names), UiText.Get(LocKeys.Ui.AddDevicesDialog.EnterAtLeastOneDeviceName), SaveAsync)" Disabled="@(_busy)" Color="Color.Primary" Variant="Variant.Filled">@Loc[LocKeys.Ui.PolicyTargetingTab.AddDevices]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private string _names = "";
+    private bool _busy;
+
+    private async Task SaveAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+
+        try
+        {
+            var result = await Devices.CreateDevicesAsync(_names);
+            if (!result.Success) { Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error); return; }
+            var submitted = _names.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length;
+            var created = result.Data!.Count;
+            Snackbar.Add(UiText.Get(LocKeys.Ui.AddDevicesDialog.Created0DeviceSSkipped1DuplicateOrExisting, (created), (submitted - created)), Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        finally { _busy = false; }
+    }
+}

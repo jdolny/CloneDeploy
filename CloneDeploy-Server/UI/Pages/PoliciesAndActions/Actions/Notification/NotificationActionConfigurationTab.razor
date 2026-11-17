@@ -1,0 +1,98 @@
+@using CloneDeploy_Agent.Contracts
+@inject ActionService Service
+
+<PolicyActionEditScope Context="canEdit">
+@if (_model is null)
+{
+    @if (_loadingAction) { <MudProgressLinear Indeterminate="true"/> }
+    else { <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.CommandActionConfigurationTab.UnableToLoadActionSettingsReopenThisTabTo]</MudAlert> }
+}
+else
+{
+    <div class="section-action-bar"><MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="OnSaveClicked" Disabled="@(!canEdit || (_saving))">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton></div>
+    <MudForm @ref="_form" Disabled="@(!canEdit || (_saving))">
+        <MudStack Spacing="6">
+            <div>
+                <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.Ui.NavMenu.Notification]</MudText>
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" md="6"><MudTextField @bind-Value="_model.Title" Label="@Loc[LocKeys.Device.Title]" MaxLength="200" Variant="Variant.Outlined" Required="true" /></MudItem>
+                    <MudItem xs="12" md="6"><MudNumericField T="int" @bind-Value="_model.Timeout" Label="@Loc[LocKeys.Ui.NotificationActionConfigurationTab.PopupTimeoutSeconds]" HelperText="@Loc[LocKeys.Ui.NotificationActionConfigurationTab.Text0Uses60SecondsDismissedNotificationsRemainInPortal]" Min="0" Max="86400" Variant="Variant.Outlined" /></MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="NotificationPosition" @bind-Value="_model.Position" Label="@Loc[LocKeys.Ui.NotificationActionConfigurationTab.Position]" Variant="Variant.Outlined">
+                            <MudSelectItem Value="NotificationPosition.LowerRight">@Loc[LocKeys.Ui.NotificationActionConfigurationTab.LowerRight]</MudSelectItem>
+                            <MudSelectItem Value="NotificationPosition.Center">@Loc[LocKeys.Ui.NotificationActionConfigurationTab.Center]</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudCheckBox T="bool" @bind-Value="_model.RequireAcknowledgment" Label="@Loc[LocKeys.Ui.NotificationActionConfigurationTab.RequireAcknowledgment]"/>
+                    </MudItem>
+                    @if (_model.RequireAcknowledgment)
+                    {
+                        <MudItem xs="12" md="6">
+                            <MudDatePicker Date="@((DateTime?)_model.ExpiresAtUtc.AddTicks(-1).Date)" DateChanged="SetExpiry" Label="@Loc[LocKeys.Ui.NotificationActionConfigurationTab.NoticeExpirationDateUTC]" Required="true" MinDate="DateTime.UtcNow.Date" HelperText="@Loc[LocKeys.Ui.NotificationActionConfigurationTab.StopsPromptingAtTheEndOfThisDateUTC]" Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudButton Disabled="@(!canEdit)" OnClick="IssueNewNotice" Variant="Variant.Outlined">@Loc[LocKeys.Ui.NotificationActionConfigurationTab.IssueAsNewNotice]</MudButton>
+                            <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.NotificationActionConfigurationTab.ResetsAcknowledgmentsWhenSavedAndDeliveredAgainRepublishPolicies]</MudText>
+                            @if (_newNotice) { <MudText Color="Color.Info">@Loc[LocKeys.Ui.NotificationActionConfigurationTab.NewNoticePreparedSelectSaveChangesToApply]</MudText> }
+                        </MudItem>
+                    }
+                    <MudItem xs="12" md="12"><MudTextField @bind-Value="_model.Body" Label="@Loc[LocKeys.Ui.NotificationActionConfigurationTab.NotificationText]" MaxLength="2000" Variant="Variant.Outlined" Required="true" Lines="8" /></MudItem>
+                </MudGrid>
+            </div>
+
+        </MudStack>
+    </MudForm>
+
+}
+
+</PolicyActionEditScope>
+
+@code {
+    [Parameter] public EventCallback OnSaved { get; set; }
+    private NotificationAction _model = null!;
+    private bool _loadingAction = true;
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Service.GetNotificationAsync(NotificationAction.Id);
+        if (result.Success && result.HasData)
+        {
+            await LoadCatalogsAsync();
+            _model = result.Data;
+        }
+        else if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loadingAction = false;
+    }
+
+    private Task LoadCatalogsAsync() => Task.CompletedTask;
+    [Parameter, EditorRequired] public NotificationAction NotificationAction { get; set; } = null!;
+    private MudForm _form = null!;
+    private bool _saving, _newNotice;
+    private void SetExpiry(DateTime? date)
+    {
+        if (date is { } value) _model.ExpiresAtUtc = DateTime.SpecifyKind(value.Date.AddDays(1), DateTimeKind.Utc);
+    }
+    private void IssueNewNotice()
+    {
+        _model.NoticeId = Guid.NewGuid();
+        SetExpiry(DateTime.UtcNow.Date.AddDays(7));
+        _newNotice = true;
+    }
+
+    private async Task OnSaveClicked()
+    {
+        if (_saving) return;
+        _saving = true;
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            _saving = false;
+            return;
+        }
+        if (_model.RequireAcknowledgment) SetExpiry(_model.ExpiresAtUtc.AddTicks(-1).Date);
+        var result = await Service.UpdateNotificationAsync(_model);
+        _saving = false;
+        if (result.Success) { _newNotice = false; await OnSaved.InvokeAsync(); }
+        Snackbar.Add(result.Success ? Loc[LocKeys.Action.ConfigurationSaved] : Loc[result.Error!.Code, result.Error.Args], result.Success ? Severity.Success : Severity.Error);
+    }
+}

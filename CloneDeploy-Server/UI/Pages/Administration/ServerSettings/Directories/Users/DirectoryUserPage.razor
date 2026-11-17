@@ -1,0 +1,102 @@
+@page "/directory-users/{SourceId:int}/{ObjectGuid:guid}"
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@inject DirectoryService Directories
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (_user is not null)
+{
+    <PageTitle>@(UiText.Get(LocKeys.Ui.DirectoryUserPage.DirectoryUsers0, (_user.Name)))</PageTitle>
+    <SectionContent SectionName="page-title">
+        <div class="device-page-heading"><div class="device-heading-row">
+            <MudIconButton Href="/directory-users" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" aria-label="@Loc[LocKeys.Ui.DirectoryUserPage.BackToDirectoryUsers]" />
+            <div class="device-heading-icon"><MudIcon Icon="@Icons.Material.Outlined.Person" Size="Size.Large" /></div>
+            <div class="device-heading-copy"><div class="device-heading-name"><h1>@_user.Name</h1></div></div>
+        </div></div>
+    </SectionContent>
+    <div class="device-detail device-workspace">
+        <ResponsiveTabs PanelOrder="@(new int[] { 0, 1 })" @bind-ActivePanelIndex="_activeTab" KeepPanelsAlive="true" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.User.General]" Icon="@Icons.Material.Outlined.Info">
+                <TabHelp Href="ui/shared-resources/directory-user-details-general.html" Title="@Loc[LocKeys.User.General]" />
+                <MudStack Class="py-4" Spacing="4">
+                    @if (_user.IsMissing) { <MudAlert Severity="Severity.Warning">@Loc[LocKeys.Ui.DirectoryUserPage.ThisUserWasNotFoundInTheLatestDirectory]</MudAlert> }
+                    <MudPaper Outlined="true" Elevation="0" Class="pa-4">
+                        <MudText Typo="Typo.h6" Class="mb-4">@Loc[LocKeys.Ui.DirectoryUserPage.DirectoryIdentity]</MudText>
+                        <MudText Typo="Typo.body2" Class="mb-4">@Loc[LocKeys.Ui.DirectoryUserPage.TheseDetailsAreSynchronizedFromTheDirectoryMakeChanges]</MudText>
+                        <MudGrid>
+                            @foreach (var field in Fields())
+                            {
+                                <MudItem xs="12" md="6"><MudText Typo="Typo.caption">@field.Label</MudText><MudText Style="overflow-wrap:anywhere">@(string.IsNullOrWhiteSpace(field.Value) ? "—" : field.Value)</MudText></MudItem>
+                            }
+                        </MudGrid>
+                    </MudPaper>
+                </MudStack>
+            </MudTabPanel>
+            <MudTabPanel Class="page-tab-divider" Text="@Loc[LocKeys.Policy.Activity]" Icon="@Icons.Material.Outlined.History">
+                <TabHelp Href="ui/shared-resources/directory-user-details-history.html" Title="@Loc[LocKeys.Policy.Activity]" />
+                @if (_activeTab == 1)
+                {
+                    <div class="py-4">
+                        <MudTabs Class="device-subtabs" TabPanelsClass="pt-4 detail-tab-content">
+                            <MudTabPanel Text="@Loc[LocKeys.Ui.ManagePolicyPage.SelfService]">
+                                <TabHelp Href="ui/shared-resources/directory-user-details-self-service.html" Title="@Loc[LocKeys.Ui.ManagePolicyPage.SelfService]" />
+                                <DirectoryUserSelfServiceHistoryTab @key="(SourceId, ObjectGuid)" SourceId="SourceId" ObjectGuid="ObjectGuid" />
+                            </MudTabPanel>
+                            <MudTabPanel Text="@Loc[LocKeys.Ui.DeviceHistoryTab.Notifications]">
+                                <TabHelp Href="ui/shared-resources/directory-user-notifications.html" Title="@Loc[LocKeys.Ui.DeviceHistoryTab.Notifications]" />
+                                <DirectoryUserNotificationsTab @key="(SourceId, ObjectGuid)" SourceId="SourceId" ObjectGuid="ObjectGuid" />
+                            </MudTabPanel>
+                            <MudTabPanel Text="@Loc[LocKeys.Ui.AdministrationNavigationGroup.HelpDesk]">
+                                <TabHelp Href="ui/shared-resources/directory-user-helpdesk.html" Title="@Loc[LocKeys.Ui.AdministrationNavigationGroup.HelpDesk]" />
+                                <DirectoryUserHelpHistoryTab @key="(SourceId, ObjectGuid)" SourceId="SourceId" ObjectGuid="ObjectGuid" />
+                            </MudTabPanel>
+                        </MudTabs>
+                    </div>
+                }
+            </MudTabPanel>
+        </ResponsiveTabs>
+    </div>
+}
+else
+{
+    <AppPageTitle Text="@Loc[LocKeys.Ui.DirectoryUserPage.DirectoryUser]" />
+    <MudAlert Severity="Severity.Error" Class="mb-4">@(_error ?? UiText.Get(LocKeys.Ui.DirectoryUserPage.ThisDirectoryUserIsNoLongerAvailable))</MudAlert>
+    <MudButton Href="/directory-users" StartIcon="@Icons.Material.Filled.ArrowBack">@Loc[LocKeys.Ui.DirectoryUserPage.BackToDirectoryUsers]</MudButton>
+}
+
+@code {
+    [Parameter] public int SourceId { get; set; }
+    [Parameter] public Guid ObjectGuid { get; set; }
+    private DirectoryObject? _user;
+    private string? _error;
+    private bool _loading = true;
+    private int _request, _activeTab;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var request = ++_request;
+        _loading = true; _user = null; _error = null;
+        var result = await Directories.GetUserAsync(SourceId, ObjectGuid);
+        if (request != _request) return;
+        if (result.Success) _user = result.Data;
+        else _error = Loc[result.Error!.Code, result.Error.Args];
+        _loading = false;
+    }
+
+    private IEnumerable<(string Label, string? Value)> Fields()
+    {
+        var user = _user!;
+        yield return ("Name", user.Name);
+        yield return ("Account", user.AccountName);
+        yield return (UiText.Get(LocKeys.Ui.DirectoryObjectsTab.UserPrincipalName), user.UserPrincipalName);
+        yield return ("Email", user.Email);
+        yield return (UiText.Get(LocKeys.User.AccountStatus), user.Disabled ? UiText.Get(LocKeys.Ui.CertificateAuthorityTab.Disabled) : UiText.Get(LocKeys.StorageProvider.Enabled));
+        yield return ("Directory", user.DirectorySource.Name);
+        yield return ("SID", user.ObjectSid);
+        yield return (UiText.Get(LocKeys.Ui.UserGroupDirectoryPickerDialog.ObjectID), user.ObjectGuid.ToString());
+        yield return (UiText.Get(LocKeys.Device.DirectoryPath), user.DistinguishedName);
+        yield return (UiText.Get(LocKeys.Ui.DirectoryUserPage.LastSeenInDirectorySync), user.LastSeenAtUtc == default ? null : user.LastSeenAtUtc.ToLocalTime().ToString("g"));
+    }
+}

@@ -1,0 +1,123 @@
+@attribute [Authorize(Policy = Constants.Permissions.DriverPackView)]
+@page "/images/driverpacks/{Id:int}"
+@page "/images/driverpacks/{Id:int}/{Tab}"
+@inject DriverService Service
+<ImagingEditScope Policy="@Constants.Permissions.DriverPackEdit" Context="canEditImage">
+@if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+else if (_entity is null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+    <MudButton OnClick="OnLoadClicked">@Loc[LocKeys.Common.Retry]</MudButton>
+}
+else
+{
+    <PageTitle>@(UiText.Get(LocKeys.Ui.ManageDriverPage.DriverPack0, (_entity.Name)))</PageTitle>
+    <SectionContent SectionName="page-title"><div class="device-page-heading"><div class="device-heading-row">
+        <MudIconButton Href="/images/driverpacks" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" aria-label="@Loc[LocKeys.Ui.ManageDriverPage.BackToDriverPacks]"/>
+        <div class="device-heading-icon"><MudIcon Icon="@Icons.Material.Outlined.Memory" Size="Size.Large"/></div>
+        <div class="device-heading-copy"><div class="device-heading-name"><h1>@_entity.Name</h1></div></div>
+    </div></div></SectionContent>
+    <ActionButtons><MainButton><MudButton OnClick="OnDeleteClicked" Disabled="@(!canEditImage || (_busy))" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error">@Loc[LocKeys.Ui.ManageDriverPage.DeleteDriverPack]</MudButton></MainButton></ActionButtons>
+    @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+    <div class="device-detail device-workspace">
+        <ResponsiveTabs PanelOrder="@(new int[] { 0, 4, 1, 3, 2, 6, 5 })" KeepPanelsAlive="true" ActivePanelIndex="_tab" ActivePanelIndexChanged="OnTabChanged" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.User.General]" Icon="@Icons.Material.Outlined.Info">
+                <TabHelp Href="ui/imaging/drivers-general.html" Title="@Loc[LocKeys.User.General]" />
+                @if (_tab == 0)
+                {
+                    <MudStack Class="pb-4"><DriverGeneralTab Id="Id" OnSaved="RefreshHeaderAsync"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Image.Configuration]" Icon="@Icons.Material.Outlined.Settings">
+                <TabHelp Href="ui/imaging/drivers-configuration.html" Title="@Loc[LocKeys.Image.Configuration]" />
+                @if (_tab == 4)
+                {
+                    <MudStack Class="pb-4"><DriverConfigurationTab Id="Id"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Action.Files]" Icon="@Icons.Material.Outlined.AttachFile">
+                <TabHelp Href="ui/imaging/drivers-files.html" Title="@Loc[LocKeys.Action.Files]" />
+                @if (_tab == 1)
+                {
+                    <MudStack Class="py-4"><DriverFilesTab ProfileId="Id"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ManageDriverPage.Models]" Icon="@Icons.Material.Outlined.Devices">
+                <TabHelp Href="ui/imaging/drivers-models.html" Title="@Loc[LocKeys.Ui.ManageDriverPage.Models]" />
+                @if (_tab == 3)
+                {
+                    <MudStack Class="pb-4"><DriverModelsTab Id="Id"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ManageDriverPage.OnlineLibrary]" Icon="@Icons.Material.Outlined.CloudDownload">
+                <TabHelp Href="ui/imaging/drivers-library.html" Title="@Loc[LocKeys.Ui.ManageDriverPage.OnlineLibrary]" />
+                @if (_tab == 2)
+                {
+                    <MudStack Class="py-4"><DriverLibraryTab ProfileId="Id"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Class="page-tab-divider" Text="@Loc[LocKeys.Policy.Activity]" Icon="@Icons.Material.Outlined.History">
+                <TabHelp Href="ui/imaging/drivers-audit.html" Title="@Loc[LocKeys.Policy.Activity]" />
+                @if (_tab == 6)
+                {
+                    <MudStack Class="py-4"><ImagingHistoryTab Kind="ImagingItemKind.DriverPack" ItemId="Id"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Device.Relations]" Icon="@Icons.Material.Outlined.AccountTree">
+                <TabHelp Href="ui/imaging/drivers-used-by.html" Title="@Loc[LocKeys.Device.Relations]" />
+                @if (_tab == 5)
+                {
+                    <MudStack Class="py-4"><ImagingRelationsTab Kind="ImagingItemKind.DriverPack" ItemId="Id"/></MudStack>
+                }
+            </MudTabPanel>
+        </ResponsiveTabs>
+    </div>
+}
+
+</ImagingEditScope>
+@code {
+    [Parameter] public int Id { get; set; }
+    [Parameter] public string? Tab { get; set; }
+    private DriverPack? _entity;
+    private bool _loading = true, _busy;
+    private string? _error;
+    private int _tab;
+    private static readonly string[] Tabs = ["general", "files", "library", "models", "configuration", "relations", "history"];
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.Equals(Tab, "profiles", StringComparison.OrdinalIgnoreCase)) Tab = "used-by";
+        if (string.Equals(Tab, "used-by", StringComparison.OrdinalIgnoreCase)) Tab = "relations";
+        if (string.Equals(Tab, "audit", StringComparison.OrdinalIgnoreCase)) Tab = "history";
+        _tab = Math.Max(0, Array.FindIndex(Tabs, x => string.Equals(x, Tab, StringComparison.OrdinalIgnoreCase)));
+        if (_entity?.Id == Id) return;
+        await OnLoadClicked();
+    }
+    private void OnTabChanged(int index)
+    {
+        if (_busy || index == _tab) return;
+        _tab = index;
+    }
+    private async Task RefreshHeaderAsync()
+    {
+        var result = await Service.GetByIdAsync(Id);
+        if (result.Success) _entity = result.Data;
+    }
+    private async Task OnLoadClicked()
+    {
+        _loading = true;
+        var result = await Service.GetByIdAsync(Id);
+        _entity = result.Data;
+        _error = result.Success ? null : Loc[result.Error!.Code, result.Error.Args].Value;
+        _loading = false;
+    }
+    private async Task OnDeleteClicked()
+    {
+        if (_busy || _entity is null) return;
+        if (await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.ManageDriverPage.DeleteDriverPack_3ac6eea3), UiText.Get(LocKeys.Ui.ManageImageProfilePage.Delete0, (_entity.Name)), yesText: UiText.Get(LocKeys.Common.Delete), cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+        _busy = true;
+        var result = await Service.DeleteAsync(Id);
+        if (result.Success) { Navigation.NavigateTo($"/images/driverpacks"); }
+        else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        _busy = false;
+    }
+}

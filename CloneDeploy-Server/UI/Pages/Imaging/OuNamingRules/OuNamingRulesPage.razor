@@ -1,0 +1,92 @@
+@page "/images/ounamingrules"
+@attribute [Authorize(Policy = Constants.Permissions.OuNamingRuleView)]
+@inject ImagingService Service
+@inject AuthenticationStateProvider Authentication
+@inject IAuthorizationService Authorization
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.NavMenu.OUNamingRules]" />
+<ActionButtons>
+    <MainButton>
+        <MudButton OnClick="CreateAsync" Disabled="@(_busy || !_canEdit)" StartIcon="@Icons.Material.Filled.Add">@Loc[LocKeys.Ui.OuNamingRulesPage.New]</MudButton>
+    </MainButton>
+</ActionButtons>
+<MudPaper Class="device-list-filters device-search-panel" Elevation="0">
+    <MudTextField @bind-Value="_search" Placeholder="@Loc[LocKeys.Ui.OuNamingRulesPage.SearchRuleSets]" Immediate="true" Clearable="true"
+                  Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
+</MudPaper>
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert> }
+<MudDataGrid T="OuNamingRuleSet" Items="_sets" QuickFilter="MatchesSearch" Loading="_busy"
+             Dense="true" Hover="true" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu"
+             ColumnResizeMode="ResizeMode.Column" RowsPerPage="@Constants.UI.DefaultPageSize"
+             Elevation="0" Outlined="true" Class="device-list-grid">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.Rule" Color="Color.Primary" />
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.NavMenu.OUNamingRules]</MudText>
+        <MudSpacer />
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]">
+            <CellTemplate><MudLink Class="device-name-link" Href="@($"/images/ounamingrules/{context.Item.Id}")">@context.Item.Name</MudLink></CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.DomainName" Title="@Loc[LocKeys.Device.Domain]" />
+        <PropertyColumn Property="x => x.Enabled" Title="@Loc[LocKeys.StorageProvider.Enabled]" />
+        <PropertyColumn Property="x => x.Rules.Count" Title="@Loc[LocKeys.Ui.OuNamingRulesPage.Rules]" />
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" Sortable="false" Filterable="false" StickyRight="true">
+            <CellTemplate>
+                <MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Common.Delete]">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => Delete(context.Item))"
+                                   Disabled="@(_busy || !_canEdit)" aria-label="@Loc[LocKeys.Ui.OuNamingRulesPage.DeleteOUNamingRuleSet]" />
+                </MudTooltip>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent><MudDataGridPager T="OuNamingRuleSet" /></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Ui.OuNamingRulesPage.NoMatchingOUNamingRuleSets]</MudText></NoRecordsContent>
+</MudDataGrid>
+
+@code {
+    private async Task CreateAsync()
+    {
+        if (_busy || !_canEdit) return;
+        var dialog = await Dialog.ShowAsync<OuNamingRuleCreateDialog>(UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.NewOUNamingRuleSet),
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Small, BackdropClick = false });
+        if (await dialog.Result is { Canceled: false, Data: int id }) Navigation.NavigateTo($"/images/ounamingrules/{id}");
+    }
+    private List<OuNamingRuleSet> _sets = [];
+    private bool _busy = true, _canEdit;
+    private string? _error, _search;
+    private bool MatchesSearch(OuNamingRuleSet set) => string.IsNullOrWhiteSpace(_search) ||
+        (set.Name + " " + set.DomainName).Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _canEdit = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.OuNamingRuleEdit)).Succeeded;
+        await Reload();
+    }
+
+    private async Task Reload()
+    {
+        _busy = true; _error = null;
+        try
+        {
+            var result = await Service.ListOuNamingAsync();
+            if (!result.Success) { _error = Loc[result.Error!.Code, result.Error.Args]; return; }
+            _sets = result.Data!;
+        }
+        catch { _error = UiText.Get(LocKeys.Ui.OuNamingRulesPage.UnableToLoadOUNamingRulesRefreshAndTry); }
+        finally { _busy = false; }
+    }
+
+    private async Task Delete(OuNamingRuleSet set)
+    {
+        if (_busy || !_canEdit || await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.DeleteRuleSet), UiText.Get(LocKeys.Ui.ManageImageProfilePage.Delete0, (set.Name)), yesText: UiText.Get(LocKeys.Common.Delete), cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+        _busy = true;
+        try
+        {
+            var result = await Service.DeleteOuNamingAsync(set.Id, set.Revision);
+            if (!result.Success) Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+            else { Snackbar.Add(UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.OUNamingRuleSetDeleted), Severity.Success); await Reload(); }
+        }
+        finally { _busy = false; }
+    }
+}

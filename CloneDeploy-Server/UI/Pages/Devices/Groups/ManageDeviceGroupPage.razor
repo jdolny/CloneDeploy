@@ -1,0 +1,211 @@
+@using CloneDeploy_Server.UI.Pages.Devices.Devices.Shared
+@page "/groups/new"
+@page "/groups/manage/{Id:int}"
+@page "/groups/manage/{Id:int}/{Tab}"
+
+@attribute [Authorize(Policy = Constants.Permissions.DeviceGroupView)]
+@inject AuthenticationStateProvider Authentication
+@inject IAuthorizationService Authorization
+@inject DeviceGroupService DeviceGroupService
+
+@if (_isLoading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true"/>
+}
+else if (_group is not null)
+{
+    <PageTitle>@UiText.Get(LocKeys.Ui.ManageDeviceGroupPage.DeviceGroups0, (_group.Name))</PageTitle>
+    <SectionContent SectionName="page-title">
+        <div class="device-page-heading">
+            <div class="device-heading-row">
+                <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Href="/groups"
+                               Class="flex-shrink-0" aria-label="@Loc[LocKeys.Group.BackToGroups]"/>
+                <div class="device-heading-icon"><MudIcon Icon="@Icons.Material.Outlined.Devices" Size="Size.Large"/></div>
+                <div class="device-heading-copy">
+                    <div class="device-heading-name">
+                        <h1>@_group.Name</h1>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </SectionContent>
+    <div class="device-detail device-workspace">
+        <ActionButtons>
+            <Content>
+                <PermissionView Policy="@Constants.Permissions.DeviceGroupEdit"><MudMenuItem Label="@Loc[LocKeys.Common.Delete]" Icon="@Icons.Material.Filled.Delete"
+                             Disabled="@(_actionBusy)" OnClick="@Snackbar.GuardAction(() => _actionBusy || _group.Type == DeviceGroupType.AllDevices, UiText.Get(LocKeys.Ui.ManageDeviceGroupPage.TheAllDevicesGroupCannotBeArchivedOrDeleted), OnDeleteClicked)" /></PermissionView>
+                <PermissionView Policy="@Constants.Permissions.DeviceGroupDeployImage"><MudMenuItem Label="@Loc[LocKeys.Device.DeployImage]" Icon="@Icons.Material.Filled.InstallDesktop"
+                             Disabled="_actionBusy" OnClick="OnDeployImageClicked" /></PermissionView>
+                <PermissionView Policy="@Constants.Permissions.DeviceGroupDeployMulticast"><MudMenuItem Label="@Loc[LocKeys.Ui.ManageDeviceGroupPage.DeployMulticast]" Icon="@Icons.Material.Outlined.WifiTethering"
+                             Disabled="_actionBusy" OnClick="OnDeployMulticastClicked" /></PermissionView>
+                <PermissionView Policy="@Constants.Permissions.DeviceGroupPowerManagement"><DeviceWakeAction GroupId="_group.Id" Disabled="_actionBusy" /></PermissionView>
+            </Content>
+        </ActionButtons>
+        <ResponsiveTabs PanelOrder="@(new int[] { 0, 2, 3, 1, 6, 5, 4 })" @bind-ActivePanelIndex="_activePanelIndex" KeepPanelsAlive="true"
+                        Class="device-primary-tabs" TabPanelsClass="device-section-content pb-4">
+            <MudTabPanel Text="@Loc[LocKeys.Group.General]" Icon="@Icons.Material.Outlined.Info">
+                <TabHelp Href="ui/devices/device-groups-general.html" Title="@Loc[LocKeys.Group.General]" />
+                @if (_activePanelIndex == 0)
+                {
+                    <DeviceGroupGeneralTab GroupId="_group.Id" Saved="OnGroupSaved" @key="_group.Id"/>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Group.Members]" Icon="@Icons.Material.Outlined.Computer">
+                <TabHelp Href="ui/devices/device-groups-members.html" Title="@Loc[LocKeys.Group.Members]" />
+                @if (_activePanelIndex == 2)
+                {
+                    <DeviceGroupMembersTab GroupId="_group.Id" Saved="OnGroupSaved" @key="_group.Id"/>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Device.Imaging]" Icon="@Icons.Material.Outlined.InstallDesktop">
+                <TabHelp Href="ui/devices/device-groups-imaging.html" Title="@Loc[LocKeys.Device.Imaging]" />
+                @if (_activePanelIndex == 3)
+                {
+                    <DeviceGroupImagingTab GroupId="_group.Id" @key="_group.Id" />
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Policy.Policies]" Icon="@Icons.Material.Outlined.VerifiedUser">
+                <TabHelp Href="ui/devices/device-groups-policies.html" Title="@Loc[LocKeys.Policy.Policies]" />
+                @if (_activePanelIndex == 1)
+                {
+                    <DeviceGroupPoliciesTab GroupId="_group.Id" @key="_group.Id"/>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.DeviceGroupPowerSchedulesTab.PowerSchedules]" Icon="@Icons.Material.Outlined.Schedule">
+                <TabHelp Href="ui/devices/device-groups-power.html" Title="@Loc[LocKeys.Ui.DeviceGroupPowerSchedulesTab.PowerSchedules]" />
+                @if (_activePanelIndex == 6)
+                {
+                    <PermissionView Policy="@Constants.Permissions.DeviceGroupPowerManagement"><DeviceGroupPowerSchedulesTab GroupId="_group.Id" @key="_group.Id" /></PermissionView>
+                }
+            </MudTabPanel>
+            <MudTabPanel Class="page-tab-divider" Text="@Loc[LocKeys.Policy.Activity]" Icon="@Icons.Material.Outlined.History">
+                <TabHelp Href="ui/devices/device-groups-history.html" Title="@Loc[LocKeys.Policy.Activity]" />
+                @if (_activePanelIndex == 5)
+                {
+                    <DeviceGroupHistoryTab GroupId="_group.Id" @key="_group.Id" />
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Device.Relations]" Icon="@Icons.Material.Outlined.AccountTree">
+                <TabHelp Href="ui/devices/device-groups-relations.html" Title="@Loc[LocKeys.Device.Relations]" />
+                @if (_activePanelIndex == 4)
+                {
+                    <DeviceGroupRelationsTab GroupId="_group.Id" @key="_group.Id" />
+                }
+            </MudTabPanel>
+        </ResponsiveTabs>
+    </div>
+}
+else
+{
+    <MudAlert Severity="Severity.Error">@_loadError</MudAlert>
+    <MudButton OnClick="OnRetryClicked">@Loc[LocKeys.Common.Retry]</MudButton>
+}
+
+@code
+{
+    [Parameter] public int? Id { get; set; }
+    [Parameter] public string? Tab { get; set; }
+
+    private static readonly string[] TabRoutes = ["general", "policies", "members", "imaging", "relations", "history", "power"];
+    private int _activePanelIndex;
+    private bool _isLoading = true;
+    private bool _actionBusy;
+
+    private DeviceGroup? _group;
+    private string? _loadError;
+
+    private async Task OnDeleteClicked()
+    {
+        if (_actionBusy || _group is null || _group.Type == DeviceGroupType.AllDevices) return;
+        var group = _group;
+        _actionBusy = true;
+        try
+        {
+            var parameters = new DialogParameters<ConfirmationDialog>
+            {
+                { x => x.ContentText, UiText.Get(LocKeys.Ui.ManageDeviceGroupPage.DeleteDeviceGroup0DevicesAndPoliciesWillNot, (group.Name)) },
+                { x => x.ButtonText, Loc[LocKeys.Common.Delete].Value },
+                { x => x.Color, Color.Error }
+            };
+            var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+            if (await dialog.Result is not { Canceled: false, Data: true }) return;
+            var result = await DeviceGroupService.DeleteManyAsync([group.Id]);
+            if (result.Success)
+            {
+                Snackbar.Add(UiText.Get(LocKeys.Ui.ManageDeviceGroupPage.DeviceGroupDeleted), Severity.Success);
+                if (Id == group.Id) Navigation.NavigateTo("/groups");
+            }
+            else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _actionBusy = false; }
+    }
+
+    private Task OnDeployImageClicked() => OpenDeploymentAsync(false);
+    private Task OnDeployMulticastClicked() => OpenDeploymentAsync(true);
+
+    private async Task OpenDeploymentAsync(bool multicast)
+    {
+        if (_actionBusy || _group is null) return;
+        _actionBusy = true;
+        try
+        {
+            var parameters = new DialogParameters<DeviceGroupDeployImageDialog>
+            {
+                { x => x.GroupId, _group.Id },
+                { x => x.Multicast, multicast }
+            };
+            var dialog = await Dialog.ShowAsync<DeviceGroupDeployImageDialog>(multicast ? UiText.Get(LocKeys.Ui.ManageDeviceGroupPage.DeployMulticast) : Loc[LocKeys.Device.DeployImage].Value, parameters,
+                new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Medium, BackdropClick = false, CloseOnEscapeKey = false });
+            await dialog.Result;
+        }
+        finally { _actionBusy = false; }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id is null) return;
+        var index = Array.FindIndex(TabRoutes, x => string.Equals(x, Tab, StringComparison.OrdinalIgnoreCase));
+        _activePanelIndex = index < 0 ? 0 : index;
+        if (_group?.Id == Id) return;
+        await OnRetryClicked();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || Id is not null) return;
+        if (!(await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.DeviceGroupEdit)).Succeeded)
+        {
+            _isLoading = false;
+            _loadError = UiText.Get(LocKeys.Ui.ManageDeviceGroupPage.EditGroupPermissionIsRequiredToCreateAGroup);
+            StateHasChanged();
+            return;
+        }
+        var dialog = await Dialog.ShowAsync<NewDeviceGroupDialog>(Constants.UI.StandardDialogBox);
+        await dialog.Result;
+        Navigation.NavigateTo("/groups");
+    }
+
+    private void OnGroupSaved(DeviceGroup group)
+    {
+        if (_group?.Id != group.Id) return;
+        _group.Name = group.Name;
+        _group.Description = group.Description;
+        _group.Type = group.Type;
+        _group.MembershipEvaluatedAtUtc = group.MembershipEvaluatedAtUtc;
+    }
+
+    private async Task OnRetryClicked()
+    {
+        _isLoading = true;
+        _group = null;
+
+        var result = await DeviceGroupService.GetByIdAsync(Id!.Value);
+        if (!result.Success)
+            _loadError = Loc[result.Error.Code, result.Error.Args];
+        else if (result.HasData)
+            _group = result.Data;
+
+        _isLoading = false;
+    }
+}

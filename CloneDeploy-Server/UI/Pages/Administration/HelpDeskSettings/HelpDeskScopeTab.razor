@@ -1,0 +1,97 @@
+@inject HelpDeskScope Scope
+@inject AuthenticationStateProvider Authentication
+
+@if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+@if (_loaded)
+{
+    <MudTabs Class="device-subtabs" ActivePanelIndex="ActiveTab" ActivePanelIndexChanged="ActiveTabChanged" TabPanelsClass="pt-4 detail-tab-content">
+        <Header>
+            <div class="device-overview-save">
+                @if (ActiveTab == 0)
+                {
+                    <MudButton OnClick="@(() => SaveScopeAsync(true))" Disabled="_saving" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Common.Save]</MudButton>
+                }
+                else
+                {
+                    <MudButton OnClick="@(() => SaveScopeAsync(false))" Disabled="_saving" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Common.Save]</MudButton>
+                }
+            </div>
+        </Header>
+        <ChildContent>
+        <MudTabPanel Text="@Loc[LocKeys.Ui.NavMenu.DeviceGroups]">
+            <TabHelp Href="ui/administration/helpdesk-settings-device-groups.html" Title="@Loc[LocKeys.Ui.NavMenu.DeviceGroups]" />
+            <MudGrid><MudItem xs="12" md="4">
+            <MudSelect Variant="Variant.Outlined" Margin="Margin.Dense" T="bool" @bind-Value="_settings.AllDevices" Label="@Loc["HelpDesk.DeviceScope"]" Disabled="_saving">
+                <MudSelectItem T="bool" Value="true">@Loc["HelpDesk.AllEligibleDevices"]</MudSelectItem>
+                <MudSelectItem T="bool" Value="false">@Loc["HelpDesk.SelectedOnly"]</MudSelectItem>
+            </MudSelect>
+            </MudItem></MudGrid>
+            @if (!_settings.AllDevices)
+            {
+                <MudGrid Class="mt-2"><MudItem xs="12" md="4">
+                    <HelpScopePicker Label="@Loc[LocKeys.Ui.NavMenu.DeviceGroups]" Options="@_groups.Select(x => new HelpScopePicker.Option(x.Id, x.Name))"
+                                     @bind-SelectedIds="_settings.DeviceGroupIds" Disabled="_saving" />
+                </MudItem></MudGrid>
+            }
+        </MudTabPanel>
+        <MudTabPanel Text="@Loc[LocKeys.Ui.NavMenu.UserAudiences]">
+            <TabHelp Href="ui/administration/helpdesk-settings-user-audiences.html" Title="@Loc[LocKeys.Ui.NavMenu.UserAudiences]" />
+            <MudGrid><MudItem xs="12" md="4">
+            <MudSelect Variant="Variant.Outlined" Margin="Margin.Dense" T="bool" @bind-Value="_settings.AllUsers" Label="@Loc["HelpDesk.UserScope"]" Disabled="_saving">
+                <MudSelectItem T="bool" Value="true">@Loc["HelpDesk.AllEligibleUsers"]</MudSelectItem>
+                <MudSelectItem T="bool" Value="false">@Loc["HelpDesk.SelectedOnly"]</MudSelectItem>
+            </MudSelect>
+            </MudItem></MudGrid>
+            @if (!_settings.AllUsers)
+            {
+                <MudGrid Class="mt-2"><MudItem xs="12" md="4">
+                    <HelpScopePicker Label="@Loc[LocKeys.Ui.NavMenu.UserAudiences]" Options="@_audiences.Select(x => new HelpScopePicker.Option(x.Id, x.Name))"
+                                     @bind-SelectedIds="_settings.UserAudienceIds" Disabled="_saving" />
+                </MudItem></MudGrid>
+            }
+        </MudTabPanel>
+        </ChildContent>
+    </MudTabs>
+}
+@code {
+    [Parameter] public int ActiveTab { get; set; }
+    [Parameter] public EventCallback<int> ActiveTabChanged { get; set; }
+    private HelpDeskScopeSettings _settings = new();
+    private HelpDeskScopeSettings _saved = new();
+    private DeviceGroup[] _groups = [];
+    private UserAudience[] _audiences = [];
+    private bool _loaded, _saving;
+    private string? _error;
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            (_settings, _groups, _audiences) = await Scope.LoadAsync((await Authentication.GetAuthenticationStateAsync()).User);
+            _saved = new() { Revision = _settings.Revision, AllDevices = _settings.AllDevices, AllUsers = _settings.AllUsers,
+                DeviceGroupIds = _settings.DeviceGroupIds.ToArray(), UserAudienceIds = _settings.UserAudienceIds.ToArray() };
+            _loaded = true;
+        }
+        catch (Exception) { _error = Loc["HelpDesk.ScopeLoadFailed"]; }
+    }
+    private async Task SaveScopeAsync(bool devices)
+    {
+        if (_saving) return;
+        _saving = true; _error = null;
+        try
+        {
+            // Keep the other tab's unsaved edits out of this save, but retain them in the editor.
+            var input = new HelpDeskScopeSettings { Revision = _saved.Revision,
+                AllDevices = devices ? _settings.AllDevices : _saved.AllDevices,
+                DeviceGroupIds = (devices ? _settings.DeviceGroupIds : _saved.DeviceGroupIds).ToArray(),
+                AllUsers = devices ? _saved.AllUsers : _settings.AllUsers,
+                UserAudienceIds = (devices ? _saved.UserAudienceIds : _settings.UserAudienceIds).ToArray() };
+            await Scope.SaveAsync((await Authentication.GetAuthenticationStateAsync()).User, input);
+            _saved = input;
+            _settings.Revision = input.Revision;
+            Snackbar.Add(Loc["HelpDesk.ScopeSaved"], Severity.Success);
+        }
+        catch (InvalidOperationException ex) { _error = ex.Message; }
+        catch (Exception) { _error = Loc["HelpDesk.ScopeSaveFailed"]; }
+        finally { _saving = false; }
+    }
+}

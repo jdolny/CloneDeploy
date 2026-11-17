@@ -1,0 +1,70 @@
+<MudStack Spacing="3">
+@if (!Disabled)
+{
+    <MudStack Row="true" Wrap="Wrap.Wrap">
+        <MudButton OnClick="@(() => OpenPickerAsync(DirectoryObjectKind.User))" Disabled="_picking" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd">@Loc[LocKeys.Ui.UserAudienceMembersTab.AddUsers]</MudButton>
+        <MudButton OnClick="@(() => OpenPickerAsync(DirectoryObjectKind.Group))" Disabled="_picking" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GroupAdd">@Loc[LocKeys.Ui.UserGroupDirectoryTab.AddGroups]</MudButton>
+        @if (Options.Any(x => x.Available && x.Kind == DirectoryObjectKind.OrganizationalUnit))
+        {
+            <MudButton OnClick="@(() => OpenPickerAsync(DirectoryObjectKind.OrganizationalUnit))" Disabled="_picking" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountTree">@Loc[LocKeys.Ui.PolicyTargetingTab.AddOUs]</MudButton>
+        }
+    </MudStack>
+}
+<MudDataGrid T="UserAudienceMember" Items="Model.Members.Where(x => x.Exclude == Exclude)" QuickFilter="Matches" Dense="true" Hover="true" Elevation="0" Outlined="true" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">@(Exclude ? UiText.Get(LocKeys.Ui.ManageUserAudiencePage.ExcludedMembers) : UiText.Get(LocKeys.Ui.ManageUserAudiencePage.IncludedMembers))</MudText><MudSpacer />
+        <MudTextField T="string" @bind-Value="_search" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.UserAudienceMembersTab.SearchMembers]" aria-label="@Loc[LocKeys.Ui.UserAudienceMembersTab.SearchAudienceMembers]"
+                      Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search" />
+    </ToolBarContent>
+    <Columns>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.UserAudienceMembersTab.DirectoryObject]"><CellTemplate>@Label(context.Item)</CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.TargetPolicies.Scope]"><CellTemplate>
+            @if (Option(context.Item)?.Kind == DirectoryObjectKind.OrganizationalUnit)
+            { <MudCheckBox @bind-Value="context.Item.IncludeDescendants" Label="@Loc[LocKeys.Ui.PolicyTargetingTab.IncludeDescendantOUs]" Disabled="Disabled" /> }
+            else { <MudText>@(Option(context.Item)?.Kind == DirectoryObjectKind.Group ? UiText.Get(LocKeys.Ui.UserAudienceMembersTab.IncludesNestedGroupMembers) : context.Item.IncludeDescendants ? UiText.Get(LocKeys.Ui.UserAudienceMembersTab.IncludesDescendantOUs) : UiText.Get(LocKeys.Ui.UserAudienceMembersTab.SelectedObject))</MudText> }
+        </CellTemplate></TemplateColumn>
+        @if (!Disabled)
+        { <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false"><CellTemplate><MudButton OnClick="@(() => Model.Members.Remove(context.Item))">@Loc[LocKeys.Ui.DeviceGroupPowerSchedulesTab.Remove]</MudButton></CellTemplate></TemplateColumn> }
+    </Columns>
+    <NoRecordsContent><MudText Class="pa-3">@(Exclude ? UiText.Get(LocKeys.Ui.UserAudienceMembersTab.NoExclusions) : UiText.Get(LocKeys.Ui.UserAudienceMembersTab.NoInclusionsThisAudienceGrantsNoAccess))</MudText></NoRecordsContent>
+    <PagerContent><MudDataGridPager T="UserAudienceMember" /></PagerContent>
+</MudDataGrid>
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public UserAudience Model { get; set; } = null!;
+    [Parameter] public List<PolicyAudienceOption> Options { get; set; } = [];
+    [Parameter] public bool Exclude { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    private string _search = "";
+    private bool _picking;
+    private bool Matches(UserAudienceMember item) => string.IsNullOrWhiteSpace(_search) || Label(item).Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+    private PolicyAudienceOption? Option(UserAudienceMember item) => Options.FirstOrDefault(x => x.SourceId == item.DirectorySourceId && x.ObjectGuid == item.ObjectGuid);
+    private string Label(UserAudienceMember item) => Option(item) is { } option ? $"{option.Name} · {option.Kind} · {option.DirectoryName}{(option.Available ? "" : " (unavailable)")}"
+        : UiText.Get(LocKeys.Ui.UserAudienceMembersTab.Text0Unavailable1, (item.DisplayName), (item.ObjectGuid));
+    private async Task OpenPickerAsync(DirectoryObjectKind kind)
+    {
+        if (Disabled || _picking) return;
+        _picking = true;
+        var model = Model;
+        var exclude = Exclude;
+        try
+        {
+            var parameters = new DialogParameters<UserAudienceMemberPickerDialog>
+            {
+                { x => x.Options, Options },
+                { x => x.Kind, kind },
+                { x => x.Exclude, exclude },
+                { x => x.Assigned, model.Members.Where(x => x.Exclude == exclude).Select(x => (x.DirectorySourceId, x.ObjectGuid)).ToHashSet() }
+            };
+            var label = kind == DirectoryObjectKind.User ? "users" : kind == DirectoryObjectKind.Group ? "groups" : UiText.Get(LocKeys.Ui.ManageDirectoryPage.OUs);
+            var dialog = await Dialog.ShowAsync<UserAudienceMemberPickerDialog>(UiText.Get(LocKeys.Ui.UserAudienceMembersTab.Select0To1, (label), ((exclude ? "exclude" : "include"))), parameters,
+                new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, CloseButton = true });
+            if (await dialog.Result is not { Canceled: false, Data: List<UserAudienceMember> selected } || Disabled || !ReferenceEquals(model, Model) || exclude != Exclude) return;
+            foreach (var item in selected)
+                if (!model.Members.Any(x => x.DirectorySourceId == item.DirectorySourceId && x.ObjectGuid == item.ObjectGuid && x.Exclude == exclude))
+                    model.Members.Add(item);
+        }
+        finally { _picking = false; }
+    }
+}

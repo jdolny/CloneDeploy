@@ -1,0 +1,19 @@
+<MudPaper Class="device-list-filters resource-list-filters" Elevation="0">
+    <MudTextField T="string" Class="@SearchClass" ValueChanged="ValueChanged" DebounceInterval="300"
+                  Placeholder="@(Label + "...")" aria-label="@Label"
+                  Variant="Variant.Outlined" Margin="Margin.Dense"
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
+</MudPaper>
+<div style="height: 4px;" aria-busy="@(Loading ? "true" : "false")">
+    @if (Loading)
+    {
+        <MudProgressLinear Color="Color.Default" Indeterminate="true" />
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public string? SearchClass { get; set; }
+}

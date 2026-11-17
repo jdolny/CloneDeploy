@@ -1,0 +1,15 @@
+<MudAutocomplete T="Image" Label="@Loc[LocKeys.Device.Image]" Value="SelectedImage" ValueChanged="SelectAsync"
+                 SearchFunc="SearchAsync" ToStringFunc="@(image => image is null ? "" : image.Name + (image.Enabled ? "" : " (disabled)"))"
+                 Required="true" Disabled="Disabled" Variant="Variant.Outlined" Clearable="true" MaxItems="30" ResetValueOnEmptyText="true" CoerceValue="false">
+    <NoItemsTemplate><MudText Class="pa-3">@Loc[LocKeys.Ui.ImageSelector.NoMatchingImagesCreateAnImageInManageImages]</MudText></NoItemsTemplate>
+</MudAutocomplete>
+@code {
+    [Parameter] public List<Image> Images { get; set; } = [];
+    [Parameter] public int Value { get; set; }
+    [Parameter] public EventCallback<int> ValueChanged { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    private Image? SelectedImage => Images.FirstOrDefault(x => x.Id == Value);
+    private Task SelectAsync(Image? image) => ValueChanged.InvokeAsync(image?.Id ?? 0);
+    private Task<IEnumerable<Image>> SearchAsync(string? text, CancellationToken token) =>
+        Task.FromResult(Images.Where(x => string.IsNullOrWhiteSpace(text) || x.Name.Contains(text.Trim(), StringComparison.OrdinalIgnoreCase)));
+}

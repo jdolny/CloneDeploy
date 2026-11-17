@@ -1,0 +1,35 @@
+@implements IDisposable
+
+<MudNavGroup Title="@Loc[LocKeys.Ui.AdministrationNavigationGroup.Administration]" Icon="@Icons.Material.Filled.Settings" @bind-Expanded="_expanded">
+    <MudNavLink Href="/users/manage" Match="NavLinkMatch.Prefix">@Loc[LocKeys.Ui.AdministrationNavigationGroup.ApplicationUsers]</MudNavLink>
+    <MudNavLink Href="/usergroups/manage" Match="NavLinkMatch.Prefix">@Loc[LocKeys.Ui.AdministrationNavigationGroup.ApplicationUserGroups]</MudNavLink>
+    <MudNavLink Href="/administration/agent" Match="NavLinkMatch.Prefix" Class="@AdministrationLinkClass("/administration/agent/general", "/administration/agent/enrollment", "/administration/agent/general")">@Loc[LocKeys.Ui.AdministrationNavigationGroup.AgentSettings]</MudNavLink>
+    <MudNavLink Href="/administration/helpdesk" Match="NavLinkMatch.Prefix">@Loc[LocKeys.Ui.HelpDeskAdministrationPage.HelpDeskSettings]</MudNavLink>
+    <MudNavLink Href="/administration/imaging" Match="NavLinkMatch.Prefix" Class="@AdministrationLinkClass("/administration/imaging/proxy", "/administration/imaging/tftp", "/images/winpe")">@Loc[LocKeys.Ui.AdministrationNavigationGroup.ImagingSettings]</MudNavLink>
+    <MudNavLink Href="/administration/server" Match="NavLinkMatch.Prefix" Class="@AdministrationLinkClass("/administration/server/general", "/administration/server/storage", "/administration/server/certificates", "/administration/server/credentials", "/administration/server/scheduler", "/administration/server/directories", "/administration/server/entra")">@Loc[LocKeys.Ui.PublicServerUrl.ServerSettings]</MudNavLink>
+    <MudNavLink Href="/settings/site-services" Match="NavLinkMatch.Prefix">@Loc[LocKeys.Ui.AdministrationNavigationGroup.SiteServices]</MudNavLink>
+</MudNavGroup>
+
+@code {
+    private string? AdministrationLinkClass(params string[] prefixes)
+    {
+        var path = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
+        return prefixes.Any(prefix => path.Equals(prefix, StringComparison.OrdinalIgnoreCase) || path.StartsWith(prefix + "/", StringComparison.OrdinalIgnoreCase)) ? "active" : null;
+    }
+
+    private bool _expanded, _administrationRoute;
+    private bool IsAdministrationRoute => AdministrationLinkClass("/administration", "/users/manage", "/usergroups/manage", "/directory-users", "/settings", "/images/winpe") is not null;
+    protected override void OnInitialized()
+    {
+        _expanded = _administrationRoute = IsAdministrationRoute;
+        Navigation.LocationChanged += LocationChanged;
+    }
+    private void LocationChanged(object? sender, LocationChangedEventArgs args) => _ = InvokeAsync(() =>
+    {
+        var administrationRoute = IsAdministrationRoute;
+        if (administrationRoute && !_administrationRoute) _expanded = true;
+        _administrationRoute = administrationRoute;
+        StateHasChanged();
+    });
+    public void Dispose() => Navigation.LocationChanged -= LocationChanged;
+}

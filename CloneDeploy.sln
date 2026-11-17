@@ -1,0 +1,664 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneDeploy-Server", "CloneDeploy-Server\CloneDeploy-Server.csproj", "{FF0B3437-0392-4370-B4AE-AFD713C4771A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneDeploy-Agent.Win", "CloneDeploy-Agent.Win\CloneDeploy-Agent.Win.csproj", "{1AE388CC-3DBC-492F-A028-D9D60EF7545A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneDeploy-Agent.Win.Portal", "CloneDeploy-Agent.Win\Portal\CloneDeploy-Agent.Win.Portal.csproj", "{1A643CA1-D13F-48A0-8864-5A2DD1C14850}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneDeploy-Agent.Contracts", "CloneDeploy-Agent.Contracts\CloneDeploy-Agent.Contracts.csproj", "{4DC1DBE7-53A1-4539-BCBF-10F2151B0DC4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneDeploy-WinPeBuilder", "CloneDeploy-WinPeBuilder\CloneDeploy-WinPeBuilder.csproj", "{AAAB7F44-2A6F-4179-9506-E41709799386}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneDeploy-Imager", "CloneDeploy-Imager\CloneDeploy-Imager.csproj", "{7FA85887-46A7-4AAC-8B8B-C9BB87B40EF4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneDeploy-SiteService", "CloneDeploy-SiteService\CloneDeploy-SiteService.csproj", "{2C9C8D1B-9B86-4FA4-9B90-71F5F19106F8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneDeploy-SiteService.Transport", "CloneDeploy-SiteService.Transport\CloneDeploy-SiteService.Transport.csproj", "{2AD10D85-ADBA-47D9-A39D-1029F0F538D4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneDeploy-Agent.MacOS", "CloneDeploy-Agent.MacOS\CloneDeploy-Agent.MacOS.csproj", "{0FF0B8BA-4828-406E-8F7B-28F8AF697ABB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneDeploy-WinPe", "CloneDeploy-WinPe\CloneDeploy-WinPe.csproj", "{D249A0D1-BC9D-4E6D-8790-D7E2C555845F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneDeploy-Agent.Core", "CloneDeploy-Agent.Core\CloneDeploy-Agent.Core.csproj", "{1BE5E2C7-318D-4B69-BFFB-AB2767F1E0CA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneDeploy-Agent.MacOS.Portal", "CloneDeploy-Agent.MacOS\Portal\CloneDeploy-Agent.MacOS.Portal.csproj", "{4E9D64A8-8410-4966-9C71-E7B39F6FD7E7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneDeploy-Service.Client", "CloneDeploy-Service.Client\CloneDeploy-Service.Client.csproj", "{731213D1-D876-471F-9B15-6E730F4F751E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneDeploy-WindowsWorker", "CloneDeploy-WindowsWorker\CloneDeploy-WindowsWorker.csproj", "{6CCA0F6B-54F1-4ED2-A0C9-DD9C008442F8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloneDeploy-Agent.Localization", "CloneDeploy-Agent.Localization\CloneDeploy-Agent.Localization.csproj", "{95AFD658-318B-449F-A677-B87E4309ABC3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CloneDeploy-Docs", "CloneDeploy-Docs", "{EF54A3C3-C324-430D-BF4A-3CEFE63C8F01}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\Build-Docs.ps1 = CloneDeploy-Docs\Build-Docs.ps1
+		CloneDeploy-Docs\Validate-Docs.ps1 = CloneDeploy-Docs\Validate-Docs.ps1
+		CloneDeploy-Docs\Validate-DialogDocs.ps1 = CloneDeploy-Docs\Validate-DialogDocs.ps1
+		CloneDeploy-Docs\docfx.json = CloneDeploy-Docs\docfx.json
+		CloneDeploy-Docs\help-tabs.json = CloneDeploy-Docs\help-tabs.json
+		CloneDeploy-Docs\help-topics.json = CloneDeploy-Docs\help-topics.json
+		CloneDeploy-Docs\help-dialogs.json = CloneDeploy-Docs\help-dialogs.json
+		CloneDeploy-Docs\index.md = CloneDeploy-Docs\index.md
+		CloneDeploy-Docs\toc.yml = CloneDeploy-Docs\toc.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Welcome", "Welcome", "{59DC61BD-E455-4CA9-93E6-C29CFBB1B886}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".config", ".config", "{71F3B6BE-7BA1-4D92-BCFC-AA307965EA17}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\.config\dotnet-tools.json = CloneDeploy-Docs\.config\dotnet-tools.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Architecture & Security", "Architecture & Security", "{A467EF7F-6D45-407B-914C-26EF1D49A7D5}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\architecture-security\architecture-overview.md = CloneDeploy-Docs\architecture-security\architecture-overview.md
+		CloneDeploy-Docs\architecture-security\background-workers.md = CloneDeploy-Docs\architecture-security\background-workers.md
+		CloneDeploy-Docs\architecture-security\certificate-guide.md = CloneDeploy-Docs\architecture-security\certificate-guide.md
+		CloneDeploy-Docs\architecture-security\security.md = CloneDeploy-Docs\architecture-security\security.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{9DFA3C3A-E538-439E-80B3-3B7C11B1DD90}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\assets\CloneDeploy-on-dark.svg = CloneDeploy-Docs\assets\CloneDeploy-on-dark.svg
+		CloneDeploy-Docs\assets\CloneDeploy.ico = CloneDeploy-Docs\assets\CloneDeploy.ico
+		CloneDeploy-Docs\assets\CloneDeploy.svg = CloneDeploy-Docs\assets\CloneDeploy.svg
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Changelog", "Changelog", "{CF783379-ECAD-4C55-893B-4AC075537516}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\changelog\changelog.md = CloneDeploy-Docs\changelog\changelog.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Device Management", "Device Management", "{C227F8DE-7B15-47CB-9541-5BA9222C3993}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\devicemanagement\first-policy.md = CloneDeploy-Docs\devicemanagement\first-policy.md
+		CloneDeploy-Docs\devicemanagement\install-agent.md = CloneDeploy-Docs\devicemanagement\install-agent.md
+		CloneDeploy-Docs\devicemanagement\overview.md = CloneDeploy-Docs\devicemanagement\overview.md
+		CloneDeploy-Docs\devicemanagement\prepare-device-management.md = CloneDeploy-Docs\devicemanagement\prepare-device-management.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Imaging & Deployment", "Imaging & Deployment", "{3AFB2B95-6BCF-4ABA-B28F-5D4C8EBCB576}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\imaging\getting-started-first-image.md = CloneDeploy-Docs\imaging\getting-started-first-image.md
+		CloneDeploy-Docs\imaging\getting-started-imaging.md = CloneDeploy-Docs\imaging\getting-started-imaging.md
+		CloneDeploy-Docs\imaging\prepare-imaging.md = CloneDeploy-Docs\imaging\prepare-imaging.md
+		CloneDeploy-Docs\imaging\prepare-upload.md = CloneDeploy-Docs\imaging\prepare-upload.md
+		CloneDeploy-Docs\imaging\proxy-dhcp.md = CloneDeploy-Docs\imaging\proxy-dhcp.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Getting Started", "Getting Started", "{41E846CC-1B05-4050-828D-A26DBB8EFD52}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\installation\getting-started-create-first-administrator.md = CloneDeploy-Docs\installation\getting-started-create-first-administrator.md
+		CloneDeploy-Docs\installation\recommended-configuration.md = CloneDeploy-Docs\installation\recommended-configuration.md
+		CloneDeploy-Docs\installation\platform-compatibility.md = CloneDeploy-Docs\installation\platform-compatibility.md
+		CloneDeploy-Docs\installation\requirements-planning.md = CloneDeploy-Docs\installation\requirements-planning.md
+		CloneDeploy-Docs\installation\server-configuration.md = CloneDeploy-Docs\installation\server-configuration.md
+		CloneDeploy-Docs\installation\server-installation-windows.md = CloneDeploy-Docs\installation\server-installation-windows.md
+		CloneDeploy-Docs\installation\server-installation-linux.md = CloneDeploy-Docs\installation\server-installation-linux.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Introduction", "Introduction", "{FC744913-3034-4AC0-B50D-0497708F0A87}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\introduction\overview.md = CloneDeploy-Docs\introduction\overview.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "resources", "resources", "{F067E567-2A48-49C6-8BD4-2337B74C21D0}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\resources\professional-support.md = CloneDeploy-Docs\resources\professional-support.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "templates", "templates", "{88E824C8-64AC-4B1C-8152-88EF8647B110}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "public", "public", "{56716DB1-948F-4334-9FE0-29EFC9DB0E5C}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\templates\public\main.css = CloneDeploy-Docs\templates\public\main.css
+		CloneDeploy-Docs\templates\public\main.js = CloneDeploy-Docs\templates\public\main.js
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Troubleshooting", "Troubleshooting", "{D10D1EA2-AF38-439C-BC8E-560143872A4E}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\troubleshooting\log-locations.md = CloneDeploy-Docs\troubleshooting\log-locations.md
+		CloneDeploy-Docs\troubleshooting\troubleshooting-access-denied.md = CloneDeploy-Docs\troubleshooting\troubleshooting-access-denied.md
+		CloneDeploy-Docs\troubleshooting\troubleshooting-application-error.md = CloneDeploy-Docs\troubleshooting\troubleshooting-application-error.md
+		CloneDeploy-Docs\troubleshooting\troubleshooting-page-not-found.md = CloneDeploy-Docs\troubleshooting\troubleshooting-page-not-found.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "User Interface", "User Interface", "{D6D24A21-8047-4538-B812-195D52D82798}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\ui\web-ui.md = CloneDeploy-Docs\ui\web-ui.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "administration", "administration", "{D3F091D4-653B-4D53-B92D-8D29E6CFB477}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\ui\administration\agent-enrollment-general.md = CloneDeploy-Docs\ui\administration\agent-enrollment-general.md
+		CloneDeploy-Docs\ui\administration\agent-enrollment-installer.md = CloneDeploy-Docs\ui\administration\agent-enrollment-installer.md
+		CloneDeploy-Docs\ui\administration\agent-enrollment-key.md = CloneDeploy-Docs\ui\administration\agent-enrollment-key.md
+		CloneDeploy-Docs\ui\administration\agent-enrollment-overview.md = CloneDeploy-Docs\ui\administration\agent-enrollment-overview.md
+		CloneDeploy-Docs\ui\administration\agent-enrollment-rules.md = CloneDeploy-Docs\ui\administration\agent-enrollment-rules.md
+		CloneDeploy-Docs\ui\administration\agent-enrollment.md = CloneDeploy-Docs\ui\administration\agent-enrollment.md
+		CloneDeploy-Docs\ui\administration\agent-features.md = CloneDeploy-Docs\ui\administration\agent-features.md
+		CloneDeploy-Docs\ui\administration\agent-tools.md = CloneDeploy-Docs\ui\administration\agent-tools.md
+		CloneDeploy-Docs\ui\administration\certificates-authority.md = CloneDeploy-Docs\ui\administration\certificates-authority.md
+		CloneDeploy-Docs\ui\administration\certificates-https.md = CloneDeploy-Docs\ui\administration\certificates-https.md
+		CloneDeploy-Docs\ui\administration\certificates.md = CloneDeploy-Docs\ui\administration\certificates.md
+		CloneDeploy-Docs\ui\administration\email-notifications.md = CloneDeploy-Docs\ui\administration\email-notifications.md
+		CloneDeploy-Docs\ui\administration\entra-directory-groups.md = CloneDeploy-Docs\ui\administration\entra-directory-groups.md
+		CloneDeploy-Docs\ui\administration\entra.md = CloneDeploy-Docs\ui\administration\entra.md
+		CloneDeploy-Docs\ui\administration\helpdesk-assignment.md = CloneDeploy-Docs\ui\administration\helpdesk-assignment.md
+		CloneDeploy-Docs\ui\administration\helpdesk-categories.md = CloneDeploy-Docs\ui\administration\helpdesk-categories.md
+		CloneDeploy-Docs\ui\administration\helpdesk-categorization.md = CloneDeploy-Docs\ui\administration\helpdesk-categorization.md
+		CloneDeploy-Docs\ui\administration\helpdesk-queues.md = CloneDeploy-Docs\ui\administration\helpdesk-queues.md
+		CloneDeploy-Docs\ui\administration\helpdesk-routing.md = CloneDeploy-Docs\ui\administration\helpdesk-routing.md
+		CloneDeploy-Docs\ui\administration\helpdesk-routing-rule.md = CloneDeploy-Docs\ui\administration\helpdesk-routing-rule.md
+		CloneDeploy-Docs\ui\administration\helpdesk-settings-device-groups.md = CloneDeploy-Docs\ui\administration\helpdesk-settings-device-groups.md
+		CloneDeploy-Docs\ui\administration\helpdesk-settings-scope.md = CloneDeploy-Docs\ui\administration\helpdesk-settings-scope.md
+		CloneDeploy-Docs\ui\administration\helpdesk-settings-user-audiences.md = CloneDeploy-Docs\ui\administration\helpdesk-settings-user-audiences.md
+		CloneDeploy-Docs\ui\administration\helpdesk-settings.md = CloneDeploy-Docs\ui\administration\helpdesk-settings.md
+		CloneDeploy-Docs\ui\administration\imaging-infrastructure-performance.md = CloneDeploy-Docs\ui\administration\imaging-infrastructure-performance.md
+		CloneDeploy-Docs\ui\administration\imaging-infrastructure-queue.md = CloneDeploy-Docs\ui\administration\imaging-infrastructure-queue.md
+		CloneDeploy-Docs\ui\administration\imaging-infrastructure.md = CloneDeploy-Docs\ui\administration\imaging-infrastructure.md
+		CloneDeploy-Docs\ui\administration\imaging-multicast.md = CloneDeploy-Docs\ui\administration\imaging-multicast.md
+		CloneDeploy-Docs\ui\administration\licenses.md = CloneDeploy-Docs\ui\administration\licenses.md
+		CloneDeploy-Docs\ui\administration\pxe-proxy-live-activity.md = CloneDeploy-Docs\ui\administration\pxe-proxy-live-activity.md
+		CloneDeploy-Docs\ui\administration\pxe-proxy-settings.md = CloneDeploy-Docs\ui\administration\pxe-proxy-settings.md
+		CloneDeploy-Docs\ui\administration\pxe-proxy.md = CloneDeploy-Docs\ui\administration\pxe-proxy.md
+		CloneDeploy-Docs\ui\administration\remote-access-global.md = CloneDeploy-Docs\ui\administration\remote-access-global.md
+		CloneDeploy-Docs\ui\administration\remote-access-rules.md = CloneDeploy-Docs\ui\administration\remote-access-rules.md
+		CloneDeploy-Docs\ui\administration\remote-access.md = CloneDeploy-Docs\ui\administration\remote-access.md
+		CloneDeploy-Docs\ui\administration\server-backup.md = CloneDeploy-Docs\ui\administration\server-backup.md
+		CloneDeploy-Docs\ui\administration\server-settings-branding.md = CloneDeploy-Docs\ui\administration\server-settings-branding.md
+		CloneDeploy-Docs\ui\administration\server-settings-general.md = CloneDeploy-Docs\ui\administration\server-settings-general.md
+		CloneDeploy-Docs\ui\administration\server-settings.md = CloneDeploy-Docs\ui\administration\server-settings.md
+		CloneDeploy-Docs\ui\administration\site-services-configuration.md = CloneDeploy-Docs\ui\administration\site-services-configuration.md
+		CloneDeploy-Docs\ui\administration\site-services-enrollment.md = CloneDeploy-Docs\ui\administration\site-services-enrollment.md
+		CloneDeploy-Docs\ui\administration\site-services-general.md = CloneDeploy-Docs\ui\administration\site-services-general.md
+		CloneDeploy-Docs\ui\administration\site-services-pxe.md = CloneDeploy-Docs\ui\administration\site-services-pxe.md
+		CloneDeploy-Docs\ui\administration\site-services-storage.md = CloneDeploy-Docs\ui\administration\site-services-storage.md
+		CloneDeploy-Docs\ui\administration\site-services.md = CloneDeploy-Docs\ui\administration\site-services.md
+		CloneDeploy-Docs\ui\administration\storage-provider-configuration.md = CloneDeploy-Docs\ui\administration\storage-provider-configuration.md
+		CloneDeploy-Docs\ui\administration\storage-providers.md = CloneDeploy-Docs\ui\administration\storage-providers.md
+		CloneDeploy-Docs\ui\administration\storage-replication-settings.md = CloneDeploy-Docs\ui\administration\storage-replication-settings.md
+		CloneDeploy-Docs\ui\administration\storage-replication-status.md = CloneDeploy-Docs\ui\administration\storage-replication-status.md
+		CloneDeploy-Docs\ui\administration\storage.md = CloneDeploy-Docs\ui\administration\storage.md
+		CloneDeploy-Docs\ui\administration\tftp-boot-files.md = CloneDeploy-Docs\ui\administration\tftp-boot-files.md
+		CloneDeploy-Docs\ui\administration\tftp-live-activity.md = CloneDeploy-Docs\ui\administration\tftp-live-activity.md
+		CloneDeploy-Docs\ui\administration\tftp-settings.md = CloneDeploy-Docs\ui\administration\tftp-settings.md
+		CloneDeploy-Docs\ui\administration\user-audiences-excluded-members.md = CloneDeploy-Docs\ui\administration\user-audiences-excluded-members.md
+		CloneDeploy-Docs\ui\administration\user-audiences-general.md = CloneDeploy-Docs\ui\administration\user-audiences-general.md
+		CloneDeploy-Docs\ui\administration\user-audiences-included-members.md = CloneDeploy-Docs\ui\administration\user-audiences-included-members.md
+		CloneDeploy-Docs\ui\administration\user-audiences-resolved-users.md = CloneDeploy-Docs\ui\administration\user-audiences-resolved-users.md
+		CloneDeploy-Docs\ui\administration\user-audiences.md = CloneDeploy-Docs\ui\administration\user-audiences.md
+		CloneDeploy-Docs\ui\administration\user-groups-general.md = CloneDeploy-Docs\ui\administration\user-groups-general.md
+		CloneDeploy-Docs\ui\administration\user-groups-members.md = CloneDeploy-Docs\ui\administration\user-groups-members.md
+		CloneDeploy-Docs\ui\administration\user-groups-permissions.md = CloneDeploy-Docs\ui\administration\user-groups-permissions.md
+		CloneDeploy-Docs\ui\administration\user-groups.md = CloneDeploy-Docs\ui\administration\user-groups.md
+		CloneDeploy-Docs\ui\administration\users-audit.md = CloneDeploy-Docs\ui\administration\users-audit.md
+		CloneDeploy-Docs\ui\administration\users-general.md = CloneDeploy-Docs\ui\administration\users-general.md
+		CloneDeploy-Docs\ui\administration\users-options.md = CloneDeploy-Docs\ui\administration\users-options.md
+		CloneDeploy-Docs\ui\administration\users-permissions.md = CloneDeploy-Docs\ui\administration\users-permissions.md
+		CloneDeploy-Docs\ui\administration\users.md = CloneDeploy-Docs\ui\administration\users.md
+		CloneDeploy-Docs\ui\administration\winpe-boot-variants.md = CloneDeploy-Docs\ui\administration\winpe-boot-variants.md
+		CloneDeploy-Docs\ui\administration\winpe-builder-history.md = CloneDeploy-Docs\ui\administration\winpe-builder-history.md
+		CloneDeploy-Docs\ui\administration\winpe-builder-status.md = CloneDeploy-Docs\ui\administration\winpe-builder-status.md
+		CloneDeploy-Docs\ui\administration\winpe-builder.md = CloneDeploy-Docs\ui\administration\winpe-builder.md
+		CloneDeploy-Docs\ui\administration\winpe-configuration.md = CloneDeploy-Docs\ui\administration\winpe-configuration.md
+		CloneDeploy-Docs\ui\administration\winpe-drivers.md = CloneDeploy-Docs\ui\administration\winpe-drivers.md
+		CloneDeploy-Docs\ui\administration\winpe-general.md = CloneDeploy-Docs\ui\administration\winpe-general.md
+		CloneDeploy-Docs\ui\administration\winpe-model-matching.md = CloneDeploy-Docs\ui\administration\winpe-model-matching.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dashboard", "dashboard", "{DF201F41-C8AC-441D-A63B-03892DDA8B2B}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\ui\dashboard\dashboard.md = CloneDeploy-Docs\ui\dashboard\dashboard.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "devices", "devices", "{523CF3AF-617C-47F7-8946-34DCD54CC2C4}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\ui\devices\approvals.md = CloneDeploy-Docs\ui\devices\approvals.md
+		CloneDeploy-Docs\ui\devices\device-connect-client-log.md = CloneDeploy-Docs\ui\devices\device-connect-client-log.md
+		CloneDeploy-Docs\ui\devices\device-connect-processes.md = CloneDeploy-Docs\ui\devices\device-connect-processes.md
+		CloneDeploy-Docs\ui\devices\device-connect-remote-viewing.md = CloneDeploy-Docs\ui\devices\device-connect-remote-viewing.md
+		CloneDeploy-Docs\ui\devices\device-connect-services.md = CloneDeploy-Docs\ui\devices\device-connect-services.md
+		CloneDeploy-Docs\ui\devices\device-connect-terminal.md = CloneDeploy-Docs\ui\devices\device-connect-terminal.md
+		CloneDeploy-Docs\ui\devices\device-connect.md = CloneDeploy-Docs\ui\devices\device-connect.md
+		CloneDeploy-Docs\ui\devices\device-deploy-image.md = CloneDeploy-Docs\ui\devices\device-deploy-image.md
+		CloneDeploy-Docs\ui\devices\device-deploy-actions.md = CloneDeploy-Docs\ui\devices\device-deploy-actions.md
+		CloneDeploy-Docs\ui\devices\device-rename.md = CloneDeploy-Docs\ui\devices\device-rename.md
+		CloneDeploy-Docs\ui\devices\device-group-criteria.md = CloneDeploy-Docs\ui\devices\device-group-criteria.md
+		CloneDeploy-Docs\ui\devices\device-details-history.md = CloneDeploy-Docs\ui\devices\device-details-history.md
+		CloneDeploy-Docs\ui\devices\device-details-imaging.md = CloneDeploy-Docs\ui\devices\device-details-imaging.md
+		CloneDeploy-Docs\ui\devices\device-details-inventory.md = CloneDeploy-Docs\ui\devices\device-details-inventory.md
+		CloneDeploy-Docs\ui\devices\device-details-overview.md = CloneDeploy-Docs\ui\devices\device-details-overview.md
+		CloneDeploy-Docs\ui\devices\device-details-policies.md = CloneDeploy-Docs\ui\devices\device-details-policies.md
+		CloneDeploy-Docs\ui\devices\device-details-relations.md = CloneDeploy-Docs\ui\devices\device-details-relations.md
+		CloneDeploy-Docs\ui\devices\device-groups-general.md = CloneDeploy-Docs\ui\devices\device-groups-general.md
+		CloneDeploy-Docs\ui\devices\device-groups-history.md = CloneDeploy-Docs\ui\devices\device-groups-history.md
+		CloneDeploy-Docs\ui\devices\device-groups-imaging.md = CloneDeploy-Docs\ui\devices\device-groups-imaging.md
+		CloneDeploy-Docs\ui\devices\device-groups-members.md = CloneDeploy-Docs\ui\devices\device-groups-members.md
+		CloneDeploy-Docs\ui\devices\device-groups-policies.md = CloneDeploy-Docs\ui\devices\device-groups-policies.md
+		CloneDeploy-Docs\ui\devices\device-groups-power.md = CloneDeploy-Docs\ui\devices\device-groups-power.md
+		CloneDeploy-Docs\ui\devices\device-groups-relations.md = CloneDeploy-Docs\ui\devices\device-groups-relations.md
+		CloneDeploy-Docs\ui\devices\device-groups.md = CloneDeploy-Docs\ui\devices\device-groups.md
+		CloneDeploy-Docs\ui\devices\device-history-actions.md = CloneDeploy-Docs\ui\devices\device-history-actions.md
+		CloneDeploy-Docs\ui\devices\device-history-audits.md = CloneDeploy-Docs\ui\devices\device-history-audits.md
+		CloneDeploy-Docs\ui\devices\device-history-helpdesk.md = CloneDeploy-Docs\ui\devices\device-history-helpdesk.md
+		CloneDeploy-Docs\ui\devices\device-history-notifications.md = CloneDeploy-Docs\ui\devices\device-history-notifications.md
+		CloneDeploy-Docs\ui\devices\device-history-policies.md = CloneDeploy-Docs\ui\devices\device-history-policies.md
+		CloneDeploy-Docs\ui\devices\device-imaging-deployment-settings.md = CloneDeploy-Docs\ui\devices\device-imaging-deployment-settings.md
+		CloneDeploy-Docs\ui\devices\device-imaging-imaging-logs.md = CloneDeploy-Docs\ui\devices\device-imaging-imaging-logs.md
+		CloneDeploy-Docs\ui\devices\device-inventory-certificates.md = CloneDeploy-Docs\ui\devices\device-inventory-certificates.md
+		CloneDeploy-Docs\ui\devices\device-inventory-custom-inventory.md = CloneDeploy-Docs\ui\devices\device-inventory-custom-inventory.md
+		CloneDeploy-Docs\ui\devices\device-inventory-software.md = CloneDeploy-Docs\ui\devices\device-inventory-software.md
+		CloneDeploy-Docs\ui\devices\device-inventory-system-information.md = CloneDeploy-Docs\ui\devices\device-inventory-system-information.md
+		CloneDeploy-Docs\ui\devices\device-inventory-user-logins.md = CloneDeploy-Docs\ui\devices\device-inventory-user-logins.md
+		CloneDeploy-Docs\ui\devices\device-inventory-windows-updates.md = CloneDeploy-Docs\ui\devices\device-inventory-windows-updates.md
+		CloneDeploy-Docs\ui\devices\device-overview-attachments.md = CloneDeploy-Docs\ui\devices\device-overview-attachments.md
+		CloneDeploy-Docs\ui\devices\device-overview-comments.md = CloneDeploy-Docs\ui\devices\device-overview-comments.md
+		CloneDeploy-Docs\ui\devices\device-overview-custom-attributes.md = CloneDeploy-Docs\ui\devices\device-overview-custom-attributes.md
+		CloneDeploy-Docs\ui\devices\device-overview-general.md = CloneDeploy-Docs\ui\devices\device-overview-general.md
+		CloneDeploy-Docs\ui\devices\device-policies-direct-assignments.md = CloneDeploy-Docs\ui\devices\device-policies-direct-assignments.md
+		CloneDeploy-Docs\ui\devices\device-policies-effective-policy.md = CloneDeploy-Docs\ui\devices\device-policies-effective-policy.md
+		CloneDeploy-Docs\ui\devices\devices.md = CloneDeploy-Docs\ui\devices\devices.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "helpdesk", "helpdesk", "{D86612D6-3562-4717-8561-0FF24B04A1F3}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\ui\helpdesk\help-request.md = CloneDeploy-Docs\ui\helpdesk\help-request.md
+		CloneDeploy-Docs\ui\helpdesk\helpdesk.md = CloneDeploy-Docs\ui\helpdesk\helpdesk.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "imaging", "imaging", "{F6926CBE-97B6-4771-9D7D-8A32F6A01019}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\ui\imaging\deployment-profiles-audit.md = CloneDeploy-Docs\ui\imaging\deployment-profiles-audit.md
+		CloneDeploy-Docs\ui\imaging\deployment-profiles-configuration.md = CloneDeploy-Docs\ui\imaging\deployment-profiles-configuration.md
+		CloneDeploy-Docs\ui\imaging\deployment-profiles-drivers.md = CloneDeploy-Docs\ui\imaging\deployment-profiles-drivers.md
+		CloneDeploy-Docs\ui\imaging\deployment-profiles-general.md = CloneDeploy-Docs\ui\imaging\deployment-profiles-general.md
+		CloneDeploy-Docs\ui\imaging\deployment-profiles-policies.md = CloneDeploy-Docs\ui\imaging\deployment-profiles-policies.md
+		CloneDeploy-Docs\ui\imaging\deployment-profiles-used-by.md = CloneDeploy-Docs\ui\imaging\deployment-profiles-used-by.md
+		CloneDeploy-Docs\ui\imaging\deployment-profiles.md = CloneDeploy-Docs\ui\imaging\deployment-profiles.md
+		CloneDeploy-Docs\ui\imaging\deployment-rules-deployment.md = CloneDeploy-Docs\ui\imaging\deployment-rules-deployment.md
+		CloneDeploy-Docs\ui\imaging\deployment-rules-general.md = CloneDeploy-Docs\ui\imaging\deployment-rules-general.md
+		CloneDeploy-Docs\ui\imaging\deployment-rules-matching.md = CloneDeploy-Docs\ui\imaging\deployment-rules-matching.md
+		CloneDeploy-Docs\ui\imaging\deployment-rules.md = CloneDeploy-Docs\ui\imaging\deployment-rules.md
+		CloneDeploy-Docs\ui\imaging\drivers-audit.md = CloneDeploy-Docs\ui\imaging\drivers-audit.md
+		CloneDeploy-Docs\ui\imaging\drivers-configuration.md = CloneDeploy-Docs\ui\imaging\drivers-configuration.md
+		CloneDeploy-Docs\ui\imaging\drivers-files.md = CloneDeploy-Docs\ui\imaging\drivers-files.md
+		CloneDeploy-Docs\ui\imaging\drivers-general.md = CloneDeploy-Docs\ui\imaging\drivers-general.md
+		CloneDeploy-Docs\ui\imaging\drivers-library.md = CloneDeploy-Docs\ui\imaging\drivers-library.md
+		CloneDeploy-Docs\ui\imaging\drivers-models.md = CloneDeploy-Docs\ui\imaging\drivers-models.md
+		CloneDeploy-Docs\ui\imaging\drivers-used-by.md = CloneDeploy-Docs\ui\imaging\drivers-used-by.md
+		CloneDeploy-Docs\ui\imaging\drivers.md = CloneDeploy-Docs\ui\imaging\drivers.md
+		CloneDeploy-Docs\ui\imaging\image-prep-answer-file.md = CloneDeploy-Docs\ui\imaging\image-prep-answer-file.md
+		CloneDeploy-Docs\ui\imaging\image-prep-configuration.md = CloneDeploy-Docs\ui\imaging\image-prep-configuration.md
+		CloneDeploy-Docs\ui\imaging\image-prep-general.md = CloneDeploy-Docs\ui\imaging\image-prep-general.md
+		CloneDeploy-Docs\ui\imaging\image-prep-history.md = CloneDeploy-Docs\ui\imaging\image-prep-history.md
+		CloneDeploy-Docs\ui\imaging\image-prep-pre-sysprep-script.md = CloneDeploy-Docs\ui\imaging\image-prep-pre-sysprep-script.md
+		CloneDeploy-Docs\ui\imaging\image-prep-setupcomplete.md = CloneDeploy-Docs\ui\imaging\image-prep-setupcomplete.md
+		CloneDeploy-Docs\ui\imaging\image-prep.md = CloneDeploy-Docs\ui\imaging\image-prep.md
+		CloneDeploy-Docs\ui\imaging\images-audit.md = CloneDeploy-Docs\ui\imaging\images-audit.md
+		CloneDeploy-Docs\ui\imaging\images-general.md = CloneDeploy-Docs\ui\imaging\images-general.md
+		CloneDeploy-Docs\ui\imaging\images-replication.md = CloneDeploy-Docs\ui\imaging\images-replication.md
+		CloneDeploy-Docs\ui\imaging\images-used-by.md = CloneDeploy-Docs\ui\imaging\images-used-by.md
+		CloneDeploy-Docs\ui\imaging\images-versions.md = CloneDeploy-Docs\ui\imaging\images-versions.md
+		CloneDeploy-Docs\ui\imaging\images.md = CloneDeploy-Docs\ui\imaging\images.md
+		CloneDeploy-Docs\ui\imaging\imaging-history-audit.md = CloneDeploy-Docs\ui\imaging\imaging-history-audit.md
+		CloneDeploy-Docs\ui\imaging\imaging-history-authorizations.md = CloneDeploy-Docs\ui\imaging\imaging-history-authorizations.md
+		CloneDeploy-Docs\ui\imaging\imaging-history-deployments.md = CloneDeploy-Docs\ui\imaging\imaging-history-deployments.md
+		CloneDeploy-Docs\ui\imaging\imaging-relations.md = CloneDeploy-Docs\ui\imaging\imaging-relations.md
+		CloneDeploy-Docs\ui\imaging\ou-naming-rules-general.md = CloneDeploy-Docs\ui\imaging\ou-naming-rules-general.md
+		CloneDeploy-Docs\ui\imaging\ou-naming-rules-matching-rules.md = CloneDeploy-Docs\ui\imaging\ou-naming-rules-matching-rules.md
+		CloneDeploy-Docs\ui\imaging\ou-naming-rules.md = CloneDeploy-Docs\ui\imaging\ou-naming-rules.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "policies-actions", "policies-actions", "{BB0F0DB5-CB3A-4BD5-A2B3-7E8326B9E5F0}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\ui\policies-actions\action-history-audit.md = CloneDeploy-Docs\ui\policies-actions\action-history-audit.md
+		CloneDeploy-Docs\ui\policies-actions\action-history-deployments.md = CloneDeploy-Docs\ui\policies-actions\action-history-deployments.md
+		CloneDeploy-Docs\ui\policies-actions\command-actions-audit.md = CloneDeploy-Docs\ui\policies-actions\command-actions-audit.md
+		CloneDeploy-Docs\ui\policies-actions\command-actions-configuration.md = CloneDeploy-Docs\ui\policies-actions\command-actions-configuration.md
+		CloneDeploy-Docs\ui\policies-actions\command-actions-files.md = CloneDeploy-Docs\ui\policies-actions\command-actions-files.md
+		CloneDeploy-Docs\ui\policies-actions\command-actions-general.md = CloneDeploy-Docs\ui\policies-actions\command-actions-general.md
+		CloneDeploy-Docs\ui\policies-actions\command-actions-used-by.md = CloneDeploy-Docs\ui\policies-actions\command-actions-used-by.md
+		CloneDeploy-Docs\ui\policies-actions\command-actions.md = CloneDeploy-Docs\ui\policies-actions\command-actions.md
+		CloneDeploy-Docs\ui\policies-actions\deploy-action.md = CloneDeploy-Docs\ui\policies-actions\deploy-action.md
+		CloneDeploy-Docs\ui\policies-actions\domainjoin-actions-audit.md = CloneDeploy-Docs\ui\policies-actions\domainjoin-actions-audit.md
+		CloneDeploy-Docs\ui\policies-actions\domainjoin-actions-configuration.md = CloneDeploy-Docs\ui\policies-actions\domainjoin-actions-configuration.md
+		CloneDeploy-Docs\ui\policies-actions\domainjoin-actions-general.md = CloneDeploy-Docs\ui\policies-actions\domainjoin-actions-general.md
+		CloneDeploy-Docs\ui\policies-actions\domainjoin-actions-used-by.md = CloneDeploy-Docs\ui\policies-actions\domainjoin-actions-used-by.md
+		CloneDeploy-Docs\ui\policies-actions\domainjoin-actions.md = CloneDeploy-Docs\ui\policies-actions\domainjoin-actions.md
+		CloneDeploy-Docs\ui\policies-actions\file-actions-audit.md = CloneDeploy-Docs\ui\policies-actions\file-actions-audit.md
+		CloneDeploy-Docs\ui\policies-actions\file-actions-configuration.md = CloneDeploy-Docs\ui\policies-actions\file-actions-configuration.md
+		CloneDeploy-Docs\ui\policies-actions\file-actions-files.md = CloneDeploy-Docs\ui\policies-actions\file-actions-files.md
+		CloneDeploy-Docs\ui\policies-actions\file-actions-general.md = CloneDeploy-Docs\ui\policies-actions\file-actions-general.md
+		CloneDeploy-Docs\ui\policies-actions\file-actions-used-by.md = CloneDeploy-Docs\ui\policies-actions\file-actions-used-by.md
+		CloneDeploy-Docs\ui\policies-actions\file-actions.md = CloneDeploy-Docs\ui\policies-actions\file-actions.md
+		CloneDeploy-Docs\ui\policies-actions\notification-actions-audit.md = CloneDeploy-Docs\ui\policies-actions\notification-actions-audit.md
+		CloneDeploy-Docs\ui\policies-actions\notification-actions-configuration.md = CloneDeploy-Docs\ui\policies-actions\notification-actions-configuration.md
+		CloneDeploy-Docs\ui\policies-actions\notification-actions-general.md = CloneDeploy-Docs\ui\policies-actions\notification-actions-general.md
+		CloneDeploy-Docs\ui\policies-actions\notification-actions-used-by.md = CloneDeploy-Docs\ui\policies-actions\notification-actions-used-by.md
+		CloneDeploy-Docs\ui\policies-actions\notification-actions.md = CloneDeploy-Docs\ui\policies-actions\notification-actions.md
+		CloneDeploy-Docs\ui\policies-actions\policies-actions.md = CloneDeploy-Docs\ui\policies-actions\policies-actions.md
+		CloneDeploy-Docs\ui\policies-actions\policies-activity.md = CloneDeploy-Docs\ui\policies-actions\policies-activity.md
+		CloneDeploy-Docs\ui\policies-actions\policies-audit-history.md = CloneDeploy-Docs\ui\policies-actions\policies-audit-history.md
+		CloneDeploy-Docs\ui\policies-actions\policies-client-results.md = CloneDeploy-Docs\ui\policies-actions\policies-client-results.md
+		CloneDeploy-Docs\ui\policies-actions\policies-execution.md = CloneDeploy-Docs\ui\policies-actions\policies-execution.md
+		CloneDeploy-Docs\ui\policies-actions\policies-general.md = CloneDeploy-Docs\ui\policies-actions\policies-general.md
+		CloneDeploy-Docs\ui\policies-actions\policies-published-versions.md = CloneDeploy-Docs\ui\policies-actions\policies-published-versions.md
+		CloneDeploy-Docs\ui\policies-actions\policies-schedule.md = CloneDeploy-Docs\ui\policies-actions\policies-schedule.md
+		CloneDeploy-Docs\ui\policies-actions\policies-self-service.md = CloneDeploy-Docs\ui\policies-actions\policies-self-service.md
+		CloneDeploy-Docs\ui\policies-actions\policies-targeting.md = CloneDeploy-Docs\ui\policies-actions\policies-targeting.md
+		CloneDeploy-Docs\ui\policies-actions\policies.md = CloneDeploy-Docs\ui\policies-actions\policies.md
+		CloneDeploy-Docs\ui\policies-actions\policy-relations.md = CloneDeploy-Docs\ui\policies-actions\policy-relations.md
+		CloneDeploy-Docs\ui\policies-actions\printer-actions-audit.md = CloneDeploy-Docs\ui\policies-actions\printer-actions-audit.md
+		CloneDeploy-Docs\ui\policies-actions\printer-actions-configuration.md = CloneDeploy-Docs\ui\policies-actions\printer-actions-configuration.md
+		CloneDeploy-Docs\ui\policies-actions\printer-actions-general.md = CloneDeploy-Docs\ui\policies-actions\printer-actions-general.md
+		CloneDeploy-Docs\ui\policies-actions\printer-actions-used-by.md = CloneDeploy-Docs\ui\policies-actions\printer-actions-used-by.md
+		CloneDeploy-Docs\ui\policies-actions\printer-actions.md = CloneDeploy-Docs\ui\policies-actions\printer-actions.md
+		CloneDeploy-Docs\ui\policies-actions\script-actions-audit.md = CloneDeploy-Docs\ui\policies-actions\script-actions-audit.md
+		CloneDeploy-Docs\ui\policies-actions\script-actions-configuration.md = CloneDeploy-Docs\ui\policies-actions\script-actions-configuration.md
+		CloneDeploy-Docs\ui\policies-actions\script-actions-files.md = CloneDeploy-Docs\ui\policies-actions\script-actions-files.md
+		CloneDeploy-Docs\ui\policies-actions\script-actions-general.md = CloneDeploy-Docs\ui\policies-actions\script-actions-general.md
+		CloneDeploy-Docs\ui\policies-actions\script-actions-used-by.md = CloneDeploy-Docs\ui\policies-actions\script-actions-used-by.md
+		CloneDeploy-Docs\ui\policies-actions\script-actions.md = CloneDeploy-Docs\ui\policies-actions\script-actions.md
+		CloneDeploy-Docs\ui\policies-actions\software-actions-audit.md = CloneDeploy-Docs\ui\policies-actions\software-actions-audit.md
+		CloneDeploy-Docs\ui\policies-actions\software-actions-configuration.md = CloneDeploy-Docs\ui\policies-actions\software-actions-configuration.md
+		CloneDeploy-Docs\ui\policies-actions\software-actions-files.md = CloneDeploy-Docs\ui\policies-actions\software-actions-files.md
+		CloneDeploy-Docs\ui\policies-actions\software-actions-general.md = CloneDeploy-Docs\ui\policies-actions\software-actions-general.md
+		CloneDeploy-Docs\ui\policies-actions\software-actions-used-by.md = CloneDeploy-Docs\ui\policies-actions\software-actions-used-by.md
+		CloneDeploy-Docs\ui\policies-actions\software-actions.md = CloneDeploy-Docs\ui\policies-actions\software-actions.md
+		CloneDeploy-Docs\ui\policies-actions\windowsupdate-actions-audit.md = CloneDeploy-Docs\ui\policies-actions\windowsupdate-actions-audit.md
+		CloneDeploy-Docs\ui\policies-actions\windowsupdate-actions-configuration.md = CloneDeploy-Docs\ui\policies-actions\windowsupdate-actions-configuration.md
+		CloneDeploy-Docs\ui\policies-actions\windowsupdate-actions-general.md = CloneDeploy-Docs\ui\policies-actions\windowsupdate-actions-general.md
+		CloneDeploy-Docs\ui\policies-actions\windowsupdate-actions-used-by.md = CloneDeploy-Docs\ui\policies-actions\windowsupdate-actions-used-by.md
+		CloneDeploy-Docs\ui\policies-actions\windowsupdate-actions.md = CloneDeploy-Docs\ui\policies-actions\windowsupdate-actions.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reports", "reports", "{15997F59-C685-4053-B738-91EC7DB52FA7}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\ui\reports\device-reports-report.md = CloneDeploy-Docs\ui\reports\device-reports-report.md
+		CloneDeploy-Docs\ui\reports\device-reports-saved-reports.md = CloneDeploy-Docs\ui\reports\device-reports-saved-reports.md
+		CloneDeploy-Docs\ui\reports\device-reports.md = CloneDeploy-Docs\ui\reports\device-reports.md
+		CloneDeploy-Docs\ui\reports\device-stats.md = CloneDeploy-Docs\ui\reports\device-stats.md
+		CloneDeploy-Docs\ui\reports\helpdesk-reports.md = CloneDeploy-Docs\ui\reports\helpdesk-reports.md
+		CloneDeploy-Docs\ui\reports\policy-reports.md = CloneDeploy-Docs\ui\reports\policy-reports.md
+		CloneDeploy-Docs\ui\reports\software-reports.md = CloneDeploy-Docs\ui\reports\software-reports.md
+		CloneDeploy-Docs\ui\reports\user-reports-login-history.md = CloneDeploy-Docs\ui\reports\user-reports-login-history.md
+		CloneDeploy-Docs\ui\reports\user-reports-saved-reports.md = CloneDeploy-Docs\ui\reports\user-reports-saved-reports.md
+		CloneDeploy-Docs\ui\reports\user-reports-self-service.md = CloneDeploy-Docs\ui\reports\user-reports-self-service.md
+		CloneDeploy-Docs\ui\reports\user-reports.md = CloneDeploy-Docs\ui\reports\user-reports.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared-resources", "shared-resources", "{83E90AA9-2160-40DA-AA57-446A4A8D0FB1}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\ui\shared-resources\credentials.md = CloneDeploy-Docs\ui\shared-resources\credentials.md
+		CloneDeploy-Docs\ui\shared-resources\custom-attributes.md = CloneDeploy-Docs\ui\shared-resources\custom-attributes.md
+		CloneDeploy-Docs\ui\shared-resources\directories-connection-configuration.md = CloneDeploy-Docs\ui\shared-resources\directories-connection-configuration.md
+		CloneDeploy-Docs\ui\shared-resources\directories.md = CloneDeploy-Docs\ui\shared-resources\directories.md
+		CloneDeploy-Docs\ui\shared-resources\directory-devices.md = CloneDeploy-Docs\ui\shared-resources\directory-devices.md
+		CloneDeploy-Docs\ui\shared-resources\directory-groups.md = CloneDeploy-Docs\ui\shared-resources\directory-groups.md
+		CloneDeploy-Docs\ui\shared-resources\directory-ous.md = CloneDeploy-Docs\ui\shared-resources\directory-ous.md
+		CloneDeploy-Docs\ui\shared-resources\directory-user-details-general.md = CloneDeploy-Docs\ui\shared-resources\directory-user-details-general.md
+		CloneDeploy-Docs\ui\shared-resources\directory-user-details-history.md = CloneDeploy-Docs\ui\shared-resources\directory-user-details-history.md
+		CloneDeploy-Docs\ui\shared-resources\directory-user-details-self-service.md = CloneDeploy-Docs\ui\shared-resources\directory-user-details-self-service.md
+		CloneDeploy-Docs\ui\shared-resources\directory-user-details.md = CloneDeploy-Docs\ui\shared-resources\directory-user-details.md
+		CloneDeploy-Docs\ui\shared-resources\directory-user-helpdesk.md = CloneDeploy-Docs\ui\shared-resources\directory-user-helpdesk.md
+		CloneDeploy-Docs\ui\shared-resources\directory-user-notifications.md = CloneDeploy-Docs\ui\shared-resources\directory-user-notifications.md
+		CloneDeploy-Docs\ui\shared-resources\directory-users.md = CloneDeploy-Docs\ui\shared-resources\directory-users.md
+		CloneDeploy-Docs\ui\shared-resources\organizational-units.md = CloneDeploy-Docs\ui\shared-resources\organizational-units.md
+		CloneDeploy-Docs\ui\shared-resources\schedules.md = CloneDeploy-Docs\ui\shared-resources\schedules.md
+		CloneDeploy-Docs\ui\shared-resources\self-service-categories.md = CloneDeploy-Docs\ui\shared-resources\self-service-categories.md
+		CloneDeploy-Docs\ui\shared-resources\tags.md = CloneDeploy-Docs\ui\shared-resources\tags.md
+		CloneDeploy-Docs\ui\shared-resources\windows-updates-auto-approve-rules.md = CloneDeploy-Docs\ui\shared-resources\windows-updates-auto-approve-rules.md
+		CloneDeploy-Docs\ui\shared-resources\windows-updates-updates.md = CloneDeploy-Docs\ui\shared-resources\windows-updates-updates.md
+		CloneDeploy-Docs\ui\shared-resources\windows-updates.md = CloneDeploy-Docs\ui\shared-resources\windows-updates.md
+		CloneDeploy-Docs\ui\shared-resources\winget.md = CloneDeploy-Docs\ui\shared-resources\winget.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sign-in", "sign-in", "{56D68721-0D14-4AC8-98AC-931FF7BD4C89}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\ui\sign-in\sign-in-authenticator-setup.md = CloneDeploy-Docs\ui\sign-in\sign-in-authenticator-setup.md
+		CloneDeploy-Docs\ui\sign-in\sign-in-login.md = CloneDeploy-Docs\ui\sign-in\sign-in-login.md
+		CloneDeploy-Docs\ui\sign-in\sign-in-mfa-verification.md = CloneDeploy-Docs\ui\sign-in\sign-in-mfa-verification.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tasks", "tasks", "{D26BC4D1-6ACC-4DAF-806B-0C990EA2F1CB}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\ui\tasks\deployments-active.md = CloneDeploy-Docs\ui\tasks\deployments-active.md
+		CloneDeploy-Docs\ui\tasks\deployments-device-tasks.md = CloneDeploy-Docs\ui\tasks\deployments-device-tasks.md
+		CloneDeploy-Docs\ui\tasks\deployments-history.md = CloneDeploy-Docs\ui\tasks\deployments-history.md
+		CloneDeploy-Docs\ui\tasks\deployments.md = CloneDeploy-Docs\ui\tasks\deployments.md
+		CloneDeploy-Docs\ui\tasks\imaging-multicast-sessions.md = CloneDeploy-Docs\ui\tasks\imaging-multicast-sessions.md
+		CloneDeploy-Docs\ui\tasks\imaging-tasks-active.md = CloneDeploy-Docs\ui\tasks\imaging-tasks-active.md
+		CloneDeploy-Docs\ui\tasks\imaging-tasks-history.md = CloneDeploy-Docs\ui\tasks\imaging-tasks-history.md
+		CloneDeploy-Docs\ui\tasks\imaging-tasks.md = CloneDeploy-Docs\ui\tasks\imaging-tasks.md
+		CloneDeploy-Docs\ui\tasks\scheduler.md = CloneDeploy-Docs\ui\tasks\scheduler.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "endpoint-portal", "endpoint-portal", "{41C5F7D1-E2BF-42A0-AD96-0B4A6B5BB5DF}"
+	ProjectSection(SolutionItems) = preProject
+		CloneDeploy-Docs\ui\endpoint-portal\endpoint-portal.md = CloneDeploy-Docs\ui\endpoint-portal\endpoint-portal.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FF0B3437-0392-4370-B4AE-AFD713C4771A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF0B3437-0392-4370-B4AE-AFD713C4771A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF0B3437-0392-4370-B4AE-AFD713C4771A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FF0B3437-0392-4370-B4AE-AFD713C4771A}.Debug|x64.Build.0 = Debug|Any CPU
+		{FF0B3437-0392-4370-B4AE-AFD713C4771A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FF0B3437-0392-4370-B4AE-AFD713C4771A}.Debug|x86.Build.0 = Debug|Any CPU
+		{FF0B3437-0392-4370-B4AE-AFD713C4771A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF0B3437-0392-4370-B4AE-AFD713C4771A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF0B3437-0392-4370-B4AE-AFD713C4771A}.Release|x64.ActiveCfg = Release|Any CPU
+		{FF0B3437-0392-4370-B4AE-AFD713C4771A}.Release|x64.Build.0 = Release|Any CPU
+		{FF0B3437-0392-4370-B4AE-AFD713C4771A}.Release|x86.ActiveCfg = Release|Any CPU
+		{FF0B3437-0392-4370-B4AE-AFD713C4771A}.Release|x86.Build.0 = Release|Any CPU
+		{1AE388CC-3DBC-492F-A028-D9D60EF7545A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1AE388CC-3DBC-492F-A028-D9D60EF7545A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1AE388CC-3DBC-492F-A028-D9D60EF7545A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1AE388CC-3DBC-492F-A028-D9D60EF7545A}.Debug|x64.Build.0 = Debug|Any CPU
+		{1AE388CC-3DBC-492F-A028-D9D60EF7545A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1AE388CC-3DBC-492F-A028-D9D60EF7545A}.Debug|x86.Build.0 = Debug|Any CPU
+		{1AE388CC-3DBC-492F-A028-D9D60EF7545A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1AE388CC-3DBC-492F-A028-D9D60EF7545A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1AE388CC-3DBC-492F-A028-D9D60EF7545A}.Release|x64.ActiveCfg = Release|Any CPU
+		{1AE388CC-3DBC-492F-A028-D9D60EF7545A}.Release|x64.Build.0 = Release|Any CPU
+		{1AE388CC-3DBC-492F-A028-D9D60EF7545A}.Release|x86.ActiveCfg = Release|Any CPU
+		{1AE388CC-3DBC-492F-A028-D9D60EF7545A}.Release|x86.Build.0 = Release|Any CPU
+		{1A643CA1-D13F-48A0-8864-5A2DD1C14850}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A643CA1-D13F-48A0-8864-5A2DD1C14850}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A643CA1-D13F-48A0-8864-5A2DD1C14850}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1A643CA1-D13F-48A0-8864-5A2DD1C14850}.Debug|x64.Build.0 = Debug|Any CPU
+		{1A643CA1-D13F-48A0-8864-5A2DD1C14850}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1A643CA1-D13F-48A0-8864-5A2DD1C14850}.Debug|x86.Build.0 = Debug|Any CPU
+		{1A643CA1-D13F-48A0-8864-5A2DD1C14850}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A643CA1-D13F-48A0-8864-5A2DD1C14850}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A643CA1-D13F-48A0-8864-5A2DD1C14850}.Release|x64.ActiveCfg = Release|Any CPU
+		{1A643CA1-D13F-48A0-8864-5A2DD1C14850}.Release|x64.Build.0 = Release|Any CPU
+		{1A643CA1-D13F-48A0-8864-5A2DD1C14850}.Release|x86.ActiveCfg = Release|Any CPU
+		{1A643CA1-D13F-48A0-8864-5A2DD1C14850}.Release|x86.Build.0 = Release|Any CPU
+		{4DC1DBE7-53A1-4539-BCBF-10F2151B0DC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4DC1DBE7-53A1-4539-BCBF-10F2151B0DC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4DC1DBE7-53A1-4539-BCBF-10F2151B0DC4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4DC1DBE7-53A1-4539-BCBF-10F2151B0DC4}.Debug|x64.Build.0 = Debug|Any CPU
+		{4DC1DBE7-53A1-4539-BCBF-10F2151B0DC4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4DC1DBE7-53A1-4539-BCBF-10F2151B0DC4}.Debug|x86.Build.0 = Debug|Any CPU
+		{4DC1DBE7-53A1-4539-BCBF-10F2151B0DC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4DC1DBE7-53A1-4539-BCBF-10F2151B0DC4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4DC1DBE7-53A1-4539-BCBF-10F2151B0DC4}.Release|x64.ActiveCfg = Release|Any CPU
+		{4DC1DBE7-53A1-4539-BCBF-10F2151B0DC4}.Release|x64.Build.0 = Release|Any CPU
+		{4DC1DBE7-53A1-4539-BCBF-10F2151B0DC4}.Release|x86.ActiveCfg = Release|Any CPU
+		{4DC1DBE7-53A1-4539-BCBF-10F2151B0DC4}.Release|x86.Build.0 = Release|Any CPU
+		{AAAB7F44-2A6F-4179-9506-E41709799386}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AAAB7F44-2A6F-4179-9506-E41709799386}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AAAB7F44-2A6F-4179-9506-E41709799386}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AAAB7F44-2A6F-4179-9506-E41709799386}.Debug|x64.Build.0 = Debug|Any CPU
+		{AAAB7F44-2A6F-4179-9506-E41709799386}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AAAB7F44-2A6F-4179-9506-E41709799386}.Debug|x86.Build.0 = Debug|Any CPU
+		{AAAB7F44-2A6F-4179-9506-E41709799386}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AAAB7F44-2A6F-4179-9506-E41709799386}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AAAB7F44-2A6F-4179-9506-E41709799386}.Release|x64.ActiveCfg = Release|Any CPU
+		{AAAB7F44-2A6F-4179-9506-E41709799386}.Release|x64.Build.0 = Release|Any CPU
+		{AAAB7F44-2A6F-4179-9506-E41709799386}.Release|x86.ActiveCfg = Release|Any CPU
+		{AAAB7F44-2A6F-4179-9506-E41709799386}.Release|x86.Build.0 = Release|Any CPU
+		{7FA85887-46A7-4AAC-8B8B-C9BB87B40EF4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7FA85887-46A7-4AAC-8B8B-C9BB87B40EF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7FA85887-46A7-4AAC-8B8B-C9BB87B40EF4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7FA85887-46A7-4AAC-8B8B-C9BB87B40EF4}.Debug|x64.Build.0 = Debug|Any CPU
+		{7FA85887-46A7-4AAC-8B8B-C9BB87B40EF4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7FA85887-46A7-4AAC-8B8B-C9BB87B40EF4}.Debug|x86.Build.0 = Debug|Any CPU
+		{7FA85887-46A7-4AAC-8B8B-C9BB87B40EF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7FA85887-46A7-4AAC-8B8B-C9BB87B40EF4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7FA85887-46A7-4AAC-8B8B-C9BB87B40EF4}.Release|x64.ActiveCfg = Release|Any CPU
+		{7FA85887-46A7-4AAC-8B8B-C9BB87B40EF4}.Release|x64.Build.0 = Release|Any CPU
+		{7FA85887-46A7-4AAC-8B8B-C9BB87B40EF4}.Release|x86.ActiveCfg = Release|Any CPU
+		{7FA85887-46A7-4AAC-8B8B-C9BB87B40EF4}.Release|x86.Build.0 = Release|Any CPU
+		{2C9C8D1B-9B86-4FA4-9B90-71F5F19106F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C9C8D1B-9B86-4FA4-9B90-71F5F19106F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C9C8D1B-9B86-4FA4-9B90-71F5F19106F8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2C9C8D1B-9B86-4FA4-9B90-71F5F19106F8}.Debug|x64.Build.0 = Debug|Any CPU
+		{2C9C8D1B-9B86-4FA4-9B90-71F5F19106F8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2C9C8D1B-9B86-4FA4-9B90-71F5F19106F8}.Debug|x86.Build.0 = Debug|Any CPU
+		{2C9C8D1B-9B86-4FA4-9B90-71F5F19106F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C9C8D1B-9B86-4FA4-9B90-71F5F19106F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C9C8D1B-9B86-4FA4-9B90-71F5F19106F8}.Release|x64.ActiveCfg = Release|Any CPU
+		{2C9C8D1B-9B86-4FA4-9B90-71F5F19106F8}.Release|x64.Build.0 = Release|Any CPU
+		{2C9C8D1B-9B86-4FA4-9B90-71F5F19106F8}.Release|x86.ActiveCfg = Release|Any CPU
+		{2C9C8D1B-9B86-4FA4-9B90-71F5F19106F8}.Release|x86.Build.0 = Release|Any CPU
+		{2AD10D85-ADBA-47D9-A39D-1029F0F538D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2AD10D85-ADBA-47D9-A39D-1029F0F538D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AD10D85-ADBA-47D9-A39D-1029F0F538D4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2AD10D85-ADBA-47D9-A39D-1029F0F538D4}.Debug|x64.Build.0 = Debug|Any CPU
+		{2AD10D85-ADBA-47D9-A39D-1029F0F538D4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2AD10D85-ADBA-47D9-A39D-1029F0F538D4}.Debug|x86.Build.0 = Debug|Any CPU
+		{2AD10D85-ADBA-47D9-A39D-1029F0F538D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2AD10D85-ADBA-47D9-A39D-1029F0F538D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2AD10D85-ADBA-47D9-A39D-1029F0F538D4}.Release|x64.ActiveCfg = Release|Any CPU
+		{2AD10D85-ADBA-47D9-A39D-1029F0F538D4}.Release|x64.Build.0 = Release|Any CPU
+		{2AD10D85-ADBA-47D9-A39D-1029F0F538D4}.Release|x86.ActiveCfg = Release|Any CPU
+		{2AD10D85-ADBA-47D9-A39D-1029F0F538D4}.Release|x86.Build.0 = Release|Any CPU
+		{0FF0B8BA-4828-406E-8F7B-28F8AF697ABB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FF0B8BA-4828-406E-8F7B-28F8AF697ABB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FF0B8BA-4828-406E-8F7B-28F8AF697ABB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0FF0B8BA-4828-406E-8F7B-28F8AF697ABB}.Debug|x64.Build.0 = Debug|Any CPU
+		{0FF0B8BA-4828-406E-8F7B-28F8AF697ABB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0FF0B8BA-4828-406E-8F7B-28F8AF697ABB}.Debug|x86.Build.0 = Debug|Any CPU
+		{0FF0B8BA-4828-406E-8F7B-28F8AF697ABB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FF0B8BA-4828-406E-8F7B-28F8AF697ABB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FF0B8BA-4828-406E-8F7B-28F8AF697ABB}.Release|x64.ActiveCfg = Release|Any CPU
+		{0FF0B8BA-4828-406E-8F7B-28F8AF697ABB}.Release|x64.Build.0 = Release|Any CPU
+		{0FF0B8BA-4828-406E-8F7B-28F8AF697ABB}.Release|x86.ActiveCfg = Release|Any CPU
+		{0FF0B8BA-4828-406E-8F7B-28F8AF697ABB}.Release|x86.Build.0 = Release|Any CPU
+		{D249A0D1-BC9D-4E6D-8790-D7E2C555845F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D249A0D1-BC9D-4E6D-8790-D7E2C555845F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D249A0D1-BC9D-4E6D-8790-D7E2C555845F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D249A0D1-BC9D-4E6D-8790-D7E2C555845F}.Debug|x64.Build.0 = Debug|Any CPU
+		{D249A0D1-BC9D-4E6D-8790-D7E2C555845F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D249A0D1-BC9D-4E6D-8790-D7E2C555845F}.Debug|x86.Build.0 = Debug|Any CPU
+		{D249A0D1-BC9D-4E6D-8790-D7E2C555845F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D249A0D1-BC9D-4E6D-8790-D7E2C555845F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D249A0D1-BC9D-4E6D-8790-D7E2C555845F}.Release|x64.ActiveCfg = Release|Any CPU
+		{D249A0D1-BC9D-4E6D-8790-D7E2C555845F}.Release|x64.Build.0 = Release|Any CPU
+		{D249A0D1-BC9D-4E6D-8790-D7E2C555845F}.Release|x86.ActiveCfg = Release|Any CPU
+		{D249A0D1-BC9D-4E6D-8790-D7E2C555845F}.Release|x86.Build.0 = Release|Any CPU
+		{1BE5E2C7-318D-4B69-BFFB-AB2767F1E0CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BE5E2C7-318D-4B69-BFFB-AB2767F1E0CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BE5E2C7-318D-4B69-BFFB-AB2767F1E0CA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1BE5E2C7-318D-4B69-BFFB-AB2767F1E0CA}.Debug|x64.Build.0 = Debug|Any CPU
+		{1BE5E2C7-318D-4B69-BFFB-AB2767F1E0CA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1BE5E2C7-318D-4B69-BFFB-AB2767F1E0CA}.Debug|x86.Build.0 = Debug|Any CPU
+		{1BE5E2C7-318D-4B69-BFFB-AB2767F1E0CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BE5E2C7-318D-4B69-BFFB-AB2767F1E0CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BE5E2C7-318D-4B69-BFFB-AB2767F1E0CA}.Release|x64.ActiveCfg = Release|Any CPU
+		{1BE5E2C7-318D-4B69-BFFB-AB2767F1E0CA}.Release|x64.Build.0 = Release|Any CPU
+		{1BE5E2C7-318D-4B69-BFFB-AB2767F1E0CA}.Release|x86.ActiveCfg = Release|Any CPU
+		{1BE5E2C7-318D-4B69-BFFB-AB2767F1E0CA}.Release|x86.Build.0 = Release|Any CPU
+		{4E9D64A8-8410-4966-9C71-E7B39F6FD7E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E9D64A8-8410-4966-9C71-E7B39F6FD7E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E9D64A8-8410-4966-9C71-E7B39F6FD7E7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4E9D64A8-8410-4966-9C71-E7B39F6FD7E7}.Debug|x64.Build.0 = Debug|Any CPU
+		{4E9D64A8-8410-4966-9C71-E7B39F6FD7E7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4E9D64A8-8410-4966-9C71-E7B39F6FD7E7}.Debug|x86.Build.0 = Debug|Any CPU
+		{4E9D64A8-8410-4966-9C71-E7B39F6FD7E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E9D64A8-8410-4966-9C71-E7B39F6FD7E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E9D64A8-8410-4966-9C71-E7B39F6FD7E7}.Release|x64.ActiveCfg = Release|Any CPU
+		{4E9D64A8-8410-4966-9C71-E7B39F6FD7E7}.Release|x64.Build.0 = Release|Any CPU
+		{4E9D64A8-8410-4966-9C71-E7B39F6FD7E7}.Release|x86.ActiveCfg = Release|Any CPU
+		{4E9D64A8-8410-4966-9C71-E7B39F6FD7E7}.Release|x86.Build.0 = Release|Any CPU
+		{731213D1-D876-471F-9B15-6E730F4F751E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{731213D1-D876-471F-9B15-6E730F4F751E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{731213D1-D876-471F-9B15-6E730F4F751E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{731213D1-D876-471F-9B15-6E730F4F751E}.Debug|x64.Build.0 = Debug|Any CPU
+		{731213D1-D876-471F-9B15-6E730F4F751E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{731213D1-D876-471F-9B15-6E730F4F751E}.Debug|x86.Build.0 = Debug|Any CPU
+		{731213D1-D876-471F-9B15-6E730F4F751E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{731213D1-D876-471F-9B15-6E730F4F751E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{731213D1-D876-471F-9B15-6E730F4F751E}.Release|x64.ActiveCfg = Release|Any CPU
+		{731213D1-D876-471F-9B15-6E730F4F751E}.Release|x64.Build.0 = Release|Any CPU
+		{731213D1-D876-471F-9B15-6E730F4F751E}.Release|x86.ActiveCfg = Release|Any CPU
+		{731213D1-D876-471F-9B15-6E730F4F751E}.Release|x86.Build.0 = Release|Any CPU
+		{6CCA0F6B-54F1-4ED2-A0C9-DD9C008442F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CCA0F6B-54F1-4ED2-A0C9-DD9C008442F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CCA0F6B-54F1-4ED2-A0C9-DD9C008442F8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6CCA0F6B-54F1-4ED2-A0C9-DD9C008442F8}.Debug|x64.Build.0 = Debug|Any CPU
+		{6CCA0F6B-54F1-4ED2-A0C9-DD9C008442F8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6CCA0F6B-54F1-4ED2-A0C9-DD9C008442F8}.Debug|x86.Build.0 = Debug|Any CPU
+		{6CCA0F6B-54F1-4ED2-A0C9-DD9C008442F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CCA0F6B-54F1-4ED2-A0C9-DD9C008442F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CCA0F6B-54F1-4ED2-A0C9-DD9C008442F8}.Release|x64.ActiveCfg = Release|Any CPU
+		{6CCA0F6B-54F1-4ED2-A0C9-DD9C008442F8}.Release|x64.Build.0 = Release|Any CPU
+		{6CCA0F6B-54F1-4ED2-A0C9-DD9C008442F8}.Release|x86.ActiveCfg = Release|Any CPU
+		{6CCA0F6B-54F1-4ED2-A0C9-DD9C008442F8}.Release|x86.Build.0 = Release|Any CPU
+		{95AFD658-318B-449F-A677-B87E4309ABC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{95AFD658-318B-449F-A677-B87E4309ABC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{95AFD658-318B-449F-A677-B87E4309ABC3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{95AFD658-318B-449F-A677-B87E4309ABC3}.Debug|x64.Build.0 = Debug|Any CPU
+		{95AFD658-318B-449F-A677-B87E4309ABC3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{95AFD658-318B-449F-A677-B87E4309ABC3}.Debug|x86.Build.0 = Debug|Any CPU
+		{95AFD658-318B-449F-A677-B87E4309ABC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{95AFD658-318B-449F-A677-B87E4309ABC3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{95AFD658-318B-449F-A677-B87E4309ABC3}.Release|x64.ActiveCfg = Release|Any CPU
+		{95AFD658-318B-449F-A677-B87E4309ABC3}.Release|x64.Build.0 = Release|Any CPU
+		{95AFD658-318B-449F-A677-B87E4309ABC3}.Release|x86.ActiveCfg = Release|Any CPU
+		{95AFD658-318B-449F-A677-B87E4309ABC3}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{59DC61BD-E455-4CA9-93E6-C29CFBB1B886} = {EF54A3C3-C324-430D-BF4A-3CEFE63C8F01}
+		{41C5F7D1-E2BF-42A0-AD96-0B4A6B5BB5DF} = {D6D24A21-8047-4538-B812-195D52D82798}
+		{71F3B6BE-7BA1-4D92-BCFC-AA307965EA17} = {EF54A3C3-C324-430D-BF4A-3CEFE63C8F01}
+		{A467EF7F-6D45-407B-914C-26EF1D49A7D5} = {EF54A3C3-C324-430D-BF4A-3CEFE63C8F01}
+		{9DFA3C3A-E538-439E-80B3-3B7C11B1DD90} = {EF54A3C3-C324-430D-BF4A-3CEFE63C8F01}
+		{CF783379-ECAD-4C55-893B-4AC075537516} = {59DC61BD-E455-4CA9-93E6-C29CFBB1B886}
+		{C227F8DE-7B15-47CB-9541-5BA9222C3993} = {EF54A3C3-C324-430D-BF4A-3CEFE63C8F01}
+		{3AFB2B95-6BCF-4ABA-B28F-5D4C8EBCB576} = {EF54A3C3-C324-430D-BF4A-3CEFE63C8F01}
+		{41E846CC-1B05-4050-828D-A26DBB8EFD52} = {EF54A3C3-C324-430D-BF4A-3CEFE63C8F01}
+		{FC744913-3034-4AC0-B50D-0497708F0A87} = {59DC61BD-E455-4CA9-93E6-C29CFBB1B886}
+		{F067E567-2A48-49C6-8BD4-2337B74C21D0} = {EF54A3C3-C324-430D-BF4A-3CEFE63C8F01}
+		{88E824C8-64AC-4B1C-8152-88EF8647B110} = {EF54A3C3-C324-430D-BF4A-3CEFE63C8F01}
+		{56716DB1-948F-4334-9FE0-29EFC9DB0E5C} = {88E824C8-64AC-4B1C-8152-88EF8647B110}
+		{D10D1EA2-AF38-439C-BC8E-560143872A4E} = {EF54A3C3-C324-430D-BF4A-3CEFE63C8F01}
+		{D6D24A21-8047-4538-B812-195D52D82798} = {EF54A3C3-C324-430D-BF4A-3CEFE63C8F01}
+		{D3F091D4-653B-4D53-B92D-8D29E6CFB477} = {D6D24A21-8047-4538-B812-195D52D82798}
+		{DF201F41-C8AC-441D-A63B-03892DDA8B2B} = {D6D24A21-8047-4538-B812-195D52D82798}
+		{523CF3AF-617C-47F7-8946-34DCD54CC2C4} = {D6D24A21-8047-4538-B812-195D52D82798}
+		{D86612D6-3562-4717-8561-0FF24B04A1F3} = {D6D24A21-8047-4538-B812-195D52D82798}
+		{F6926CBE-97B6-4771-9D7D-8A32F6A01019} = {D6D24A21-8047-4538-B812-195D52D82798}
+		{BB0F0DB5-CB3A-4BD5-A2B3-7E8326B9E5F0} = {D6D24A21-8047-4538-B812-195D52D82798}
+		{15997F59-C685-4053-B738-91EC7DB52FA7} = {D6D24A21-8047-4538-B812-195D52D82798}
+		{83E90AA9-2160-40DA-AA57-446A4A8D0FB1} = {D6D24A21-8047-4538-B812-195D52D82798}
+		{56D68721-0D14-4AC8-98AC-931FF7BD4C89} = {D6D24A21-8047-4538-B812-195D52D82798}
+		{D26BC4D1-6ACC-4DAF-806B-0C990EA2F1CB} = {D6D24A21-8047-4538-B812-195D52D82798}
+	EndGlobalSection
+EndGlobal

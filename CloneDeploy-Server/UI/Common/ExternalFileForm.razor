@@ -1,0 +1,84 @@
+@using CloneDeploy_Server.Backend.Services
+@using CloneDeploy_Server.Backend.Services.Files
+
+<MudForm @ref="_form" Disabled="_saving">
+    <MudStack Spacing="3">
+        <MudTextField T="string" Value="_url" ValueChanged="UrlChanged" Immediate="true" Label="@Loc[LocKeys.Ui.ExternalFileForm.DownloadURL]" Required="true" Variant="Variant.Outlined" HelperText="@Loc[LocKeys.Ui.ExternalFileForm.HTTPOrHTTPSDownloadsContinueAfterYouLeaveThis]" />
+        <MudTextField T="string" Value="_name" ValueChanged="NameChanged" Immediate="true" Label="@Loc[LocKeys.Ui.ExternalFileForm.FileName]" Required="true" Variant="Variant.Outlined"
+                      Validation="@((Func<string, string?>)ValidateFileName)" HelperText="@Loc[LocKeys.Ui.ExternalFileForm.FilledFromTheURLWhenPossibleIncludeAnExtension]" />
+        <MudTextField @bind-Value="_hash" Label="@Loc[LocKeys.Ui.ExternalFileForm.ExpectedSHA256Optional]" Variant="Variant.Outlined" HelperText="@Loc[LocKeys.Ui.ExternalFileForm.TheDownloadedFileMustMatchThisChecksumIfSupplied]" />
+        @if (ShowAutoRefresh)
+        {
+            <MudCheckBox @bind-Value="_refresh" Label="@AutoRefreshLabel" />
+        }
+        @AdditionalContent
+        <MudStack Row="true" Spacing="2">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="_saving">@(_saving ? UiText.Get(LocKeys.Action.Saving) : UiText.Get(LocKeys.Ui.ExternalFileForm.SaveAndDownload))</MudButton>
+            <MudButton OnClick="@(() => OnCancel.InvokeAsync())" Disabled="_saving">@Loc[LocKeys.Common.Cancel]</MudButton>
+        </MudStack>
+    </MudStack>
+</MudForm>
+
+@code {
+    [Parameter, EditorRequired] public Func<string, string, string?, bool, Task<ServiceResult>> SaveFileAsync { get; set; } = null!;
+    [Parameter] public bool ShowAutoRefresh { get; set; }
+    [Parameter] public string AutoRefreshLabel { get; set; } = UiText.Get(LocKeys.Ui.ExternalFileForm.CheckThisURLOnSchedule);
+    [Parameter] public RenderFragment? AdditionalContent { get; set; }
+    [Parameter] public ActionFileItemDto? File { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    private MudForm _form = null!;
+    private string _name = "";
+    private string _url = "";
+    private string? _hash;
+    private bool _saving;
+    private bool _refresh = true;
+    private bool _nameEdited;
+
+    protected override void OnInitialized()
+    {
+        _name = File?.Name ?? "";
+        _url = File?.Url ?? "";
+        _hash = File?.ExpectedSha256;
+        _refresh = File?.AutoRefresh ?? true;
+        _nameEdited = File is not null;
+    }
+
+    private void UrlChanged(string value)
+    {
+        _url = value ?? "";
+        if (!_nameEdited) _name = FileService.SuggestExternalName(_url) ?? "";
+    }
+
+    private void NameChanged(string value)
+    {
+        _name = value ?? "";
+        _nameEdited = !string.IsNullOrWhiteSpace(_name);
+    }
+
+    private string? ValidateFileName(string value)
+    {
+        var result = FileService.ValidateExternalName(value);
+        return result.Success ? null : Loc[result.Error.Code, result.Error.Args].Value;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_saving) return;
+        _saving = true;
+
+        try
+        {
+            await _form.ValidateAsync();
+            if (!_form.IsValid) return;
+            var result = await SaveFileAsync(_name, _url, _hash, ShowAutoRefresh ? _refresh : true);
+            if (!result.Success)
+            {
+                Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+                return;
+            }
+            await OnSaved.InvokeAsync();
+        }
+        finally { _saving = false; }
+    }
+}

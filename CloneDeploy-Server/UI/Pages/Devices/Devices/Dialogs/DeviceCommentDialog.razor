@@ -1,0 +1,41 @@
+@inject DeviceService Devices
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-3">@Loc[LocKeys.Ui.DeviceCommentDialog.CommentsCannotBeEditedOrDeletedAfterTheyAre]</MudText>
+        <MudTextField T="string" @bind-Value="_text" Label="@Loc[LocKeys.Ui.DeviceCommentsTab.Comment]" Variant="Variant.Outlined"
+                      Lines="6" Immediate="true" AutoFocus="true" Disabled="_saving" />
+        </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked" Disabled="_saving">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="OnAddCommentClicked" Disabled="_saving" Variant="Variant.Filled" Color="Color.Primary">@Loc[LocKeys.Ui.DeviceCommentsTab.AddComment]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public int DeviceId { get; set; }
+    private string _text = "";
+    private bool _saving;
+
+    private void OnCancelClicked() => MudDialog.Cancel();
+
+    private async Task OnAddCommentClicked()
+    {
+        if (_saving) return;
+
+        if (string.IsNullOrWhiteSpace(_text))
+        {
+            Snackbar.Add(Loc[LocKeys.Ui.DeviceCommentDialog.DeviceCommentRequired], Severity.Error);
+            return;
+        }
+        _saving = true;
+        try
+        {
+            var result = await Devices.AddCommentAsync(DeviceId, _text);
+            if (result.Success) MudDialog.Close(DialogResult.Ok(result.Data!));
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _saving = false; }
+    }
+}

@@ -1,0 +1,85 @@
+@inject ActionDeploymentUiService Deployments
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+<MudText Typo="Typo.body2" Color="Color.Secondary">@Loc[LocKeys.Ui.DeviceActionHistoryTab.MostRecent100ActionDeploymentsIncludingQueuedAndRunning]</MudText>
+<MudDataGrid T="DeviceActionHistoryRowDto" Items="_runs" Loading="_loading" Dense="true" Hover="true"
+             RowsPerPage="10" Class="device-list-grid" Elevation="0" Outlined="true" HorizontalScrollbar="true"
+             Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" ColumnResizeMode="ResizeMode.Column">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DeviceActionHistoryTab.ActionHistory]</MudText>
+        <MudSpacer/>
+        <MudButton OnClick="LoadAsync" Disabled="_loading" StartIcon="@Icons.Material.Filled.Refresh">@Loc[LocKeys.Dashboard.Refresh]</MudButton>
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.ActionName" Title="@Loc[LocKeys.Dashboard.Action]"/>
+        <PropertyColumn Property="x => x.Status" Title="@Loc[LocKeys.Image.VersionStatus]"/>
+        <PropertyColumn Property="x => x.RequestedBy" Title="@Loc[LocKeys.Dashboard.RequestedBy]"/>
+        <PropertyColumn Property="x => x.Source" Title="@Loc[LocKeys.Ui.DeviceActionHistoryTab.Source]"/>
+        <PropertyColumn Property="x => x.QueuedAtUtc" Title="@Loc[LocKeys.Scheduler.StatusQueued]">
+            <CellTemplate>@Time(context.Item.QueuedAtUtc)</CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.StartedAtUtc" Title="@Loc[LocKeys.Device.Started]">
+            <CellTemplate>@Time(context.Item.StartedAtUtc)</CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.FinishedAtUtc" Title="@Loc[LocKeys.Dashboard.FinishedAt]">
+            <CellTemplate>@Time(context.Item.FinishedAtUtc)</CellTemplate>
+        </PropertyColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Dashboard.Result]" Sortable="false" Filterable="false">
+            <CellTemplate>
+                @if (!string.IsNullOrWhiteSpace(context.Item.Result))
+                {
+                    <MudButton Color="Color.Primary" OnClick="@(() => ViewResultAsync(context.Item))">@Loc[LocKeys.Device.ViewResult]</MudButton>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.DeviceActionHistoryTab.NoResultReported]</MudText>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent><MudDataGridPager T="DeviceActionHistoryRowDto"/></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Ui.DeviceActionHistoryTab.NoActionDeploymentsForThisDevice]</MudText></NoRecordsContent>
+</MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+    private List<DeviceActionHistoryRowDto> _runs = [];
+    private int? _loadedId;
+    private bool _loading;
+    private string? _error;
+    private static string Time(DateTime? value) => value?.ToLocalTime().ToString("g") ?? "—";
+
+    private async Task ViewResultAsync(DeviceActionHistoryRowDto run)
+    {
+        var parameters = new DialogParameters<DeviceHistoryResultDialog>
+        {
+            { x => x.Result, run.Result },
+            { x => x.Summary, UiText.Get(LocKeys.Ui.DeviceActionHistoryTab.Text0RequestedBy1Queued2, (run.Status), (run.RequestedBy), (Time(run.QueuedAtUtc))) }
+        };
+        await Dialog.ShowAsync<DeviceHistoryResultDialog>(run.ActionName, parameters,
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, CloseButton = true, CloseOnEscapeKey = true });
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedId == Device.Id) return;
+        _loadedId = Device.Id;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var id = Device.Id;
+        _loading = true;
+        _error = null;
+        _runs = [];
+        var result = await Deployments.GetDeviceHistoryAsync(id);
+        if (id != Device.Id) return;
+        if (result.HasData) _runs = result.Data!;
+        else _error = Loc[result.Error!.Code, result.Error.Args];
+        _loading = false;
+    }
+}

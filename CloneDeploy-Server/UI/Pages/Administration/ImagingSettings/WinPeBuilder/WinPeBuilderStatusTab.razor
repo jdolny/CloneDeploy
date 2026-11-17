@@ -1,0 +1,14 @@
+@using CloneDeploy_Server.WinPe
+@if (Builder is null || DateTime.UtcNow - Builder.SeenAtUtc > TimeSpan.FromSeconds(30))
+{
+    <MudAlert Severity="Severity.Info" Class="mb-3">@Loc[LocKeys.Ui.WinPeBuilderStatusTab.WindowsBuilderIsOfflineYouCanConfigureBootEnvironments]</MudAlert>
+}
+else if (!Builder.Ready)
+{
+    <MudAlert Severity="Severity.Warning" Class="mb-3">@Builder.Message</MudAlert>
+}
+else
+{
+    <MudAlert Severity="Severity.Success" Class="mb-3">@UiText.Get(LocKeys.Ui.WinPeBuilderStatusTab.WindowsBuilderReadyADK0, (Builder.AdkVersion))</MudAlert>
+}
+@code { [Parameter] public BuilderHealthDto? Builder { get; set; } }

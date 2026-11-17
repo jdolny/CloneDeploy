@@ -1,0 +1,101 @@
+@inject AppUserService AppUserService
+
+<div class="section-action-bar"><MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" Disabled="@(_saving || _loading)" OnClick="@Snackbar.GuardAction(() => _saving || _loading || !_loaded, UiText.Get(LocKeys.Ui.UserGroupMembersTab.ThisRecordCouldNotBeLoadedReopenThePage), OnSaveClicked)">@Loc[LocKeys.User.SavePermissions]</MudButton></div>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+
+<div>
+    <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.User.Permissions]</MudText>
+    <MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" Class="mb-3">
+        <MudButton OnClick="EnableAllPermissions" Variant="Variant.Outlined" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.DoneAll" Disabled="@(_loading || _saving || !_loaded || AllPermissionsEnabled)">@Loc[LocKeys.Ui.UserGroupPermissionsTab.EnableAllPermissions]</MudButton>
+    </MudStack>
+    <MudGrid>
+        @foreach (var category in Constants.Permissions.All.GroupBy(x => x.Category).OrderBy(x => UiText.Label(x.Key), StringComparer.CurrentCultureIgnoreCase))
+        {
+            <MudItem xs="12">
+                <MudText Typo="Typo.h6" Class="mt-4 mb-2">@UiText.Label(category.Key)</MudText>
+            </MudItem>
+
+            @foreach (var permission in category)
+            {
+                <MudItem xs="12" md="6" lg="6" xl="3">
+                    <MudText Typo="Typo.body1">@PermissionLabel(permission.Name)</MudText>
+
+                    <MudToggleGroup T="bool" SelectionMode="SelectionMode.SingleSelection" Value="@Permissions.Selected.Contains(permission.Key)"
+                                    ValueChanged="@(value => SetPermission(permission.Key, value))" Color="Color.Primary" Disabled="@_saving" CheckMark>
+                        <MudToggleItem Value="true" Text="@Loc[LocKeys.User.Yes]" />
+                        <MudToggleItem Value="false" Text="@Loc[LocKeys.User.No]" />
+                    </MudToggleGroup>
+                </MudItem>
+            }
+        }
+    </MudGrid>
+</div>
+}
+
+
+
+@code {
+    [Parameter] public int GroupId { get; set; }
+
+    private PermissionsDto Permissions { get; set; } = new();
+    private bool _loading = true;
+    private bool _saving;
+    private bool _loaded;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+
+        var result = await AppUserService.GetGroupPermissionsAsync(GroupId);
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args],Severity.Error);
+        else if (result.HasData)
+            { Permissions = result.Data; _loaded = true; }
+
+        _loading = false;
+    }
+
+    private static string PermissionLabel(string name) =>
+        System.Text.RegularExpressions.Regex.Replace(UiText.Label(name), @"\s*\([^)]*\)", "").Trim();
+
+    private bool AllPermissionsEnabled => Constants.Permissions.All
+        .Where(permission => permission.Key != Constants.Permissions.AdminOnly)
+        .All(permission => Permissions.Selected.Contains(permission.Key));
+
+    private void EnableAllPermissions()
+    {
+        if (_loading || _saving || !_loaded) return;
+        foreach (var permission in Constants.Permissions.All)
+            if (permission.Key != Constants.Permissions.AdminOnly)
+                Permissions.Selected.Add(permission.Key);
+    }
+
+    private void SetPermission(string permission, bool enabled)
+    {
+        if (enabled)
+            Permissions.Selected.Add(permission);
+        else
+            Permissions.Selected.Remove(permission);
+    }
+
+    private async Task OnSaveClicked()
+    {
+        if (_saving || _loading || !_loaded ) return;
+        _saving = true;
+
+        var result = await AppUserService.SaveGroupPermissionsAsync(GroupId, Permissions);
+        if (result.Success)
+            Snackbar.Add(Loc[LocKeys.UserGroup.PermissionsSaved], Severity.Success);
+        else
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+
+        _saving = false;
+    }
+}

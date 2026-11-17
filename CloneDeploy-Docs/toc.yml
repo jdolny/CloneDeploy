@@ -1,0 +1,704 @@
+- name: "Welcome"
+- name: "Introduction"
+  href: introduction/overview.md
+- name: "Changelog / Version History"
+  href: changelog/changelog.md
+- name: "Getting Started"
+- name: "Requirements & Planning"
+  href: installation/requirements-planning.md
+- name: "Windows Installation"
+  href: installation/server-installation-windows.md
+- name: "Linux Installation"
+  href: installation/server-installation-linux.md
+- name: "Initial Configuration"
+  href: installation/server-configuration.md
+- name: "Device Management"
+- name: "Device Overview"
+  href: devicemanagement/overview.md
+- name: "Prepare for Device Management"
+  href: devicemanagement/prepare-device-management.md
+- name: "Install the Agent"
+  href: devicemanagement/install-agent.md
+- name: "Create Your First Policy"
+  href: devicemanagement/first-policy.md
+- name: "Imaging & Deployment"
+- name: "Imaging Overview"
+  href: imaging/getting-started-imaging.md
+- name: "Prepare for Imaging"
+  href: imaging/prepare-imaging.md
+- name: "Understanding ProxyDHCP and IP Helpers"
+  href: imaging/proxy-dhcp.md
+- name: "Prepare an Image for Capture"
+  href: imaging/prepare-upload.md
+- name: "Your First Capture and Deployment"
+  href: imaging/getting-started-first-image.md
+- name: "User Interface"
+- name: "Web UI"
+  href: ui/web-ui.md
+  items:
+  - name: "Dashboard"
+    href: ui/dashboard/dashboard.md
+  - name: "Devices"
+    items:
+    - name: "Devices"
+      href: ui/devices/devices.md
+      items:
+      - name: "Deploy an Image"
+        href: ui/devices/device-deploy-image.md
+      - name: "Deploy Actions to a Device"
+        href: ui/devices/device-deploy-actions.md
+      - name: "Rename a Device"
+        href: ui/devices/device-rename.md
+      - name: "Imaging"
+        href: ui/devices/device-details-imaging.md
+        items:
+        - name: "Deployment Settings"
+          href: ui/devices/device-imaging-deployment-settings.md
+        - name: "Imaging Logs"
+          href: ui/devices/device-imaging-imaging-logs.md
+      - name: "Inventory"
+        href: ui/devices/device-details-inventory.md
+        items:
+        - name: "System Info"
+          href: ui/devices/device-inventory-system-information.md
+        - name: "Software"
+          href: ui/devices/device-inventory-software.md
+        - name: "Windows Updates"
+          href: ui/devices/device-inventory-windows-updates.md
+        - name: "Certificates"
+          href: ui/devices/device-inventory-certificates.md
+        - name: "Custom Inventory"
+          href: ui/devices/device-inventory-custom-inventory.md
+        - name: "User Logins"
+          href: ui/devices/device-inventory-user-logins.md
+      - name: "Overview"
+        href: ui/devices/device-details-overview.md
+        items:
+        - name: "General"
+          href: ui/devices/device-overview-general.md
+        - name: "Custom Attributes"
+          href: ui/devices/device-overview-custom-attributes.md
+        - name: "Comments"
+          href: ui/devices/device-overview-comments.md
+        - name: "Attachments"
+          href: ui/devices/device-overview-attachments.md
+      - name: "Policies"
+        href: ui/devices/device-details-policies.md
+        items:
+        - name: "Effective Policy"
+          href: ui/devices/device-policies-effective-policy.md
+        - name: "Direct assignments"
+          href: ui/devices/device-policies-direct-assignments.md
+      - name: "History"
+        href: ui/devices/device-details-history.md
+        items:
+        - name: "Actions"
+          href: ui/devices/device-history-actions.md
+        - name: "Policies"
+          href: ui/devices/device-history-policies.md
+        - name: "Notifications"
+          href: ui/devices/device-history-notifications.md
+        - name: "Help Desk"
+          href: ui/devices/device-history-helpdesk.md
+        - name: "Audits"
+          href: ui/devices/device-history-audits.md
+      - name: "Relations"
+        href: ui/devices/device-details-relations.md
+      - name: "Connect"
+        href: ui/devices/device-connect.md
+        items:
+        - name: "Agent log"
+          href: ui/devices/device-connect-client-log.md
+        - name: "Terminal"
+          href: ui/devices/device-connect-terminal.md
+        - name: "Services"
+          href: ui/devices/device-connect-services.md
+        - name: "Processes"
+          href: ui/devices/device-connect-processes.md
+        - name: "Remote viewing"
+          href: ui/devices/device-connect-remote-viewing.md
+    - name: "Device Groups"
+      href: ui/devices/device-groups.md
+      items:
+      - name: "Dynamic Group Criteria"
+        href: ui/devices/device-group-criteria.md
+      - name: "General"
+        href: ui/devices/device-groups-general.md
+      - name: "Group Members"
+        href: ui/devices/device-groups-members.md
+      - name: "Imaging"
+        href: ui/devices/device-groups-imaging.md
+      - name: "Policies"
+        href: ui/devices/device-groups-policies.md
+      - name: "Power schedules"
+        href: ui/devices/device-groups-power.md
+      - name: "History"
+        href: ui/devices/device-groups-history.md
+      - name: "Relations"
+        href: ui/devices/device-groups-relations.md
+      - name: "Organizational Units"
+        href: ui/shared-resources/organizational-units.md
+    - name: "Enrollment Requests"
+      href: ui/devices/approvals.md
+  - name: "Policies & Actions"
+    items:
+    - name: "Policies"
+      href: ui/policies-actions/policies.md
+      items:
+      - name: "General"
+        href: ui/policies-actions/policies-general.md
+      - name: "Actions"
+        href: ui/policies-actions/policies-actions.md
+      - name: "Execution"
+        href: ui/policies-actions/policies-execution.md
+      - name: "Self Service"
+        href: ui/policies-actions/policies-self-service.md
+      - name: "Targets"
+        href: ui/policies-actions/policies-targeting.md
+      - name: "Triggers & Timing"
+        href: ui/policies-actions/policies-schedule.md
+      - name: "History"
+        href: ui/policies-actions/policies-activity.md
+        items:
+        - name: "Client results"
+          href: ui/policies-actions/policies-client-results.md
+        - name: "Published versions"
+          href: ui/policies-actions/policies-published-versions.md
+        - name: "Audit history"
+          href: ui/policies-actions/policies-audit-history.md
+      - name: "Relations"
+        href: ui/policies-actions/policy-relations.md
+    - name: "Actions"
+      items:
+      - name: "Commands"
+        href: ui/policies-actions/command-actions.md
+        items:
+        - name: "General"
+          href: ui/policies-actions/command-actions-general.md
+        - name: "Configuration"
+          href: ui/policies-actions/command-actions-configuration.md
+        - name: "Files"
+          href: ui/policies-actions/command-actions-files.md
+        - name: "History"
+          href: ui/policies-actions/command-actions-audit.md
+          items:
+          - name: "Audit"
+            href: ui/policies-actions/action-history-audit.md
+          - name: "Deployments"
+            href: ui/policies-actions/action-history-deployments.md
+        - name: "Relations"
+          href: ui/policies-actions/command-actions-used-by.md
+      - name: "Notification"
+        href: ui/policies-actions/notification-actions.md
+        items:
+        - name: "General"
+          href: ui/policies-actions/notification-actions-general.md
+        - name: "Configuration"
+          href: ui/policies-actions/notification-actions-configuration.md
+        - name: "History"
+          href: ui/policies-actions/notification-actions-audit.md
+          items:
+          - name: "Audit"
+            href: ui/policies-actions/action-history-audit.md
+          - name: "Deployments"
+            href: ui/policies-actions/action-history-deployments.md
+        - name: "Relations"
+          href: ui/policies-actions/notification-actions-used-by.md
+      - name: "File Deployment"
+        href: ui/policies-actions/file-actions.md
+        items:
+        - name: "General"
+          href: ui/policies-actions/file-actions-general.md
+        - name: "Configuration"
+          href: ui/policies-actions/file-actions-configuration.md
+        - name: "Files"
+          href: ui/policies-actions/file-actions-files.md
+        - name: "History"
+          href: ui/policies-actions/file-actions-audit.md
+          items:
+          - name: "Audit"
+            href: ui/policies-actions/action-history-audit.md
+          - name: "Deployments"
+            href: ui/policies-actions/action-history-deployments.md
+        - name: "Relations"
+          href: ui/policies-actions/file-actions-used-by.md
+      - name: "Join Domain"
+        href: ui/policies-actions/domainjoin-actions.md
+        items:
+        - name: "General"
+          href: ui/policies-actions/domainjoin-actions-general.md
+        - name: "Configuration"
+          href: ui/policies-actions/domainjoin-actions-configuration.md
+        - name: "History"
+          href: ui/policies-actions/domainjoin-actions-audit.md
+          items:
+          - name: "Audit"
+            href: ui/policies-actions/action-history-audit.md
+          - name: "Deployments"
+            href: ui/policies-actions/action-history-deployments.md
+        - name: "Relations"
+          href: ui/policies-actions/domainjoin-actions-used-by.md
+      - name: "Printer"
+        href: ui/policies-actions/printer-actions.md
+        items:
+        - name: "General"
+          href: ui/policies-actions/printer-actions-general.md
+        - name: "Configuration"
+          href: ui/policies-actions/printer-actions-configuration.md
+        - name: "History"
+          href: ui/policies-actions/printer-actions-audit.md
+          items:
+          - name: "Audit"
+            href: ui/policies-actions/action-history-audit.md
+          - name: "Deployments"
+            href: ui/policies-actions/action-history-deployments.md
+        - name: "Relations"
+          href: ui/policies-actions/printer-actions-used-by.md
+      - name: "Script"
+        href: ui/policies-actions/script-actions.md
+        items:
+        - name: "General"
+          href: ui/policies-actions/script-actions-general.md
+        - name: "Configuration"
+          href: ui/policies-actions/script-actions-configuration.md
+        - name: "Files"
+          href: ui/policies-actions/script-actions-files.md
+        - name: "History"
+          href: ui/policies-actions/script-actions-audit.md
+          items:
+          - name: "Audit"
+            href: ui/policies-actions/action-history-audit.md
+          - name: "Deployments"
+            href: ui/policies-actions/action-history-deployments.md
+        - name: "Relations"
+          href: ui/policies-actions/script-actions-used-by.md
+      - name: "Software"
+        href: ui/policies-actions/software-actions.md
+        items:
+        - name: "General"
+          href: ui/policies-actions/software-actions-general.md
+        - name: "Configuration"
+          href: ui/policies-actions/software-actions-configuration.md
+        - name: "Files"
+          href: ui/policies-actions/software-actions-files.md
+        - name: "History"
+          href: ui/policies-actions/software-actions-audit.md
+          items:
+          - name: "Audit"
+            href: ui/policies-actions/action-history-audit.md
+          - name: "Deployments"
+            href: ui/policies-actions/action-history-deployments.md
+        - name: "Relations"
+          href: ui/policies-actions/software-actions-used-by.md
+      - name: "Windows Updates"
+        href: ui/policies-actions/windowsupdate-actions.md
+        items:
+        - name: "General"
+          href: ui/policies-actions/windowsupdate-actions-general.md
+        - name: "Configuration"
+          href: ui/policies-actions/windowsupdate-actions-configuration.md
+        - name: "History"
+          href: ui/policies-actions/windowsupdate-actions-audit.md
+          items:
+          - name: "Audit"
+            href: ui/policies-actions/action-history-audit.md
+          - name: "Deployments"
+            href: ui/policies-actions/action-history-deployments.md
+        - name: "Relations"
+          href: ui/policies-actions/windowsupdate-actions-used-by.md
+      - name: "Deploy action"
+        href: ui/policies-actions/deploy-action.md
+  - name: "Imaging"
+    items:
+    - name: "Images"
+      href: ui/imaging/images.md
+      items:
+      - name: "General"
+        href: ui/imaging/images-general.md
+      - name: "Replication"
+        href: ui/imaging/images-replication.md
+      - name: "Versions"
+        href: ui/imaging/images-versions.md
+      - name: "History"
+        href: ui/imaging/images-audit.md
+        items:
+        - name: "Audit"
+          href: ui/imaging/imaging-history-audit.md
+        - name: "Deployments"
+          href: ui/imaging/imaging-history-deployments.md
+      - name: "Relations"
+        href: ui/imaging/images-used-by.md
+    - name: "Deployment Profiles"
+      href: ui/imaging/deployment-profiles.md
+      items:
+      - name: "General"
+        href: ui/imaging/deployment-profiles-general.md
+      - name: "Configuration"
+        href: ui/imaging/deployment-profiles-configuration.md
+      - name: "Drivers"
+        href: ui/imaging/deployment-profiles-drivers.md
+      - name: "Post-deployment Policies"
+        href: ui/imaging/deployment-profiles-policies.md
+      - name: "History"
+        href: ui/imaging/deployment-profiles-audit.md
+        items:
+        - name: "Audit"
+          href: ui/imaging/imaging-history-audit.md
+        - name: "Deployments"
+          href: ui/imaging/imaging-history-deployments.md
+      - name: "Relations"
+        href: ui/imaging/deployment-profiles-used-by.md
+    - name: "Deployment Rules"
+      href: ui/imaging/deployment-rules.md
+      items:
+      - name: "General"
+        href: ui/imaging/deployment-rules-general.md
+      - name: "Deployment"
+        href: ui/imaging/deployment-rules-deployment.md
+      - name: "Matching"
+        href: ui/imaging/deployment-rules-matching.md
+    - name: "OU Naming Rules"
+      href: ui/imaging/ou-naming-rules.md
+      items:
+      - name: "General"
+        href: ui/imaging/ou-naming-rules-general.md
+      - name: "Matching Rules"
+        href: ui/imaging/ou-naming-rules-matching-rules.md
+    - name: "Driver Packs"
+      href: ui/imaging/drivers.md
+      items:
+      - name: "General"
+        href: ui/imaging/drivers-general.md
+      - name: "Configuration"
+        href: ui/imaging/drivers-configuration.md
+      - name: "Files"
+        href: ui/imaging/drivers-files.md
+      - name: "Models"
+        href: ui/imaging/drivers-models.md
+      - name: "Online Library"
+        href: ui/imaging/drivers-library.md
+      - name: "History"
+        href: ui/imaging/drivers-audit.md
+        items:
+        - name: "Audit"
+          href: ui/imaging/imaging-history-audit.md
+      - name: "Relations"
+        href: ui/imaging/drivers-used-by.md
+    - name: "Image Prep Profiles"
+      href: ui/imaging/image-prep.md
+      items:
+      - name: "General"
+        href: ui/imaging/image-prep-general.md
+      - name: "Answer File"
+        href: ui/imaging/image-prep-answer-file.md
+      - name: "Configuration"
+        href: ui/imaging/image-prep-configuration.md
+      - name: "Pre-Sysprep Script"
+        href: ui/imaging/image-prep-pre-sysprep-script.md
+      - name: "SetupComplete"
+        href: ui/imaging/image-prep-setupcomplete.md
+      - name: "History"
+        href: ui/imaging/image-prep-history.md
+        items:
+        - name: "Audit"
+          href: ui/imaging/imaging-history-audit.md
+        - name: "Authorizations"
+          href: ui/imaging/imaging-history-authorizations.md
+      - name: "Relations"
+        href: ui/imaging/imaging-relations.md
+  - name: "Help Desk"
+    href: ui/helpdesk/helpdesk.md
+    items:
+    - name: "Help request"
+      href: ui/helpdesk/help-request.md
+  - name: "Tasks"
+    items:
+    - name: "Action Deployments"
+      href: ui/tasks/deployments.md
+      items:
+      - name: "Active"
+        href: ui/tasks/deployments-active.md
+      - name: "History"
+        href: ui/tasks/deployments-history.md
+      - name: "Deployment details"
+        href: ui/tasks/deployments-device-tasks.md
+    - name: "Imaging Tasks"
+      href: ui/tasks/imaging-tasks.md
+      items:
+      - name: "Active"
+        href: ui/tasks/imaging-tasks-active.md
+      - name: "Multicast"
+        href: ui/tasks/imaging-multicast-sessions.md
+      - name: "History"
+        href: ui/tasks/imaging-tasks-history.md
+  - name: "Shared Resources"
+    items:
+    - name: "Custom Attributes"
+      href: ui/shared-resources/custom-attributes.md
+    - name: "Schedules"
+      href: ui/shared-resources/schedules.md
+    - name: "User Audiences"
+      href: ui/administration/user-audiences.md
+      items:
+      - name: "General"
+        href: ui/administration/user-audiences-general.md
+      - name: "Excluded members"
+        href: ui/administration/user-audiences-excluded-members.md
+      - name: "Included members"
+        href: ui/administration/user-audiences-included-members.md
+      - name: "Resolved users"
+        href: ui/administration/user-audiences-resolved-users.md
+    - name: "Self-service Categories"
+      href: ui/shared-resources/self-service-categories.md
+    - name: "Tags"
+      href: ui/shared-resources/tags.md
+  - name: "Reports"
+    items:
+    - name: "Help Desk"
+      href: ui/reports/helpdesk-reports.md
+    - name: "Devices"
+      href: ui/reports/device-reports.md
+      items:
+      - name: "Device Stats"
+        href: ui/reports/device-stats.md
+      - name: "Report"
+        href: ui/reports/device-reports-report.md
+      - name: "Saved Reports"
+        href: ui/reports/device-reports-saved-reports.md
+    - name: "Users"
+      href: ui/reports/user-reports.md
+      items:
+      - name: "Saved Reports"
+        href: ui/reports/user-reports-saved-reports.md
+      - name: "Self Service"
+        href: ui/reports/user-reports-self-service.md
+      - name: "Login History"
+        href: ui/reports/user-reports-login-history.md
+    - name: "Windows Updates"
+      href: ui/shared-resources/windows-updates.md
+      items:
+      - name: "Auto-Approve Rules"
+        href: ui/shared-resources/windows-updates-auto-approve-rules.md
+      - name: "Updates"
+        href: ui/shared-resources/windows-updates-updates.md
+    - name: "Software"
+      href: ui/reports/software-reports.md
+      items:
+      - name: "Software"
+        href: ui/reports/software-reports.md
+    - name: "Policies"
+      href: ui/reports/policy-reports.md
+  - name: "Administration"
+    items:
+    - name: "Application Users"
+      href: ui/administration/users.md
+      items:
+      - name: "General"
+        href: ui/administration/users-general.md
+      - name: "Options"
+        href: ui/administration/users-options.md
+      - name: "Permissions"
+        href: ui/administration/users-permissions.md
+      - name: "Audit History"
+        href: ui/administration/users-audit.md
+    - name: "Application User Groups"
+      href: ui/administration/user-groups.md
+      items:
+      - name: "General"
+        href: ui/administration/user-groups-general.md
+      - name: "Assigned Users"
+        href: ui/administration/user-groups-members.md
+      - name: "Directory groups"
+        href: ui/administration/entra-directory-groups.md
+      - name: "Permissions"
+        href: ui/administration/user-groups-permissions.md
+    - name: "Agent Settings"
+      href: ui/administration/agent-enrollment.md
+      items:
+      - name: "General"
+        href: ui/administration/agent-enrollment-general.md
+      - name: "Agent tools"
+        href: ui/administration/agent-tools.md
+      - name: "Branding"
+        href: ui/administration/server-settings-branding.md
+      - name: "Enrollment"
+        href: ui/administration/agent-enrollment-overview.md
+        items:
+        - name: "Enrollment Rules"
+          href: ui/administration/agent-enrollment-rules.md
+        - name: "Enrollment Key"
+          href: ui/administration/agent-enrollment-key.md
+      - name: "Features"
+        href: ui/administration/agent-features.md
+      - name: "Installer & Updates"
+        href: ui/administration/agent-enrollment-installer.md
+      - name: "Remote access"
+        href: ui/administration/remote-access.md
+        items:
+        - name: "Global configuration"
+          href: ui/administration/remote-access-global.md
+        - name: "Rules"
+          href: ui/administration/remote-access-rules.md
+    - name: "Help Desk Settings"
+      href: ui/administration/helpdesk-settings.md
+      items:
+      - name: "Categories"
+        href: ui/administration/helpdesk-categories.md
+      - name: "Queues"
+        href: ui/administration/helpdesk-queues.md
+      - name: "Routing Rules"
+        href: ui/administration/helpdesk-routing.md
+        items:
+        - name: "Rule Configuration"
+          href: ui/administration/helpdesk-routing-rule.md
+        - name: "Categorization"
+          href: ui/administration/helpdesk-categorization.md
+        - name: "Queue Assignment"
+          href: ui/administration/helpdesk-assignment.md
+      - name: "Scope"
+        href: ui/administration/helpdesk-settings-scope.md
+        items:
+        - name: "Device Groups"
+          href: ui/administration/helpdesk-settings-device-groups.md
+        - name: "User Audiences"
+          href: ui/administration/helpdesk-settings-user-audiences.md
+    - name: "Imaging Settings"
+      href: ui/administration/imaging-infrastructure.md
+      items:
+      - name: "Deployment Performance"
+        href: ui/administration/imaging-infrastructure-performance.md
+      - name: "Imaging Queue"
+        href: ui/administration/imaging-infrastructure-queue.md
+      - name: "Multicast"
+        href: ui/administration/imaging-multicast.md
+      - name: "PXE Proxy"
+        href: ui/administration/pxe-proxy.md
+        items:
+        - name: "Settings"
+          href: ui/administration/pxe-proxy-settings.md
+        - name: "Live Activity"
+          href: ui/administration/pxe-proxy-live-activity.md
+      - name: "TFTP & Boot Files"
+        href: ui/administration/tftp-boot-files.md
+        items:
+        - name: "Settings"
+          href: ui/administration/tftp-settings.md
+        - name: "Live Activity"
+          href: ui/administration/tftp-live-activity.md
+      - name: "WinPE Boot Environments"
+        href: ui/administration/winpe-boot-variants.md
+        items:
+        - name: "General"
+          href: ui/administration/winpe-general.md
+        - name: "Configuration"
+          href: ui/administration/winpe-configuration.md
+        - name: "Model matching"
+          href: ui/administration/winpe-model-matching.md
+        - name: "Drivers"
+          href: ui/administration/winpe-drivers.md
+      - name: "WinPE Builder"
+        href: ui/administration/winpe-builder.md
+        items:
+        - name: "Status"
+          href: ui/administration/winpe-builder-status.md
+        - name: "History"
+          href: ui/administration/winpe-builder-history.md
+    - name: "Server Settings"
+      href: ui/administration/server-settings.md
+      items:
+      - name: "General"
+        href: ui/administration/server-settings-general.md
+      - name: "Backup"
+        href: ui/administration/server-backup.md
+      - name: "Certificates"
+        href: ui/administration/certificates.md
+        items:
+        - name: "Root CA"
+          href: ui/administration/certificates-authority.md
+        - name: "Server HTTPS"
+          href: ui/administration/certificates-https.md
+      - name: "Directory Connections"
+        href: ui/shared-resources/directories.md
+        items:
+        - name: "Configuration"
+          href: ui/shared-resources/directories-connection-configuration.md
+        - name: "Users"
+          href: ui/shared-resources/directory-users.md
+          items:
+          - name: "User details"
+            href: ui/shared-resources/directory-user-details.md
+            items:
+            - name: "General"
+              href: ui/shared-resources/directory-user-details-general.md
+            - name: "History"
+              href: ui/shared-resources/directory-user-details-history.md
+              items:
+              - name: "Self Service"
+                href: ui/shared-resources/directory-user-details-self-service.md
+              - name: "Notifications"
+                href: ui/shared-resources/directory-user-notifications.md
+              - name: "Help Desk"
+                href: ui/shared-resources/directory-user-helpdesk.md
+        - name: "Groups"
+          href: ui/shared-resources/directory-groups.md
+        - name: "Devices"
+          href: ui/shared-resources/directory-devices.md
+        - name: "OUs"
+          href: ui/shared-resources/directory-ous.md
+      - name: "Email"
+        href: ui/administration/email-notifications.md
+      - name: "Managed Credentials"
+        href: ui/shared-resources/credentials.md
+      - name: "Microsoft Entra"
+        href: ui/administration/entra.md
+      - name: "Storage Providers"
+        href: ui/administration/storage.md
+        items:
+        - name: "Storage Providers"
+          href: ui/administration/storage-providers.md
+          items:
+          - name: "Provider Configuration"
+            href: ui/administration/storage-provider-configuration.md
+        - name: "Replication Settings"
+          href: ui/administration/storage-replication-settings.md
+        - name: "Replication Status"
+          href: ui/administration/storage-replication-status.md
+      - name: "Task Scheduler"
+        href: ui/tasks/scheduler.md
+      - name: "Professional Support"
+        href: resources/professional-support.md
+      - name: "WinGet"
+        href: ui/shared-resources/winget.md
+    - name: "Site Services"
+      href: ui/administration/site-services.md
+      items:
+      - name: "General"
+        href: ui/administration/site-services-general.md
+      - name: "Configuration"
+        href: ui/administration/site-services-configuration.md
+      - name: "Enrollment"
+        href: ui/administration/site-services-enrollment.md
+      - name: "PXE / TFTP"
+        href: ui/administration/site-services-pxe.md
+      - name: "Storage"
+        href: ui/administration/site-services-storage.md
+  - name: "Account"
+    items:
+    - name: "Options"
+      href: ui/administration/users-options.md
+    - name: "Authenticator setup"
+      href: ui/sign-in/sign-in-authenticator-setup.md
+    - name: "Licenses"
+      href: ui/administration/licenses.md
+- name: "Architecture & Security"
+- name: "Architecture Overview"
+  href: architecture-security/architecture-overview.md
+- name: "Security"
+  href: architecture-security/security.md
+- name: "Certificates"
+  href: architecture-security/certificate-guide.md
+- name: "Background Workers"
+  href: architecture-security/background-workers.md
+- name: "Troubleshooting"
+- name: "Log Locations"
+  href: troubleshooting/log-locations.md

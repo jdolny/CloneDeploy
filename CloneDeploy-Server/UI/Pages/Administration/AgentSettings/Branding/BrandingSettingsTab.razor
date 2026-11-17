@@ -1,0 +1,163 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@using CloneDeploy_Agent.Contracts
+@inject ServerSettingsUiService Settings
+
+<div class="section-action-bar">
+    <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+        <MudButton OnClick="@Snackbar.GuardAction(() => _busy || !_loaded, UiText.Get(LocKeys.Ui.UserGroupDirectoryTab.SettingsCouldNotBeLoadedRefreshAndTryAgain), SaveAsync)" Disabled="@(_busy)" Color="Color.Primary" Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+        <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Style="align-self: auto;"
+                 Disabled="_busy" aria-label="@Loc[LocKeys.Ui.BrandingSettingsTab.MoreBrandingActions]">
+            <MudMenuItem OnClick="@Snackbar.GuardAction(() => !_loaded, UiText.Get(LocKeys.Ui.BrandingSettingsTab.BrandingSettingsCouldNotBeLoadedRefreshAndTry), ResetDefaults)">@Loc[LocKeys.Ui.BrandingSettingsTab.ResetToCloneDeployDefaults]</MudMenuItem>
+        </MudMenu>
+    </MudButtonGroup>
+</div>
+
+@if (_loading) { <MudProgressLinear Indeterminate="true"/> }
+else
+{
+    <MudGrid>
+        <MudItem xs="12" md="5">
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="_name" Immediate="true" Label="@Loc[LocKeys.Ui.BrandingSettingsTab.OrganizationNameOptional]" MaxLength="100" Variant="Variant.Outlined" Disabled="_busy"/>
+                <MudTextField @bind-Value="_portalTitle" Immediate="true" Label="@Loc[LocKeys.Ui.BrandingSettingsTab.PortalTitle]" HelperText="@Loc[LocKeys.Ui.BrandingSettingsTab.DefaultsToSelfServicePortalWhenBlank]" MaxLength="100" Variant="Variant.Outlined" Disabled="_busy"/>
+                <MudTextField @bind-Value="_helpTabName" Immediate="true" Label="@Loc[LocKeys.Ui.BrandingSettingsTab.HelpTabName]" HelperText="@Loc[LocKeys.Ui.BrandingSettingsTab.AlsoUsedByTheTrayMenuAndOpenHelp]" MaxLength="40" Variant="Variant.Outlined" Disabled="_busy"/>
+                <MudTextField @bind-Value="_supportResponse" Immediate="true" Label="@Loc[LocKeys.Ui.BrandingSettingsTab.SupportResponseMessage]" HelperText="@Loc[LocKeys.Ui.BrandingSettingsTab.ShownAboveHelpConversationsLeaveBlankToUseThe]" MaxLength="300" Lines="2" Variant="Variant.Outlined" Disabled="_busy"/>
+                <label>@Loc["Ui.BrandingSettingsTab.LightModeHeaderColor"] <input type="color" aria-label="@Loc["Ui.BrandingSettingsTab.LightModeHeaderColor"]" value="@(AgentBranding.ValidColor(_color) ? _color : "#2459D6")" @oninput="e => _color = e.Value?.ToString() ?? _color" disabled="@_busy" /></label>
+                <MudTextField @bind-Value="_color" Immediate="true" Label="@Loc["Ui.BrandingSettingsTab.LightModeHeaderColor"]" Variant="Variant.Outlined" Disabled="_busy"/>
+                <label>@Loc["Ui.BrandingSettingsTab.LightModeAccentColor"] <input type="color" aria-label="@Loc["Ui.BrandingSettingsTab.LightModeAccentColor"]" value="@(AgentBranding.ValidColor(_accent) ? _accent : "#2459D6")" @oninput="e => _accent = e.Value?.ToString() ?? _accent" disabled="@_busy" /></label>
+                <MudTextField @bind-Value="_accent" Immediate="true" Label="@Loc["Ui.BrandingSettingsTab.LightModeAccentColor"]" Variant="Variant.Outlined" Disabled="_busy"/>
+                <label>@Loc["Ui.BrandingSettingsTab.DarkModeHeaderColor"] <input type="color" aria-label="@Loc["Ui.BrandingSettingsTab.DarkModeHeaderColor"]" value="@(AgentBranding.ValidColor(_darkColor) ? _darkColor : "#2459D6")" @oninput="e => _darkColor = e.Value?.ToString() ?? _darkColor" disabled="@_busy" /></label>
+                <MudTextField @bind-Value="_darkColor" Immediate="true" Label="@Loc["Ui.BrandingSettingsTab.DarkModeHeaderColor"]" Variant="Variant.Outlined" Disabled="_busy"/>
+                <label>@Loc["Ui.BrandingSettingsTab.DarkModeAccentColor"] <input type="color" aria-label="@Loc["Ui.BrandingSettingsTab.DarkModeAccentColor"]" value="@(AgentBranding.ValidColor(_darkAccent) ? _darkAccent : "#2459D6")" @oninput="e => _darkAccent = e.Value?.ToString() ?? _darkAccent" disabled="@_busy" /></label>
+                <MudTextField @bind-Value="_darkAccent" Immediate="true" Label="@Loc["Ui.BrandingSettingsTab.DarkModeAccentColor"]" Variant="Variant.Outlined" Disabled="_busy"/>
+                <div>
+                    <MudText Typo="Typo.subtitle2">@Loc[LocKeys.Ui.BrandingSettingsTab.OrganizationLogoOptional]</MudText>
+                    <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.BrandingSettingsTab.TransparentPNGRecommendedUpTo64KiBAnd512]</MudText>
+                    <div class="branding-logo-controls">
+                        <label class="@($"branding-logo-upload {(_busy ? "is-disabled" : "")}")">
+                            <MudIcon Icon="@Icons.Material.Filled.FileUpload" Size="Size.Small" />
+                            <span>@Loc[LocKeys.Ui.BrandingSettingsTab.UploadLogo]</span>
+                            <InputFile OnChange="UploadAsync" accept="image/png" disabled="@_busy" aria-label="@Loc[LocKeys.Ui.BrandingSettingsTab.UploadOrganizationLogo]" />
+                        </label>
+                        @if (_logo is not null)
+                        {
+                            <img class="branding-logo-preview" src="@($"data:image/png;base64,{Convert.ToBase64String(_logo)}")" alt="@Loc[LocKeys.Ui.BrandingSettingsTab.SelectedOrganizationLogo]" />
+                            <MudButton OnClick="RemoveLogo" Disabled="_busy">@Loc[LocKeys.Ui.BrandingSettingsTab.RemoveLogo]</MudButton>
+                        }
+                    </div>
+                </div>
+                @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+            </MudStack>
+        </MudItem>
+        <MudItem xs="12" md="7">
+            <MudSwitch T="bool" @bind-Value="_previewDark" Color="Color.Primary" Label="@Loc[LocKeys.Ui.BrandingSettingsTab.PreviewDarkWindowsTheme]" />
+            <div class="branding-preview-theme" style="@ThemeStyle">
+            <MudText Typo="Typo.h6" Class="mt-6 mb-3">@Loc[LocKeys.Ui.BrandingSettingsTab.PortalPreview]</MudText>
+            <div class="portal-preview" style="@AccentStyle">
+                <header style="@(Preview.IsConfigured ? $"background:{Preview.BackgroundColor};color:{Preview.ForegroundColor}" : "")">
+                    @if (_logo is not null) { <img src="@($"data:image/png;base64,{Convert.ToBase64String(_logo)}")" alt="@Loc[LocKeys.Ui.BrandingSettingsTab.OrganizationLogo]"/> }
+                    <div>@if (!string.IsNullOrWhiteSpace(_name)) { <small class="preview-organization">@_name</small> }<strong>@Preview.PortalTitleText</strong></div>
+                </header>
+                <div class="portal-preview-body">
+                    <nav aria-label="@Loc[LocKeys.Ui.BrandingSettingsTab.ExamplePortalNavigation]"><span class="selected">@Loc[LocKeys.Ui.ManageDevicesPage.All]</span><span>@Loc[LocKeys.Device.Software]</span><span>@Loc[LocKeys.Ui.BrandingSettingsTab.Maintenance]</span><span>@Loc[LocKeys.Ui.DeviceHistoryTab.Notifications]</span><span>@Preview.HelpTabText</span>
+                        <div class="preview-identity"><div><strong>@Loc[LocKeys.Ui.BrandingSettingsTab.WORKSTATION]</strong><small>@Loc[LocKeys.Ui.BrandingSettingsTab.DOMAINUser]</small></div><span aria-label="@Loc[LocKeys.Dashboard.Refresh]">â†»</span></div>
+                    </nav>
+                    <main><h3>@Loc[LocKeys.Ui.ManageDevicesPage.All]</h3><p>@Loc[LocKeys.Ui.BrandingSettingsTab.AvailableToYouOnThisDevice]</p>
+                        <div class="preview-policy"><strong>@Loc[LocKeys.Ui.BrandingSettingsTab.ExampleApplication]</strong><p>@Loc[LocKeys.Ui.BrandingSettingsTab.InstallAnApplication]</p><span class="preview-primary">@Loc[LocKeys.Device.Run]</span></div>
+                    </main>
+                </div>
+                <footer><span>@Loc[LocKeys.Ui.BrandingSettingsTab.PoweredBy] <img src="@ThemeLogoPath" alt=""/> <strong>CloneDeploy</strong></span><span>@Loc[LocKeys.Ui.BrandingSettingsTab.AgentVersion4] <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Title="@Loc[LocKeys.Ui.BrandingSettingsTab.AdministratorTools]" /></span></footer>
+            </div>
+            <MudText Typo="Typo.subtitle2" Class="mt-3">@Loc[LocKeys.Ui.BrandingSettingsTab.HelpConversationMessagePreview]</MudText>
+            <MudText Typo="Typo.body2">@Preview.SupportResponseText</MudText>
+            <MudText Typo="Typo.h6" Class="mt-6 mb-3">@Loc[LocKeys.Ui.BrandingSettingsTab.NotificationPreview]</MudText>
+            <MudSelect T="string" @bind-Value="_notificationExample" Label="@Loc[LocKeys.Ui.BrandingSettingsTab.NotificationExample]" Variant="Variant.Outlined" Class="mb-3">
+                <MudSelectItem Value='@("Help")'>@Loc[LocKeys.Ui.BrandingSettingsTab.HelpUpdate]</MudSelectItem>
+                <MudSelectItem Value='@("Notification")'>@Loc[LocKeys.Ui.BrandingSettingsTab.NotificationRequiringAcknowledgement]</MudSelectItem>
+                <MudSelectItem Value='@("Remote")'>@Loc[LocKeys.Ui.BrandingSettingsTab.RemoteAccessRequest]</MudSelectItem>
+                <MudSelectItem Value='@("Sharing")'>@Loc[LocKeys.Ui.BrandingSettingsTab.ActiveScreenSharing]</MudSelectItem>
+            </MudSelect>
+            <div class="toast-preview" style="@AccentStyle">
+                <header><img src="@(_logo is not null ? $"data:image/png;base64,{Convert.ToBase64String(_logo)}" : ThemeLogoPath)" alt="@Loc[LocKeys.Ui.BrandingSettingsTab.NotificationLogo]"/><strong>@(string.IsNullOrWhiteSpace(_name) ? "CloneDeploy" : _name)</strong><span aria-hidden="true">Ã—</span></header>
+                <div class="toast-body"><div class="toast-icon">@(_notificationExample == "Help" ? "?" : "i")</div><div><strong>@NotificationTitle</strong><p>@NotificationBody</p></div></div>
+                <div class="toast-actions">
+                    @if (_notificationExample == "Help") { <span class="preview-primary">@UiText.Get(LocKeys.Ui.BrandingSettingsTab.Open0, (Preview.HelpTabText))</span> }
+                    else if (_notificationExample == "Notification") { <span class="preview-primary">@Loc[LocKeys.Ui.BrandingSettingsTab.Acknowledge]</span><span class="preview-secondary">@Loc[LocKeys.Ui.BrandingSettingsTab.Later]</span> }
+                    else if (_notificationExample == "Remote") { <span class="preview-primary">@Loc[LocKeys.Ui.BrandingSettingsTab.Allow]</span><span class="preview-secondary">@Loc[LocKeys.Ui.ApprovalRequestsPage.Deny]</span> }
+                    else { <span class="preview-secondary">@Loc[LocKeys.Ui.BrandingSettingsTab.StopSharing]</span> }
+                </div>
+            </div>
+            <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.BrandingSettingsTab.AllNotificationsUseThisCompactBrandingRequiredActionsRemain]</MudText>
+
+            </div>
+        </MudItem>
+    </MudGrid>
+}
+@code {
+    private bool _loading = true, _busy, _loaded;
+    private string _darkColor = "#2459D6", _darkAccent = "#2459D6";
+    private string _name = "", _tagline = "", _color = "#2459D6", _version = "default", _accent = "#2459D6";
+    private byte[]? _logo;
+    private string? _error;
+    private string _portalTitle = UiText.Get(LocKeys.Ui.BrandingSettingsTab.SelfServicePortal), _helpTabName = UiText.Get(LocKeys.Ui.BrandingSettingsTab.Help);
+    private string _supportResponse = AgentBranding.DefaultSupportResponseMessage;
+    private bool _previewDark;
+    private string _notificationExample = "Help";
+    private string NotificationTitle => _notificationExample switch { "Notification" => UiText.Get(LocKeys.Ui.BrandingSettingsTab.ScheduledMaintenance), "Remote" => UiText.Get(LocKeys.Ui.BrandingSettingsTab.RemoteAccessRequest_73832251), "Sharing" => UiText.Get(LocKeys.Ui.BrandingSettingsTab.RemoteSharingIsActive), _ => UiText.Get(LocKeys.Ui.BrandingSettingsTab.Text0Update, (Preview.HelpTabText)) };
+    private string NotificationBody => _notificationExample switch {
+        "Notification" => UiText.Get(LocKeys.Ui.BrandingSettingsTab.PleaseSaveYourWorkBeforeMaintenanceBegins),
+        "Remote" => UiText.Get(LocKeys.Ui.BrandingSettingsTab.UserIsRequestingToViewAndControlYourComputer),
+        "Sharing" => UiText.Get(LocKeys.Ui.BrandingSettingsTab.UserCanViewAndControlYourComputerYouCan),
+        _ => UiText.Get(LocKeys.Ui.BrandingSettingsTab.PrinterNotWorkingRequest1042Open0ToView, (Preview.HelpTabText)) };
+    private string ThemeLogoPath => _previewDark ? "branding/clonedeploy-on-dark.svg" : "branding/clonedeploy.svg";
+    private string ThemeStyle => _previewDark ? "--preview-surface:#202020;--preview-text:#F2F2F2;--preview-muted:#BFC5CD;--preview-border:#454545" : "--preview-surface:#FFFFFF;--preview-text:#172B3A;--preview-muted:#627383;--preview-border:#E4E9EE";
+    private AgentBranding Preview => new AgentBranding() { OrganizationName = _name, PortalTitle = _portalTitle, HelpTabName = _helpTabName, SupportResponseMessage = _supportResponse, Tagline = _tagline, LogoPng = _logo, BackgroundColor = AgentBranding.ValidColor(_color) ? _color : "#2459D6", AccentColor = AgentBranding.ValidColor(_accent) ? _accent : "#2459D6", DarkBackgroundColor = _darkColor, DarkAccentColor = _darkAccent }.ForTheme(_previewDark);
+    private string AccentStyle => $"--accent:{Preview.AccentColor};--accent-foreground:{Preview.AccentForegroundColor};--accent-tint:{Preview.AccentTintColor};--accent-text:{Preview.AccentTextColor}";
+    protected override Task OnInitializedAsync() => LoadAsync();
+    private void RemoveLogo() => _logo = null;
+    private void ResetDefaults()
+    {
+        var defaults = new AgentBranding();
+        _portalTitle = defaults.PortalTitle; _helpTabName = defaults.HelpTabName; _supportResponse = defaults.SupportResponseText;
+        _name = defaults.OrganizationName; _tagline = defaults.Tagline; _logo = defaults.LogoPng;
+        _darkColor = defaults.BackgroundColor; _darkAccent = defaults.AccentColor; _color = defaults.BackgroundColor; _accent = defaults.AccentColor; _error = null;
+        Snackbar.Add(UiText.Get(LocKeys.Ui.BrandingSettingsTab.CloneDeployDefaultsRestoredInThePreviewSaveToApply), Severity.Info);
+    }
+    private async Task LoadAsync()
+    {
+        _busy = true; _error = null;
+        try
+        {
+            var result = await Settings.ReadBrandingAsync();
+            if (result.Success && result.Data is { } b) { _portalTitle = b.PortalTitleText; _helpTabName = b.HelpTabText; _supportResponse = b.SupportResponseText; _name = b.OrganizationName; _tagline = b.Tagline; _darkColor = b.DarkBackgroundColor ?? b.BackgroundColor; _darkAccent = b.DarkAccentColor ?? b.AccentColor; _color = b.BackgroundColor; _accent = b.AccentColor; _logo = b.LogoPng; _version = b.Version; _loaded = true; }
+            else _error = UiText.Get(LocKeys.Ui.BrandingSettingsTab.CouldNotLoadBrandingSettings);
+        }
+        finally { _loading = false; _busy = false; }
+    }
+    private async Task UploadAsync(InputFileChangeEventArgs e)
+    {
+        _error = null; _busy = true;
+        try
+        {
+            await using var stream = e.File.OpenReadStream(ServerSettingsUiService.MaximumIconBytes);
+            using var buffer = new MemoryStream(); await stream.CopyToAsync(buffer);
+            var bytes = buffer.ToArray();
+            if (!ServerSettingsUiService.IsValidIcon(bytes)) { Snackbar.Add(UiText.Get(LocKeys.Ui.PolicyAudiencesTab.UseAPNGUpTo64KiBAnd512), Severity.Error); return; }
+            _logo = bytes;
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException) { Snackbar.Add(UiText.Get(LocKeys.Ui.BrandingSettingsTab.CouldNotReadTheLogoUseAPNGUp), Severity.Error); }
+        finally { _busy = false; }
+    }
+    private async Task SaveAsync()
+    {
+        _busy = true; _error = null;
+        try
+        {
+            var result = await Settings.SaveBrandingAsync(new AgentBranding { OrganizationName = _name, PortalTitle = _portalTitle, HelpTabName = _helpTabName, SupportResponseMessage = _supportResponse, Tagline = _tagline, BackgroundColor = _color, AccentColor = _accent, DarkBackgroundColor = _darkColor, DarkAccentColor = _darkAccent, LogoPng = _logo }, _version);
+            if (result.Success && result.Data is { } b) { _version = b.Version; Snackbar.Add(UiText.Get(LocKeys.Ui.BrandingSettingsTab.BrandingSavedDevicesWillReceiveItAtTheirNext), Severity.Success); }
+            else Snackbar.Add(result.Error?.Args.FirstOrDefault()?.ToString() ?? "Could not save branding.", Severity.Error);
+        }
+        finally { _busy = false; }
+    }
+}

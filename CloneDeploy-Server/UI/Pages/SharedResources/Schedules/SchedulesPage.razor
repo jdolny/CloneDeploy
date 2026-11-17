@@ -1,0 +1,238 @@
+@attribute [Authorize(Policy = Constants.Permissions.ScheduleView)]
+@inject AuthenticationStateProvider SharedAuthentication
+@inject IAuthorizationService SharedAuthorization
+@page "/shared/schedules"
+
+@inject ScheduleService ScheduleService
+<AppPageTitle Text="@Loc[LocKeys.Common.Schedules]" />
+
+<ActionButtons>
+    <MainButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   Disabled="@(!_canEditShared)" OnClick="@OnNewClicked" StartIcon="@Icons.Material.Filled.Add">
+            @Loc[LocKeys.Schedule.NewSchedule]
+        </MudButton>
+    </MainButton>
+</ActionButtons>
+
+<MudPaper Class="device-list-filters device-search-panel" Elevation="0">
+    <MudTextField T="string" Class="shared-resource-search" Value="_search" ValueChanged="OnSearchChanged" DebounceInterval="300" Clearable="true"
+                  Placeholder="@Loc[LocKeys.Ui.SchedulesPage.SearchSchedules]" aria-label="@Loc[LocKeys.Ui.SchedulesPage.SearchSchedules_849298be]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"/>
+</MudPaper>
+
+<MudDataGrid T="Schedule"
+             Items="@_items"
+             Dense="true"
+             Elevation="0"
+             Outlined="true"
+             Loading="_isLoading"
+             SelectOnRowClick="false"
+             MultiSelection="true"
+             @bind-SelectedItems="_selectedItems"
+             RowsPerPage="@Constants.UI.DefaultPageSize"
+             Filterable="true"
+             FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+             HorizontalScrollbar="true"
+             FilterMode="DataGridFilterMode.ColumnFilterMenu"
+             ColumnResizeMode="ResizeMode.Column"
+             Hover="true"
+             Class="device-list-grid mb-8">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.Schedule" Color="Color.Primary"/>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Common.Schedules]</MudText>
+        <MudSpacer/>
+        <div class="grid-toolbar-actions">
+            <GridSelectionCount Count="_selectedItems.Count"/>
+            @if (_selectedItems.Count > 0)
+        {
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       Disabled="@(!_canEditShared)" OnClick="@OnDeleteSelectedClicked"
+                       StartIcon="@Icons.Material.Filled.Delete"
+                      >
+                @Loc[LocKeys.Common.DeleteSelected]
+            </MudButton>
+        }
+        </div>
+    </ToolBarContent>
+
+    <Columns>
+        <SelectColumn T="Schedule"/>
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]">
+            <CellTemplate>
+                <button type="button" class="resource-name-link" @onclick="@(() => OnEditClicked(context.Item))">@context.Item.Name</button>
+            </CellTemplate>
+        </PropertyColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.SchedulesPage.Repeat]">
+            <CellTemplate>
+                @if (context.Item.Type == ScheduleType.Interval)
+                {
+                    var minutes = context.Item.IntervalMinutes ?? 0;
+                    <text>@UiText.Get(LocKeys.Ui.SchedulesPage.Every0, ((minutes % 60 == 0 ? UiText.Get(LocKeys.Ui.SchedulesPage.Text0HourS, (minutes / 60)) : UiText.Get(LocKeys.Ui.SchedulesPage.Text0MinuteS, (minutes)))))</text>
+                }
+                else
+                {
+                    @string.Join(", ", GetDays(context.Item))
+                }
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.SchedulesPage.TimeStart]" Filterable="false">
+            <CellTemplate>
+                @(context.Item.Type == ScheduleType.Interval
+                    ? context.Item.StartsAtUtc?.ToLocalTime().ToString("g")
+                    : context.Item.Time?.ToString(@"hh\:mm"))
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <MudTooltip Text="@($"{Loc[LocKeys.Common.Delete]} - {context.Item.Name}")" Placement="Placement.Left"
+                            Arrow="true" Delay="200">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Medium"
+                                   Color="Color.Primary"
+                                   aria-label="@($"{Loc[LocKeys.Common.Delete]} {context.Item.Name}")"
+                                   Disabled="@(!_canEditShared)" OnClick="@(() => OnDeleteClicked(context.Item))"/>
+                </MudTooltip>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager T="Schedule"/>
+    </PagerContent>
+
+    <NoRecordsContent>
+        <MudText>@Loc[LocKeys.Schedule.NoSchedulesFound]</MudText>
+    </NoRecordsContent>
+</MudDataGrid>
+
+@code {
+    private bool _canEditShared;
+    protected override async Task OnParametersSetAsync()
+    {
+        _canEditShared = (await SharedAuthorization.AuthorizeAsync((await SharedAuthentication.GetAuthenticationStateAsync()).User, Constants.Permissions.ScheduleEdit)).Succeeded;
+    }
+
+    private List<Schedule> _items = [];
+    private HashSet<Schedule> _selectedItems = [];
+    private bool _isLoading = true;
+    private string? _search;
+
+    private IEnumerable<string> GetDays(Schedule schedule)
+    {
+        if (schedule.Monday) yield return Loc[LocKeys.Common.Monday];
+        if (schedule.Tuesday) yield return Loc[LocKeys.Common.Tuesday];
+        if (schedule.Wednesday) yield return Loc[LocKeys.Common.Wednesday];
+        if (schedule.Thursday) yield return Loc[LocKeys.Common.Thursday];
+        if (schedule.Friday) yield return Loc[LocKeys.Common.Friday];
+        if (schedule.Saturday) yield return Loc[LocKeys.Common.Saturday];
+        if (schedule.Sunday) yield return Loc[LocKeys.Common.Sunday];
+    }
+    
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        var result = await ScheduleService.GetAsync(_search);
+        _items = result.Data ?? [];
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _selectedItems.Clear();
+
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task OnSearchChanged(string? value)
+    {
+        _search = value;
+        await LoadAsync();
+    }
+
+    private async Task OnNewClicked()
+    {
+        var dialog = await Dialog.ShowAsync<ScheduleDialog>(Constants.UI.StandardDialogBox);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: Schedule })
+            await LoadAsync();
+    }
+
+    private async Task OnEditClicked(Schedule item)
+    {
+        var parameters = new DialogParameters<ScheduleDialog>
+        {
+            { x => x.Schedule, item }
+        };
+
+        var dialog = await Dialog.ShowAsync<ScheduleDialog>(parameters, Constants.UI.StandardDialogBox);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: Schedule })
+            await LoadAsync();
+    }
+
+    private async Task OnDeleteClicked(Schedule item)
+    {
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, Loc[LocKeys.Schedule.ConfirmDelete, item.Name] },
+            { x => x.ButtonText, Loc[LocKeys.Common.Delete] },
+            { x => x.Color, Color.Error }
+        };
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        var dialogResult = await dialog.Result;
+
+        if (dialogResult is { Canceled: false, Data: true })
+        {
+            var result = await ScheduleService.DeleteAsync(item.Id);
+
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[LocKeys.Common.Deleted, item.Name], Severity.Success);
+                await LoadAsync();
+            }
+            else
+            {
+                Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+            }
+        }
+    }
+
+    private async Task OnDeleteSelectedClicked()
+    {
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, Loc[LocKeys.Schedule.ConfirmDeleteMany] },
+            { x => x.ButtonText, Loc[LocKeys.Common.Delete] },
+            { x => x.Color, Color.Error }
+        };
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        var dialogResult = await dialog.Result;
+
+        if (dialogResult is { Canceled: false, Data: true })
+        {
+            var result = await ScheduleService.DeleteManyAsync(_selectedItems.Select(x => x.Id).ToList());
+
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[LocKeys.Common.DeletedMany], Severity.Success);
+                await LoadAsync();
+            }
+            else
+            {
+                Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+            }
+        }
+    }
+
+}

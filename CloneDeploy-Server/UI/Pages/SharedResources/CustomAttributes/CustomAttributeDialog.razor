@@ -1,0 +1,90 @@
+@inject AuthenticationStateProvider SharedAuthentication
+@inject IAuthorizationService SharedAuthorization
+@inject CustomAttributeService CustomAttributeService
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Outlined.Tune" Color="Color.Primary"/>
+            <MudText Typo="Typo.h6">
+                @(_isNew ? Loc[LocKeys.CustomAttribute.NewCustomAttribute] : Loc[LocKeys.CustomAttribute.EditCustomAttribute])
+            </MudText>
+        </MudStack>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm Disabled="@(!_canEditShared)" @ref="_form">
+            <MudStack Spacing="3" Class="pt-2">
+                <MudTextField @bind-Value="_customAttribute.Name" Label="@Loc[LocKeys.Common.Name]" Variant="Variant.Outlined"
+                              Required="true"/>
+                <MudTextField @bind-Value="_customAttribute.Description" Label="@Loc[LocKeys.Common.Description]"
+                              Lines="4"
+                              Variant="Variant.Outlined"/>
+
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="@OnCancelClicked">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="@(!_canEditShared)" OnClick="@OnSaveClicked">
+            @(_isNew ? Loc[LocKeys.Common.Create] : Loc[LocKeys.Common.Save])
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private bool _canEditShared;
+    protected override async Task OnParametersSetAsync()
+    {
+        _canEditShared = (await SharedAuthorization.AuthorizeAsync((await SharedAuthentication.GetAuthenticationStateAsync()).User, Constants.Permissions.CustomAttributeEdit)).Succeeded;
+    }
+
+    [Parameter] public CustomAttribute? CustomAttribute { get; set; }
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private CustomAttribute _customAttribute = null!;
+    private bool _isNew => CustomAttribute is null || CustomAttribute.Id == 0;
+    private MudForm _form = null!;
+
+    protected override void OnInitialized()
+    {
+        _customAttribute = CustomAttribute is null
+            ? new CustomAttribute()
+            : new CustomAttribute
+            {
+                Id = CustomAttribute.Id,
+                Name = CustomAttribute.Name,
+                Description = CustomAttribute.Description,
+                ClientImagingAvailable = CustomAttribute.ClientImagingAvailable
+            };
+    }
+
+    private void OnCancelClicked()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task OnSaveClicked()
+    {
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+            return;
+
+        ServiceResult<CustomAttribute> result;
+
+        if (_isNew)
+            result = await CustomAttributeService.CreateAsync(_customAttribute);
+        else
+            result = await CustomAttributeService.UpdateAsync(_customAttribute);
+
+        if (result.Success)
+        {
+            Snackbar.Add(_isNew ? Loc[LocKeys.Common.Created, _customAttribute.Name] : Loc[LocKeys.Common.Updated, _customAttribute.Name], Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+            Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+    }
+}

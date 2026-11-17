@@ -1,0 +1,88 @@
+@inject AppUserService AppUserService
+@using System.Security.Claims
+@inject AuthenticationStateProvider Authentication
+<div class="section-action-bar"><MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" Disabled="@(_saving || _loading)" OnClick="@Snackbar.GuardAction(() => _saving || _loading || _appUserOptions is null, UiText.Get(LocKeys.Ui.UserGroupMembersTab.ThisRecordCouldNotBeLoadedReopenThePage), OnSaveClicked)">
+                @Loc[LocKeys.User.SaveOptions]
+            </MudButton></div>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_appUserOptions is not null)
+{
+
+    <div>
+        <MudForm @ref="_form">
+            <MudGrid Spacing="3">
+                <MudItem xs="12" md="6">
+                    <MudSelect @bind-Value="_appUserOptions.ColorMode" Label="@Loc[LocKeys.User.ColorMode]" Variant="Variant.Outlined">
+                        <MudSelectItem Value="@ColorMode.System">@Loc[LocKeys.User.SystemMode]</MudSelectItem>
+                        <MudSelectItem Value="@ColorMode.Light">@Loc[LocKeys.User.LightMode]</MudSelectItem>
+                        <MudSelectItem Value="@ColorMode.Dark">@Loc[LocKeys.User.DarkMode]</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudSelect T="string" @bind-Value="_appUserOptions.Language" Label="@Loc[LocKeys.User.Language]" Variant="Variant.Outlined">
+                        <MudSelectItem T="string" Value="@((string?)null)">@Loc[LocKeys.User.BrowserLanguage]</MudSelectItem>
+                        @foreach (var language in UiLanguages.Supported)
+                        {
+                            <MudSelectItem T="string" Value="@language.Name">@language.NativeName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </div>
+}
+
+
+
+@if (_appUserOptions is not null && !_loading)
+{
+    <MudDivider Class="my-4" />
+    <CloneDeploy_Server.UI.Pages.Administration.ApplicationUsers.EmailNotificationOptions @ref="_emailOptions" UserId="AppUser.Id" @key="AppUser.Id" />
+}
+
+@code {
+    [Parameter, EditorRequired] public AppUser AppUser { get; set; } = null!;
+
+    private MudForm _form = null!;
+    private EmailNotificationOptions? _emailOptions;
+    private bool _saving, _loading, _isOwnAccount;
+    private AppUserOptions _appUserOptions = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        _isOwnAccount = int.TryParse((await Authentication.GetAuthenticationStateAsync()).User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId) && userId == AppUser.Id;
+
+        var result = await AppUserService.GetOptionsAsync(AppUser.Id);
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        else if (result.HasData)
+            _appUserOptions = result.Data;
+        _loading = false;
+    }
+
+    private async Task OnSaveClicked()
+    {
+        if (_saving || _loading || _appUserOptions is null) return;
+        _saving = true;
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+        {
+            _saving = false;
+            return;
+        }
+
+        try
+        {
+            if (_emailOptions is null || !await _emailOptions.SaveOptionsAsync(_appUserOptions)) return;
+            Snackbar.Add(Loc[LocKeys.User.OptionsUpdated], Severity.Success);
+            if (_isOwnAccount) Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+        }
+        finally { _saving = false; }
+    }
+}

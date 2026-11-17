@@ -1,0 +1,99 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@implements IAsyncDisposable
+@using CloneDeploy_Server.Backend.Services.Scheduler
+@inject SchedulerService ScheduledTaskService
+@inject ScheduleService ScheduleService
+
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+<MudDataGrid T="StableGridRow<SchedulerTaskDto>" Items="_rows.Items" Loading="_loading" Dense="true" Hover="true" Outlined="true" Elevation="0"
+             Class="device-list-grid" HorizontalScrollbar="true" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu"
+             FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" QuickFilter="@(row => Matches(row.Value))" RowsPerPage="@Constants.UI.DefaultPageSize">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.Schedule" Color="Color.Primary" />
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ServerAdministrationPage.TaskScheduler]</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="_search" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ImagingTasksPage.SearchTasks]" aria-label="@Loc[LocKeys.Ui.SchedulerTab.SearchTasks]"
+                      Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search" />
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Value.Name" Title="@Loc[LocKeys.Dashboard.TaskText]"><CellTemplate><MudLink OnClick="@(() => OpenAsync(context.Item.Value))" Disabled="_busy">@context.Item.Value.Name</MudLink></CellTemplate></PropertyColumn>
+        <PropertyColumn Property="x => x.Value.Description" Title="@Loc[LocKeys.Common.Description]" />
+        <PropertyColumn Property="x => x.Value.Enabled" Title="@Loc[LocKeys.Scheduler.Automatic]">
+            <CellTemplate>@(context.Item.Value.Enabled ? UiText.Get(LocKeys.StorageProvider.Enabled) : UiText.Get(LocKeys.Ui.CertificateAuthorityTab.Disabled))</CellTemplate>
+        </PropertyColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Schedule]"><CellTemplate>@ScheduleName(context.Item.Value)</CellTemplate></TemplateColumn>
+        <PropertyColumn Property="x => x.Value.NextRunUtc" Title="@Loc[LocKeys.Scheduler.NextRun]">
+            <CellTemplate>@(context.Item.Value.NextRunUtc.HasValue ? Format(context.Item.Value.NextRunUtc) : Loc[LocKeys.Scheduler.NotScheduled])</CellTemplate>
+        </PropertyColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.SchedulerTab.LatestStatus]" StickyRight="true">
+            <CellTemplate><MudChip T="string" Size="Size.Small" Color="@StatusColor(context.Item.Value.LastRun?.Status)">@(context.Item.Value.LastRun?.Status.ToString() ?? UiText.Get(LocKeys.Scheduler.NeverRun))</MudChip></CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent><MudDataGridPager T="StableGridRow<SchedulerTaskDto>" /></PagerContent>
+    <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.SchedulerTab.NoMatchingScheduledTasks]</MudText></NoRecordsContent>
+</MudDataGrid>
+
+@code {
+    private readonly StableGridRows<SchedulerTaskDto, ScheduledTaskType> _rows = new(x => x.Id);
+    private List<Schedule> _schedules = [];
+    private bool _loading = true, _busy;
+    private string? _error, _search;
+    private readonly CancellationTokenSource _stop = new();
+    private Task? _poll;
+    private static string Format(DateTime? value) => value?.ToLocalTime().ToString("g") ?? "—";
+    private string ScheduleName(SchedulerTaskDto task) => _schedules.FirstOrDefault(s => s.Id == task.ScheduleId)?.Name ?? UiText.Get(LocKeys.Ui.SiteServiceBootTab.None);
+    private bool Matches(SchedulerTaskDto task) => string.IsNullOrWhiteSpace(_search) ||
+        task.Name.Contains(_search, StringComparison.OrdinalIgnoreCase) || task.Description.Contains(_search, StringComparison.OrdinalIgnoreCase);
+    private static Color StatusColor(ScheduledTaskStatus? status) => status switch
+    {
+        ScheduledTaskStatus.Succeeded => Color.Success,
+        ScheduledTaskStatus.Failed => Color.Error,
+        ScheduledTaskStatus.Running or ScheduledTaskStatus.Queued => Color.Info,
+        ScheduledTaskStatus.Interrupted => Color.Warning,
+        _ => Color.Default
+    };
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+    protected override void OnAfterRender(bool firstRender) { if (firstRender) _poll = PollAsync(); }
+    private async Task LoadAsync()
+    {
+        var result = await ScheduledTaskService.GetScheduledTaskViews(_stop.Token);
+        if (_stop.IsCancellationRequested) return;
+        _loading = false;
+        if (!result.Success) { _error = Loc[result.Error.Code, result.Error.Args]; return; }
+        _rows.Update(result.Data ?? []);
+        var schedules = await ScheduleService.GetAllAsync();
+        if (_stop.IsCancellationRequested) return;
+        if (schedules.Success) { _schedules = schedules.Data ?? []; _error = null; }
+        else _error = Loc[schedules.Error.Code, schedules.Error.Args];
+    }
+    private async Task OpenAsync(SchedulerTaskDto task)
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var parameters = new DialogParameters<SchedulerTaskDialog> { { x => x.TaskInfo, task } };
+            var dialog = await Dialog.ShowAsync<SchedulerTaskDialog>(task.Name, parameters,
+                new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = false });
+            await dialog.Result;
+            if (!_stop.IsCancellationRequested) await LoadAsync();
+        }
+        finally { _busy = false; }
+    }
+    private async Task PollAsync()
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(3));
+            while (await timer.WaitForNextTickAsync(_stop.Token))
+                await InvokeAsync(async () => { if (_busy || _stop.IsCancellationRequested) return; await LoadAsync(); if (!_stop.IsCancellationRequested) StateHasChanged(); });
+        }
+        catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
+    }
+    public async ValueTask DisposeAsync()
+    {
+        await _stop.CancelAsync();
+        if (_poll is not null) await _poll;
+        _stop.Dispose();
+    }
+}

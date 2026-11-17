@@ -1,0 +1,31 @@
+@inject ServerSettingsUiService ServerSettings
+
+<MudText Typo="Typo.body2">@(Boot ? UiText.Get(LocKeys.Ui.PublicServerUrl.PXEBootURL) : UiText.Get(LocKeys.Ui.ServerSettingsTab.PublicApplicationURL)): @(_url ?? UiText.Get(LocKeys.Ui.PublicServerUrl.NotConfigured)) · <MudLink Href="/administration/server/general">@Loc[LocKeys.Ui.PublicServerUrl.ServerSettings]</MudLink></MudText>
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else if (_loaded && _url is null)
+{
+    <MudAlert Severity="Severity.Warning">@Loc[LocKeys.Ui.PublicServerUrl.ConfigureThePublicApplicationURLInServerSettingsBefore]</MudAlert>
+}
+else if (_loaded && HasSnapshot && SnapshotUrl != _url)
+{
+    <MudAlert Severity="Severity.Warning">@UiText.Get(LocKeys.Ui.PublicServerUrl.TheSavedBootFilesUseADifferentServerURL_6bc287aa, (RefreshInstruction))</MudAlert>
+}
+
+@code {
+    [Parameter] public bool Boot { get; set; }
+    [Parameter] public bool HasSnapshot { get; set; }
+    [Parameter] public string? SnapshotUrl { get; set; }
+    [Parameter] public string? RefreshInstruction { get; set; }
+    private string? _url, _error;
+    private bool _loaded;
+    protected override async Task OnParametersSetAsync()
+    {
+        var result = Boot ? await ServerSettings.ReadBootUrlAsync() : await ServerSettings.ReadAsync();
+        _loaded = result.Success;
+        _url = result.Data;
+        _error = result.Success ? null : Loc[result.Error.Code, result.Error.Args].Value;
+    }
+}

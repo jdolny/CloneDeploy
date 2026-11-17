@@ -1,0 +1,99 @@
+@inject AppUserService AppUserService
+
+<div class="section-action-bar"><MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" Disabled="@(_saving || _loading)" OnClick="@Snackbar.GuardAction(() => _saving || _loading || !_loaded, UiText.Get(LocKeys.Ui.UserGroupMembersTab.ThisRecordCouldNotBeLoadedReopenThePage), OnSaveClicked)">@Loc[LocKeys.UserGroup.SaveMembers]</MudButton></div>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+
+    <div>
+        <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.UserGroup.Members]</MudText>
+        <MudAutocomplete T="UserGroupMemberDto" @ref="_userPicker" Label="@Loc[LocKeys.UserGroup.AddUser]" Variant="Variant.Outlined"
+                         SearchFunc="SearchUsers" ToStringFunc="@(x => x?.UserName ?? string.Empty)" ValueChanged="OnAddUser"
+                         Clearable="true" ResetValueOnEmptyText="true" MaxItems="100" Disabled="_saving">
+            <ItemTemplate>
+                <MudText>@context.UserName</MudText>
+                <MudText Typo="Typo.caption">@context.Email</MudText>
+            </ItemTemplate>
+        </MudAutocomplete>
+        <MudDataGrid T="UserGroupMemberDto" Items="_members" Dense="true" Elevation="0" Class="device-list-grid mt-4"
+                     Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" RowsPerPage="@Constants.UI.DefaultPageSize" Outlined="true">
+            <ToolBarContent><MudIcon Icon="@Icons.Material.Outlined.People" Color="Color.Primary" Class="mr-2"/><MudText Typo="Typo.h6">@Loc[LocKeys.UserGroup.Members]</MudText></ToolBarContent>
+            <Columns>
+                <PropertyColumn Property="x => x.UserName" Title="@Loc[LocKeys.Auth.UserName]" />
+                <PropertyColumn Property="x => x.Email" Title="@Loc[LocKeys.User.Email]" />
+                <TemplateColumn Sortable="false" Filterable="false">
+                    <CellTemplate>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Disabled="@(_saving || _loading)" OnClick="@Snackbar.GuardAction(() => _saving || _loading || !_loaded, UiText.Get(LocKeys.Ui.UserGroupMembersTab.ThisRecordCouldNotBeLoadedReopenThePage), () => OnRemoveUserClicked(context.Item))"
+                                       aria-label="@Loc[LocKeys.UserGroup.RemoveUser, context.Item.UserName]" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent><MudDataGridPager T="UserGroupMemberDto" /></PagerContent>
+            <NoRecordsContent><MudText>@Loc[LocKeys.UserGroup.NoMembers]</MudText></NoRecordsContent>
+        </MudDataGrid>
+    </div>
+}
+
+
+
+@code {
+    [Parameter] public int GroupId { get; set; }
+    private List<UserGroupMemberDto> _members = [];
+    private MudAutocomplete<UserGroupMemberDto> _userPicker = null!;
+    private bool _loading = true;
+    private bool _saving;
+    private bool _loaded;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        var result = await AppUserService.GetGroupMembersAsync(GroupId);
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        else if (result.HasData)
+            { _members = result.Data; _loaded = true; }
+        _loading = false;
+    }
+
+    private async Task<IEnumerable<UserGroupMemberDto>> SearchUsers(string? text, CancellationToken cancellationToken)
+    {
+        var result = await AppUserService.SearchUsersAsync(text, cancellationToken);
+        if (!result.Success)
+        {
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+            return [];
+        }
+
+        return result.Data!.Where(x => _members.All(member => member.Id != x.Id));
+    }
+
+    private async Task OnAddUser(UserGroupMemberDto? user)
+    {
+        if (_saving || user is null) return;
+        if (_members.All(x => x.Id != user.Id))
+            _members = _members.Append(user).OrderBy(x => x.UserName).ToList();
+        await _userPicker.ClearAsync();
+    }
+
+    private void OnRemoveUserClicked(UserGroupMemberDto user)
+    {
+        if (_saving) return;
+        _members = _members.Where(x => x.Id != user.Id).ToList();
+    }
+
+    private async Task OnSaveClicked()
+    {
+        if (_saving || _loading || !_loaded) return;
+        _saving = true;
+        var result = await AppUserService.SaveGroupMembersAsync(GroupId, _members.Select(x => x.Id));
+        if (result.Success)
+            Snackbar.Add(Loc[LocKeys.UserGroup.MembersSaved], Severity.Success);
+        else
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _saving = false;
+    }
+}

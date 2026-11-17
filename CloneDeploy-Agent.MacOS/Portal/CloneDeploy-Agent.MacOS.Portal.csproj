@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../AgentVersion.props" />
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType><TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+    <AssemblyName>CloneDeploy-Agent.MacOS.Portal</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.6" />
+    <ProjectReference Include="../../CloneDeploy-Agent.Core/CloneDeploy-Agent.Core.csproj" />
+    <Compile Include="../Hosting/MacDaemonGuard.cs" Link="MacDaemonGuard.cs" />
+    <Compile Include="../UserLogins/MacConsoleSession.cs" Link="MacConsoleSession.cs" />
+    <Compile Include="../RemoteDesktop/MacRemoteProtocol.cs" Link="MacRemoteProtocol.cs" />
+    <Compile Include="../PortalService/MacPortalAuthProtocol.cs" Link="MacPortalAuthProtocol.cs" />
+    <Compile Include="../PortalService/MacPortalStatus.cs" Link="MacPortalStatus.cs" />
+    <AvaloniaResource Include="../../Branding/CloneDeploy.ico" Link="Assets/CloneDeploy.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../CloneDeploy-Agent.Localization/CloneDeploy-Agent.Localization.csproj" />
+    <Using Include="CloneDeploy_Agent.Localization.PortalText" Alias="PortalText" />
+  </ItemGroup>
+</Project>

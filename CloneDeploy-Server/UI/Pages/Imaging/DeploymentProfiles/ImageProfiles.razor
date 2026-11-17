@@ -1,0 +1,79 @@
+@inject ImagingService ImagingService
+
+
+
+<MudText Class="mb-3">@Loc[LocKeys.Image.ProfilesHint]</MudText>
+<div>
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudTextField T="string" ValueChanged="OnSearchChanged" DebounceInterval="300" Placeholder="@Loc[LocKeys.Image.SearchProfiles]"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Immediate="false"
+                          Variant="Variant.Outlined" Class="mt-0"/>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudCheckBox T="bool" Value="_includeDisabled" ValueChanged="OnIncludeDisabledChanged" Label="@Loc[LocKeys.Image.IncludeDisabled]" Color="Color.Primary"/>
+        </MudItem>
+    </MudGrid>
+</div>
+
+@if (_loading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true"/>
+}
+
+<MudDataGrid T="DeploymentProfile" Items="@_profiles" Dense="true" Hover="true"
+             RowsPerPage="@Constants.UI.DefaultPageSize" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" ColumnResizeMode="ResizeMode.Column" Elevation="0" Outlined="true" Class="device-list-grid"><ToolBarContent><MudIcon Icon="@Icons.Material.Outlined.AccountTree" Color="Color.Primary"/><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ImageProfiles.DeploymentProfiles]</MudText><MudButton Href="/images/deploymentprofiles">@Loc[LocKeys.Image.ManageProfiles]</MudButton><MudSpacer/></ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]">
+            <CellTemplate>
+                <MudLink Href="@($"/images/deploymentprofiles/{context.Item.Id}")">@context.Item.Name</MudLink>
+            </CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Description" Title="@Loc[LocKeys.Common.Description]"/>
+        <PropertyColumn Property="x => x.Enabled" Title="@Loc[LocKeys.Image.Enabled]"/>
+        <PropertyColumn Property="x => x.VisibleInWinPe" Title="@Loc[LocKeys.Image.ShowInWinPe]"/>
+    </Columns>
+    <PagerContent><MudDataGridPager T="DeploymentProfile"/></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Image.NoProfilesFound]</MudText></NoRecordsContent>
+</MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired] public int ImageId { get; set; }
+
+    private List<DeploymentProfile> _profiles = [];
+    private string? _search;
+    private bool _loading = true;
+    private bool _includeDisabled = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task OnSearchChanged(string? value)
+    {
+        _search = value;
+        await LoadAsync();
+    }
+
+    private async Task OnIncludeDisabledChanged(bool value)
+    {
+        _includeDisabled = value;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        var result = await ImagingService.GetProfilesAsync(ImageId, _search, _includeDisabled);
+        if (!result.Success)
+        {
+            _profiles = [];
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        else if (result.HasData)
+            _profiles = result.Data;
+
+        _loading = false;
+    }
+}

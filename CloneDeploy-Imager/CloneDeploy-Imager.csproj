@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0-windows</TargetFramework>
+        <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+        <PlatformTarget Condition="'$(RuntimeIdentifier)' != 'win-arm64'">x64</PlatformTarget>
+        <PlatformTarget Condition="'$(RuntimeIdentifier)' == 'win-arm64'">arm64</PlatformTarget>
+        <NativeToolArchitecture Condition="'$(RuntimeIdentifier)' != 'win-arm64'">x64</NativeToolArchitecture>
+        <NativeToolArchitecture Condition="'$(RuntimeIdentifier)' == 'win-arm64'">a64</NativeToolArchitecture>
+        <RootNamespace>CloneDeploy_Imager</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Spectre.Console" Version="0.57.2" />
+
+        <Compile Include="../CloneDeploy-Agent.Contracts/Imaging/ImagePrepGeneratorOptions.cs" Link="Api/ImagePrepGeneratorOptions.cs" />
+        <Compile Include="../CloneDeploy-Agent.Contracts/Imaging/DeploymentCompletionAction.cs" Link="Api/DeploymentCompletionAction.cs" />
+        <Compile Include="../CloneDeploy-Agent.Contracts/Imaging/ImagingOu.cs" Link="Api/ImagingOu.cs" />
+        <Compile Include="../CloneDeploy-Agent.Contracts/DeviceTools/ComputerNameValidation.cs" Link="Api/ComputerNameValidation.cs" />
+        <Compile Include="../CloneDeploy-Agent.Contracts/Imaging/PreparedCaptureHandoff.cs" Link="Api/PreparedCaptureHandoff.cs" />
+        <Compile Include="../CloneDeploy-Agent.Core/Communication/SiteDownloadClient.cs" Link="Api/SiteDownloadClient.cs" />
+        <Compile Include="../CloneDeploy-Agent.Contracts/Communication/SiteDirectDownload.cs" Link="Api/SiteDirectDownload.cs" />
+        <Compile Include="../CloneDeploy-Agent.Contracts/Communication/ServerSignatures.cs" Link="Api/ServerSignatures.cs" />
+        <Compile Include="../CloneDeploy-Agent.Contracts/Communication/ImagerSignatures.cs" Link="Api/ImagerSignatures.cs" />
+        <Compile Include="../CloneDeploy-Agent.Contracts/Communication/ImagerSessionProtocol.cs" Link="Api/ImagerSessionProtocol.cs" />
+        <EmbeddedResource Include="Deployment/Configure-Disk.ps1" LogicalName="CloneDeploy.Configure-Disk.ps1" />
+        <EmbeddedResource Include="Capture/Clear-PreparedCaptureBoot.ps1" LogicalName="CloneDeploy.Clear-PreparedCaptureBoot.ps1" />
+
+        <PackageReference Include="winfsp.net" Version="2.1.25156" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,12 @@
+@using Microsoft.AspNetCore.Components.Sections
+
+<SectionContent SectionName="related-pages">
+    <MudStack Row Spacing="1" AlignItems="AlignItems.Center">
+        @ChildContent
+    </MudStack>
+</SectionContent>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

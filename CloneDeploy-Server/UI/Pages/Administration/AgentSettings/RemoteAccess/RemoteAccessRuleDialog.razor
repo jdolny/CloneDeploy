@@ -1,0 +1,94 @@
+@using CloneDeploy_Agent.Contracts
+@inject AgentService Rules
+@inject AuthenticationStateProvider Authentication
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Outlined.Rule" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">@(RuleId is null ? UiText.Get(LocKeys.Ui.RemoteAccessRuleDialog.CreateRemoteAccessRule) : UiText.Get(LocKeys.Ui.RemoteAccessRuleDialog.EditRemoteAccessRule))</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        @if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+        @if (_loaded)
+        {
+            <MudForm @ref="_form">
+                <MudStack Spacing="3" Class="pt-2">
+                    <MudTextField @bind-Value="_edit.Name" Label="@Loc[LocKeys.Ui.ManageOuNamingRulePage.RuleName]" Variant="Variant.Outlined" Required="true" MaxLength="100" Disabled="_busy" />
+                    <MudNumericField T="int" @bind-Value="_edit.Priority" Label="@Loc[LocKeys.Device.Priority]" HelperText="@Loc[LocKeys.Ui.RemoteAccessRuleDialog.LowestNumberMatchesFirstEachRuleMustHaveA]" Variant="Variant.Outlined" Min="0" Max="100000" Disabled="_busy" />
+                    <MudSwitch T="bool" @bind-Value="_edit.Enabled" Color="Color.Primary" Disabled="_busy">@Loc[LocKeys.StorageProvider.Enabled]</MudSwitch>
+                    <MudSelect T="RemoteAccessMode" @bind-Value="_edit.Mode" Label="@Loc[LocKeys.Ui.RemoteAccessRuleDialog.AccessMode]" Variant="Variant.Outlined" Disabled="_busy">
+                        @foreach (var mode in Enum.GetValues<RemoteAccessMode>()) { <MudSelectItem Value="mode">@AgentService.RemoteAccessLabel(mode)</MudSelectItem> }
+                    </MudSelect>
+                    <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.RemoteAccessRuleDialog.SelectAtLeastOneDeviceOrDeviceGroupThe]</MudText>
+                    <MudTextField T="string" @bind-Value="_filter" Label="@Loc[LocKeys.Ui.RemoteAccessRuleDialog.FilterDeviceAndGroupChoices]" Immediate="true" Clearable="true" Variant="Variant.Outlined" Disabled="_busy" />
+                    <MudSelect T="int" MultiSelection="true" SelectedValues="_edit.GroupIds" SelectedValuesChanged="@((IReadOnlyCollection<int> ids) => _edit.GroupIds = ids.ToList())" ToStringFunc="@(id => _groups.FirstOrDefault(x => x.Id == id)?.Name ?? UiText.Get(LocKeys.Ui.RemoteAccessRuleDialog.UnavailableGroup0, (id)))" Label="@Loc[LocKeys.Group.Groups]" Variant="Variant.Outlined" Disabled="_busy">
+                        @foreach (var target in _groups.Where(x => Matches(x.Name) || _edit.GroupIds.Contains(x.Id))) { <MudSelectItem Value="target.Id">@target.Name</MudSelectItem> }
+                        @foreach (var id in _edit.GroupIds.Where(id => _groups.All(x => x.Id != id))) { <MudSelectItem Value="id">@UiText.Get(LocKeys.Ui.RemoteAccessRuleDialog.UnavailableGroup0, (id))</MudSelectItem> }
+                    </MudSelect>
+                    <MudSelect T="int" MultiSelection="true" SelectedValues="_edit.DeviceIds" SelectedValuesChanged="@((IReadOnlyCollection<int> ids) => _edit.DeviceIds = ids.ToList())" ToStringFunc="@(id => _devices.FirstOrDefault(x => x.Id == id)?.Name ?? UiText.Get(LocKeys.Ui.RemoteAccessRuleDialog.UnavailableDevice0, (id)))" Label="@Loc[LocKeys.Group.Devices]" Variant="Variant.Outlined" Disabled="_busy">
+                        @foreach (var target in _devices.Where(x => Matches(x.Name) || _edit.DeviceIds.Contains(x.Id))) { <MudSelectItem Value="target.Id">@target.Name</MudSelectItem> }
+                        @foreach (var id in _edit.DeviceIds.Where(id => _devices.All(x => x.Id != id))) { <MudSelectItem Value="id">@UiText.Get(LocKeys.Ui.RemoteAccessRuleDialog.UnavailableDevice0, (id))</MudSelectItem> }
+                    </MudSelect>
+                </MudStack>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_busy">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="Save" Disabled="@(_busy || !_loaded)" Color="Color.Primary" Variant="Variant.Filled">@Loc[LocKeys.Ui.RemoteAccessRuleDialog.SaveRule]</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public Guid? RuleId { get; set; }
+    private RemoteAccessRule _edit = new();
+    private RemoteAccessTarget[] _devices = [], _groups = [];
+    private MudForm _form = null!;
+    private bool _busy, _loaded;
+    private string? _filter, _error;
+    private bool Matches(string name) => string.IsNullOrWhiteSpace(_filter) || name.Contains(_filter, StringComparison.OrdinalIgnoreCase);
+    protected override async Task OnInitializedAsync()
+    {
+        _busy = true;
+        try
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            var settings = await Rules.GetRemoteAccessAsync(user);
+            (_devices, _groups) = await Rules.RemoteAccessTargetsAsync(user);
+            if (RuleId is { } id)
+                _edit = settings.Rules.FirstOrDefault(x => x.Id == id) ?? throw new InvalidOperationException(UiText.Get(LocKeys.Ui.RemoteAccessRuleDialog.ThisRuleNoLongerExistsCloseTheDialogAnd));
+            else
+                _edit.Priority = Enumerable.Range(1, 100000).First(x => settings.Rules.All(r => r.Priority != x));
+            _loaded = true;
+        }
+        catch (InvalidOperationException ex) { _error = ex.Message; }
+        catch { _error = UiText.Get(LocKeys.Ui.RemoteAccessRuleDialog.TheRemoteAccessRuleCouldNotBeLoadedClose); }
+        finally { _busy = false; }
+    }
+    private void Cancel() => MudDialog.Cancel();
+    private async Task Save()
+    {
+        if (_busy || !_loaded) return;
+        await _form.ValidateAsync();
+        if (!_form.IsValid) return;
+        _busy = true;
+        try
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            var settings = await Rules.GetRemoteAccessAsync(user);
+            if (RuleId is { } id && !settings.Rules.Any(x => x.Id == id))
+                throw new InvalidOperationException(UiText.Get(LocKeys.Ui.RemoteAccessRuleDialog.ThisRuleNoLongerExistsCloseTheDialogAnd));
+            settings.Rules.RemoveAll(x => x.Id == _edit.Id);
+            settings.Rules.Add(_edit);
+            await Rules.SaveRemoteAccessAsync(user, settings);
+            Snackbar.Add(UiText.Get(LocKeys.Ui.RemoteAccessRuleDialog.RemoteAccessRuleSaved), Severity.Success);
+            MudDialog.Close(DialogResult.Ok(settings));
+        }
+        catch (InvalidOperationException ex) { _error = ex.Message; }
+        catch { _error = UiText.Get(LocKeys.Ui.RemoteAccessRuleDialog.TheRemoteAccessRuleCouldNotBeSaved); }
+        finally { _busy = false; }
+    }
+}
+

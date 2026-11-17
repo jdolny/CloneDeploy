@@ -1,0 +1,5 @@
+@page "/access-denied"
+@attribute [AllowAnonymous]
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.AccessDeniedPage.AccessDenied]" />
+<MudAlert Severity="Severity.Warning">@Loc[LocKeys.Ui.AccessDeniedPage.YouDoNotHavePermissionToAccessThisPage]</MudAlert>

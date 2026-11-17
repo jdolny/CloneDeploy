@@ -1,0 +1,30 @@
+@page "/login/mfa"
+@attribute [AllowAnonymous]
+@layout AuthLayout
+@inject IStringLocalizer<LocalizationResources> Loc
+
+<MudPaper Elevation="3" Class="pa-6" Style="width: 100%;">
+    <MudText Typo="Typo.h5" Class="mb-4">@Loc[LocKeys.Auth.MfaCode]</MudText>
+
+    @if (Error == "invalid")
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@Loc[LocKeys.Auth.InvalidMfaCode]</MudAlert>
+    }
+
+    <form method="post" action="/auth/login/mfa">
+        <AntiforgeryToken />
+        <input type="hidden" name="ReturnUrl" value="@ReturnUrl"/>
+
+        <MudTextField T="string" name="Code" autocomplete="one-time-code" Label="@Loc[LocKeys.Auth.Code]" Variant="Variant.Outlined"
+                      Required="true" AutoFocus="true" Class="mb-3"/>
+
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+            @Loc[LocKeys.Auth.Verify]
+        </MudButton>
+    </form>
+</MudPaper>
+
+@code {
+    [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
+    [SupplyParameterFromQuery(Name = "error")] private string? Error { get; set; }
+}

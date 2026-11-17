@@ -1,0 +1,47 @@
+<DeviceInventoryTable TItem="Software" Title="@Loc[LocKeys.Device.Software]"
+                      Items="@(Device.Softwares.Where(x => x.Software != null).Select(x => x.Software!).OrderBy(x => x.Name))"
+                      SearchText="@(item => $"{item.Name} {item.Version} {item.Major} {item.Minor} {item.Build} {item.Revision}")">
+    <Columns>
+        <PropertyColumn T="Software" TProperty="string" Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]"/>
+        <PropertyColumn T="Software" TProperty="string" Property="x => x.Version" Title="@Loc[LocKeys.Device.Version]"/>
+        <PropertyColumn T="Software" TProperty="int" Property="x => x.Major" Title="@Loc[LocKeys.Device.Major]"/>
+        <PropertyColumn T="Software" TProperty="int" Property="x => x.Minor" Title="@Loc[LocKeys.Device.Minor]"/>
+        <PropertyColumn T="Software" TProperty="int" Property="x => x.Build" Title="@Loc[LocKeys.Device.Build]"/>
+        <PropertyColumn T="Software" TProperty="int" Property="x => x.Revision" Title="@Loc[LocKeys.Device.Revision]"/>
+        @if (!IsMac)
+        {
+            <TemplateColumn T="Software" Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+                <CellTemplate>
+                    <PermissionView Policy="@Constants.Permissions.DeviceUninstallSoftware">
+                        <MudTooltip Placement="Placement.Left" Text="@(CanUninstall(context.Item) ? UiText.Get(LocKeys.Ui.DeviceSoftwareTab.UninstallThisVersionFromThisDevice) : UiText.Get(LocKeys.Ui.DeviceSoftwareTab.NoUninstallCommandIsAvailableOrTheDeviceIs))">
+                            <MudButton Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Outlined.Delete"
+                                       OnClick="@Snackbar.GuardAction(() => !CanUninstall(context.Item), Device.ArchivedAtUtc is not null ? UiText.Get(LocKeys.Ui.DeviceSoftwareTab.RestoreThisDeviceBeforeUninstallingSoftware) : UiText.Get(LocKeys.Ui.DeviceSoftwareTab.NoUninstallCommandIsAvailableForThisSoftware), () => OnUninstallClicked(context.Item))">@Loc[LocKeys.Ui.DeviceSoftwareTab.Uninstall]</MudButton>
+                        </MudTooltip>
+                    </PermissionView>
+                </CellTemplate>
+            </TemplateColumn>
+        }
+    </Columns>
+</DeviceInventoryTable>
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+
+    private bool IsMac => Device.AgentPlatform == CloneDeploy_Agent.Contracts.AgentPlatform.MacOS;
+
+    private bool CanUninstall(Software software) => !IsMac && Device.ArchivedAtUtc is null &&
+        !string.IsNullOrWhiteSpace(software.Name) && Device.Softwares.Any(x => x.SoftwareId == software.Id && !string.IsNullOrWhiteSpace(x.UninstallString));
+
+    private async Task OnUninstallClicked(Software software)
+    {
+        if (!CanUninstall(software)) return;
+        var parameters = new DialogParameters<Dialogs.DeviceSoftwareUninstallDialog>
+        {
+            { x => x.DeviceId, Device.Id }, { x => x.DeviceName, Device.Name }, { x => x.Software, software }
+        };
+        var dialog = await Dialog.ShowAsync<Dialogs.DeviceSoftwareUninstallDialog>(UiText.Get(LocKeys.Ui.DeviceSoftwareTab.UninstallSoftware), parameters,
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Small, BackdropClick = false, CloseOnEscapeKey = false });
+        if (await dialog.Result is { Canceled: false })
+            Snackbar.Add(UiText.Get(LocKeys.Ui.DeviceSoftwareTab.UninstallQueuedTrackItsProgressInTheDeviceS), Severity.Success);
+    }
+}

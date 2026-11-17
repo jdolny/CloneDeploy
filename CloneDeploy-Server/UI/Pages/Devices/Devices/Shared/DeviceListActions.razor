@@ -1,0 +1,13 @@
+<ActionButtons>
+    <MainButton>
+        <PermissionView Policy="@Constants.Permissions.DeviceAdd">
+            <MudButton OnClick="OnAddDevice" Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add">@Loc[LocKeys.Group.AddDevice]</MudButton>
+        </PermissionView>
+    </MainButton>
+</ActionButtons>
+
+@code {
+    // A stable callback lets Blazor skip rerendering this header during list/activity updates.
+    [Parameter] public EventCallback OnAddDevice { get; set; }
+}

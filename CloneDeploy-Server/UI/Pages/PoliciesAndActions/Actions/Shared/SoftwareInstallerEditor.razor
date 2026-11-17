@@ -1,0 +1,177 @@
+@using CloneDeploy_Agent.Contracts
+@implements IAsyncDisposable
+@inject ActionService Files
+
+<MudGrid Spacing="3">
+
+    @if (_loading)
+    {
+        <MudItem xs="12">
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+        </MudItem>
+    }
+    else
+    {
+        <MudItem xs="12">
+            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+                <MudButton OnClick="OnManageFilesClicked" Disabled="Disabled" StartIcon="@Icons.Material.Filled.AttachFile"
+                           Variant="Variant.Outlined" Color="Color.Primary">@Loc[LocKeys.Ui.SoftwareInstallerEditor.AddManageFiles]
+                </MudButton>
+                <MudButton OnClick="OnRefreshClicked" Disabled="@(Disabled || _loading)"
+                           StartIcon="@Icons.Material.Filled.Refresh">@Loc[LocKeys.Ui.SoftwareInstallerEditor.RefreshFiles]
+                </MudButton>
+            </MudStack>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudSelect T="int?" Value="SelectedId" ValueChanged="SelectInstaller" Label="@Loc[LocKeys.Ui.SoftwareInstallerEditor.InstallerFile]"
+                       Variant="Variant.Outlined"
+                       Required="true" RequiredError="@Loc[LocKeys.Ui.SoftwareInstallerEditor.SelectAnAttachedInstallerFile]" Disabled="Disabled"
+                       HelperText="@Loc[LocKeys.Ui.SoftwareInstallerEditor.OnePrimaryInstallerIsRunOtherAttachmentsRemainSupporting]">
+                @foreach (var file in Candidates)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)file.Id)">@file.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        @if (!Candidates.Any())
+        {
+            <MudItem xs="12">
+                <MudAlert Severity="Severity.Info">@UiText.Get(LocKeys.Ui.SoftwareInstallerEditor.AttachA0InstallerToConfigureThisAction, ((ActionService.InstallerExtension(SoftwareAction))))
+                </MudAlert>
+            </MudItem>
+        }
+        else if (SelectedId is null)
+        {
+            <MudItem xs="12">
+                <MudAlert
+                    Severity="Severity.Warning">@(SoftwareAction.InstallerFileId.HasValue || !string.IsNullOrWhiteSpace(SoftwareAction.Command)
+                        ? UiText.Get(LocKeys.Ui.SoftwareInstallerEditor.ThePreviousInstallerIsMissingOrDoesNotMatch)
+                        : UiText.Get(LocKeys.Ui.SoftwareInstallerEditor.SelectThePrimaryInstallerFromTheAttachedFiles))</MudAlert>
+            </MudItem>
+        }
+    }
+
+    @if (_items.Any(x => !ActionService.IsInstallerReady(x)))
+    {
+        <MudItem xs="12">
+            <MudAlert Severity="Severity.Warning">@Loc[LocKeys.Ui.SoftwareInstallerEditor.NotReadyToRunOneOrMoreAttachedFiles]
+            </MudAlert>
+        </MudItem>
+    }
+    @if (SoftwareAction.Type == SoftwareActionType.Pkg)
+    {
+        <MudItem xs="12"><MudText Typo="Typo.caption">@Loc[LocKeys.Ui.SoftwareInstallerEditor.InstallsAsRootOnMacOSUsingInstallerPkgWith]</MudText></MudItem>
+    }
+    else
+    {
+    <MudItem xs="12">
+        <MudTextField @bind-Value="SoftwareAction.AdditionalArguments" Label="@Loc[LocKeys.Ui.SoftwareInstallerEditor.AdditionalArguments]"
+                      Variant="Variant.Outlined" Disabled="Disabled"
+                      HelperText="@(SoftwareAction.Type == SoftwareActionType.Exe ? UiText.Get(LocKeys.Ui.SoftwareInstallerEditor.SilentSwitchesVaryByInstallerEnterTheVendorS) : UiText.Get(LocKeys.Ui.SoftwareInstallerEditor.DefaultsToQnNorestartWhenSelectingAnMSIOr))"/>
+    </MudItem>
+    }
+</MudGrid>
+
+@code {
+    [Parameter, EditorRequired] public SoftwareAction SoftwareAction { get; set; } = null!;
+    [Parameter] public bool Disabled { get; set; }
+    private readonly PeriodicTimer _timer = new(TimeSpan.FromSeconds(2));
+    private bool _disposed;
+    private List<ActionFileItemDto> _items = [];
+    private Task? _polling;
+    private Guid? _loadedGuid;
+    private (SoftwareActionType Type, MsiInstallType Operation)? _previousType;
+    private bool _loading;
+    private bool _managingFiles;
+    private IEnumerable<ActionFileItemDto> Candidates => _items.Where(x => ActionService.MatchesInstaller(SoftwareAction, x.Name));
+    private int? SelectedId => Candidates.FirstOrDefault(x => x.Id == SoftwareAction.InstallerFileId)?.Id;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var current = (SoftwareAction.Type, SoftwareAction.MsiInstallType);
+        if (_previousType.HasValue && _previousType != current )
+        {
+            if (_previousType.Value.Type == SoftwareActionType.Msi && SoftwareAction.Type == SoftwareActionType.Exe &&
+                SoftwareAction.AdditionalArguments == ActionService.MsiArguments)
+                SoftwareAction.AdditionalArguments = null;
+            if (SoftwareAction.InstallerFileId.HasValue && !ActionService.MatchesInstaller(SoftwareAction, SoftwareAction.Command ?? ""))
+            {
+                SoftwareAction.InstallerFileId = null;
+                SoftwareAction.Command = null;
+            }
+        }
+
+        var changedType = _previousType != current;
+        _previousType = current;
+        if (_loadedGuid != SoftwareAction.Guid)
+        {
+            _loadedGuid = SoftwareAction.Guid;
+            await OnRefreshClicked();
+            _polling ??= PollAsync();
+        }
+        else if (changedType) ActionService.SynchronizeInstaller(SoftwareAction, _items);
+    }
+
+    private void SelectInstaller(int? id)
+    {
+        var file = Candidates.FirstOrDefault(x => x.Id == id);
+        if (file is null) return;
+        var result = ActionService.SelectInstaller(SoftwareAction, file);
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+    }
+
+    private async Task OnRefreshClicked()
+    {
+        if (_loading || _disposed) return;
+        _loading = true;
+        try
+        {
+            var result = await Files.GetActionFilesAsync(SoftwareAction.Guid);
+            _items = result.Data ?? [];
+            if (!result.Success)
+            {
+                Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+                return;
+            }
+            if (!Disabled) ActionService.SynchronizeInstaller(SoftwareAction, _items);
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task OnManageFilesClicked()
+    {
+        if (_managingFiles || Disabled) return;
+        _managingFiles = true;
+        var parameters = new DialogParameters<ActionFilesDialog>
+        {
+            { x => x.ActionGuid, SoftwareAction.Guid },
+            { x => x.InstallerFileId, SoftwareAction.InstallerFileId }
+        };
+        var dialog = await Dialog.ShowAsync<ActionFilesDialog>(parameters,
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = false });
+        await dialog.Result;
+        await OnRefreshClicked();
+        _managingFiles = false;
+    }
+
+    private async Task PollAsync()
+    {
+        while (await _timer.WaitForNextTickAsync())
+            await InvokeAsync(async () =>
+            {
+                if (_disposed || Disabled || _loading || _managingFiles || !_items.Any(x => x.Busy)) return;
+                await OnRefreshClicked();
+                StateHasChanged();
+            });
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _disposed = true;
+        _timer.Dispose();
+        if (_polling is not null) await _polling;
+    }
+}

@@ -1,0 +1,56 @@
+@inject DriverService Service
+<MudStack Spacing="3" Class="mb-4">
+    <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DriverModelMatching.InventoriedModels]</MudText>
+    <MudSelect T="string" @bind-Value="_brand" Label="@Loc[LocKeys.Device.Manufacturer]" Variant="Variant.Outlined" Disabled="Disabled" Clearable="true">
+        @foreach (var brand in Inventory.Select(x => x.Manufacturer).Distinct().Order()) { <MudSelectItem T="string" Value="@brand">@brand</MudSelectItem> }
+    </MudSelect>
+    <MudAutocomplete T="InventoriedModelDto" Label="@Loc[LocKeys.Ui.DriverModelMatching.AddModel]" SearchFunc="SearchModelsAsync" ValueChanged="AddModel" ToStringFunc="@(m => m is null ? "" : $"{m.Manufacturer} — {m.Model}")" Disabled="Disabled" ResetValueOnEmptyText="true" Clearable="true" Variant="Variant.Outlined" />
+    <MudDataGrid T="DriverModelLink" Items="Profile.Models" Dense="true" Elevation="0" Outlined="true" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize" QuickFilter="@(x => string.IsNullOrWhiteSpace(_gridSearch0) || (x.Manufacturer + " " + x.Model).Contains(_gridSearch0.Trim(), StringComparison.OrdinalIgnoreCase))"><ToolBarContent><MudIcon Icon="@Icons.Material.Outlined.Devices" Color="Color.Primary"/><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ManageDriverPage.Models]</MudText><MudSpacer/><MudTextField T="string" @bind-Value="_gridSearch0" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" aria-label="@Loc[LocKeys.Ui.DriverModelMatching.SearchModels]" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/></ToolBarContent><Columns><TemplateColumn Title="@Loc[LocKeys.Device.Manufacturer]" Sortable="false" Filterable="false"><CellTemplate>@context.Item.Manufacturer</CellTemplate></TemplateColumn><TemplateColumn Title="@Loc[LocKeys.Device.Model]" Sortable="false" Filterable="false"><CellTemplate>@context.Item.Model</CellTemplate></TemplateColumn><TemplateColumn Title="@Loc[LocKeys.Common.Actions]" Sortable="false" Filterable="false"><CellTemplate><MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="@(() => OnRemoveModelClicked(context.Item))" Disabled="Disabled" aria-label="@Loc[LocKeys.Ui.DriverModelMatching.RemoveModelLink]" /></CellTemplate></TemplateColumn></Columns><PagerContent><MudDataGridPager T="DriverModelLink"/></PagerContent></MudDataGrid>
+    <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DriverModelMatching.OptionalRegexMatching]</MudText>
+    <MudTextField @bind-Value="Profile.ManufacturerRegex" Label="@Loc[LocKeys.Ui.ManageDeploymentRulePage.ManufacturerRegex]" MaxLength="500" Variant="Variant.Outlined" Disabled="Disabled" />
+    <MudTextField @bind-Value="Profile.ModelRegex" Label="@Loc[LocKeys.Ui.ManageDeploymentRulePage.ModelRegex]" MaxLength="500" Variant="Variant.Outlined" Disabled="Disabled" />
+    @foreach (var rule in Profile.RegexRules)
+    {
+        <MudPaper @key="rule" Class="pa-3" Outlined="true"><MudStack Spacing="2">
+            <MudTextField @bind-Value="rule.ManufacturerRegex" Label="@Loc[LocKeys.Ui.ManageDeploymentRulePage.ManufacturerRegex]" MaxLength="500" Variant="Variant.Outlined" Disabled="Disabled" />
+            <MudTextField @bind-Value="rule.ModelRegex" Label="@Loc[LocKeys.Ui.ManageDeploymentRulePage.ModelRegex]" MaxLength="500" Variant="Variant.Outlined" Disabled="Disabled" />
+            <MudButton OnClick="@(() => OnRemoveRuleClicked(rule))" Disabled="Disabled" StartIcon="@Icons.Material.Filled.Delete">@Loc[LocKeys.Ui.DriverModelMatching.RemoveRegexRule]</MudButton>
+        </MudStack></MudPaper>
+    }
+    <MudButton OnClick="@(() => OnAddRuleClicked())" Disabled="Disabled" StartIcon="@Icons.Material.Filled.Add">@Loc[LocKeys.Ui.DriverModelMatching.AddRegexRule]</MudButton>
+    <MudButton OnClick="OnPreviewClicked" Disabled="@(Disabled || _busy)" Variant="Variant.Outlined">@Loc[LocKeys.Group.Preview]</MudButton>
+
+    @if (_matches is not null)
+    {
+        <MudText>@UiText.Get(LocKeys.Ui.DriverModelMatching.Text0DevicesAcross1InventoriedModelsMatchThisPreview, (_matches.Sum(x => x.Devices)), (_matches.Count))</MudText>
+        <MudDataGrid T="InventoriedModelDto" Items="_matches" Dense="true" RowsPerPage="10" Elevation="0" Outlined="true" Class="device-list-grid" QuickFilter="@(x => string.IsNullOrWhiteSpace(_gridSearch1) || (x.Manufacturer + " " + x.Model).Contains(_gridSearch1.Trim(), StringComparison.OrdinalIgnoreCase))"><ToolBarContent><MudIcon Icon="@Icons.Material.Outlined.Devices" Color="Color.Primary"/><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DeviceGroupCriteriaDialog.MatchingDevices]</MudText><MudSpacer/><MudTextField T="string" @bind-Value="_gridSearch1" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" aria-label="@Loc[LocKeys.Ui.DriverModelMatching.SearchModels]" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/></ToolBarContent><Columns><TemplateColumn Title="@Loc[LocKeys.Device.Manufacturer]" Sortable="false" Filterable="false"><CellTemplate>@context.Item.Manufacturer</CellTemplate></TemplateColumn><TemplateColumn Title="@Loc[LocKeys.Device.Model]" Sortable="false" Filterable="false"><CellTemplate>@context.Item.Model</CellTemplate></TemplateColumn><TemplateColumn Title="@Loc[LocKeys.Group.Devices]" Sortable="false" Filterable="false"><CellTemplate>@context.Item.Devices</CellTemplate></TemplateColumn></Columns><PagerContent><MudDataGridPager T="InventoriedModelDto"/></PagerContent></MudDataGrid>
+    }
+</MudStack>
+@code {
+    private void OnRemoveModelClicked(DriverModelLink model) { if (!Disabled) Profile.Models.Remove(model); }
+    private void OnRemoveRuleClicked(DriverPackRegexRule rule) { if (!Disabled) Profile.RegexRules.Remove(rule); }
+    private void OnAddRuleClicked() { if (!Disabled) Profile.RegexRules.Add(new()); }
+
+    private string? _gridSearch0;
+    private string? _gridSearch1;
+
+    [Parameter, EditorRequired] public DriverPack Profile { get; set; } = null!;
+    [Parameter] public List<InventoriedModelDto> Inventory { get; set; } = [];
+    [Parameter] public bool Disabled { get; set; }
+    private string? _brand;
+    private bool _busy;
+    private List<InventoriedModelDto>? _matches;
+    private Task<IEnumerable<InventoriedModelDto>> SearchModelsAsync(string? text, CancellationToken token) => Task.FromResult(Inventory.Where(x =>
+        (string.IsNullOrWhiteSpace(_brand) || x.Manufacturer == _brand) && (string.IsNullOrWhiteSpace(text) || x.Model.Contains(text, StringComparison.OrdinalIgnoreCase))));
+    private void AddModel(InventoriedModelDto? model)
+    {
+        if (model is null || Profile.Models.Any(x => x.Manufacturer == model.Manufacturer && x.Model == model.Model)) return;
+        Profile.Models.Add(new DriverModelLink { Manufacturer = model.Manufacturer, Model = model.Model }); _matches = null;
+    }
+    private async Task OnPreviewClicked()
+    {
+        _busy = true; var result = await Service.PreviewMatchingAsync(Profile);
+        _matches = result.Data; if (!result.Success) Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); _busy = false;
+    }
+}
+

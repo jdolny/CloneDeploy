@@ -1,0 +1,44 @@
+@inject HelpDeskUiService Settings
+@inject AuthenticationStateProvider Authentication
+
+<MudDialog>
+    <DialogContent>
+        @if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert> }
+        <MudForm @ref="_form" Disabled="_busy">
+            <MudTextField T="string" @bind-Value="_name" Label="@Loc[LocKeys.Common.Name]" Required="true" MaxLength="100" Variant="Variant.Outlined" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_busy">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="Create" Disabled="_busy" Color="Color.Primary" Variant="Variant.Filled">@(CategoryId == 0 ? Loc[LocKeys.Common.Create] : Loc[LocKeys.Common.SaveChanges])</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public int CategoryId { get; set; }
+    [Parameter] public string CategoryName { get; set; } = "";
+    protected override void OnInitialized() => _name = CategoryName;
+    private MudForm _form = null!;
+    private string _name = "";
+    private string? _error;
+    private bool _busy;
+    private void Cancel() => MudDialog.Cancel();
+    private async Task Create()
+    {
+        if (_busy) return;
+        _busy = true; _error = null;
+        try
+        {
+            await _form.ValidateAsync();
+            if (!_form.IsValid) return;
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            await Settings.SaveRoutingCategoryAsync(user, CategoryId, _name);
+            Snackbar.Add(UiText.Get(LocKeys.Ui.HelpConfigurationNamesTab.HelpDeskConfigurationSaved), Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (InvalidOperationException ex) { _error = ex.Message; }
+        catch { _error = UiText.Get(LocKeys.Ui.HelpConfigurationNamesTab.HelpDeskConfigurationCouldNotBeSavedOrLoaded); }
+        finally { _busy = false; }
+    }
+}

@@ -1,0 +1,266 @@
+@page "/tasks/imaging"
+@attribute [Authorize]
+@inject AuthenticationStateProvider TaskAuthentication
+@inject IAuthorizationService TaskAuthorization
+@implements IAsyncDisposable
+@inject ImagingService Tasks
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.NavMenu.ImagingTasks]" />
+@if (_access?.ViewAll == true)
+{
+    <MudToggleGroup T="bool" Value="_allTasks" ValueChanged="ScopeChanged" SelectionMode="SelectionMode.SingleSelection" Color="Color.Primary" Size="Size.Small" Class="mb-3" Style="width: 33.333%; min-width: min(100%, 20rem); align-self: flex-start;">
+        <MudToggleItem Value="false" Text="@Loc[LocKeys.Ui.DeploymentsPage.MyTasks]" />
+        <MudToggleItem Value="true" Text="@Loc[LocKeys.Ui.DeploymentsPage.AllTasks]" />
+    </MudToggleGroup>
+}
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert>
+}
+<div class="device-detail device-workspace">
+    <ResponsiveTabs PanelOrder="@(new int[] { 0, 2, 1 })" ActivePanelIndex="_view" ActivePanelIndexChanged="OnViewChanged" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.Policy.Active]" Icon="@Icons.Material.Outlined.PendingActions">
+                <TabHelp Href="ui/tasks/imaging-tasks-active.html" Title="@Loc[LocKeys.Policy.Active]" />
+            @if (_view == 0) { <MudStack Class="py-4">@TaskGrid</MudStack> }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ImagingInfrastructurePage.Multicast]" Icon="@Icons.Material.Outlined.WifiTethering">
+                <TabHelp Href="ui/tasks/imaging-multicast-sessions.html" Title="@Loc[LocKeys.Ui.ImagingInfrastructurePage.Multicast]" />
+            @if (_view == 2)
+            {
+                <div class="section-action-bar">
+                    <MudButton Disabled="!_canCreateMulticast" OnClick="OnCreateMulticastClicked" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.WifiTethering">@Loc[LocKeys.Ui.ImagingTasksPage.CreateMulticastSession]</MudButton>
+                </div>
+                <MulticastSessionsTab @key="(_multicastVersion, _allTasks)" AllTasks="_allTasks" />
+            }
+        </MudTabPanel>
+            <MudTabPanel Class="page-tab-divider" Text="@Loc[LocKeys.Policy.Activity]" Icon="@Icons.Material.Outlined.History">
+                <TabHelp Href="ui/tasks/imaging-tasks-history.html" Title="@Loc[LocKeys.Policy.Activity]" />
+            @if (_view == 1) { <MudStack Class="py-4">@TaskGrid</MudStack> }
+        </MudTabPanel>
+        </ResponsiveTabs>
+</div>
+
+@code {
+    private TaskAccess? _access;
+    private bool _allTasks, _canCreateMulticast;
+    private async Task ScopeChanged(bool all) { _allTasks = all; await OnRefreshClicked(); }
+
+    private RenderFragment TaskGrid => @<MudDataGrid T="StableGridRow<ImagingTaskRowDto>" Items="VisibleTasks" Loading="_loading" Dense="true" Hover="true" RowsPerPage="@Constants.UI.DefaultPageSize" Elevation="0" Outlined="true" Class="device-list-grid" QuickFilter="@(row => MatchesSearch(row.Value))">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.Computer" Color="Color.Primary"/>
+        <MudText Typo="Typo.h6">@(_view == 0 ? UiText.Get(LocKeys.Ui.ImagingTasksPage.ActiveImagingTasks) : UiText.Get(LocKeys.Ui.ImagingTasksPage.ImagingHistory))</MudText>
+        <MudSpacer/>
+        <MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Ui.DeploymentsPage.RefreshTasks]"><MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="OnRefreshClicked" Disabled="_refreshing" aria-label="@Loc[LocKeys.Ui.DeploymentsPage.RefreshTasks]"/></MudTooltip>
+        <MudTextField T="string" @bind-Value="_search" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ImagingTasksPage.SearchTasks]" aria-label="@Loc[LocKeys.Ui.ImagingTasksPage.SearchImagingTasks]" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/>
+    </ToolBarContent>
+    <Columns>
+        <TemplateColumn Title="@Loc[LocKeys.Dashboard.Device]" Sortable="false" Filterable="false"><CellTemplate><MudLink Href="@($"/devices/manage/{context.Item.Value.DeviceId}")">@context.Item.Value.DeviceName</MudLink></CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Dashboard.RequestedBy]"><CellTemplate>@context.Item.Value.RequestedBy</CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.StorageProvider.Type]" Sortable="false" Filterable="false"><CellTemplate>@UiText.Label(context.Item.Value.Type)</CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Device.Image]" Sortable="false" Filterable="false"><CellTemplate>@context.Item.Value.ImageName</CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Dashboard.Progress]" Sortable="false" Filterable="false"><CellTemplate>
+            <MudStack Spacing="1" Style="min-width: 240px">
+                @{
+                    var complete = context.Item.Value.Status == ImagingStatus.Succeeded && !context.Item.Value.SetupPending;
+                    var value = complete ? 100 : context.Item.Value.Percent ?? 0;
+                    var active = context.Item.Value.Status > ImagingStatus.TaskCreated && context.Item.Value.Status < ImagingStatus.Succeeded && !Stale(context.Item.Value);
+                }
+                <MudText Typo="Typo.caption">@Label(context.Item.Value, context.Item.Value.Phase) @(complete || context.Item.Value.Percent is not null ? $"{value:0}%" : "")</MudText>
+                <MudProgressLinear Value="value" Indeterminate="@(active && context.Item.Value.Percent is null)"
+                                   Color="@(context.Item.Value.Status is ImagingStatus.Failed or ImagingStatus.Interrupted ? Color.Error : Color.Primary)"
+                                   aria-label="@($"{context.Item.Value.DeviceName}: {Label(context.Item.Value, context.Item.Value.Phase)}")" />
+                @if (!string.IsNullOrWhiteSpace(context.Item.Value.StatusMessage))
+                { <MudText Typo="Typo.caption">@context.Item.Value.StatusMessage</MudText> }
+                <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.ImagingTasksPage.Elapsed0, (Elapsed(context.Item.Value)))</MudText>
+                @if (active && context.Item.Value.Rate is not null)
+                { <MudText Typo="Typo.caption" title="@Loc[LocKeys.Ui.ImagingTasksPage.AdapterTrafficIncludingOtherTrafficAndProtocolOverhead]">@UiText.Get(LocKeys.Ui.ImagingTasksPage.Network01, ((context.Item.Value.Type == "Upload" ? UiText.Get(LocKeys.Ui.ImagingTasksPage.TX) : UiText.Get(LocKeys.Ui.ImagingTasksPage.RX))), (context.Item.Value.Rate))</MudText> }
+            </MudStack>
+        </CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Image.VersionStatus]" Sortable="false" Filterable="false"><CellTemplate>
+            <MudStack Spacing="0">
+            @if (context.Item.Value.Status == ImagingStatus.InImagingQueue) { <MudText>@UiText.Get(LocKeys.Ui.ImagingTasksPage.WaitingForImagingSlotPosition0, (context.Item.Value.QueuePosition))</MudText> }
+            <MudText>@(Stale(context.Item.Value) ? UiText.Get(LocKeys.Ui.ImagingTasksPage.NotReporting) : context.Item.Value.Status == ImagingStatus.Imaging ? UiText.Get(LocKeys.Ui.HelpDeskPage.InProgress) : context.Item.Value.Status == ImagingStatus.TaskCreated ? UiText.Get(LocKeys.Scheduler.StatusQueued) : UiText.Label(context.Item.Value.Status))</MudText>
+            @if (context.Item.Value.ErrorMessage is not null) { <MudText Color="Color.Error" Typo="Typo.caption">@context.Item.Value.ErrorMessage</MudText> }
+            <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.HelpTicketPage.Updated0, (context.Item.Value.LastUpdatedAtUtc.ToLocalTime().ToString("g")))</MudText>
+            </MudStack>
+        </CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.ImagingTasksPage.SetupPolicies]" Sortable="false" Filterable="false"><CellTemplate>
+            @if (context.Item.Value.SetupSteps.Count > 0)
+            {
+                <details>
+                    <summary>@UiText.Get(LocKeys.Ui.ImagingTasksPage.Text0Policies, (context.Item.Value.SetupSteps.Count))</summary>
+                    <MudStack Spacing="2" Class="mt-2" Style="min-width: 260px">
+                        @foreach (var step in context.Item.Value.SetupSteps)
+                        {
+                            <MudStack Spacing="0">
+                                <MudText>@step.Position. @step.Name — @UiText.Label(step.Status)</MudText>
+                                @if (!string.IsNullOrWhiteSpace(step.Detail))
+                                {
+                                    <MudText Typo="Typo.caption" Style="white-space: pre-wrap; overflow-wrap: anywhere;">@step.Detail</MudText>
+                                }
+                                @if (step.CanRecover && context.Item.Value.DeploymentId is { } deploymentId)
+                                {
+                                    <MudStack Row="true">
+                                        <MudButton Size="Size.Small" Disabled="_cancelling" OnClick="@(() => OnRecoverClicked(deploymentId, context.Item.Value.DeviceId, step, false))">@Loc[LocKeys.Ui.ImagingTasksPage.RetryFailedPolicy]</MudButton>
+                                        <MudButton Size="Size.Small" Disabled="_cancelling" OnClick="@(() => OnRecoverClicked(deploymentId, context.Item.Value.DeviceId, step, true))">@Loc[LocKeys.Ui.ImagingTasksPage.SkipAndContinue]</MudButton>
+                                    </MudStack>
+                                }
+                            </MudStack>
+                        }
+                    </MudStack>
+                </details>
+            }
+        </CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" Sortable="false" Filterable="false"><CellTemplate>
+            @if (context.Item.Value.CanManage && context.Item.Value.DeploymentId is { } deploymentId && context.Item.Value.Status != ImagingStatus.Cancelled && (context.Item.Value.Status != ImagingStatus.Succeeded || context.Item.Value.SetupPending))
+            {
+                <MudButton OnClick="@(() => OnCancelDeploymentClicked(deploymentId, context.Item.Value.DeviceId))" Disabled="_cancelling" Color="Color.Error" Size="Size.Small">@(context.Item.Value.SetupPending ? UiText.Get(LocKeys.Ui.ImagingTasksPage.CancelRemainingSetup) : UiText.Get(LocKeys.Common.Cancel))</MudButton>
+            }
+            @if (context.Item.Value.CanManage && context.Item.Value.UploadId is { } uploadId && context.Item.Value.Status < ImagingStatus.Succeeded)
+            {
+                <MudButton OnClick="@(() => OnCancelUploadClicked(uploadId))" Disabled="_cancelling" Color="Color.Error" Size="Size.Small">@Loc[LocKeys.Common.Cancel]</MudButton>
+            }
+        </CellTemplate></TemplateColumn>
+    </Columns>
+    <NoRecordsContent><MudText>@(string.IsNullOrWhiteSpace(_search) ? _view == 0 ? UiText.Get(LocKeys.Ui.ImagingTasksPage.NoActiveImagingTasksCapturesAndDeploymentsWillAppear) : UiText.Get(LocKeys.Ui.ImagingTasksPage.NoFinishedImagingTasks) : UiText.Get(LocKeys.Ui.ImagingTasksPage.NoTasksMatchYourSearch))</MudText></NoRecordsContent>
+    <PagerContent><MudDataGridPager T="StableGridRow<ImagingTaskRowDto>"/></PagerContent>
+</MudDataGrid>;
+
+    [SupplyParameterFromQuery(Name = "view")] public string? View { get; set; }
+    private int _view;
+    private int _multicastVersion;
+    private async Task OnCreateMulticastClicked()
+    {
+        if (_disposed || _view != 2 || !_canCreateMulticast) return;
+        var dialog = await Dialog.ShowAsync<CreateMulticastDialog>(UiText.Get(LocKeys.Ui.ImagingTasksPage.CreateMulticastSession),
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Small, BackdropClick = false });
+        if (await dialog.Result is { Canceled: false } && !_disposed)
+        {
+            _multicastVersion++;
+            await OnViewChanged(2);
+        }
+    }
+    private string? _search;
+    private bool _refreshing;
+    private IEnumerable<StableGridRow<ImagingTaskRowDto>> VisibleTasks => _rows.Items.Where(x => (x.Value.Status >= ImagingStatus.Succeeded && !x.Value.SetupPending) == (_view == 1));
+    private bool MatchesSearch(ImagingTaskRowDto task) => string.IsNullOrWhiteSpace(_search) ||
+        $"{task.DeviceName} {task.ImageName} {task.Type} {task.Status} {task.StatusMessage} {task.ErrorMessage}".Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+    protected override void OnParametersSet() => _view = string.Equals(View, "multicast", StringComparison.OrdinalIgnoreCase) ? 2 : string.Equals(View, "history", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+    private async Task OnViewChanged(int view)
+    {
+        // MudTabs also reports selection changes while its panels are being disposed.
+        await Task.Yield();
+        if (_disposed || view is < 0 or > 2 || view == _view) return;
+        _view = view;
+    }
+    private readonly StableGridRows<ImagingTaskRowDto, (int, Guid?, Guid?, DateTime)> _rows = new(x => (x.DeviceId, x.UploadId, x.DeploymentId, x.StartedAtUtc));
+    private string? _error;
+    private bool _loading = true, _cancelling, _disposed;
+    private readonly CancellationTokenSource _stop = new();
+    private Task? _poll;
+    protected override async Task OnInitializedAsync() { await OnRefreshClicked(); if (!_disposed) _poll = Poll(); }
+    private static bool Stale(ImagingTaskRowDto task) => !task.SetupPending && task.Status > ImagingStatus.TaskCreated && task.Status < ImagingStatus.Succeeded &&
+        DateTime.UtcNow - task.LastUpdatedAtUtc > TimeSpan.FromSeconds(30);
+    private static string Label(ImagingTaskRowDto task, int phase) => (task.Type == "Upload", phase) switch
+    {
+        (true, 0) => UiText.Get(LocKeys.Ui.ImagingTasksPage.PreparingToUploadImage), (true, 1) => UiText.Get(LocKeys.Ui.ImagingTasksPage.CapturingAndUploadingImage), (true, 2) => UiText.Get(LocKeys.Ui.ImagingTasksPage.FinalizingUpload),
+        (_, 3) => UiText.Get(LocKeys.Ui.ImagingTasksPage.WaitingForWindowsSetup), (_, 4) => UiText.Get(LocKeys.Ui.DeploymentPoliciesTab.PostDeploymentPolicies),
+        (_, 0) => UiText.Get(LocKeys.Ui.ImagingTasksPage.PreparingToDeployImage), (_, 1) => UiText.Get(LocKeys.Ui.ImagingTasksPage.DeployingImage), _ => UiText.Get(LocKeys.Ui.ImagingTasksPage.FinalizingImage)
+    };
+    private static string Elapsed(ImagingTaskRowDto task)
+    {
+        var end = task.FinishedAtUtc ?? (Stale(task) || task.Status >= ImagingStatus.Succeeded ? task.LastUpdatedAtUtc : DateTime.UtcNow);
+        var elapsed = end - task.StartedAtUtc;
+        if (elapsed < TimeSpan.Zero) elapsed = TimeSpan.Zero;
+        return $"{(int)elapsed.TotalHours:00}:{elapsed.Minutes:00}:{elapsed.Seconds:00}";
+    }
+    private async Task OnRefreshClicked()
+    {
+        if (_refreshing || _disposed) return;
+        var token = _stop.Token;
+        _refreshing = true;
+        try
+        {
+        _access = await TaskAccess.ReadAsync(TaskAuthentication, TaskAuthorization);
+        if (_access?.ViewAll != true) _allTasks = false;
+        _canCreateMulticast = (await TaskAuthorization.AuthorizeAsync((await TaskAuthentication.GetAuthenticationStateAsync()).User, Constants.Permissions.DeviceGroupDeployMulticast)).Succeeded;
+        var scope = _allTasks;
+        if (_disposed) return;
+        var result = await Tasks.GetTaskAsync(scope, token);
+        if (_disposed || scope != _allTasks) return;
+        if (result.Success) { _rows.Update(result.Data!.OrderByDescending(x => x.StartedAtUtc).ThenBy(x => x.DeviceId)); _error = null; }
+        else { _rows.Update([]); _error = Loc[result.Error.Code, result.Error.Args]; }
+        _loading = false;
+        }
+        catch (OperationCanceledException) when (_disposed || token.IsCancellationRequested) { }
+        finally { _refreshing = false; }
+    }
+    private async Task OnCancelUploadClicked(Guid id)
+    {
+        if (_cancelling) return;
+        var confirm = await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.ImagingTasksPage.CancelImagingTask), UiText.Get(LocKeys.Ui.ImagingTasksPage.DiscardThisUnfinishedUpload), yesText: UiText.Get(LocKeys.Ui.ImagingTasksPage.CancelUpload), cancelText: UiText.Get(LocKeys.Ui.ImagingTasksPage.KeepRunning));
+        if (confirm != true) return;
+        _cancelling = true;
+        try
+        {
+            var result = await Tasks.CancelTaskAsync(id, _stop.Token);
+            if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+            await OnRefreshClicked();
+        }
+        finally { _cancelling = false; }
+    }
+    private async Task OnCancelDeploymentClicked(Guid id, int deviceId)
+    {
+        if (_cancelling) return;
+        if (await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.ImagingTasksPage.CancelDeployment), UiText.Get(LocKeys.Ui.ImagingTasksPage.CancelRemainingImagingSetupWorkAndReleaseNormalPolicies), yesText: UiText.Get(LocKeys.Ui.ImagingTasksPage.CancelDeployment), cancelText: UiText.Get(LocKeys.Ui.ImagingTasksPage.KeepTask)) != true) return;
+        _cancelling = true;
+        try
+        {
+            var result = await Tasks.CancelTaskDeploymentAsync(id, deviceId);
+            if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+            await OnRefreshClicked();
+        }
+        finally { _cancelling = false; }
+    }
+    private async Task OnRecoverClicked(Guid id, int deviceId, ImagingSetupStepDto step, bool skip)
+    {
+        if (_cancelling) return;
+        var title = skip ? UiText.Get(LocKeys.Ui.ImagingTasksPage.SkipFailedPolicy) : UiText.Get(LocKeys.Ui.ImagingTasksPage.RetryFailedPolicy);
+        var message = skip
+            ? UiText.Get(LocKeys.Ui.ImagingTasksPage.Skip0AndContinueSetupLaterPoliciesMayDepend, (step.Name))
+            : UiText.Get(LocKeys.Ui.ImagingTasksPage.Run0AgainFromTheBeginningReviewAnyPartial, (step.Name));
+        if (await Dialog.ShowMessageBoxAsync(title, message, yesText: skip ? UiText.Get(LocKeys.Ui.ImagingTasksPage.SkipAndContinue) : UiText.Get(LocKeys.Common.Retry), cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+        _cancelling = true;
+        try
+        {
+            var result = await Tasks.TaskRecoverPolicyAsync(id, deviceId, step.Id, step.Hash, skip);
+            if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+            await OnRefreshClicked();
+        }
+        finally { _cancelling = false; }
+    }
+
+    private async Task Poll()
+    {
+        var token = _stop.Token;
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(3));
+            while (await timer.WaitForNextTickAsync(token)) await InvokeAsync(async () =>
+            {
+                if (_disposed) return;
+                await OnRefreshClicked();
+                if (!_disposed) StateHasChanged();
+            });
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+    }
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _stop.Cancel();
+        if (_poll is not null) await _poll;
+        _stop.Dispose();
+    }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "clonedeploy-script-editor",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node bundle.mjs"
+  },
+  "overrides": {
+    "dompurify": "3.4.17"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "monaco-editor": "0.56.0"
+  }
+}

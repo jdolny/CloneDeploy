@@ -1,0 +1,16 @@
+<Project>
+  <PropertyGroup>
+    <WinFspDirectory Condition="'$(WinFspDirectory)' == ''">$(MSBuildThisFileDirectory)../../third_party/WinFsp/2.1.25156</WinFspDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(WinFspDirectory)/winfsp-x64.dll" LogicalName="CloneDeploy.WinFsp.winfsp-x64.dll" Link="Resources/WinFsp/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="$(WinFspDirectory)/winfsp-x64.sys" LogicalName="CloneDeploy.WinFsp.winfsp-x64.sys" Link="Resources/WinFsp/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="$(WinFspDirectory)/winfsp-a64.dll" LogicalName="CloneDeploy.WinFsp.winfsp-a64.dll" Link="Resources/WinFsp/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="$(WinFspDirectory)/winfsp-a64.sys" LogicalName="CloneDeploy.WinFsp.winfsp-a64.sys" Link="Resources/WinFsp/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="$(WinFspDirectory)/License.txt" LogicalName="CloneDeploy.WinFsp.License.txt" Link="Resources/WinFsp/%(Filename)%(Extension)" />
+  </ItemGroup>
+  <Target Name="RequireWinFspResources" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('$(WinFspDirectory)/winfsp-x64.dll') Or !Exists('$(WinFspDirectory)/winfsp-x64.sys') Or !Exists('$(WinFspDirectory)/winfsp-a64.dll') Or !Exists('$(WinFspDirectory)/winfsp-a64.sys') Or !Exists('$(WinFspDirectory)/License.txt')"
+           Text="Missing bundled WinFsp files in $(WinFspDirectory). Restore the third_party/WinFsp directory from source control." />
+  </Target>
+</Project>

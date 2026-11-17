@@ -1,0 +1,12 @@
+@page "/reports/software"
+@attribute [Authorize(Policy = Constants.Permissions.ReportSoftware)]
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.SoftwareReportPage.SoftwareReports]" />
+<div class="device-detail device-workspace">
+    <ResponsiveTabs KeepPanelsAlive="true" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+        <MudTabPanel Text="@Loc[LocKeys.Device.Software]" Icon="@Icons.Material.Outlined.Apps">
+            <TabHelp Href="ui/reports/software-reports.html" Title="@Loc[LocKeys.Device.Software]" />
+            <div class="py-4"><SoftwareInventoryReportTab /></div>
+        </MudTabPanel>
+    </ResponsiveTabs>
+</div>

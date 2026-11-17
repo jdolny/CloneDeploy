@@ -1,0 +1,139 @@
+@inject ImagingService ImagingService
+@inject AgentService Wake
+@inject AuthenticationStateProvider Authentication
+@inject IAuthorizationService Authorization
+@inject ILogger<DeviceDeployImageDialog> Logger
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            @if (_loading)
+            {
+                <MudProgressLinear Indeterminate="true" />
+            }
+            @if (_error is not null)
+            {
+                <MudAlert Severity="Severity.Error">@_error</MudAlert>
+            }
+            @if (_loaded)
+            {
+                <MudText Typo="Typo.h6">@_deviceName</MudText>
+                <MudText><b>@Loc[LocKeys.Device.Image]:</b> @_imageName</MudText>
+                <MudText><b>@Loc[LocKeys.Device.DeploymentProfile]:</b> @_profileName</MudText>
+                <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.DeviceDeploymentSettingsTab.Source0, (_source))</MudText>
+                @if (_canTestVersion)
+                {
+                    <MudSelect T="Guid?" @bind-Value="_versionId" Label="@Loc[LocKeys.Ui.DeviceDeployImageDialog.ImageVersion]" Clearable="true" Disabled="_busy" HelperText="@Loc[LocKeys.Ui.DeviceDeployImageDialog.LeaveEmptyToDeployTheActiveVersionUnapprovedVersions]">
+                        @foreach (var version in _versions)
+                        { <MudSelectItem T="Guid?" Value="@((Guid?)version.Id)">@version.Name (@(version.IsApproved ? "approved" : "unapproved"))</MudSelectItem> }
+                    </MudSelect>
+                }
+                <MudAlert Severity="Severity.Warning">@Loc[LocKeys.Device.DeploymentQueueWarning]</MudAlert>
+                @if (_canWake) { <MudCheckBox @bind-Value="_sendWake" Label="@Loc[LocKeys.Ui.DeviceDeployImageDialog.SendWakeUp]" Disabled="_busy" /> }
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked" Disabled="_busy">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="OnReloadReviewClicked" Disabled="@(_busy || _loading)">@Loc[LocKeys.Ui.AgentImagingBootDialog.ReloadReview]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _busy || _loading || !_loaded || !_imageId.HasValue || !_profileId.HasValue, UiText.Get(LocKeys.Ui.DeviceDeployImageDialog.ReloadTheDeploymentReviewAndAssignAnEnabledImage), OnDeployClicked)" Disabled="@(_busy || _loading)"
+                   Color="Color.Primary" Variant="Variant.Filled">@Loc[LocKeys.Device.QueueDeployment]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private void OnCancelClicked() => MudDialog.Cancel();
+
+    [Parameter] public int DeviceId { get; set; }
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private string? _error, _deviceName, _imageName, _profileName, _source;
+    private int? _imageId, _profileId;
+    private bool _loading, _loaded, _busy;
+    private bool _sendWake, _canWake;
+    private bool _canTestVersion;
+    private Guid? _versionId;
+    private List<ImageVersion> _versions = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await Authentication.GetAuthenticationStateAsync()).User;
+        _canTestVersion = (await Authorization.AuthorizeAsync(user, Constants.Permissions.ImageView)).Succeeded &&
+            (await Authorization.AuthorizeAsync(user, Constants.Permissions.ImageDeployUnapproved)).Succeeded;
+        _canWake = _sendWake = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.DeviceWake)).Succeeded;
+        await OnReloadReviewClicked();
+    }
+
+    private async Task OnReloadReviewClicked()
+    {
+        _loading = true;
+        _loaded = false;
+        _imageId = null; _profileId = null;
+        _versionId = null; _versions = [];
+        _error = null;
+        try
+        {
+            var device = await ImagingService.GetDeviceAsync(DeviceId);
+            var images = await ImagingService.GetImagesAsync(includeDisabled: false);
+            var profiles = await ImagingService.GetAllProfilesAsync(includeDisabled: false);
+            if (!device.HasData || !images.Success || !profiles.Success)
+            {
+                var error = device.Error ?? images.Error ?? profiles.Error;
+                _error = error is null ? Loc[LocKeys.Device.NotFound] : Loc[error.Code, error.Args];
+                return;
+            }
+            _deviceName = device.Data!.Name;
+            var effective = await ImagingService.GetEffectiveSettingsAsync(DeviceId);
+            if (!effective.HasData || effective.Data.Error is not null)
+            {
+                _error = effective.Data?.Error ?? UiText.Get(LocKeys.Ui.DeviceDeployImageDialog.UnableToLoadEffectiveImagingSettings);
+                return;
+            }
+            _source = effective.Data.Source;
+            var image = images.Data?.SingleOrDefault(x => x.Id == effective.Data.ImageId);
+            var profile = profiles.Data?.SingleOrDefault(x => x.Id == effective.Data.ProfileId);
+            if (image is null || profile is null)
+            {
+                _error = UiText.Get(LocKeys.Ui.DeviceDeployImageDialog.AssignAnEnabledImageAndDeploymentProfileToThis);
+                return;
+            }
+            _imageId = image.Id; _imageName = image.Name;
+            _profileId = profile.Id; _profileName = profile.Name;
+            if (_canTestVersion) _versions = (await ImagingService.GetVersionsAsync(image.Id)).Data ?? [];
+            _loaded = true;
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task OnDeployClicked()
+    {
+        if (_busy || _loading || !_loaded || !_imageId.HasValue || !_profileId.HasValue) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var result = _versionId.HasValue
+                ? await ImagingService.PrepareVersionAsync(DeviceId, _imageId.Value, _profileId.Value, _versionId.Value)
+                : await ImagingService.PrepareAssignedAsync(DeviceId, _imageId.Value, _profileId.Value);
+            if (result.Success)
+            {
+                if (_sendWake)
+                {
+                    try
+                    {
+                        var user = (await Authentication.GetAuthenticationStateAsync()).User;
+                        var wake = await Wake.WakeDeviceAsync(user, DeviceId);
+                        Snackbar.Add(wake.Detail, wake.Sent == wake.Requested ? Severity.Success : Severity.Warning);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogWarning(ex, "Deployment prepared but wake-up failed for device {DeviceId}", DeviceId);
+                        Snackbar.Add(UiText.Get(LocKeys.Ui.DeviceDeployImageDialog.DeploymentQueuedButWakeUpPacketsCouldNotBe), Severity.Warning);
+                    }
+                }
+                MudDialog.Close(DialogResult.Ok(result.Data!.Id));
+            }
+            else { Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); _loaded = false; }
+        }
+        finally { _busy = false; }
+    }
+}

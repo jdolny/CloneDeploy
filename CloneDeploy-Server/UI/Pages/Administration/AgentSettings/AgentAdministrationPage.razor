@@ -1,0 +1,65 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@page "/administration/agent"
+@page "/administration/agent/{Tab}"
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.AdministrationNavigationGroup.AgentSettings]"/>
+
+<div class="device-detail device-workspace">
+    <ResponsiveTabs PanelOrder="@(new int[] { 0, 6, 4, 1, 5, 2, 3 })" ActivePanelIndex="_tab" ActivePanelIndexChanged="OnTabChanged" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.User.General]" Icon="@Icons.Material.Outlined.Settings">
+                <TabHelp Href="ui/administration/agent-enrollment-general.html" Title="@Loc[LocKeys.User.General]" />
+            @if (_tab == 0)
+            {
+                <CloneDeploy_Server.UI.Pages.Administration.AgentSettings.General.AgentGeneralSettingsTab />
+            }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.AgentAdministrationPage.AgentTools]" Icon="@Icons.Material.Outlined.Security">
+                <TabHelp Href="ui/administration/agent-tools.html" Title="@Loc[LocKeys.Ui.AgentAdministrationPage.AgentTools]" />
+            @if (_tab == 6) { <AgentToolsAccessTab /> }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.AgentAdministrationPage.Branding]" Icon="@Icons.Material.Outlined.Palette">
+                <TabHelp Href="ui/administration/server-settings-branding.html" Title="@Loc[LocKeys.Ui.AgentAdministrationPage.Branding]" />
+            @if (_tab == 4) { <CloneDeploy_Server.UI.Pages.Administration.AgentSettings.Branding.BrandingSettingsTab/> }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.AgentAdministrationPage.Enrollment]" Icon="@Icons.Material.Outlined.AppRegistration">
+                <TabHelp Href="ui/administration/agent-enrollment-overview.html" Title="@Loc[LocKeys.Ui.AgentAdministrationPage.Enrollment]" />
+            @if (_tab == 1)
+            {
+                <CloneDeploy_Server.UI.Pages.Administration.AgentSettings.Enrollment.AgentEnrollmentTab Embedded="true"/>
+            }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.AgentAdministrationPage.Features]" Icon="@Icons.Material.Outlined.ToggleOn">
+                <TabHelp Href="ui/administration/agent-features.html" Title="@Loc[LocKeys.Ui.AgentAdministrationPage.Features]" />
+            @if (_tab == 5) { <CloneDeploy_Server.UI.Pages.Administration.AgentSettings.Features.AgentFeatureSettingsTab/> }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.AgentAdministrationPage.InstallerUpdates]" Icon="@Icons.Material.Outlined.SystemUpdate">
+                <TabHelp Href="ui/administration/agent-enrollment-installer.html" Title="@Loc[LocKeys.Ui.AgentAdministrationPage.InstallerUpdates]" />
+            @if (_tab == 2)
+            {
+                <CloneDeploy_Server.UI.Pages.Administration.AgentSettings.Installer.AgentInstallerTab />
+            }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.AgentAdministrationPage.RemoteAccess]" Icon="@Icons.Material.Outlined.DesktopWindows">
+                <TabHelp Href="ui/administration/remote-access.html" Title="@Loc[LocKeys.Ui.AgentAdministrationPage.RemoteAccess]" />
+            @if (_tab == 3)
+            {
+                <CloneDeploy_Server.UI.Pages.Administration.AgentSettings.RemoteAccess.RemoteAccessSettingsTab />
+            }
+        </MudTabPanel>
+        </ResponsiveTabs>
+</div>
+@code {
+    [Parameter] public string? Tab { get; set; }
+    private int _tab;
+    private static readonly string[] Tabs = ["general", "enrollment", "installer", "remote-access", "branding", "features", "agent-tools"];
+    protected override void OnParametersSet()
+    {
+        var selected = Tab;
+        _tab = Math.Max(0, Array.FindIndex(Tabs, x => string.Equals(x, selected, StringComparison.OrdinalIgnoreCase)));
+    }
+    private void OnTabChanged(int tab)
+    {
+        if (tab == _tab || tab < 0 || tab >= Tabs.Length) return;
+        _tab = tab;
+    }
+}

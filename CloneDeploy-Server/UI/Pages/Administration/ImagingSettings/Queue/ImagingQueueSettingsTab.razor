@@ -1,0 +1,45 @@
+@inject ServerSettingsUiService Settings
+
+<div class="section-action-bar">
+    <MudButton OnClick="@Snackbar.GuardAction(() => _busy || !_loaded || _limit < 0 || _limit > 1000, !_loaded ? UiText.Get(LocKeys.Ui.UserGroupDirectoryTab.SettingsCouldNotBeLoadedRefreshAndTryAgain) : UiText.Get(LocKeys.Ui.ImagingQueueSettingsTab.EnterAConcurrentDeploymentLimitFrom0To1000), OnSaveClicked)" Disabled="@(_busy)" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+</div>
+<MudPaper Class="pa-4" Elevation="0" Outlined="true">
+    <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ImagingQueueSettingsTab.ImagingDeploymentQueue]</MudText>
+    @if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+    @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+    <MudNumericField T="int" @bind-Value="_limit" Label="@Loc[LocKeys.Ui.ImagingQueueSettingsTab.MaximumConcurrentDeployments]" Min="0" Max="1000" Variant="Variant.Outlined" Disabled="@(_busy || !_loaded)" />
+
+
+</MudPaper>
+@code {
+    private int _limit = 4, _original;
+    private bool _loading, _loaded, _busy;
+    private string? _error;
+    protected override Task OnInitializedAsync() => OnLoadClicked();
+    private async Task OnLoadClicked()
+    {
+        _loading = true;
+        _loaded = false;
+        _error = null;
+        try
+        {
+            var result = await Settings.ReadDeploymentLimitAsync();
+            if (result.Success) { _limit = _original = result.Data; _loaded = true; }
+            else _error = Loc[result.Error.Code, result.Error.Args];
+        }
+        finally { _loading = false; }
+    }
+    private async Task OnSaveClicked()
+    {
+        if (_busy || !_loaded) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var result = await Settings.SaveDeploymentLimitAsync(_limit, _original);
+            if (result.Success) { _original = result.Data; Snackbar.Add(UiText.Get(LocKeys.Ui.ImagingQueueSettingsTab.DeploymentLimitSaved), Severity.Success); }
+            else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _busy = false; }
+    }
+}

@@ -1,0 +1,44 @@
+<MudTabs @bind-ActivePanelIndex="_activePanelIndex" KeepPanelsAlive="false"
+         TabPanelsClass="pt-4 detail-tab-content" Class="device-subtabs">
+    <MudTabPanel Text="@Loc[LocKeys.Common.Actions]">
+        <TabHelp Href="ui/devices/device-history-actions.html" Title="@Loc[LocKeys.Common.Actions]" />
+        @if (IsActive && _activePanelIndex == 0)
+        {
+            <MudStack Class="stack-full"><DeviceActionHistoryTab Device="Device"/></MudStack>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Loc[LocKeys.Policy.Policies]">
+        <TabHelp Href="ui/devices/device-history-policies.html" Title="@Loc[LocKeys.Policy.Policies]" />
+        @if (IsActive && _activePanelIndex == 1)
+        {
+            <MudStack Class="stack-full"><DevicePolicyHistoryTab Device="Device"/></MudStack>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Loc[LocKeys.Ui.DeviceHistoryTab.Notifications]">
+        <TabHelp Href="ui/devices/device-history-notifications.html" Title="@Loc[LocKeys.Ui.DeviceHistoryTab.Notifications]" />
+        @if (IsActive && _activePanelIndex == 2)
+        {
+            <MudStack Class="stack-full"><DeviceNotificationHistoryTab Device="Device"/></MudStack>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Loc[LocKeys.Ui.AdministrationNavigationGroup.HelpDesk]">
+        <TabHelp Href="ui/devices/device-history-helpdesk.html" Title="@Loc[LocKeys.Ui.AdministrationNavigationGroup.HelpDesk]" />
+        @if (IsActive && _activePanelIndex == 3)
+        {
+            <MudStack Class="stack-full"><DeviceHelpHistoryTab Device="Device" @key="Device.Id" /></MudStack>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Loc[LocKeys.Ui.DeviceHistoryTab.Audits]">
+        <TabHelp Href="ui/devices/device-history-audits.html" Title="@Loc[LocKeys.Ui.DeviceHistoryTab.Audits]" />
+        @if (IsActive && _activePanelIndex == 4)
+        {
+            <MudStack Class="stack-full"><DeviceAuditHistoryTab Device="Device"/></MudStack>
+        }
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+    [Parameter] public bool IsActive { get; set; }
+    private int _activePanelIndex;
+}

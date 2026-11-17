@@ -1,0 +1,162 @@
+@inject DeviceGroupService Groups
+@inject ImagingService Imaging
+@inject ImagingService Deployments
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            @if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+            @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+            @if (_loaded)
+            {
+                <MudText Typo="Typo.h6">@_groupName</MudText>
+                <MudText><b>@Loc[LocKeys.Ui.DeviceGroupDeployImageDialog.GroupImage]</b> @_imageName</MudText>
+                <MudText><b>@Loc[LocKeys.Ui.DeviceGroupDeployImageDialog.GroupDeploymentProfile]</b> @_profileName</MudText>
+                <MudText>@UiText.Get(LocKeys.Ui.DeviceGroupDeployImageDialog.TheGroupImageAndProfileWillBeUsedFor_504fe4a8, (_members.Count))</MudText>
+                @if (!_submitted)
+                {
+                    <MudAlert Severity="Severity.Warning">@Loc[LocKeys.Device.DeploymentQueueWarning]</MudAlert>
+                    @if (Multicast)
+                    {
+                        <MudAlert Severity="Severity.Info">@Loc[LocKeys.Ui.DeviceGroupDeployImageDialog.MulticastSupportsWIMImagesOnly]</MudAlert>
+                        <MudSelect T="int" @bind-Value="_provider" Label="@Loc[LocKeys.Ui.CreateMulticastDialog.StorageSenderHost]" Strict="true" Placeholder="@Loc[LocKeys.Ui.CreateMulticastDialog.SelectAStorageSenderHost]" Disabled="_busy">
+                            @foreach (var provider in _providers) { <MudSelectItem T="int" Value="provider.Id">@provider.Name (@provider.Host)</MudSelectItem> }
+                        </MudSelect>
+                        <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.CreateMulticastDialog.TheSenderUsesTheSelectedSiteServiceSConfigured]</MudText>
+                        <MudNumericField T="int" @bind-Value="_rate" Min="1" Max="100000" Label="@Loc[LocKeys.Ui.CreateMulticastDialog.MaximumRateMbitS]" Disabled="_busy" />
+                        <MudNumericField T="int" @bind-Value="_ttl" Min="1" Max="32" Label="@Loc[LocKeys.Ui.CreateMulticastDialog.MulticastTTL]" Disabled="_busy" />
+                        <MudText>@Loc[LocKeys.Ui.DeviceGroupDeployImageDialog.DevicesDeployAutomaticallyOnTheirNextPXEWinPEBoot]</MudText>
+                    }
+                }
+                <MudDataGrid T="DeploymentMember" Items="_members" Dense="true" Outlined="true" Elevation="0" RowsPerPage="10">
+                    <Columns>
+                        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Dashboard.Device]" />
+                        <PropertyColumn Property="x => x.Status" Title="@Loc[LocKeys.Image.VersionStatus]" />
+                    </Columns>
+                    <PagerContent><MudDataGridPager T="DeploymentMember" /></PagerContent>
+                </MudDataGrid>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close" Disabled="_busy">@(_submitted ? UiText.Get(LocKeys.Ui.ActionFiles.Close) : Loc[LocKeys.Common.Cancel].Value)</MudButton>
+        @if (!_submitted)
+        {
+            <MudButton OnClick="LoadAsync" Disabled="@(_busy || _loading)">@Loc[LocKeys.Ui.AgentImagingBootDialog.ReloadReview]</MudButton>
+            <MudButton OnClick="@Snackbar.GuardAction(() => _busy || _loading || !_loaded || (Multicast && _provider == 0), !_loaded ? UiText.Get(LocKeys.Ui.DeviceGroupDeployImageDialog.ReloadTheDeploymentReviewBeforeQueuingDeployments) : UiText.Get(LocKeys.Ui.DeviceGroupDeployImageDialog.SelectAMulticastStorageProvider), DeployAsync)" Disabled="@(_busy || _loading)" Color="Color.Primary" Variant="Variant.Filled">@(Multicast ? UiText.Get(LocKeys.Ui.DeviceGroupDeployImageDialog.QueueMulticast) : UiText.Get(LocKeys.Ui.DeviceGroupDeployImageDialog.QueueDeployments))</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int GroupId { get; set; }
+    [Parameter] public bool Multicast { get; set; }
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private string? _error, _groupName, _imageName, _profileName;
+    private int _imageId, _profileId;
+    private bool _loading, _loaded, _busy, _submitted;
+    private List<DeploymentMember> _members = [];
+    private int _provider, _rate = 100, _ttl = 1;
+    private List<MulticastProvider> _providers = [];
+
+    private sealed class DeploymentMember(int id, string name)
+    {
+        public int Id { get; } = id;
+        public string Name { get; } = name;
+        public string Status { get; set; } = UiText.Get(LocKeys.Ui.WinPeBuildHistoryTab.Ready);
+    }
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+    private void Close() => MudDialog.Cancel();
+
+    private async Task LoadAsync()
+    {
+        if (_busy || _submitted) return;
+        _loading = true;
+        _loaded = false;
+        _error = null;
+        try
+        {
+            var group = await Groups.GetByIdAsync(GroupId);
+            var members = await Groups.GetMembersAsync(GroupId);
+            var images = await Imaging.GetImagesAsync(includeDisabled: false);
+            var profiles = await Imaging.GetAllProfilesAsync(includeDisabled: false);
+            if (!group.HasData || !members.HasData || !images.HasData || !profiles.HasData)
+            {
+                _error = UiText.Get(LocKeys.Ui.DeviceGroupDeployImageDialog.UnableToLoadTheGroupDeploymentReviewReloadTo);
+                return;
+            }
+            var image = images.Data.SingleOrDefault(x => x.Id == group.Data.ImageId);
+            var profile = profiles.Data.SingleOrDefault(x => x.Id == group.Data.DeploymentProfileId);
+            if (image is null || profile is null)
+            {
+                _error = UiText.Get(LocKeys.Ui.DeviceGroupDeployImageDialog.AssignAnEnabledImageAndDeploymentProfileInThe);
+                return;
+            }
+            _groupName = group.Data.Name;
+            _imageId = image.Id; _imageName = image.Name;
+            _profileId = profile.Id; _profileName = profile.Name;
+            if (Multicast)
+            {
+                if (image.Format != ImageFormat.Wim)
+                {
+                    _error = UiText.Get(LocKeys.Ui.DeviceGroupDeployImageDialog.MulticastRequiresAWIMImageChangeTheGroupS);
+                    return;
+                }
+                _provider = 0;
+                _providers = await Deployments.MulticastProvidersAsync(_imageId);
+            }
+            _members = members.Data.Select(x => new DeploymentMember(x.Id, x.Name)).ToList();
+            if (_members.Count == 0)
+            {
+                _error = UiText.Get(LocKeys.Ui.DeviceGroupDeployImageDialog.ThisGroupHasNoMembersToDeployTo);
+                return;
+            }
+            _loaded = true;
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _loading = false; }
+    }
+
+    private async Task DeployAsync()
+    {
+        if (_busy || _loading || !_loaded || _submitted) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var group = await Groups.GetByIdAsync(GroupId);
+            var members = await Groups.GetMembersAsync(GroupId);
+            if (!group.HasData || !members.HasData || group.Data.ImageId != _imageId ||
+                group.Data.DeploymentProfileId != _profileId ||
+                !members.Data.Select(x => x.Id).ToHashSet().SetEquals(_members.Select(x => x.Id)))
+            {
+                _loaded = false;
+                Snackbar.Add(UiText.Get(LocKeys.Ui.DeviceGroupDeployImageDialog.TheGroupSettingsOrMembersChangedOrCouldNot), Severity.Error);
+                return;
+            }
+            if (Multicast)
+            {
+                await Deployments.CreateMulticastAsync(new(_groupName ?? UiText.Get(LocKeys.Ui.DeviceGroupDeployImageDialog.GroupMulticast), _imageId, _profileId, _provider,
+                    _members.Count, _rate, _ttl, GroupId), Groups);
+                _submitted = true;
+                foreach (var member in _members) member.Status = UiText.Get(LocKeys.Ui.DeviceGroupDeployImageDialog.MulticastQueued);
+                Snackbar.Add(UiText.Get(LocKeys.Ui.DeviceGroupDeployImageDialog.MulticastSessionQueuedMonitorItInImagingTasksMulticast), Severity.Success);
+                return;
+            }
+            _submitted = true;
+            var queued = 0;
+            foreach (var member in _members)
+            {
+                // Explicit group settings override device defaults for this deployment only.
+                var result = await Deployments.PrepareGroupMemberAsync(GroupId, member.Id, _imageId, _profileId);
+                member.Status = result.Success ? UiText.Get(LocKeys.Scheduler.StatusQueued) : Loc[result.Error!.Code, result.Error.Args].Value;
+                if (result.Success) queued++;
+                StateHasChanged();
+            }
+            Snackbar.Add(UiText.Get(LocKeys.Ui.DeviceGroupDeployImageDialog.Queued0Of1Deployments, (queued), (_members.Count)), queued == _members.Count ? Severity.Success : Severity.Warning);
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _busy = false; }
+    }
+}

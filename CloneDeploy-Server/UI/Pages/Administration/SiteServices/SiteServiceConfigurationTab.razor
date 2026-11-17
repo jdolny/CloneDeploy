@@ -1,0 +1,115 @@
+@using CloneDeploy.SiteServices
+@inject SiteService Services
+@inject AuthenticationStateProvider Authentication
+@if (Service.State is SiteRegistrationState.Pending or SiteRegistrationState.Approved)
+{
+    <div class="section-action-bar">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" Disabled="@(_saving || !_loaded)" OnClick="SaveAsync">@(Service.State == SiteRegistrationState.Pending ? UiText.Get(LocKeys.Ui.SiteServiceConfigurationTab.ApproveAndConfigure) : UiText.Get(LocKeys.Action.SaveConfiguration))</MudButton>
+    </div>
+    @if (!_loaded) { <MudAlert Severity="Severity.Info">@Loc[LocKeys.Ui.SiteServiceConfigurationTab.ConfigurationIsLoadingOrCouldNotBeLoadedRefresh]</MudAlert> }
+    @if (Service.State == SiteRegistrationState.Pending)
+    {
+        <MudAlert Severity="Severity.Info">@Loc[LocKeys.Ui.SiteServiceConfigurationTab.CompareThisFingerprintWithTheInstallerFingerprintFileOr]</MudAlert>
+        <MudText Style="overflow-wrap:anywhere">@UiText.Get(LocKeys.Ui.SiteServiceConfigurationTab.IdentityKeyFingerprint0, (Service.KeyFingerprint))</MudText>
+    }
+    <MudForm @ref="_form">
+        <MudGrid Spacing="3">
+            @if (!Service.IsWindowsWorker)
+            {
+                <MudItem xs="12" md="6">
+                    <MudStack Spacing="3">
+                        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.SiteServiceConfigurationTab.ConnectionsAndCapabilities]</MudText>
+                        <MudTextField @bind-Value="_listen" Label="@Loc[LocKeys.Ui.SiteServiceConfigurationTab.ListeningIP]" Required="true" Variant="Variant.Outlined" Disabled="@(_saving || !_loaded)" />
+                        <MudSwitch @bind-Value="_agentsEnabled" Label="@Loc[LocKeys.Ui.SiteServiceConfigurationTab.AllowAgentCommunication]" Color="Color.Primary" Disabled="@(_saving || !_loaded)" />
+                        <MudSwitch @bind-Value="_enrollmentEnabled" Label="@Loc[LocKeys.Ui.SiteServiceConfigurationTab.AllowAgentEnrollment]" Color="Color.Primary" Disabled="@(_saving || !_loaded)" />
+                        <MudSwitch @bind-Value="_portalEnabled" Label="@Loc[LocKeys.Ui.SiteServiceConfigurationTab.AllowUserPortalSignIn]" Color="Color.Primary" Disabled="@(_saving || !_loaded)" />
+                        <MudSwitch @bind-Value="_adminEnabled" Label="@Loc[LocKeys.Ui.SiteServiceConfigurationTab.AllowAgentToolsSignIn]" Color="Color.Primary" Disabled="@(_saving || !_loaded)" />
+                        <MudSwitch @bind-Value="_multicastEnabled" Label="@Loc[LocKeys.Ui.SiteServiceConfigurationTab.EnableMulticastSenderRequiresStorage]" Color="Color.Primary" Disabled="@(_saving || !_loaded)" />
+                        <MudSwitch @bind-Value="_imagingEnabled" Label="@Loc[LocKeys.Ui.SiteServiceConfigurationTab.AllowImagingThroughThisProxy]" Color="Color.Primary" Disabled="@(_saving || !_loaded)" />
+                    </MudStack>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudStack Spacing="3">
+                        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.SiteServiceConfigurationTab.AccessAndLimits]</MudText>
+                        <MudTextField @bind-Value="_adminNetworks" Label="@Loc[LocKeys.Ui.SiteServiceConfigurationTab.AgentToolsClientNetworksCIDR]" Lines="3" Variant="Variant.Outlined" Disabled="@(_saving || !_loaded)" />
+                        <MudNumericField T="int" @bind-Value="_authenticationRate" Label="@Loc[LocKeys.Ui.SiteServiceConfigurationTab.EnrollmentRequestsPerMinute]" Min="0" Max="1000000" Variant="Variant.Outlined" Disabled="@(_saving || !_loaded)" />
+                        <MudNumericField T="int" @bind-Value="_loginRate" Label="@Loc[LocKeys.Ui.SiteServiceConfigurationTab.ImagerLoginRequestsPerMinute]" Min="0" Max="1000000" Variant="Variant.Outlined" Disabled="@(_saving || !_loaded)" />
+                        <MudNumericField T="int" @bind-Value="_bandwidth" Label="@Loc[LocKeys.Ui.SiteServiceConfigurationTab.SiteReplicationBandwidthMiBS]" Min="0" Max="102400" Variant="Variant.Outlined" Disabled="@(_saving || !_loaded)" />
+                    </MudStack>
+                </MudItem>
+            }
+            else
+            {
+                <MudItem xs="12" md="6">
+                    <MudSwitch @bind-Value="_workerEnabled" Label="@Loc[LocKeys.Ui.SiteServiceConfigurationTab.EnableWindowsWorker]" Color="Color.Primary" Disabled="@(Service.HostOs != "Windows" || !OperatingSystem.IsLinux() || _saving || !_loaded)" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudText>@Loc[LocKeys.Ui.SiteServiceConfigurationTab.ProcessesWinPEDriversCatalogsAndReadOnlyAgentMSI]</MudText>
+                    <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.SiteServiceConfigurationTab.ReportedOS0, ((Service.HostOs ?? UiText.Get(LocKeys.Ui.SiteServiceConfigurationTab.WaitingForHeartbeat))))</MudText>
+                </MudItem>
+            }
+        </MudGrid>
+    </MudForm>
+}
+else
+{
+    <MudAlert Severity="Severity.Info">@(Service.State == SiteRegistrationState.Revoked ? UiText.Get(LocKeys.Ui.SiteServiceConfigurationTab.ThisServiceHasBeenRevokedCreateAReplacementOn) : UiText.Get(LocKeys.Ui.SiteServiceConfigurationTab.InstallSiteServiceUsingItsSetupFileConfigurationBecomesAvailable))</MudAlert>
+}
+@code {
+    [Parameter, EditorRequired] public SiteServiceDetails Service { get; set; } = null!;
+    [Parameter] public EventCallback OnSaved { get; set; }
+    private MudForm _form = null!;
+    private string _listen = "", _adminNetworks = "";
+    private bool _saving, _loaded, _workerEnabled;
+    private int _authenticationRate, _loginRate, _bandwidth;
+    private bool _imagingEnabled = true, _agentsEnabled = true, _enrollmentEnabled = true, _portalEnabled = true;
+    private bool _adminEnabled, _multicastEnabled = true;
+    private SiteReplicationOptions? _expectedReplication;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _workerEnabled = Service.WindowsWorkerRoles != 0;
+        _listen = Service.IsWindowsWorker ? "127.0.0.1" : Service.ListenAddress;
+        if (Service.State is not (SiteRegistrationState.Pending or SiteRegistrationState.Approved)) return;
+        try
+        {
+            if (!Service.IsWindowsWorker)
+            {
+                var user = (await Authentication.GetAuthenticationStateAsync()).User;
+                _authenticationRate = await Services.GetProxyRateLimitAsync(user, Service.Id);
+                var access = await Services.GetProxyAccessAsync(user, Service.Id);
+                _agentsEnabled = access.AgentsEnabled; _enrollmentEnabled = access.EnrollmentEnabled;
+                _portalEnabled = access.PortalEnabled; _adminEnabled = access.AgentAdminEnabled;
+                _adminNetworks = access.AdminNetworks;
+                _multicastEnabled = access.MulticastEnabled; _imagingEnabled = access.ImagingEnabled;
+                _loginRate = access.ImagingLoginRequestsPerMinute;
+                _expectedReplication = await Services.ReadReplicationAsync(user, Service.Id);
+                _bandwidth = _expectedReplication?.BandwidthMiB ?? 0;
+            }
+            _loaded = true;
+        }
+        catch { Snackbar.Add(UiText.Get(LocKeys.Ui.SiteServiceConfigurationTab.UnableToLoadConfigurationRefreshAndTryAgain), Severity.Error); }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_saving || !_loaded) return;
+        await _form.ValidateAsync(); if (!_form.IsValid) return;
+        _saving = true;
+        try
+        {
+            var access = new SiteProxyAccess(_imagingEnabled, _loginRate) {
+                AgentsEnabled = _agentsEnabled, EnrollmentEnabled = _enrollmentEnabled,
+                PortalEnabled = _portalEnabled, AgentAdminEnabled = _adminEnabled, AdminNetworks = _adminNetworks,
+                MulticastEnabled = _multicastEnabled };
+            await Services.SaveConfigurationAsync((await Authentication.GetAuthenticationStateAsync()).User,
+                Service.Id, Service.Revision, new(_listen, !Service.IsWindowsWorker, Service.State == SiteRegistrationState.Pending,
+                    access, _authenticationRate, new(_bandwidth), _expectedReplication, _workerEnabled));
+            await OnSaved.InvokeAsync();
+            Snackbar.Add(UiText.Get(LocKeys.Ui.SiteServiceConfigurationTab.SiteServiceConfigurationSaved), Severity.Success);
+        }
+        catch (InvalidDataException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        catch { Snackbar.Add(UiText.Get(LocKeys.Ui.SiteServiceConfigurationTab.UnableToSaveConfigurationRefreshAndTryAgain), Severity.Error); }
+        finally { _saving = false; }
+    }
+}

@@ -1,0 +1,138 @@
+@using CloneDeploy_Agent.Contracts
+@inject AgentService Rules
+@inject AuthenticationStateProvider Authentication
+
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+@if (_settings is null)
+{
+    <MudButton OnClick="Load" Disabled="_busy">@Loc[LocKeys.Ui.RemoteAccessSettingsTab.ReloadRemoteAccessSettings]</MudButton>
+}
+else
+{
+    <MudTabs @bind-ActivePanelIndex="_tab" Class="device-subtabs" KeepPanelsAlive="true" TabPanelsClass="pt-4 detail-tab-content">
+        <Header>
+            <div class="device-overview-save">
+                @if (_tab == 0)
+                {
+                    <MudButton OnClick="SaveDefault" Disabled="_busy" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Common.SaveChanges]</MudButton>
+                }
+                else
+                {
+                    <MudButton OnClick="@(() => EditRule(null))" Disabled="@(_busy || _settings.Rules.Count >= 100)" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add">@Loc[LocKeys.Ui.RemoteAccessSettingsTab.CreateRule]</MudButton>
+                }
+            </div>
+        </Header>
+        <ChildContent>
+        <MudTabPanel Text="@Loc[LocKeys.Ui.RemoteAccessSettingsTab.GlobalConfiguration]" Icon="@Icons.Material.Outlined.Settings">
+            <TabHelp Href="ui/administration/remote-access-global.html" Title="@Loc[LocKeys.Ui.RemoteAccessSettingsTab.GlobalConfiguration]" />
+            <MudPaper Class="pa-5" Elevation="0" Outlined="true">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.RemoteAccessSettingsTab.GlobalConfiguration]</MudText>
+                    <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.RemoteAccessSettingsTab.TheGlobalDefaultAppliesWhenNoEnabledRuleMatches]</MudText>
+                    <MudSelect T="RemoteAccessMode" Label="@Loc[LocKeys.Ui.RemoteAccessSettingsTab.GlobalDefault]" @bind-Value="_defaultMode" Disabled="_busy" Variant="Variant.Outlined">
+                        @foreach (var mode in Enum.GetValues<RemoteAccessMode>()) { <MudSelectItem Value="mode">@AgentService.RemoteAccessLabel(mode)</MudSelectItem> }
+                    </MudSelect>
+                </MudStack>
+            </MudPaper>
+        </MudTabPanel>
+        <MudTabPanel Text="@Loc[LocKeys.Ui.OuNamingRulesPage.Rules]" Icon="@Icons.Material.Outlined.Rule">
+            <TabHelp Href="ui/administration/remote-access-rules.html" Title="@Loc[LocKeys.Ui.OuNamingRulesPage.Rules]" />
+            <MudText Typo="Typo.body2" Class="mb-4">@Loc[LocKeys.Ui.RemoteAccessSettingsTab.TheLowestPriorityNumberMatchingRuleWinsRulesMatch]</MudText>
+            <MudPaper Class="device-list-filters device-search-panel" Elevation="0">
+                <MudTextField T="string" @bind-Value="_search" DebounceInterval="300" Placeholder="@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.SearchRules]" Clearable="true" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" />
+            </MudPaper>
+            <MudDataGrid T="RemoteAccessRule" Items="FilteredRules" Loading="_busy" Dense="true" Hover="true" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" ColumnResizeMode="ResizeMode.Column" RowsPerPage="25" Elevation="0" Outlined="true" Class="device-list-grid">
+                <Columns>
+                    <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]" />
+                    <PropertyColumn Property="x => x.Priority" Title="@Loc[LocKeys.Device.Priority]" />
+                    <PropertyColumn Property="x => x.Enabled" Title="@Loc[LocKeys.StorageProvider.Enabled]" />
+                    <PropertyColumn Property="x => AgentService.RemoteAccessLabel(x.Mode)" Title="@Loc[LocKeys.Ui.RemoteAccessRuleDialog.AccessMode]" />
+                    <TemplateColumn Title="@Loc[LocKeys.Policy.Targets]" Sortable="false" Filterable="false">
+                        <CellTemplate>@Targets(context.Item)</CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+                        <CellTemplate>
+                            <MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Ui.RemoteAccessSettingsTab.EditRule]"><MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Disabled="_busy" OnClick="@(() => EditRule(context.Item))" aria-label="@Loc[LocKeys.Ui.RemoteAccessSettingsTab.EditRule]" /></MudTooltip>
+                            <MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.DeleteRule]"><MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Primary" Disabled="_busy" OnClick="@(() => DeleteRule(context.Item))" aria-label="@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.DeleteRule]" /></MudTooltip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <PagerContent><MudDataGridPager T="RemoteAccessRule" /></PagerContent>
+                <NoRecordsContent><MudText>@Loc[LocKeys.Ui.RemoteAccessSettingsTab.NoRemoteAccessRulesFound]</MudText></NoRecordsContent>
+            </MudDataGrid>
+        </MudTabPanel>
+        </ChildContent>
+    </MudTabs>
+}
+@code {
+    private RemoteAccessSettings? _settings;
+    private RemoteAccessMode _defaultMode;
+    private string? _search, _error;
+    private bool _busy;
+    private int _tab;
+    private IEnumerable<RemoteAccessRule> FilteredRules => (_settings?.Rules ?? []).OrderBy(x => x.Priority)
+        .Where(x => string.IsNullOrWhiteSpace(_search) || $"{x.Name} {AgentService.RemoteAccessLabel(x.Mode)}".Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase));
+    private static string Targets(RemoteAccessRule rule) => UiText.Get(LocKeys.Ui.RemoteAccessSettingsTab.Text0Devices1Groups, (rule.DeviceIds.Count), (rule.GroupIds.Count));
+    protected override Task OnInitializedAsync() => Load();
+    private async Task Load()
+    {
+        _busy = true;
+        try
+        {
+            _settings = await Rules.GetRemoteAccessAsync((await Authentication.GetAuthenticationStateAsync()).User);
+            _defaultMode = _settings.DefaultMode;
+            _error = null;
+        }
+        catch { _error = UiText.Get(LocKeys.Ui.RemoteAccessSettingsTab.RemoteAccessSettingsCouldNotBeLoaded); }
+        finally { _busy = false; }
+    }
+    private async Task SaveDefault()
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            var settings = await Rules.GetRemoteAccessAsync(user);
+            settings.DefaultMode = _defaultMode;
+            await Rules.SaveRemoteAccessAsync(user, settings);
+            _settings = settings;
+            _error = null;
+            Snackbar.Add(UiText.Get(LocKeys.Ui.RemoteAccessSettingsTab.GlobalConfigurationSaved), Severity.Success);
+        }
+        catch (InvalidOperationException ex) { _error = ex.Message; }
+        catch { _error = UiText.Get(LocKeys.Ui.RemoteAccessSettingsTab.GlobalConfigurationCouldNotBeSaved); }
+        finally { _busy = false; }
+    }
+    private async Task EditRule(RemoteAccessRule? rule)
+    {
+        if (_busy) return;
+        var parameters = new DialogParameters<RemoteAccessRuleDialog> { { x => x.RuleId, rule?.Id } };
+        var dialog = await Dialog.ShowAsync<RemoteAccessRuleDialog>(rule is null ? UiText.Get(LocKeys.Ui.RemoteAccessSettingsTab.CreateRule) : UiText.Get(LocKeys.Ui.RemoteAccessSettingsTab.EditRule), parameters,
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Medium, BackdropClick = false });
+        if (await dialog.Result is { Canceled: false, Data: RemoteAccessSettings settings })
+        {
+            _settings = settings;
+            _error = null;
+        }
+    }
+    private async Task DeleteRule(RemoteAccessRule rule)
+    {
+        if (_busy || await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.RemoteAccessSettingsTab.DeleteRemoteAccessRule), UiText.Get(LocKeys.Ui.ManageImageProfilePage.Delete0, (rule.Name)), yesText: UiText.Get(LocKeys.Common.Delete), cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+        _busy = true;
+        try
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            var settings = await Rules.GetRemoteAccessAsync(user);
+            settings.Rules.RemoveAll(x => x.Id == rule.Id);
+            await Rules.SaveRemoteAccessAsync(user, settings);
+            _settings = settings;
+            _error = null;
+            Snackbar.Add(UiText.Get(LocKeys.Ui.RemoteAccessSettingsTab.RemoteAccessRuleDeleted), Severity.Success);
+        }
+        catch (InvalidOperationException ex) { _error = ex.Message; }
+        catch { _error = UiText.Get(LocKeys.Ui.RemoteAccessSettingsTab.RemoteAccessRuleCouldNotBeDeleted); }
+        finally { _busy = false; }
+    }
+}
+

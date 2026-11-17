@@ -1,0 +1,71 @@
+@inject ImagingService ImagingService
+@inject DriverService Packs
+<ImagingEditScope Policy="@Constants.Permissions.DeploymentProfileEdit" Context="canEditImage">
+@if (_model is null)
+{
+    @if (_loadingModel) { <MudProgressLinear Indeterminate="true"/> }
+    else { <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.DeploymentDriversTab.UnableToLoadSettingsReopenThisTabToTry]</MudAlert> }
+}
+else
+{
+<div class="section-action-bar"><MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" Disabled="@(!canEditImage || (_busy || _loading))" OnClick="@Snackbar.GuardAction(() => _busy || _loading || _failed, UiText.Get(LocKeys.Ui.DeploymentDriversTab.DriverSettingsCouldNotBeLoadedReopenThisTab), OnSaveClicked)">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton></div>
+
+@if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+else if (_failed) { <MudButton OnClick="OnLoadClicked">@Loc[LocKeys.Common.Retry]</MudButton> }
+else
+{
+    <div><MudStack Spacing="3">
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DeploymentDriversTab.Drivers]</MudText>
+        <MudSelect T="DeploymentDriverMode" @bind-Value="_model.DriverMode" Label="@Loc[LocKeys.Ui.DeploymentDriversTab.DriverSelection]" Variant="Variant.Outlined" Disabled="@(!canEditImage || (_busy))">
+            <MudSelectItem Value="DeploymentDriverMode.Automatic">@Loc[LocKeys.Ui.DeploymentDriversTab.MatchThisDeviceSModel]</MudSelectItem>
+            <MudSelectItem Value="DeploymentDriverMode.Specific">@Loc[LocKeys.Ui.DeploymentDriversTab.UseASpecificDriverPack]</MudSelectItem>
+            <MudSelectItem Value="DeploymentDriverMode.None">@Loc[LocKeys.Ui.DeploymentDriversTab.NoAdditionalDrivers]</MudSelectItem>
+        </MudSelect>
+        @if (_model.DriverMode == DeploymentDriverMode.Specific)
+        {
+            <MudSelect T="int?" @bind-Value="_model.DriverPackId" Label="@Loc[LocKeys.Ui.DeploymentDriversTab.DriverPack]" Variant="Variant.Outlined" Disabled="@(!canEditImage || (_busy))">
+                @foreach (var pack in _packs) { <MudSelectItem T="int?" Value="@((int?)pack.Id)">@pack.Name</MudSelectItem> }
+            </MudSelect>
+        }
+    </MudStack></div>
+}
+
+}
+
+</ImagingEditScope>
+@code {
+    private DeploymentProfile _model = null!;
+    private bool _loadingModel = true;
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await ImagingService.GetProfileByIdAsync(Profile.Id);
+        if (result.Success && result.HasData) { _model = result.Data; await LoadOptionsAsync(); }
+        else if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loadingModel = false;
+    }
+
+    private Task LoadOptionsAsync() => OnLoadClicked();
+    [Parameter, EditorRequired] public DeploymentProfile Profile { get; set; } = null!;
+
+    private List<DriverPack> _packs = [];
+    private bool _loading = true, _busy, _failed;
+
+    private async Task OnLoadClicked()
+    {
+        _loading = true;
+
+        var packs = await Packs.GetAsync(includeDisabled: true);
+        _failed = !packs.Success;
+        var error = packs.Error;
+        if (error is not null) Snackbar.Add(Loc[error.Code, error.Args], Severity.Error);
+        _packs = packs.Data ?? [];
+        _loading = false;
+    }
+    private async Task OnSaveClicked()
+    {
+        if (_busy || _failed) return; _busy = true;
+        var result = await ImagingService.SaveDriversAsync(_model, []);
+        Snackbar.Add(result.Success ? UiText.Get(LocKeys.Ui.DeploymentDriversTab.DriverSettingsSaved) : Loc[result.Error!.Code, result.Error.Args], result.Success ? Severity.Success : Severity.Error);
+        _busy = false;
+    }
+}

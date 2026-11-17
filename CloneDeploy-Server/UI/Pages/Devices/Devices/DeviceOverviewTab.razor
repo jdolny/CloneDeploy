@@ -1,0 +1,66 @@
+
+<MudTabs @bind-ActivePanelIndex="_activePanelIndex" KeepPanelsAlive="false"
+         TabPanelsClass="pt-4 detail-tab-content" Class="device-subtabs device-overview-tabs">
+    <Header>
+        @if (IsActive)
+        {
+            <div class="device-overview-save"><SectionOutlet SectionId="@ActiveActionSection"/></div>
+        }
+    </Header>
+    <ChildContent>
+    <MudTabPanel Text="@Loc[LocKeys.Device.General]">
+        <TabHelp Href="ui/devices/device-overview-general.html" Title="@Loc[LocKeys.Device.General]" />
+        @if (IsActive)
+        {
+            <MudStack Class="stack-full">
+                <DeviceGeneralTab Device="Device" SaveActionSectionId="_generalSaveSection"/>
+            </MudStack>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Loc[LocKeys.Common.CustomAttributes]">
+        <TabHelp Href="ui/devices/device-overview-custom-attributes.html" Title="@Loc[LocKeys.Common.CustomAttributes]" />
+        @if (IsActive)
+        {
+            <MudStack Class="stack-full">
+                <DeviceCustomAttributesTab Device="Device" ActionSectionId="_attributesActionSection"/>
+            </MudStack>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Loc[LocKeys.Device.Comments]">
+        <TabHelp Href="ui/devices/device-overview-comments.html" Title="@Loc[LocKeys.Device.Comments]" />
+        @if (IsActive)
+        {
+            <MudStack Class="stack-full">
+                <DeviceCommentsTab Device="Device" ActionSectionId="_commentsActionSection"/>
+            </MudStack>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Loc[LocKeys.Device.Attachments]">
+        <TabHelp Href="ui/devices/device-overview-attachments.html" Title="@Loc[LocKeys.Device.Attachments]" />
+        @if (IsActive)
+        {
+            <MudStack Class="stack-full">
+                <DeviceAttachmentsTab Device="Device" ActionSectionId="_attachmentsActionSection"/>
+            </MudStack>
+        }
+    </MudTabPanel>
+    </ChildContent>
+</MudTabs>
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+    [Parameter] public bool IsActive { get; set; } = true;
+    private int _activePanelIndex;
+    private readonly object _generalSaveSection = new();
+    private readonly object _attributesActionSection = new();
+    private readonly object _commentsActionSection = new();
+    private readonly object _attachmentsActionSection = new();
+    private object ActiveActionSection => _activePanelIndex switch
+    {
+        1 => _attributesActionSection,
+        2 => _commentsActionSection,
+        3 => _attachmentsActionSection,
+        _ => _generalSaveSection
+    };
+
+}

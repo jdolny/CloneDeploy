@@ -1,0 +1,89 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@inject AgentService Releases
+@inject AgentService MacReleases
+@inject AuthenticationStateProvider Authentication
+
+<div class="section-action-bar">
+    <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+        <MudButton OnClick="OnPrepareClicked" Disabled="_busy" StartIcon="@Icons.Material.Filled.Build">
+            @(_busy ? UiText.Get(LocKeys.Ui.AgentInstallerTab.PreparingRelease) : UiText.Get(LocKeys.Ui.AgentInstallerTab.PrepareAgentRelease))
+        </MudButton>
+        <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Style="align-self: auto;" Disabled="_busy" aria-label="@Loc[LocKeys.Ui.AgentInstallerTab.DownloadAgentInstaller]">
+            @foreach (var architecture in Architectures)
+            {
+                <MudMenuItem OnClick="@Snackbar.GuardAction(() => !_releases.ContainsKey(architecture), UiText.Get(LocKeys.Ui.AgentInstallerTab.PrepareTheAgentReleaseBeforeDownloadingItsInstaller), () => Navigation.NavigateTo(DownloadUrl(architecture), forceLoad: true))"
+                             Disabled="_busy" Icon="@Icons.Material.Filled.Download">@UiText.Get(LocKeys.Ui.AgentInstallerTab.Download01, (Label(architecture)), ((architecture == "mac" ? "installer" : UiText.Get(LocKeys.Ui.AgentInstallerTab.DeploymentZIP))))</MudMenuItem>
+            }
+        </MudMenu>
+    </MudButtonGroup>
+</div>
+<MudPaper Class="pa-5" Outlined="true" Elevation="0">
+    <MudStack Spacing="3">
+        @foreach (var architecture in Architectures)
+        {
+            <div>
+                <MudText Typo="Typo.subtitle1">@Label(architecture)</MudText>
+                <MudText Typo="Typo.body2">@UiText.Get(LocKeys.Ui.AgentInstallerTab.AvailableAgentVersion0, (CloneDeploy_Agent.Contracts.AgentUpdateOffer.DisplayVersion(_readiness.GetValueOrDefault(architecture)?.BuiltVersion)))</MudText>
+                <MudText Typo="Typo.body2">@UiText.Get(LocKeys.Ui.AgentInstallerTab.CurrentPreparedVersion0, (CloneDeploy_Agent.Contracts.AgentUpdateOffer.DisplayVersion(_releases.GetValueOrDefault(architecture)?.Version)))</MudText>
+            </div>
+        }
+        @if (_busy) { <MudProgressLinear Indeterminate="true" /> }
+        @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+    </MudStack>
+</MudPaper>
+
+@code {
+    private static readonly string[] Architectures = ["x64", "arm64", "mac"];
+    private readonly Dictionary<string, CloneDeploy_Agent.Contracts.AgentUpdateOffer> _releases = [];
+    private readonly Dictionary<string, AgentReleaseReadiness> _readiness = [];
+    private bool _busy;
+    private string? _error;
+    private static string Label(string architecture) => architecture switch { "mac" => UiText.Get(LocKeys.Ui.AgentInstallerTab.MacOSAppleSilicon), "arm64" => UiText.Get(LocKeys.Ui.AgentInstallerTab.WindowsARM64), _ => UiText.Get(LocKeys.Ui.AgentInstallerTab.WindowsX64) };
+    private static string DownloadUrl(string architecture) => architecture == "mac" ? "api/ui/administration/agent/general/installer/macos/current" : $"api/ui/administration/agent/general/installer/current?architecture={architecture}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _busy = true;
+        try { await LoadAsync(); }
+        catch { _error = UiText.Get(LocKeys.Ui.AgentInstallerTab.CouldNotLoadAgentReleaseStatusReloadThePage); }
+        finally { _busy = false; }
+    }
+
+    private async Task LoadAsync()
+    {
+        foreach (var architecture in Architectures)
+        {
+            var release = architecture == "mac" ? await MacReleases.MacReleaseCurrentAsync(default) : await Releases.WindowsReleaseCurrentAsync(default, architecture);
+            if (release is not null) _releases[architecture] = release;
+            else _releases.Remove(architecture);
+            _readiness[architecture] = architecture == "mac" ? await MacReleases.ReadMacReleaseinessAsync(default) : await Releases.ReadWindowsReleaseinessAsync(default, architecture);
+        }
+    }
+
+    private async Task OnPrepareClicked()
+    {
+        if (_busy) return;
+        _busy = true; _error = null;
+        var errors = new List<string>();
+        try
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            foreach (var architecture in Architectures)
+            {
+                try { _releases[architecture] = architecture == "mac" ? await MacReleases.PublishMacReleaseAsync(user, default) : await Releases.PublishWindowsReleaseAsync(user, default, architecture); }
+                catch (InvalidDataException ex) { errors.Add($"{Label(architecture)}: {ex.Message}"); }
+                catch { errors.Add(UiText.Get(LocKeys.Ui.AgentInstallerTab.Text0CouldNotPrepareTheReleaseCheckTheBuilt, (Label(architecture)))); }
+            }
+            try { await LoadAsync(); }
+            catch { errors.Add(UiText.Get(LocKeys.Ui.AgentInstallerTab.CouldNotRefreshAgentReleaseStatusReloadThePage)); }
+            if (errors.Count == 0)
+                Snackbar.Add(UiText.Get(LocKeys.Ui.AgentInstallerTab.WindowsAndMacInstallersPreparedAgentsWithUpdateSupport), Severity.Success);
+        }
+        catch { errors.Add(UiText.Get(LocKeys.Ui.AgentInstallerTab.CouldNotPrepareAgentReleasesReloadThePageTo)); }
+        finally
+        {
+            if (errors.Count > 0) Snackbar.Add(string.Join(" ", errors), Severity.Error);
+            _busy = false;
+        }
+    }
+}

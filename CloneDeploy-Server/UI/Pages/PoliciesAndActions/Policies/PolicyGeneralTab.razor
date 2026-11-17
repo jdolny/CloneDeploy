@@ -1,0 +1,63 @@
+@inject PolicyService PolicyService
+
+@if (_details is null)
+{
+    @if (_loading) { <MudProgressLinear Indeterminate="true"/> }
+    else { <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.PolicyGeneralTab.UnableToLoadPolicySettings]</MudAlert> }
+}
+else
+{
+    <div class="section-action-bar">
+        <MudButton OnClick="@Snackbar.GuardAction(() => ReadOnly || _saving, UiText.Get(LocKeys.Ui.PolicyExecutionTab.ThisPolicyIsArchivedOrYouDoNotHave), OnSaveClicked)" Disabled="@(_saving)" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+    </div>
+    <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.Policy.General]</MudText>
+    <MudForm @ref="_form" Disabled="@(ReadOnly || _saving)">
+        <PolicyGeneral Details="_details" ReadOnly="@(ReadOnly || _saving)"/>
+    </MudForm>
+}
+
+@code {
+    [Parameter, EditorRequired] public PolicyDetailsDto Details { get; set; } = null!;
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public EventCallback OnStateChanged { get; set; }
+
+    private MudForm _form = null!;
+    private bool _saving, _loading = true;
+    private int? _loadedPolicyId;
+    private PolicyDetailsDto? _details;
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedPolicyId == Details.Policy.Id) return;
+        _loadedPolicyId = Details.Policy.Id;
+        _loading = true;
+        var result = await PolicyService.GetDetailsAsync(Details.Policy.Id);
+        _details = result.Data;
+        if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loading = false;
+    }
+    private bool Archived => Details.Policy.Archived || Details.Policy.ArchivedAtUtc.HasValue;
+    private bool ReadOnly => !CanEdit || Archived || Details.Active;
+
+    private async Task OnSaveClicked()
+    {
+        if (_saving || ReadOnly) return;
+        _saving = true;
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            _saving = false;
+            return;
+        }
+        var result = await PolicyService.SaveAsync(_details!, "general");
+        if (result.Success)
+        {
+            _details!.Policy.Name = _details.Policy.Name.Trim();
+            await OnStateChanged.InvokeAsync();
+            Snackbar.Add(Loc[LocKeys.Policy.SettingsSaved], Severity.Success);
+        }
+        else
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _saving = false;
+    }
+
+}

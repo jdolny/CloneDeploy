@@ -1,0 +1,68 @@
+@using CloneDeploy_Agent.Contracts
+@inject WindowsUpdateService Service
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Outlined.Rule" Color="Color.Primary"/>
+            <MudText Typo="Typo.h6">@(Rule is null ? UiText.Get(LocKeys.Ui.WindowsUpdateAutoApprovalRuleDialog.NewAutoApproveRule) : UiText.Get(LocKeys.Ui.WindowsUpdateAutoApprovalRuleDialog.EditAutoApproveRule))</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudStack Spacing="3" Class="pt-2">
+                <MudTextField @bind-Value="_edit.Name" Variant="Variant.Outlined" Label="@Loc[LocKeys.Common.Name]" MaxLength="128" Required="true" Disabled="_busy" />
+                <MudCheckBox @bind-Value="_edit.Enabled" Label="@Loc[LocKeys.StorageProvider.Enabled]" Disabled="_busy" />
+                <MudSelect T="string" MultiSelection="true" @bind-SelectedValues="_severities" Variant="Variant.Outlined" Label="@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRuleDialog.Severities]" Disabled="_busy">
+                    @foreach (var severity in WindowsUpdateService.AutoApprovalSeverities)
+                    { <MudSelectItem T="string" Value="@severity">@severity</MudSelectItem> }
+                </MudSelect>
+                <MudSelect T="string" MultiSelection="true" @bind-SelectedValues="_classifications" Variant="Variant.Outlined" Label="@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRuleDialog.ClassificationsFromInventory]" Disabled="_busy">
+                    @foreach (var category in _categories)
+                    { <MudSelectItem T="string" Value="@Guid.Parse(category.Id).ToString()">@category.Name</MudSelectItem> }
+                    @foreach (var id in _classifications.Where(id => !_categories.Any(c => Guid.Parse(c.Id).ToString() == id)))
+                    { <MudSelectItem T="string" Value="@id">@UiText.Get(LocKeys.Ui.WindowsUpdateAutoApprovalRuleDialog.Text0NoLongerInCatalog, (id))</MudSelectItem> }
+                </MudSelect>
+                <MudNumericField T="int" @bind-Value="_edit.DelayDays" Variant="Variant.Outlined" Label="@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRuleDialog.DelayAfterFirstDiscoveryOfThisRevisionDays]" Min="0" Max="365" Disabled="_busy" />
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked" Disabled="_busy">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="OnSaveClicked" Disabled="_busy" Variant="Variant.Filled" Color="Color.Primary">@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRuleDialog.SaveRule]</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public WindowsUpdateAutoApprovalRule? Rule { get; set; }
+    [Parameter] public List<InventoryUpdateCategory> Categories { get; set; } = [];
+    private List<InventoryUpdateCategory> _categories => Categories;
+    private WindowsUpdateAutoApprovalRule _edit = new();
+    private IReadOnlyCollection<string> _severities = [], _classifications = [];
+    private MudForm _form = null!;
+    private bool _busy;
+    protected override void OnInitialized()
+    {
+        if (Rule is null) return;
+        _edit = new() { Id = Rule.Id, Name = Rule.Name, Enabled = Rule.Enabled, DelayDays = Rule.DelayDays };
+        _severities = Rule.Severities.ToArray();
+        _classifications = Rule.ClassificationIds.ToArray();
+    }
+    private void OnCancelClicked() => MudDialog.Cancel();
+    private async Task OnSaveClicked()
+    {
+        if (_busy) return;
+        await _form.ValidateAsync();
+        if (!_form.IsValid) return;
+        _busy = true;
+        try
+        {
+            _edit.Severities = _severities.ToArray(); _edit.ClassificationIds = _classifications.ToArray();
+            var result = await Service.SaveAutoApprovalAsync(_edit);
+            if (!result.Success) { Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); return; }
+            Snackbar.Add(UiText.Get(LocKeys.Ui.WindowsUpdateAutoApprovalRuleDialog.RuleSavedEnabledRulesAreEvaluatedOnTheNext), Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        finally { _busy = false; }
+    }
+}

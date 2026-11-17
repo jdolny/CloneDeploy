@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <!-- Shared server runtime is patched by the administrator. Keep the installer
+         minimum in ServerActions.RequiredDotNetVersion aligned with this value. -->
+    <SelfContained>false</SelfContained>
+    <RuntimeFrameworkVersion>10.0.13</RuntimeFrameworkVersion>
+    <RollForward>LatestPatch</RollForward>
+    <UseAppHost>true</UseAppHost>
+  </PropertyGroup>
+</Project>

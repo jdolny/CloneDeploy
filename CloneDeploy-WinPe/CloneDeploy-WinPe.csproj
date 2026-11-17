@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>CloneDeploy_Server.WinPe</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources/Scripts/Start-Imager.ps1" LogicalName="CloneDeploy.Start-Imager.ps1" />
+    <Compile Remove="Resources/Scripts/ImagerBootstrapSignature.cs" />
+    <EmbeddedResource Include="Resources/Scripts/ImagerBootstrapSignature.cs" LogicalName="CloneDeploy.ImagerBootstrapSignature.cs" />
+    <Compile Remove="Resources/Scripts/ImagerTimeSync.cs" />
+    <EmbeddedResource Include="Resources/Scripts/ImagerTimeSync.cs" LogicalName="CloneDeploy.ImagerTimeSync.cs" />
+  </ItemGroup>
+  <Import Project="Packaging/WinFspResources.targets" />
+  <Import Project="Packaging/WimlibResources.targets" />
+  <Import Project="Packaging/UdpcastResources.targets" />
+</Project>

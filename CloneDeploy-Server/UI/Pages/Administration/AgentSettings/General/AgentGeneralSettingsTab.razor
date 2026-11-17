@@ -1,0 +1,39 @@
+@inject ActionDeploymentUiService Service
+
+<div class="section-action-bar">
+    <MudButton OnClick="@Snackbar.GuardAction(() => _busy || _limits is null, UiText.Get(LocKeys.Ui.AgentGeneralSettingsTab.AgentSettingsCouldNotBeLoadedRefreshThePage), OnSaveClicked)" Disabled="@(_busy)" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+</div>
+
+@if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+@if (_limits is not null)
+{
+    <div class="agent-general-settings">
+    <MudPaper Class="pa-4" Elevation="0" Outlined="true"><MudStack Spacing="3">
+        <MudNumericField T="int" @bind-Value="_limits.EnrollmentRequestsPerMinute" Min="1" Max="10000" Disabled="_busy" Label="@Loc[LocKeys.Ui.AgentGeneralSettingsTab.MaximumEnrollmentRequestsPerMinute]" Variant="Variant.Outlined" HelperText="@Loc[LocKeys.Ui.AgentGeneralSettingsTab.DefaultsTo30SharedByAllEnrollingAgentsIncludes]" />
+        <MudNumericField T="int" @bind-Value="_limits.CheckinIntervalMinutes" Min="1" Max="1440" Disabled="_busy" Label="@Loc[LocKeys.Ui.AgentGeneralSettingsTab.DefaultCheckInIntervalMinutes]" Variant="Variant.Outlined" HelperText="@Loc[LocKeys.Ui.AgentGeneralSettingsTab.DefaultsTo60MinutesAgentsReceiveTheCurrentInterval]" />
+        <MudNumericField T="int" @bind-Value="_limits.MaxConcurrentDownloads" Min="1" Max="10000" Disabled="_busy" Label="@Loc[LocKeys.Ui.AgentGeneralSettingsTab.MaximumSimultaneousDownloads]" Variant="Variant.Outlined" HelperText="@Loc[LocKeys.Ui.AgentGeneralSettingsTab.SharesDownloadCapacityBetweenPoliciesAndDirectActionDeployments]" />
+        <MudNumericField T="int" @bind-Value="_limits.MaxConcurrentTasks" Min="1" Max="10000" Disabled="_busy" Label="@Loc[LocKeys.Ui.AgentGeneralSettingsTab.MaximumSimultaneousDeviceTasks]" Variant="Variant.Outlined" HelperText="@Loc[LocKeys.Ui.AgentGeneralSettingsTab.LimitsActiveDirectActionDeploymentsAcrossDevicesTasksRetain]" />
+        <MudNumericField T="int" @bind-Value="_limits.MaxConcurrentCheckins" Min="1" Max="10000" Disabled="_busy" Label="@Loc[LocKeys.Ui.AgentGeneralSettingsTab.MaximumSimultaneousCheckInRequests]" Variant="Variant.Outlined" HelperText="@Loc[LocKeys.Ui.AgentGeneralSettingsTab.LimitsConcurrentAuthenticatedCheckInAndPolicyRetrievalProcessing]" />
+        <MudNumericField T="int" @bind-Value="_limits.MaxConcurrentInventorySubmissions" Min="1" Max="10000" Disabled="_busy" Label="@Loc[LocKeys.Ui.AgentGeneralSettingsTab.MaximumSimultaneousInventorySubmissions]" Variant="Variant.Outlined" HelperText="@Loc[LocKeys.Ui.AgentGeneralSettingsTab.LimitsInventoryRequestProcessingAcrossServerInstancesIncludingPolicy]" />
+    </MudStack></MudPaper>
+    </div>
+}
+else { <MudButton OnClick="OnLoadClicked" Disabled="_busy">@Loc[LocKeys.Ui.AgentToolsAccessTab.ReloadSettings]</MudButton> }
+@code {
+    private DeviceTaskLimitsDto? _limits;
+    private string? _error;
+    private bool _busy;
+    protected override Task OnInitializedAsync() => OnLoadClicked();
+    private async Task OnLoadClicked()
+    {
+        _busy = true; var result = await Service.GetLimitsAsync(); _limits = result.Data;
+        _error = result.Success ? null : Loc[result.Error!.Code, result.Error.Args].Value; _busy = false;
+    }
+    private async Task OnSaveClicked()
+    {
+        if (_busy || _limits is null) return;
+        _busy = true; var result = await Service.SaveLimitsAsync(_limits);
+        if (result.Success) Snackbar.Add(UiText.Get(LocKeys.Ui.AgentGeneralSettingsTab.AgentSettingsSaved), Severity.Success); if (!result.Success) Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); _busy = false;
+    }
+}
+

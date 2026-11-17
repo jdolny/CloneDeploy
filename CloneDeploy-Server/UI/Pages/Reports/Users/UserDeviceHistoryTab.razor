@@ -1,0 +1,298 @@
+@attribute [Authorize(Policy = Constants.Permissions.ReportUsers)]
+@using System.Text.Json
+@using CloneDeploy_Server.UI.Pages.Devices.Devices.Dialogs
+@inject DeviceService Reports
+@inject IJSRuntime JS
+
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+@if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+else
+{
+    <div class="device-detail device-workspace">
+    <ResponsiveTabs PanelOrder="@(new int[] { 2, 1, 0 })" ActivePanelIndex="_activeTab" ActivePanelIndexChanged="ChangeTabAsync" KeepPanelsAlive="true" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.Ui.DevicesReportPage.SavedReports]" Icon="@Icons.Material.Outlined.Folder">
+                <TabHelp Href="ui/reports/user-reports-saved-reports.html" Title="@Loc[LocKeys.Ui.DevicesReportPage.SavedReports]" />
+        <div class="pb-4">
+            <MudDataGrid T="SavedUserDeviceReport" Items="_saved" Dense="true" Hover="true" Outlined="true" Elevation="0" Class="device-list-grid" RowsPerPage="25" QuickFilter="MatchesSaved" HorizontalScrollbar="true">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DevicesReportPage.SavedReports_8f028a72]</MudText><MudSpacer />
+                    <MudTextField T="string" @bind-Value="_savedSearch" Immediate="true" Clearable="true" Placeholder="@Loc[LocKeys.Ui.DevicesReportPage.SearchSavedReports]" Variant="Variant.Outlined" Margin="Margin.Dense" Class="shared-resource-search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" aria-label="@Loc[LocKeys.Ui.DevicesReportPage.SearchSavedReports_95d3b27f]" />
+                </ToolBarContent>
+                <Columns>
+                    <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]">
+                        <CellTemplate><MudLink OnClick="@(() => LoadReportAsync(context.Item.Id))" Disabled="_busy">@context.Item.Name</MudLink></CellTemplate>
+                    </PropertyColumn>
+                    <TemplateColumn Title="@Loc[LocKeys.Ui.UserDeviceHistoryTab.ReportType]"><CellTemplate>@ReportType(context.Item)</CellTemplate></TemplateColumn>
+                    <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+                        <CellTemplate><MudIconButton Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => DeleteReportAsync(context.Item))" Disabled="_busy" aria-label="@(UiText.Get(LocKeys.Ui.ActionFiles.Delete0_7eab122c, (context.Item.Name)))" /></CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.DevicesReportPage.NoSavedReportsFoundBuildAReportAndSelect]</MudText></NoRecordsContent>
+                <PagerContent><MudDataGridPager T="SavedUserDeviceReport" /></PagerContent>
+            </MudDataGrid>
+        </div>
+    </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ManagePolicyPage.SelfService]" Icon="@Icons.Material.Outlined.Apps">
+                <TabHelp Href="ui/reports/user-reports-self-service.html" Title="@Loc[LocKeys.Ui.ManagePolicyPage.SelfService]" />
+        @if (_activeTab == 1) { @ReportContent }
+    </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.UserDeviceHistoryTab.DeviceHistory]" Icon="@Icons.Material.Outlined.History">
+                <TabHelp Href="ui/reports/user-reports-login-history.html" Title="@Loc[LocKeys.Ui.UserDeviceHistoryTab.DeviceHistory]" />
+        @if (_activeTab == 0) { @ReportContent }
+    </MudTabPanel>
+        </ResponsiveTabs>
+    </div>
+}
+@code {
+    private RenderFragment ReportContent => @<text>
+    <div class="py-4">
+    <div class="section-action-bar">
+        <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+                <MudButton OnClick="RunAsync" Disabled="_busy" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow">@Loc[LocKeys.Ui.DevicesReportPage.RunReport]</MudButton>
+            <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Style="align-self: auto;" Disabled="_busy" aria-label="@Loc[LocKeys.Ui.ActionButtons.MoreActions]">
+                <MudMenuItem OnClick="SaveReportAsync" Disabled="_busy">@Loc[LocKeys.Ui.DevicesReportPage.SaveReport]</MudMenuItem>
+                <MudMenuItem OnClick="@Snackbar.GuardAction(() => _busy || _preview is null, UiText.Get(LocKeys.Ui.DevicesReportPage.RunTheReportBeforeExportingItsResults), ExportAsync)" Disabled="_busy">@Loc[LocKeys.Ui.DevicesReportPage.ExportAllMatches]</MudMenuItem>
+            </MudMenu>
+        </MudButtonGroup>
+            </div>
+<fieldset disabled="@_busy" style="border:0;padding:0;margin:0;min-width:0">
+        <MudStack Spacing="4">
+            @if (_id != 0 || _dirty)
+            {
+                <MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                    @if (_id != 0) { <MudText Typo="Typo.h6">@_name</MudText> }
+                    @if (_dirty) { <MudText Typo="Typo.caption">@Loc[LocKeys.Common.UnsavedChanges]</MudText> }
+                </MudStack>
+            }
+            <MudPaper Outlined="true" Elevation="0" Class="pa-4">
+                <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DevicesReportPage.Filters]</MudText>
+                <MudGrid Class="mt-1">
+                    <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_definition.UserName" @bind-Value:after="DefinitionChanged" Label="@Loc[LocKeys.Ui.UserDeviceHistoryTab.RecordedUsername]" Placeholder="@Loc[LocKeys.Ui.UserDeviceHistoryTab.LeaveBlankForAllUsers]" Variant="Variant.Outlined" Immediate="true" Disabled="_busy" /></MudItem>
+                    <MudItem xs="12" md="6"><MudSelect T="bool" @bind-Value="_definition.ExactMatch" @bind-Value:after="DefinitionChanged" Label="@Loc[LocKeys.Ui.UserDeviceHistoryTab.UsernameMatching]" Variant="Variant.Outlined" Disabled="_busy"><MudSelectItem Value="false">@Loc[LocKeys.Ui.UserDeviceHistoryTab.Contains]</MudSelectItem><MudSelectItem Value="true">@Loc[LocKeys.Ui.UserDeviceHistoryTab.Equal]</MudSelectItem></MudSelect></MudItem>
+                    <MudItem xs="12" md="6"><MudDatePicker @bind-Date="_definition.From" @bind-Date:after="DefinitionChanged" Label="@(_definition.SelfService ? UiText.Get(LocKeys.Ui.UserDeviceHistoryTab.AcceptedFromUTC) : UiText.Get(LocKeys.Ui.UserDeviceHistoryTab.LoginDateFromUTC))" Variant="Variant.Outlined" Clearable="true" Disabled="_busy" /></MudItem>
+                    <MudItem xs="12" md="6"><MudDatePicker @bind-Date="_definition.Through" @bind-Date:after="DefinitionChanged" Label="@(_definition.SelfService ? UiText.Get(LocKeys.Ui.UserDeviceHistoryTab.AcceptedThroughUTC) : UiText.Get(LocKeys.Ui.UserDeviceHistoryTab.LoginDateThroughUTC))" Variant="Variant.Outlined" Clearable="true" Disabled="_busy" /></MudItem>
+                    @if (_definition.SelfService)
+                    {
+                        <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_definition.PolicyName" @bind-Value:after="DefinitionChanged" Label="@Loc[LocKeys.Ui.UserDeviceHistoryTab.PolicyNameContains]" Immediate="true" Variant="Variant.Outlined" Disabled="_busy" /></MudItem>
+                        <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_definition.UserSid" @bind-Value:after="DefinitionChanged" Label="@Loc[LocKeys.Ui.UserDeviceHistoryTab.UserSIDExactMatch]" Immediate="true" Variant="Variant.Outlined" Disabled="_busy" /></MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudSelect T="int?" @bind-Value="_definition.Result" @bind-Value:after="DefinitionChanged" Label="@Loc[LocKeys.Dashboard.Result]" Variant="Variant.Outlined" Disabled="_busy">
+                                <MudSelectItem T="int?" Value="@((int?)null)">@Loc[LocKeys.Ui.UserDeviceHistoryTab.AllResults]</MudSelectItem>
+                                <MudSelectItem T="int?" Value="@((int?)-1)">@Loc[LocKeys.Device.PolicyAwaitingResult]</MudSelectItem>
+                                <MudSelectItem T="int?" Value="@((int?)0)">@Loc[LocKeys.Scheduler.StatusSucceeded]</MudSelectItem>
+                                <MudSelectItem T="int?" Value="@((int?)1)">@Loc[LocKeys.Scheduler.StatusFailed]</MudSelectItem>
+                                <MudSelectItem T="int?" Value="@((int?)2)">@Loc[LocKeys.Device.PolicySkipped]</MudSelectItem>
+                                <MudSelectItem T="int?" Value="@((int?)3)">@Loc[LocKeys.Device.PolicyNotApplicable]</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                    }
+                    <MudItem xs="12"><MudSwitch T="bool" @bind-Value="_definition.IncludeArchived" @bind-Value:after="DefinitionChanged" Color="Color.Primary" Disabled="_busy">@Loc[LocKeys.Ui.UserDeviceHistoryTab.IncludeArchivedDevices]</MudSwitch></MudItem>
+                </MudGrid>
+            </MudPaper>
+            <MudPaper Outlined="true" Elevation="0" Class="pa-4">
+                <MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center">
+                    <MudText Typo="Typo.h6">@UiText.Get(LocKeys.Ui.DevicesReportPage.Columns0, (_columns.Count))</MudText><MudSpacer />
+                    <MudButton OnClick="ChooseColumnsAsync" Disabled="_busy" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.ViewColumn">@Loc[LocKeys.Ui.DevicesReportPage.ChooseColumns]</MudButton>
+                </MudStack>
+                <MudText Typo="Typo.body2" Class="mt-3">@string.Join(", ", _columns.Select(key => CurrentColumns.FirstOrDefault(x => x.Key == key)?.Title ?? UiText.Get(LocKeys.Ui.DevicesReportPage.Unavailable0, (key))))</MudText>
+            </MudPaper>
+
+        </MudStack>
+    </fieldset>
+    @if (_busy) { <MudProgressLinear Indeterminate="true" Class="my-3" /> }
+    @if (_preview is not null)
+    {
+        <MudText Class="my-3">@UiText.Get(LocKeys.Ui.UserDeviceHistoryTab.Text01PreviewShowsTheFirst2CSVExport, (_preview.Total.ToString("N0")), ((_definition.SelfService ? UiText.Get(LocKeys.Ui.UserDeviceHistoryTab.MatchingSelfServiceRuns) : UiText.Get(LocKeys.Ui.UserDeviceHistoryTab.MatchingUserDevicePairs))), (_preview.Rows.Count))</MudText>
+        <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.DevicesReportPage.PreviewGenerated0DateColumnsUseUTC, (_preview.AsOfUtc.ToLocalTime().ToString("g")))</MudText>
+        <MudDataGrid @key="_preview" T="DeviceReportResultRow" Items="_preview.Rows" Dense="true" Hover="true" Outlined="true" Elevation="0" Class="device-list-grid mt-3" HorizontalScrollbar="true" RowsPerPage="25" SortMode="SortMode.None">
+            <Columns>
+                @for (var i = 0; i < _preview.Columns.Count; i++)
+                {
+                    var index = i;
+                    var column = _preview.Columns[i];
+                    <TemplateColumn T="DeviceReportResultRow" Title="@column.Title" Sortable="false" Filterable="false">
+                        <CellTemplate>
+                            @if (column.Key == "name") { <MudLink Href="@($"/devices/manage/{context.Item.DeviceId}")">@context.Item.Values[index]</MudLink> }
+                            else if (column.Key == "policy" && context.Item.PolicyId is { } policyId) { <MudLink Href="@($"/policies/{policyId}")">@context.Item.Values[index]</MudLink> }
+                            else { @context.Item.Values[index] }
+                        </CellTemplate>
+                    </TemplateColumn>
+                }
+                @if (_definition.SelfService)
+                {
+                    <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+                        <CellTemplate><MudButton Color="Color.Primary" OnClick="@(() => ViewResultAsync(context.Item))">@Loc[LocKeys.Ui.UserDeviceHistoryTab.ViewResult]</MudButton></CellTemplate>
+                    </TemplateColumn>
+                }
+            </Columns>
+            <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.UserDeviceHistoryTab.NoRecordsMatchTheseFilters]</MudText></NoRecordsContent>
+            <PagerContent><MudDataGridPager T="DeviceReportResultRow" /></PagerContent>
+        </MudDataGrid>
+    }
+    </div>
+    </text>;
+
+    private List<SavedUserDeviceReport> _saved = [];
+    private UserDeviceReportQuery _definition = new();
+    private List<string> _columns = [.. DeviceService.DefaultUserReportColumns];
+    private DeviceReportPreview? _preview;
+    private string _name = "";
+    private string? _error;
+    private int _id, _activeTab;
+    private string? _savedSearch;
+    private Guid _revision;
+    private bool _loading = true, _busy, _dirty;
+
+    protected override Task OnInitializedAsync() => InitializeAsync();
+    private async Task InitializeAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            var saved = await Reports.ListUserReportAsync();
+            if (!saved.HasData)
+            {
+                var error = saved.Error!;
+                _error = Loc[error.Code, error.Args];
+                return;
+            }
+            _saved = saved.Data;
+        }
+        finally { _loading = false; }
+    }
+    private bool MatchesSaved(SavedUserDeviceReport report) => string.IsNullOrWhiteSpace(_savedSearch) || report.Name.Contains(_savedSearch.Trim(), StringComparison.OrdinalIgnoreCase);
+    private IReadOnlyList<DeviceReportColumn> CurrentColumns => _definition.SelfService ? DeviceService.SelfServiceReportColumns : DeviceService.UserReportColumns;
+    private static string ReportType(SavedUserDeviceReport report)
+    {
+        try { return JsonSerializer.Deserialize<UserDeviceReportQuery>(report.QueryJson)?.SelfService == true ? UiText.Get(LocKeys.Ui.ManagePolicyPage.SelfService) : UiText.Get(LocKeys.Ui.UserDeviceHistoryTab.DeviceHistory); }
+        catch (JsonException) { return UiText.Get(LocKeys.Ui.OuTargetPickerNode.Unavailable); }
+    }
+    private async Task ChangeTabAsync(int tab)
+    {
+        if (_busy) return;
+        if (tab != 2 && (tab == 1) != _definition.SelfService)
+        {
+            if (!await CanDiscardAsync()) return;
+            ResetReport(tab == 1);
+        }
+        _activeTab = tab;
+    }
+    private void ResetReport(bool selfService)
+    {
+        _id = 0; _revision = Guid.Empty; _name = ""; _definition = new() { SelfService = selfService };
+        _columns = [.. selfService ? DeviceService.DefaultSelfServiceReportColumns : DeviceService.DefaultUserReportColumns];
+        _preview = null; _error = null; _dirty = false; _activeTab = selfService ? 1 : 0;
+    }
+    private void DefinitionChanged() { _preview = null; _dirty = true; _error = null; }
+    private async Task<bool> CanDiscardAsync() => !_dirty || await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.DevicesReportPage.DiscardReportChanges), UiText.Get(LocKeys.Ui.DevicesReportPage.TheCurrentFiltersAndColumnsHaveNotBeenSaved), yesText: UiText.Get(LocKeys.Ui.DevicesReportPage.Discard), cancelText: UiText.Get(LocKeys.Common.Cancel)) == true;
+    private async Task NewAsync()
+    {
+        if (_busy || !await CanDiscardAsync()) return;
+        ResetReport(_definition.SelfService);
+    }
+    private async Task LoadReportAsync(int id)
+    {
+        if (_busy) return;
+        if (id == 0) { await NewAsync(); return; }
+        if (!await CanDiscardAsync()) return;
+        _busy = true;
+        try
+        {
+            var result = await Reports.ListUserReportAsync();
+            if (!result.HasData) { _error = Loc[result.Error!.Code, result.Error.Args]; return; }
+            _saved = result.Data;
+            var report = _saved.FirstOrDefault(x => x.Id == id);
+            if (report is null) { _error = UiText.Get(LocKeys.Ui.DevicesReportPage.ThisReportIsNoLongerAvailable); return; }
+            var definition = JsonSerializer.Deserialize<UserDeviceReportQuery>(report.QueryJson) ?? new();
+            var columns = JsonSerializer.Deserialize<List<string>>(report.ColumnsJson) ?? [];
+            _definition = definition; _columns = columns; _name = report.Name; _id = report.Id; _revision = report.Revision;
+            _preview = null; _error = null; _dirty = false; _activeTab = definition.SelfService ? 1 : 0;
+        }
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException) { _error = UiText.Get(LocKeys.Ui.DevicesReportPage.ThisSavedReportCouldNotBeRead); }
+        finally { _busy = false; }
+    }
+    private async Task ChooseColumnsAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var parameters = new DialogParameters<DeviceReportColumnsDialog> { { x => x.Catalog, CurrentColumns }, { x => x.Selected, _columns } };
+            var dialog = await Dialog.ShowAsync<DeviceReportColumnsDialog>(UiText.Get(LocKeys.Ui.DevicesReportPage.ReportColumns), parameters, new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large });
+            if (await dialog.Result is { Canceled: false, Data: List<string> selected }) { _columns = selected; DefinitionChanged(); }
+        }
+        finally { _busy = false; }
+    }
+    private async Task SaveReportAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var parameters = new DialogParameters<SaveUserDeviceReportDialog>
+            {
+                { x => x.ReportId, _id }, { x => x.Revision, _revision }, { x => x.InitialName, _name },
+                { x => x.Definition, _definition }, { x => x.Columns, _columns }
+            };
+            var dialog = await Dialog.ShowAsync<SaveUserDeviceReportDialog>(UiText.Get(LocKeys.Ui.DevicesReportPage.SaveReport_8ec314b0), parameters,
+                new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Small, BackdropClick = false });
+            if (await dialog.Result is not { Canceled: false, Data: SavedUserDeviceReport saved }) return;
+            _saved.RemoveAll(x => x.Id == saved.Id); _saved.Add(saved); _saved = _saved.OrderBy(x => x.Name).ToList();
+            _id = saved.Id; _revision = saved.Revision; _name = saved.Name; _dirty = false; _error = null;
+            Snackbar.Add(UiText.Get(LocKeys.Ui.DevicesReportPage.ReportSaved), Severity.Success);
+        }
+        finally { _busy = false; }
+    }
+    private async Task DeleteReportAsync(SavedUserDeviceReport report)
+    {
+        if (_busy || await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.DevicesReportPage.DeleteSavedReport), UiText.Get(LocKeys.Ui.ManageImageProfilePage.Delete0, (report.Name)), yesText: UiText.Get(LocKeys.Common.Delete), cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+        _busy = true;
+        try
+        {
+            var result = await Reports.DeleteUserReportAsync(report.Id, report.Revision);
+            if (!result.Success) { Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); return; }
+            _saved.RemoveAll(x => x.Id == report.Id);
+            if (_id == report.Id) { _id = 0; _revision = Guid.Empty; _name = ""; _dirty = true; }
+            _error = null;
+        }
+        finally { _busy = false; }
+    }
+    private async Task RunAsync()
+    {
+        if (_busy) return;
+        _busy = true; _error = null; _preview = null;
+        try
+        {
+            var result = await Reports.PreviewUserReportAsync(_definition, _columns);
+            if (result.HasData) _preview = result.Data;
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _busy = false; }
+    }
+    private async Task ViewResultAsync(DeviceReportResultRow row)
+    {
+        var parameters = new DialogParameters<DeviceHistoryResultDialog>
+        {
+            { x => x.Result, row.ReportedDetail }, { x => x.Hash, row.PolicyHash }, { x => x.Summary, UiText.Get(LocKeys.Ui.UserDeviceHistoryTab.Run0, (row.RunId)) }
+        };
+        await Dialog.ShowAsync<DeviceHistoryResultDialog>(row.PolicyName ?? UiText.Get(LocKeys.Ui.UserDeviceHistoryTab.SelfServiceResult), parameters,
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, CloseButton = true, CloseOnEscapeKey = true });
+    }
+    private async Task ExportAsync()
+    {
+        if (_busy || _preview is null) return;
+        _busy = true; _error = null;
+        try
+        {
+            var result = await Reports.ExportUserReportAsync(_definition, _columns);
+            if (!result.HasData) { Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); return; }
+            await using var module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/device-report.js");
+            using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(result.Data));
+            using var reference = new DotNetStreamReference(stream);
+            await module.InvokeVoidAsync("downloadStream", reference, _definition.SelfService ? "user-self-service.csv" : "user-device-history.csv");
+        }
+        catch (JSException) { Snackbar.Add(UiText.Get(LocKeys.Ui.DevicesReportPage.CouldNotDownloadTheCSVTryExportingAgain), Severity.Error); }
+        finally { _busy = false; }
+    }
+}

@@ -1,0 +1,209 @@
+@using CloneDeploy_Server.Backend.Auth
+@using Microsoft.AspNetCore.Components.Sections
+@using CloneDeploy_Server.Backend.Services
+@using CloneDeploy_Server.UI.Common
+@implements IDisposable
+@inject NavigationSearchService NavigationSearch
+@inject NavigationManager Navigation
+@inject ServerFeatureSettings Features
+
+@inject IStringLocalizer<LocalizationResources> Loc
+
+<MudNavMenu Color="Color.Primary" Class="@(_searchOpen ? "mt-2 navigation-search-open" : "mt-2")">
+    <div class="mx-2 navigation-search-input" style="position: relative;" @onkeydown="SearchKeyDown" @onclick:stopPropagation="true">
+        <MudTextField Class="nav-search" T="string" Value="_navSearchString" ValueChanged="SearchChanged" Placeholder="@Loc[LocKeys.Ui.NavMenu.SearchRecords]" aria-label="@Loc[LocKeys.Ui.NavMenu.SearchNavigation]" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" Immediate Clearable="true"
+                      @onfocusin="OpenSearch" @onclick="OpenSearch"
+                      Variant="Variant.Outlined" Margin="Margin.Dense"/>
+        <MudPopover Open="_searchOpen" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft"
+                    Elevation="8" Style="width: min(360px, calc(100vw - 32px)); z-index: 1402;">
+        <div aria-live="polite" @onkeydown="SearchKeyDown" style="max-height: min(360px, 60vh); overflow-y: auto; overflow-x: hidden; scrollbar-gutter: stable;">
+            @if (_searchLoading)
+            {
+                <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+            }
+            else if (_searchError)
+            {
+                <MudText Class="mx-4 my-2" Typo="Typo.caption">@Loc[LocKeys.Ui.NavMenu.SearchUnavailablePleaseTryAgain]</MudText>
+            }
+            else if (_searchResults.Count == 0)
+            {
+                <MudText Class="mx-4 my-2" Typo="Typo.caption">@Loc[LocKeys.Ui.NavMenu.NoMatchingResults]</MudText>
+            }
+            @foreach (var group in _searchResults.GroupBy(x => x.Category))
+            {
+                <MudText Class="mx-4 mt-2" Typo="Typo.overline">@UiText.Label(group.Key)</MudText>
+                @foreach (var result in group)
+                {
+                    <MudNavLink Href="@result.Url" Match="NavLinkMatch.Prefix"
+                                Icon="@SearchResultIcon(result.Category)">
+                        <span style="overflow-wrap: anywhere;">@result.Label</span>
+                    </MudNavLink>
+                }
+            }
+        </div>
+        </MudPopover>
+    </div>
+    <MudOverlay Visible="_searchOpen" OnClick="CloseSearch" ZIndex="1400" />
+    <MudDivider Class="my-2"/>
+
+    <MudNavLink Href="/dashboard" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dashboard">@Loc[LocKeys.Dashboard.Title]</MudNavLink>
+ 
+    <AuthorizedNavigationGroup Policies="@DevicesPermissions" Title="@Loc[LocKeys.Group.Devices]" Icon="@Icons.Material.Filled.Computer">
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.DeviceView" Href="/devices/manage" Text="@Loc[LocKeys.Group.Devices]" />
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.DeviceGroupView" Href="/groups" Text="@Loc[LocKeys.Ui.NavMenu.DeviceGroups]" />
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.DeviceApprove" Href="/devices/approval-and-reset" Text="@Loc[LocKeys.Ui.NavMenu.EnrollmentRequests]" />
+    </AuthorizedNavigationGroup>
+
+    @if (_features.Management)
+    {
+    <AuthorizedNavigationGroup Policies="@PoliciesPermissions" Title="@Loc[LocKeys.Ui.NavMenu.PoliciesActions]" Icon="@Icons.Material.Filled.FactCheck">
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.PolicyView" Href="/policies" Text="@Loc[LocKeys.Policy.Policies]" />
+        <MudNavGroup Title="@Loc[LocKeys.Common.Actions]">
+            <AuthorizedNavigationLink Policy="@Constants.Permissions.PolicyView" Href="/actions/command" Text="@Loc[LocKeys.Ui.NavMenu.Commands]" />
+            <AuthorizedNavigationLink Policy="@Constants.Permissions.PolicyView" Href="/actions/notification" Text="@Loc[LocKeys.Ui.NavMenu.Notification]" />
+            <AuthorizedNavigationLink Policy="@Constants.Permissions.PolicyView" Href="/actions/file" Text="@Loc[LocKeys.Ui.NavMenu.FileDeployment]" />
+            <AuthorizedNavigationLink Policy="@Constants.Permissions.PolicyView" Href="/actions/domainjoin" Text="@Loc[LocKeys.Ui.NavMenu.JoinDomain]" />
+            <AuthorizedNavigationLink Policy="@Constants.Permissions.PolicyView" Href="/actions/printer" Text="@Loc[LocKeys.Ui.NavMenu.Printer]" />
+            <AuthorizedNavigationLink Policy="@Constants.Permissions.PolicyView" Href="/actions/script" Text="@Loc[LocKeys.Ui.NavMenu.Script]" />
+            <AuthorizedNavigationLink Policy="@Constants.Permissions.PolicyView" Href="/actions/software" Text="@Loc[LocKeys.Device.Software]" />
+            <AuthorizedNavigationLink Policy="@Constants.Permissions.PolicyView" Href="/actions/windowsupdate" Text="@Loc[LocKeys.Device.WindowsUpdates]" />
+        </MudNavGroup>
+    </AuthorizedNavigationGroup>
+
+    }
+    @if (_features.Imaging)
+    {
+    <AuthorizedNavigationGroup Policies="@ImagingPermissions" Title="@Loc[LocKeys.Device.Imaging]" Icon="@AppIcons.HardDrive">
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.ImageView" Href="/images/manage" Text="@Loc[LocKeys.Image.Images]" />
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.DeploymentProfileView" Href="/images/deploymentprofiles" Text="@Loc[LocKeys.Ui.NavMenu.DeploymentProfiles]" />
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.DeploymentRuleView" Href="/images/deploymentrules" Text="@Loc[LocKeys.Ui.NavMenu.DeploymentRules]" />
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.OuNamingRuleView" Href="/images/ounamingrules" Text="@Loc[LocKeys.Ui.NavMenu.OUNamingRules]" />
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.DriverPackView" Href="/images/driverpacks" Text="@Loc[LocKeys.Ui.NavMenu.DriverPacks]" />
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.ImagePrepProfileView" Href="/images/prepprofiles" Text="@Loc[LocKeys.Ui.NavMenu.ImagePrepProfiles]" />
+    </AuthorizedNavigationGroup>
+    }
+    <AuthorizedNavigationLink Policy="@Constants.Permissions.HelpDeskAccess" Href="/helpdesk" Text="@Loc[LocKeys.Ui.AdministrationNavigationGroup.HelpDesk]" Icon="@Icons.Material.Filled.SupportAgent" />
+    <MudNavGroup Title="@Loc[LocKeys.Device.Tasks]" Icon="@Icons.Material.Filled.PendingActions">
+        <MudNavLink Href="/tasks/deployments" Match="NavLinkMatch.Prefix">@Loc[LocKeys.Ui.NavMenu.ActionDeployments]</MudNavLink>
+        <MudNavLink Href="/tasks/imaging" Match="NavLinkMatch.Prefix">@Loc[LocKeys.Ui.NavMenu.ImagingTasks]</MudNavLink>
+    </MudNavGroup>
+    <AuthorizedNavigationGroup Policies="@SharedPermissions" Title="@Loc[LocKeys.Ui.NavMenu.SharedResources]" Icon="@Icons.Material.Filled.BlurCircular">
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.CustomAttributeView" Href="/shared/customattributes" Text="@Loc[LocKeys.Common.CustomAttributes]" />
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.ScheduleView" Href="/shared/schedules" Text="@Loc[LocKeys.Common.Schedules]" />
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.UserAudienceView" Href="/shared/user-audiences" Text="@Loc[LocKeys.Ui.NavMenu.UserAudiences]" />
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.SelfServiceCategoryView" Href="/shared/self-service-categories" Text="@Loc[LocKeys.Ui.NavMenu.SelfServiceCategories]" />
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.TagView" Href="/shared/tags" Text="@Loc[LocKeys.Common.Tags]" />
+
+    </AuthorizedNavigationGroup>
+    <AuthorizedNavigationGroup Policies="@ReportsPermissions" Title="@Loc[LocKeys.Ui.NavMenu.Reports]"  Icon="@Icons.Material.Filled.Report">
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.ReportHelpDesk" Href="/reports/helpdesk" Text="@Loc[LocKeys.Ui.AdministrationNavigationGroup.HelpDesk]" />
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.ReportDevices" Href="/reports/devices" Text="@Loc[LocKeys.Group.Devices]" />
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.ReportUsers" Href="/reports/user" Text="@Loc[LocKeys.Common.Users]" />
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.ReportWindowsUpdates" Href="/reports/windowsupdates" Text="@Loc[LocKeys.Device.WindowsUpdates]" />
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.ReportSoftware" Href="/reports/software" Text="@Loc[LocKeys.Device.Software]" />
+        <AuthorizedNavigationLink Policy="@Constants.Permissions.ReportPolicies" Href="/reports/policies" Text="@Loc[LocKeys.Policy.Policies]" />
+    </AuthorizedNavigationGroup>
+    <AdministrationNavigation />
+</MudNavMenu>
+
+@code {
+    private static readonly string[] DevicesPermissions = [Constants.Permissions.DeviceView, Constants.Permissions.DeviceGroupView, Constants.Permissions.DeviceApprove];
+    private static readonly string[] PoliciesPermissions = [Constants.Permissions.PolicyView];
+    private static readonly string[] ImagingPermissions = [Constants.Permissions.ImageView, Constants.Permissions.DeploymentProfileView, Constants.Permissions.DeploymentRuleView, Constants.Permissions.OuNamingRuleView, Constants.Permissions.DriverPackView, Constants.Permissions.ImagePrepProfileView];
+    private static readonly string[] SharedPermissions = [Constants.Permissions.CustomAttributeView, Constants.Permissions.ScheduleView, Constants.Permissions.UserAudienceView, Constants.Permissions.SelfServiceCategoryView, Constants.Permissions.TagView];
+    private static readonly string[] ReportsPermissions = [Constants.Permissions.ReportHelpDesk, Constants.Permissions.ReportDevices, Constants.Permissions.ReportUsers, Constants.Permissions.ReportWindowsUpdates, Constants.Permissions.ReportSoftware, Constants.Permissions.ReportPolicies];
+
+    private static string SearchResultIcon(string category) => category switch
+    {
+        "Devices" => Icons.Material.Filled.Computer,
+        "Policies" => Icons.Material.Filled.FactCheck,
+        "Actions" => Icons.Material.Filled.PlayArrow,
+        "Directory Users" => Icons.Material.Filled.People,
+        "Images" => AppIcons.HardDrive,
+        _ => Icons.Material.Filled.Person
+    };
+
+    private string? _navSearchString { get; set; }
+    private List<NavigationSearchResultDto> _searchResults = [];
+    private CancellationTokenSource? _searchCancellation;
+    private bool _searchLoading;
+    private bool _searchError;
+    private bool _searchOpen;
+
+    private ServerFeatures _features = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Navigation.LocationChanged += LocationChanged;
+        Features.Changed += FeaturesChanged;
+        _features = await Features.ReadAsync();
+    }
+
+    private void FeaturesChanged() => _ = InvokeAsync(async () =>
+    {
+        _features = await Features.ReadAsync();
+        await ClearSearch();
+        StateHasChanged();
+    });
+
+    private void LocationChanged(object? sender, LocationChangedEventArgs args)
+    {
+        _ = InvokeAsync(async () =>
+        {
+            await ClearSearch();
+            _features = await Features.ReadAsync();
+            StateHasChanged();
+        });
+    }
+
+    private void OpenSearch() => _searchOpen = _navSearchString?.Trim().Length >= 2;
+    private void CloseSearch() => _searchOpen = false;
+    private void SearchKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape") CloseSearch();
+    }
+
+    private async Task SearchChanged(string? value)
+    {
+        _navSearchString = value;
+        OpenSearch();
+        _searchCancellation?.Cancel();
+        _searchResults = [];
+        _searchError = false;
+        _searchLoading = false;
+        if (string.IsNullOrWhiteSpace(value) || value.Trim().Length < 2) return;
+
+        using var cancellation = new CancellationTokenSource();
+        _searchCancellation = cancellation;
+        _searchLoading = true;
+        try
+        {
+            await Task.Delay(300, cancellation.Token);
+            var results = await NavigationSearch.SearchAsync(value, cancellation.Token);
+            if (!cancellation.IsCancellationRequested)
+            {
+                _searchResults = results.Data ?? [];
+                _searchError = !results.Success;
+            }
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+        finally
+        {
+            if (ReferenceEquals(_searchCancellation, cancellation))
+            {
+                _searchCancellation = null;
+                _searchLoading = false;
+            }
+        }
+    }
+
+    private Task ClearSearch() => SearchChanged(null);
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= LocationChanged;
+        Features.Changed -= FeaturesChanged;
+        _searchCancellation?.Cancel();
+    }
+    
+}

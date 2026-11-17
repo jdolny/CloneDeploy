@@ -1,0 +1,59 @@
+@using CloneDeploy_Server.UI.Pages.Devices.Devices.Dialogs
+@inject DirectoryService Directories
+
+<MudText Typo="Typo.body2" Class="mb-4">@Loc[LocKeys.Ui.DirectoryUserSelfServiceHistoryTab.AcceptedSelfServiceRunsForThisDirectoryIdentityRejected]</MudText>
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+@if (!_hasSid) { <MudAlert Severity="Severity.Info" Class="mb-4">@Loc[LocKeys.Ui.DirectoryUserSelfServiceHistoryTab.ThisDirectoryUserHasNoSIDSoSelfService]</MudAlert> }
+<MudDataGrid T="DirectoryUserHistoryRow" ServerData="LoadAsync" Dense="true" Hover="true" Outlined="true" Elevation="0"
+             Class="device-list-grid" HorizontalScrollbar="true" RowsPerPage="25" SortMode="SortMode.None" Filterable="false">
+    <Columns>
+        <TemplateColumn Title="@Loc[LocKeys.Group.Policy]"><CellTemplate><MudLink Href="@($"/policies/{context.Item.PolicyId}")">@context.Item.PolicyName</MudLink></CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Dashboard.Device]"><CellTemplate><MudLink Href="@($"/devices/manage/{context.Item.DeviceId}")">@context.Item.DeviceName</MudLink></CellTemplate></TemplateColumn>
+        <PropertyColumn Property="x => x.UserName" Title="@Loc[LocKeys.Ui.DirectoryUserNotificationsTab.RecordedUser]" />
+        <TemplateColumn Title="@Loc[LocKeys.Ui.DirectoryUserSelfServiceHistoryTab.Accepted]"><CellTemplate>@context.Item.StartedAtUtc.ToLocalTime().ToString("g")</CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.DatabaseBackupTab.Completed]"><CellTemplate>@(context.Item.FinishedAtUtc?.ToLocalTime().ToString("g") ?? "—")</CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Dashboard.Result]"><CellTemplate><MudChip T="string" Size="Size.Small" Color="@ResultColor(context.Item)" Variant="Variant.Outlined">@Status(context.Item)</MudChip></CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+            <CellTemplate><MudButton OnClick="@(() => ViewAsync(context.Item))" Color="Color.Primary">@Loc[LocKeys.Ui.UserDeviceHistoryTab.ViewResult]</MudButton></CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.DirectoryUserSelfServiceHistoryTab.NoRecordedSelfServiceRunsFound]</MudText></NoRecordsContent>
+    <PagerContent><MudDataGridPager T="DirectoryUserHistoryRow" PageSizeOptions="@(new[] { 10, 25, 50, 100 })" /></PagerContent>
+</MudDataGrid>
+
+@code {
+    [Parameter] public int SourceId { get; set; }
+    [Parameter] public Guid ObjectGuid { get; set; }
+    private string? _error;
+    private bool _hasSid = true;
+    private async Task<GridData<DirectoryUserHistoryRow>> LoadAsync(GridState<DirectoryUserHistoryRow> state, CancellationToken ct)
+    {
+        _error = null;
+        var result = await Directories.GetUserSelfServiceHistoryAsync(SourceId, ObjectGuid, state.Page, state.PageSize, ct);
+        if (!result.HasData)
+        {
+            _error = Loc[result.Error!.Code, result.Error.Args];
+            return new() { Items = [], TotalItems = 0 };
+        }
+        _hasSid = result.Data.HasSid;
+        return new() { Items = result.Data.Rows, TotalItems = result.Data.Total };
+    }
+    private static string Status(DirectoryUserHistoryRow row) => row.FinishedAtUtc is null ? UiText.Get(LocKeys.Device.PolicyAwaitingResult) : row.Result switch
+    {
+        0 => UiText.Get(LocKeys.Scheduler.StatusSucceeded), 1 => UiText.Get(LocKeys.Scheduler.StatusFailed), 2 => UiText.Get(LocKeys.Device.PolicySkipped), 3 => UiText.Get(LocKeys.Device.PolicyNotApplicable), _ => UiText.Get(LocKeys.Ui.DirectoryUserSelfServiceHistoryTab.UnknownResult)
+    };
+    private static Color ResultColor(DirectoryUserHistoryRow row) => row.FinishedAtUtc is null ? Color.Default : row.Result switch
+    {
+        0 => Color.Success, 1 => Color.Error, 2 or 3 => Color.Warning, _ => Color.Default
+    };
+    private async Task ViewAsync(DirectoryUserHistoryRow row)
+    {
+        var parameters = new DialogParameters<DeviceHistoryResultDialog>
+        {
+            { x => x.Result, row.Detail }, { x => x.Hash, row.Hash },
+            { x => x.Summary, UiText.Get(LocKeys.Ui.DirectoryUserSelfServiceHistoryTab.Text01Accepted2GRun3, (row.DeviceName), (Status(row)), (row.StartedAtUtc.ToLocalTime()), (row.RunId)) }
+        };
+        await Dialog.ShowAsync<DeviceHistoryResultDialog>(row.PolicyName, parameters,
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, CloseButton = true, CloseOnEscapeKey = true });
+    }
+}

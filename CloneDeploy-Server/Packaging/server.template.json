@@ -1,0 +1,99 @@
+{
+  "LinuxDataRoot": "/var/lib/clonedeploy/server",
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Warning",
+        "Microsoft.AspNetCore": "Warning",
+        "Microsoft.EntityFrameworkCore": "Warning",
+        "Microsoft.EntityFrameworkCore.Database.Command": "Warning",
+        "System": "Warning",
+        "CloneDeploy_Server.Backend.Services.PxeWorker": "Information",
+        "CloneDeploy_Server.Backend.Services.TftpWorker": "Information"
+      }
+    },
+    "WriteTo": [
+      {
+        "Name": "Console"
+      },
+      {
+        "Name": "File",
+        "Args": {
+          "path": "logs/app-.log",
+          "rollingInterval": "Day",
+          "retainedFileCountLimit": 30
+        }
+      }
+    ]
+  },
+  "AllowedHosts": "*",
+  "Uploads": {
+    "MaxFileSize": 10737418240,
+    "MaxActiveUploads": 20
+  },
+  "ConnectionStrings": {
+    "CloneDeploy-Server-Database": ""
+  },
+  "Server": {
+    "AgentAdmin": {
+      "AllowedNetworks": ""
+    },
+    "Listeners": {
+      "Enabled": false,
+      "ListenAddress": "0.0.0.0",
+      "ManagementPort": 443,
+      "ServicePort": 8443,
+      "PortalPort": 8444,
+      "HttpPort": 80
+    },
+    "PublicUrl": "",
+    "BootUrl": ""
+  },
+  "ServerSecrets": {
+    "DatabasePassword": "",
+    "CertificateThumbprint": ""
+  },
+  "Authentication": {
+    "Lockout": {
+      "DurationMinutes": 15,
+      "MaxFailedAccessAttempts": 5
+    },
+    "Password": {
+      "RequiredLength": 15,
+      "RequireNonAlphanumeric": false,
+      "RequireDigit": false,
+      "RequireUppercase": false,
+      "RequireLowercase": false
+    }
+  },
+  "Certificates": {
+    "UseManagedHttps": true
+  },
+  "Kestrel": {
+    "Certificates": {
+      "Default": {
+        "Subject": null,
+        "Store": "My",
+        "Location": "LocalMachine",
+        "AllowInvalid": false
+      }
+    }
+  },
+  "StorageMounts": {
+    "CheckIntervalSeconds": 300
+  },
+  "DriverPreparation": {
+    "MaxFiles": 100000,
+    "TimeoutMinutes": 30,
+    "MaxExpandedBytes": 42949672960,
+    "SevenZipPath": ""
+  },
+  "ImagingApi": {
+    "SessionMinutes": 60,
+    "AutomationTokenSha256": ""
+  },
+  "SiteProxies": {
+    "CertificateSha256": []
+  }
+}

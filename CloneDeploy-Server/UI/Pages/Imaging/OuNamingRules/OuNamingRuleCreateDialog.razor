@@ -1,0 +1,46 @@
+@inject ImagingService Service
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" Disabled="_busy">
+            <MudTextField @bind-Value="_model.Name" Label="@Loc[LocKeys.Common.Name]" Required="true" MaxLength="200" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_model.Description" Label="@Loc[LocKeys.Common.Description]" Lines="3" MaxLength="2000" Variant="Variant.Outlined" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_busy">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="CreateAsync" Disabled="_busy" Color="Color.Primary" Variant="Variant.Filled">@Loc[LocKeys.Common.Create]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private MudForm _form = null!;
+    private readonly OuNamingRuleSet _model = new() { Enabled = false };
+    private bool _busy;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task CreateAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            await _form.ValidateAsync();
+            if (!_form.IsValid) return;
+            var result = await Service.SaveOuNamingAsync(_model);
+            if (!result.Success)
+            {
+                Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+                return;
+            }
+            MudDialog.Close(DialogResult.Ok(_model.Id));
+        }
+        catch
+        {
+            Snackbar.Add(UiText.Get(LocKeys.Ui.OuNamingRulesPage.UnableToLoadOUNamingRulesRefreshAndTry), Severity.Error);
+        }
+        finally { _busy = false; }
+    }
+}

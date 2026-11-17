@@ -1,0 +1,24 @@
+
+<details class="directory-node" open="@(ExpandAll || Node.ParentGuid is null)">
+    <summary>
+        <MudButton Variant="Variant.Text" Class="@(SelectedGuid == Node.ObjectGuid ? "directory-node-selected" : "")"
+                   Color="Color.Primary" Size="Size.Small" OnClick="OnSelectClicked"
+                   StartIcon="@Icons.Material.Filled.Folder">
+            @Node.Name
+        </MudButton>
+    </summary>
+    @foreach (var child in Children[Node.ObjectGuid])
+    {
+        <DirectoryTreeNode @key="child.ObjectGuid" Node="child" Children="Children"
+                           SelectedGuid="SelectedGuid" Selected="Selected" ExpandAll="ExpandAll" />
+    }
+</details>
+
+@code {
+    [Parameter] public bool ExpandAll { get; set; }
+    private Task OnSelectClicked() => Selected.InvokeAsync(Node);
+    [Parameter, EditorRequired] public DirectoryObject Node { get; set; } = null!;
+    [Parameter, EditorRequired] public ILookup<Guid?, DirectoryObject> Children { get; set; } = null!;
+    [Parameter] public Guid? SelectedGuid { get; set; }
+    [Parameter] public EventCallback<DirectoryObject> Selected { get; set; }
+}

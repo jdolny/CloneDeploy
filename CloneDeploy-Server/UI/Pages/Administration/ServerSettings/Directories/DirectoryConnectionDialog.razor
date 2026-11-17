@@ -1,0 +1,196 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@using CloneDeploy_Server.UI.Pages.Administration.ServerSettings.ManagedCredentials
+@inject DirectoryService Sources
+
+<MudPaper Outlined="true" Class="pa-4">
+        @if (_message is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_message</MudAlert>
+        }
+        @if (_loading)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+        }
+        @if (_edit?.LdapSettings is { } ldap)
+        {
+            <MudForm @ref="_form" Disabled="_busy">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="_edit.Name" Label="@Loc[LocKeys.Ui.DirectoryConnectionDialog.ConnectionName]" Required="true" MaxLength="200" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12"><MudTextField @bind-Value="_edit.Description" Label="@Loc[LocKeys.Common.Description]" Lines="3" MaxLength="2000" Variant="Variant.Outlined" /></MudItem>
+                    <MudItem xs="12" md="9">
+                        <MudTextField @bind-Value="ldap.Host" Label="@Loc[LocKeys.Ui.DirectoryConnectionDialog.DomainControllerHostname]" Required="true" Placeholder="@Loc[LocKeys.Ui.DirectoryConnectionDialog.Dc01ExampleCom]" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudNumericField T="int" @bind-Value="ldap.Port" Label="@Loc[LocKeys.Ui.DirectoryConnectionDialog.LDAPSPort]" Min="1" Max="65535" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField T="string" @bind-Value="SearchBasesText" Label="@Loc[LocKeys.Ui.DirectoryConnectionDialog.SearchBaseDNsOptional]" Lines="4"
+                                      Placeholder="@Loc[LocKeys.Ui.DirectoryConnectionDialog.OUStaffDCExampleDCCom]"
+                                      HelperText="@Loc[LocKeys.Ui.DirectoryConnectionDialog.OneDNPerLineAllInTheSameDomain]" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" md="9">
+                        <MudSelect T="int" @bind-Value="ldap.ManagedCredentialId" Label="@Loc[LocKeys.Ui.DirectoryConnectionDialog.ReadOnlyADCredential]" Strict="true" Placeholder="@Loc[LocKeys.Ui.DirectoryConnectionDialog.SelectACredential]" Required="true" Variant="Variant.Outlined">
+                            @foreach (var credential in _credentials)
+                            {
+                                <MudSelectItem T="int" Value="@credential.Id">@credential.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="3" Class="d-flex align-center">
+                        <MudButton OnClick="OnNewCredentialClicked" Disabled="_busy" StartIcon="@Icons.Material.Filled.Add">@Loc[LocKeys.Ui.DirectoryConnectionDialog.NewCredential]</MudButton>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudSwitch @bind-Value="_edit.ApplicationAccessOnly" Label="@Loc[LocKeys.Ui.DirectoryConnectionDialog.ApplicationAccessOnly]" Color="Color.Primary" />
+                        <MudSwitch T="bool" @bind-Value="_edit.IsEnabled" Label="@Loc[LocKeys.Ui.DirectoryConnectionDialog.EnableThisConnection]" Color="Color.Primary" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudNumericField T="int" @bind-Value="ldap.PageSize" Label="@Loc[LocKeys.Ui.DirectoryConnectionDialog.LDAPPageSize]" Min="1" Max="1000" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudNumericField T="int" @bind-Value="ldap.TimeoutSeconds" Label="@Loc[LocKeys.Ui.DirectoryConnectionDialog.SyncTimeoutSeconds]" Min="1" Max="3600" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudNumericField T="int" @bind-Value="ldap.MaxObjects" Label="@Loc[LocKeys.Ui.DirectoryConnectionDialog.MaximumObjects]" Min="1" Variant="Variant.Outlined" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+            <MudText Typo="Typo.caption" Class="mt-3">@Loc[LocKeys.Ui.DirectoryConnectionDialog.UsesLDAPSWithCertificateVerificationTheADAccountNeeds]</MudText>
+        }
+
+        @if (SaveActionSectionId is not null)
+        {
+            <SectionContent SectionId="SaveActionSectionId">@SaveButton</SectionContent>
+        }
+        else
+        {
+            <div class="device-form-footer mt-4"><MudSpacer/>@SaveButton</div>
+        }
+</MudPaper>
+
+@code {
+    [Parameter] public object? SaveActionSectionId { get; set; }
+    private RenderFragment SaveButton => @<MudButton OnClick="@Snackbar.GuardAction(() => _loading || _busy || _edit is null, UiText.Get(LocKeys.Ui.DirectoryConnectionDialog.DirectorySettingsCouldNotBeLoadedReopenTheConnection), OnSaveClicked)" Disabled="@(_busy || _loading)"
+        Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>;
+    [Parameter] public DirectorySource? Source { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+    private DirectorySource? _edit;
+    private List<DirectorySettingChoiceDto> _credentials = [];
+    private MudForm? _form;
+    private bool _loading = true;
+    private bool _busy;
+    private string? _message;
+
+    private string SearchBasesText
+    {
+        get => string.Join(
+            Environment.NewLine,
+            _edit?.LdapSettings?.BaseDns ?? []);
+
+        set
+        {
+            if (_edit?.LdapSettings is { } ldap)
+            {
+                ldap.BaseDns = (value ?? "")
+                    .Split(
+                        ['\r', '\n'],
+                        StringSplitOptions.RemoveEmptyEntries |
+                        StringSplitOptions.TrimEntries);
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var credentials = await Sources.GetCredentialsAsync();
+        if (!credentials.Success)
+        {
+            _message = Loc[credentials.Error!.Code, credentials.Error.Args];
+            _loading = false;
+            return;
+        }
+        _credentials = credentials.Data!;
+        if (Source is null)
+        {
+            var draft = await Sources.NewLdapSourceAsync();
+            if (draft.Success)
+                _edit = draft.Data;
+            else
+                _message = Loc[draft.Error!.Code, draft.Error.Args];
+        }
+        else
+            _edit = Copy(Source);
+        if (_edit is not null) _edit.LdapSettings ??= new LdapDirectorySettings();
+        _loading = false;
+    }
+
+    private async Task OnNewCredentialClicked()
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var dialog = await Dialog.ShowAsync<ManagedCredentialDialog>(Constants.UI.StandardDialogBox);
+            if (await dialog.Result is not { Canceled: false, Data: ManagedCredentialDto credential }
+                || _edit?.LdapSettings is null) return;
+
+            var credentials = await Sources.GetCredentialsAsync();
+            if (!credentials.Success)
+            {
+                Snackbar.Add(Loc[credentials.Error!.Code, credentials.Error.Args], Severity.Error);
+                return;
+            }
+            _credentials = credentials.Data!;
+            _edit.LdapSettings.ManagedCredentialId = credential.Id;
+        }
+        finally { _busy = false; }
+    }
+
+
+    private async Task OnSaveClicked()
+    {
+        if (_busy || _edit is null || _form is null) return;
+        _busy = true;
+        _message = null;
+        try
+        {
+            await _form.ValidateAsync();
+            if (!_form.IsValid) return;
+            var result = await Sources.SaveLdapSourceAsync(_edit);
+            if (!result.Success)
+            {
+                Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+                return;
+            }
+            Snackbar.Add(UiText.Get(LocKeys.Ui.DirectoryConnectionDialog.ConnectionSaved), Severity.Success);
+            await OnSaved.InvokeAsync();
+        }
+        finally { _busy = false; }
+    }
+
+    private static DirectorySource Copy(DirectorySource source) => new()
+    {
+        Id = source.Id,
+        Name = source.Name,
+        Description = source.Description,
+        Provider = source.Provider,
+        IsEnabled = source.IsEnabled,
+        ApplicationAccessOnly = source.ApplicationAccessOnly,
+        ScheduleId = source.ScheduleId,
+
+        LdapSettings = source.LdapSettings is { } ldap
+            ? new LdapDirectorySettings
+            {
+                DirectorySourceId = source.Id,
+                Host = ldap.Host,
+                Port = ldap.Port,
+                BaseDns = ldap.BaseDns.ToArray(),
+                ManagedCredentialId = ldap.ManagedCredentialId,
+                PageSize = ldap.PageSize,
+                TimeoutSeconds = ldap.TimeoutSeconds,
+                MaxObjects = ldap.MaxObjects
+            }
+            : null
+    };
+}

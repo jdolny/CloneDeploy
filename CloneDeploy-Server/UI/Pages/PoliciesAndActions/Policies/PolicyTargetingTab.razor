@@ -1,0 +1,166 @@
+@using CloneDeploy_Server.UI.Pages.Tasks.ActionDeployments
+@using CloneDeploy_Agent.Contracts
+@inject PolicyService PolicyService
+@inject IAuthorizationService Authorization
+@inject AuthenticationStateProvider Authentication
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_state is not null)
+{
+    <MudStack Spacing="4">
+        <div class="section-action-bar">
+            <MudButton OnClick="@Snackbar.GuardAction(() => ReadOnly || _busy, UiText.Get(LocKeys.Ui.PolicyExecutionTab.ThisPolicyIsArchivedOrYouDoNotHave), OnSaveClicked)" Disabled="@(_busy)" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+        </div>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Policy.Targets]</MudText>
+        <MudStack Row="true" Wrap="Wrap.Wrap">
+            <MudButton OnClick="@Snackbar.GuardAction(() => ReadOnly || _busy || !_canPreview, ReadOnly ? UiText.Get(LocKeys.Ui.PolicyExecutionTab.ThisPolicyIsArchivedOrYouDoNotHave) : UiText.Get(LocKeys.Ui.PolicyTargetingTab.YouDoNotHavePermissionToViewDevices), OnOpenDevicesClicked)" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Computer" Disabled="@(_busy)">@Loc[LocKeys.Ui.PolicyTargetingTab.AddDevices]</MudButton>
+            <MudButton OnClick="@Snackbar.GuardAction(() => ReadOnly || _busy, UiText.Get(LocKeys.Ui.PolicyExecutionTab.ThisPolicyIsArchivedOrYouDoNotHave), () => OnOpenPickerClicked(false))" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GroupAdd" Disabled="@(_busy)">@Loc[LocKeys.Ui.UserGroupDirectoryTab.AddGroups]</MudButton>
+            @if (_state.CanSelectOus)
+            {
+                <MudButton OnClick="@Snackbar.GuardAction(() => ReadOnly || _busy, UiText.Get(LocKeys.Ui.PolicyExecutionTab.ThisPolicyIsArchivedOrYouDoNotHave), () => OnOpenPickerClicked(true))" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountTree" Disabled="@(_busy)">@Loc[LocKeys.Ui.PolicyTargetingTab.AddOUs]</MudButton>
+            }
+        </MudStack>
+        <MudDataGrid T="PolicyTargetSelectionDto" Items="_state.Selected" QuickFilter="@(x => string.IsNullOrWhiteSpace(_tableSearch0) || (Option(x.Key)?.Name ?? "").Contains(_tableSearch0.Trim(), StringComparison.OrdinalIgnoreCase))"
+                     Dense="true" Hover="true" Elevation="0" Outlined="true" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize" HorizontalScrollbar="true">
+            <ToolBarContent>
+                <MudIcon Icon="@Icons.Material.Outlined.AccountTree" Color="Color.Primary"/>
+                <MudText Typo="Typo.h6">@Loc[LocKeys.Policy.Targets]</MudText>
+                <MudSpacer/>
+                <MudTextField T="string" @bind-Value="_tableSearch0" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" aria-label="@Loc[LocKeys.Ui.PolicyTargetingTab.SearchTargets]"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/>
+            </ToolBarContent>
+            <Columns>
+                <TemplateColumn Title="@Loc[LocKeys.Ui.PolicyTargetingTab.Target]" Sortable="false" Filterable="false"><CellTemplate>
+                    <MudText>@Option(context.Item.Key)?.Name</MudText>
+                    <MudText Typo="Typo.caption" Style="overflow-wrap:anywhere">@Option(context.Item.Key)?.Description</MudText>
+                    @if (Option(context.Item.Key)?.Available != true) { <MudText Color="Color.Warning" Typo="Typo.caption">@Loc[LocKeys.Ui.PolicyTargetingTab.TargetUnavailable]</MudText> }
+                </CellTemplate></TemplateColumn>
+                <TemplateColumn Title="@Loc[LocKeys.StorageProvider.Type]" Sortable="false" Filterable="false"><CellTemplate>@(context.Item.Key.IsDevice ? UiText.Get(LocKeys.Dashboard.Device) : context.Item.Key.IsOu ? UiText.Get(LocKeys.Ui.DomainJoinActionConfigurationTab.OrganizationalUnit) : UiText.Get(LocKeys.Ui.PolicyTargetingTab.Group))</CellTemplate></TemplateColumn>
+                <TemplateColumn Title="@Loc[LocKeys.Ui.TargetPolicies.Scope]" Sortable="false" Filterable="false"><CellTemplate>
+                    @if (context.Item.Key.IsOu)
+                    {
+                        <MudCheckBox T="bool" @bind-Value="context.Item.IncludeDescendants"  Label="@Loc[LocKeys.Ui.PolicyTargetingTab.IncludeDescendantOUs]" Disabled="@(ReadOnly || _busy)" />
+                    }
+                    else { <MudText Typo="Typo.body2">@(context.Item.Key.IsDevice ? UiText.Get(LocKeys.Ui.PolicyTargetingTab.ThisDevice) : UiText.Get(LocKeys.Ui.DeployActionPage.CurrentGroupMembers))</MudText> }
+                </CellTemplate></TemplateColumn>
+                <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" Sortable="false" Filterable="false"><CellTemplate><MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="@Snackbar.GuardAction(() => ReadOnly || _busy, UiText.Get(LocKeys.Ui.PolicyExecutionTab.ThisPolicyIsArchivedOrYouDoNotHave), () => OnRemoveClicked(context.Item))" Disabled="@(_busy)" aria-label="@(UiText.Get(LocKeys.Ui.PolicyTargetingTab.RemoveTarget0, (Option(context.Item.Key)?.Name)))" /></CellTemplate></TemplateColumn>
+            </Columns>
+            <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.PolicyTargetingTab.NoTargetsAssigned]</MudText></NoRecordsContent>
+            <PagerContent><MudDataGridPager T="PolicyTargetSelectionDto"/></PagerContent>
+        </MudDataGrid>
+
+        @if (_state.Trigger == PolicyTrigger.Login || _state.NotificationAudienceAllowed || _state.LoginAudienceId.HasValue)
+        {
+            <MudDivider />
+            <MudText Typo="Typo.h6">@(_state.Trigger == PolicyTrigger.Login ? UiText.Get(LocKeys.Ui.PolicyAudiencesTab.UserAudience) : UiText.Get(LocKeys.Ui.PolicyTargetingTab.RecipientAudience))</MudText>
+            @if (_state.Trigger == PolicyTrigger.Login)
+            {
+                <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.PolicyTargetingTab.ChooseWhoReceivesThisPolicyAtLoginDeviceAnd]</MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.PolicyTargetingTab.ChooseWhoCanSeeAndAcknowledgeNotificationsOnThe]</MudText>
+            }
+            <MudSelect T="int?" @bind-Value="_state.LoginAudienceId" Label="@(_state.Trigger == PolicyTrigger.Login ? UiText.Get(LocKeys.Ui.PolicyAudiencesTab.UserAudienceOptional) : UiText.Get(LocKeys.Ui.PolicyTargetingTab.RecipientAudienceOptional))" Clearable="true" Disabled="@(ReadOnly || _busy)" Variant="Variant.Outlined">
+                @foreach (var audience in _state.Audiences)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)audience.Id)">@audience.Name</MudSelectItem>
+                }
+            </MudSelect>
+        }
+    </MudStack>
+}
+
+@code {
+    private string? _tableSearch0;
+
+
+    [Parameter] public int PolicyId { get; set; }
+    private PolicyTargetStateDto? _state;
+
+    private bool _loading = true, _busy, _canEdit, _canPreview;
+    private bool ReadOnly => !_canEdit || _state?.Archived == true;
+    private int? _loadedPolicyId;
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedPolicyId == PolicyId) return;
+        _loadedPolicyId = PolicyId;
+        await OnReloadClicked();
+    }
+    private async Task OnReloadClicked()
+    {
+        _loading = true;
+        var user = (await Authentication.GetAuthenticationStateAsync()).User;
+        _canEdit = (await Authorization.AuthorizeAsync(user, Constants.Permissions.PolicyEdit)).Succeeded;
+        _canPreview = (await Authorization.AuthorizeAsync(user, Constants.Permissions.DeviceView)).Succeeded;
+        var result = await PolicyService.GetPolicyTargetsAsync(PolicyId);
+        _state = result.Data;
+        if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loading = false;
+    }
+    private PolicyTargetOptionDto? Option(PolicyTargetKeyDto key) => _state!.Options.FirstOrDefault(x => x.Key == key);
+    private async Task OnOpenDevicesClicked()
+    {
+        if (ReadOnly || _busy || !_canPreview || _state is null) return;
+        var state = _state;
+        var selected = state.Selected.Where(x => x.Key.IsDevice)
+            .ToDictionary(x => x.Key.DeviceId!.Value, x => Option(x.Key)?.Name ?? UiText.Get(LocKeys.Ui.ManageDevicesPage.Device0, (x.Key.DeviceId)));
+        var parameters = new DialogParameters<DeviceDeploymentPickerDialog>
+        {
+            { x => x.Selected, selected },
+            { x => x.SearchDevices, PolicyService.SearchDevicesAsync }
+        };
+        var dialog = await Dialog.ShowAsync<DeviceDeploymentPickerDialog>(UiText.Get(LocKeys.Ui.PolicyTargetingTab.SelectDevices), parameters,
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, CloseButton = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not Dictionary<int, string> devices ||
+            !ReferenceEquals(state, _state) || ReadOnly || _busy) return;
+        state.Selected.RemoveAll(x => x.Key.IsDevice && !devices.ContainsKey(x.Key.DeviceId!.Value));
+        foreach (var (id, name) in devices)
+        {
+            var key = PolicyTargetKeyDto.Device(id);
+            if (state.Selected.All(x => x.Key != key)) state.Selected.Add(new() { Key = key });
+            if (state.Options.All(x => x.Key != key)) state.Options.Add(new(key, name, UiText.Get(LocKeys.Ui.PolicyTargetingTab.DeviceID0, (id)), true));
+        }
+    }
+
+    private async Task OnOpenPickerClicked(bool ous)
+    {
+        if (ReadOnly || _busy || _state is null) return;
+        if (ous && !_state.CanSelectOus) return;
+        var state = _state;
+        var assigned = state.Selected.Select(x => x.Key).ToHashSet();
+        var parameters = new DialogParameters { ["Assigned"] = assigned };
+        if (ous) parameters["Nodes"] = state.DirectoryNodes;
+        else parameters["Options"] = state.Options;
+        var options = new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, CloseButton = true };
+        var dialog = ous
+            ? await Dialog.ShowAsync<OuTargetPickerDialog>(UiText.Get(LocKeys.Ui.PolicyTargetingTab.AddOrganizationalUnits), parameters, options)
+            : await Dialog.ShowAsync<GroupTargetPickerDialog>(UiText.Get(LocKeys.Ui.UserGroupDirectoryTab.AddGroups), parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not List<PolicyTargetSelectionDto> selections ||
+            !ReferenceEquals(state, _state) || ReadOnly || _busy) return;
+        foreach (var selection in selections)
+            if (_state.Selected.All(x => x.Key != selection.Key)) _state.Selected.Add(selection);
+
+    }
+    private void OnRemoveClicked(PolicyTargetSelectionDto selection) { if (!ReadOnly && !_busy) { _state!.Selected.Remove(selection); } }
+
+    private async Task OnSaveClicked()
+    {
+        if (ReadOnly || _busy || _state is null) return;
+        _busy = true;
+        _state.SaveLoginAudience = true;
+        var result = await PolicyService.SavePolicyTargetsAsync(_state, false);
+        if (result.Success)
+        {
+            Snackbar.Add(UiText.Get(LocKeys.Ui.PolicyTargetingTab.PolicyTargetingSaved), Severity.Success);
+            await OnReloadClicked();
+        }
+        else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _busy = false;
+    }
+}

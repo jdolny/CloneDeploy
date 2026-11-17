@@ -1,0 +1,89 @@
+@page "/setup/admin"
+@attribute [AllowAnonymous]
+@layout AuthLayout
+@inject AppUserService AppUserService
+@inject FirstAdminSetup FirstAdminSetup
+@inject NavigationManager Navigation
+@inject IStringLocalizer<LocalizationResources> Loc
+
+@if (!_ready)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (_setupUnavailable)
+{
+    <MudAlert Severity="Severity.Info">@Loc[LocKeys.User.SetupUnavailable]</MudAlert>
+}
+else
+{
+    <MudPaper Elevation="3" Class="pa-6" Style="width: 100%;">
+        <MudText Typo="Typo.h5" Class="mb-4">@Loc[LocKeys.User.CreateFirstAdmin]</MudText>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_user.UserName" Label="@Loc[LocKeys.Auth.UserName]" Variant="Variant.Outlined"
+                          Required="true"/>
+            <MudTextField @bind-Value="_password" Label="@Loc[LocKeys.Auth.Password]" Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Required="true"/>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@CreateAdmin" FullWidth="true" Class="mt-4">
+                @Loc[LocKeys.Common.Create]
+            </MudButton>
+        </MudForm>
+    </MudPaper>
+}
+
+@code {
+    private readonly AppUser _user = new()
+    {
+        Membership = Constants.UserMembership.Admin,
+        LockoutEnabled = true
+    };
+
+    private MudForm _form = null!;
+    private string? _password;
+    private bool _setupUnavailable;
+    private bool _ready;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await AppUserService.AnyUsersAsync();
+        if (result.Success && result.Data)
+        {
+            Navigation.NavigateTo("/login", replace: true);
+            return;
+        }
+        _setupUnavailable = !result.Success;
+        _ready = true;
+        if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+    }
+
+    private async Task CreateAdmin()
+    {
+        if (!_ready || _setupUnavailable) return;
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+            return;
+
+        var existing = await AppUserService.AnyUsersAsync();
+        if (!existing.Success)
+        {
+            Snackbar.Add(Loc[existing.Error.Code, existing.Error.Args], Severity.Error);
+            return;
+        }
+        if (existing.Data)
+        {
+            _setupUnavailable = true;
+            return;
+        }
+
+        var result = await FirstAdminSetup.CreateAsync(_user.UserName, _password!);
+
+        if (!result.Success)
+        {
+            Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+            return;
+        }
+
+        Navigation.NavigateTo("/login", forceLoad: true);
+    }
+}

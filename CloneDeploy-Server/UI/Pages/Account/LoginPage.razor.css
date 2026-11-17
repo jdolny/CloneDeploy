@@ -1,0 +1,6 @@
+.login-form ::deep .login-title { font-weight: 650; font-size: 1.375rem; margin-bottom: 18px; color: var(--mud-palette-text-primary); }
+.login-form ::deep .mud-input-outlined { border-radius: 4px; background: #11182718; }
+.login-form ::deep .mud-input-adornment { color: var(--mud-palette-text-secondary); }
+.login-form ::deep .mud-input-control > .mud-input-control-input-container > .mud-input { min-height: 50px; }
+.login-form ::deep .login-submit { min-height: 46px; border-radius: 4px; font-weight: 600; }
+.login-form ::deep .login-submit { box-shadow: 0 3px 8px #00000018; }

@@ -1,0 +1,192 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+
+@inject TftpService Settings
+@inject PxeService BootFiles
+
+<MudTabs Class="device-subtabs" KeepPanelsAlive="false" ActivePanelIndex="_activityTab" ActivePanelIndexChanged="@(index => _activityTab = index)" TabPanelsClass="pt-4 detail-tab-content">
+    <Header>
+        <div class="device-overview-save">
+            @if (_activityTab == 0)
+            {
+                <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+                    <MudButton OnClick="@Snackbar.GuardAction(() => _loading || _busy || _settings is null, UiText.Get(LocKeys.Ui.UserGroupDirectoryTab.SettingsCouldNotBeLoadedRefreshAndTryAgain), OnSaveClicked)" Disabled="@(_busy || _loading)" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+                    <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Style="align-self: auto;">
+                        <MudMenuItem OnClick="OnPrepareBootFilesClicked" Disabled="_preparing">@Loc[LocKeys.Ui.PxeTftpTab.PrepareUpdatePXEFiles]</MudMenuItem>
+                    </MudMenu>
+                </MudButtonGroup>
+            }
+            else
+            {
+                <SectionOutlet SectionId="_activityActions" />
+            }
+        </div>
+    </Header>
+    <ChildContent>
+    <MudTabPanel Text="@Loc[LocKeys.Ui.PxeProxyTab.Settings]">
+        <TabHelp Href="ui/administration/tftp-settings.html" Title="@Loc[LocKeys.Ui.PxeProxyTab.Settings]" />
+        @if (_activityTab == 0)
+        {
+            <div>
+<MudPaper Class="pa-4 mb-4" Elevation="0" Outlined="true">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudText Typo="Typo.h6">@UiText.Get(LocKeys.Ui.PxeTftpTab.TFTP0, (UiText.Label(_status.State)))</MudText>
+    </MudStack>
+    <MudAlert Severity="@(_status.State == "Error" ? Severity.Error : Severity.Info)" Class="mt-3">@Loc[_status.Detail]</MudAlert>
+</MudPaper>
+<MudPaper Class="pa-4 mb-4" Elevation="0" Outlined="true">
+    <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.PxeTftpTab.PXEBootFiles]</MudText>
+    @if (_bootFiles is not null)
+    {
+        <MudText Class="mt-2">@UiText.Get(LocKeys.Ui.PxeTftpTab.InstalledIPXE0Wimboot12, (_bootFiles.IpxeVersion), (_bootFiles.WimbootVersion), (_bootFiles.PreparedAtUtc.ToLocalTime().ToString("g")))</MudText>
+        <MudText Typo="Typo.body2">@UiText.Get(LocKeys.Ui.PxeTftpTab.BootScriptServer0, (_bootFiles.ServerUrl))</MudText>
+    }
+    @if (_bootError is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-2">@_bootError</MudAlert>
+    }
+    @if (_preparing)
+    {
+        <MudProgressLinear Indeterminate="true" Class="mt-2" />
+        <MudText>@Loc[LocKeys.Ui.PxeTftpTab.DownloadingAndVerifyingBootFiles]</MudText>
+    }
+</MudPaper>
+<MudPaper Class="pa-4" Elevation="0" Outlined="true">
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else if (_settings is null)
+    {
+        <MudAlert Severity="Severity.Error">@_loadError</MudAlert>
+        <MudButton OnClick="OnLoadClicked">@Loc[LocKeys.Common.Retry]</MudButton>
+    }
+    else
+    {
+        <MudForm Disabled="_busy">
+            <MudSwitch @bind-Value="_settings.Enabled" Color="Color.Primary" Label="@Loc[LocKeys.Ui.SiteServiceBootTab.EnableTFTP]" />
+            <MudSelect T="string" @bind-Value="_settings.Interface" Label="@Loc[LocKeys.Ui.PxeProxyTab.ListenIPv4Address]" Variant="Variant.Outlined" HelperText="@Loc[LocKeys.Ui.PxeProxyTab.AddressesOnThisServer0000Listens]">
+                <MudSelectItem T="string" Value='@("0.0.0.0")'>@Loc[LocKeys.Ui.PxeProxyTab.AllInterfaces0000]</MudSelectItem>
+                @foreach (var address in _bindAddresses)
+                {
+                    <MudSelectItem T="string" Value="@address.Address">@address.AdapterName — @address.Address</MudSelectItem>
+                }
+                @if (_settings.Interface != "0.0.0.0" && !_bindAddresses.Any(address => address.Address == _settings.Interface))
+                {
+                    <MudSelectItem T="string" Value="@_settings.Interface">@UiText.Get(LocKeys.Ui.PxeProxyTab.Text0SavedAddressCurrentlyUnavailable, (_settings.Interface))</MudSelectItem>
+                }
+            </MudSelect>
+            <MudNumericField T="int" @bind-Value="_settings.ResponseTimeoutMilliseconds" Label="@Loc[LocKeys.Ui.PxeTftpTab.ResponseTimeoutMilliseconds]" Min="250" Max="30000" Variant="Variant.Outlined" />
+            <MudNumericField T="int" @bind-Value="_settings.Retries" Label="@Loc[LocKeys.Ui.PxeTftpTab.Retries]" Min="0" Max="10" Variant="Variant.Outlined" />
+        </MudForm>
+    }
+</MudPaper>
+
+            </div>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Loc[LocKeys.Ui.PxeProxyTab.LiveActivity]">
+        <TabHelp Href="ui/administration/tftp-live-activity.html" Title="@Loc[LocKeys.Ui.PxeProxyTab.LiveActivity]" />
+        @if (_activityTab == 1)
+        {
+            <div><BootLiveActivityTab ActionSectionId="_activityActions" Tftp="true" /></div>
+        }
+    </MudTabPanel>
+    </ChildContent>
+</MudTabs>
+
+@code {
+    private readonly object _activityActions = new();
+    private int _activityTab;
+    private TftpSettingsDto? _settings;
+    private TftpStatusDto _status = new("Starting", UiText.Get(LocKeys.Ui.PxeProxyTab.WaitingForStatus));
+    private bool _loading = true;
+    private bool _busy;
+    private string? _loadError;
+    private List<TftpBindAddressDto> _bindAddresses = [];
+
+    private bool _preparing;
+    private PxeBootFilesDto? _bootFiles;
+    private string? _bootError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await BootFiles.ReadBootFilesAsync();
+        if (result.Success)
+        {
+            _bootFiles = result.Data;
+        }
+        else _bootError = Loc[result.Error.Code, result.Error.Args];
+        await OnLoadClicked();
+    }
+
+    private async Task OnPrepareBootFilesClicked()
+    {
+        if (_preparing) return;
+        _preparing = true;
+        _bootError = null;
+        try
+        {
+            var result = await BootFiles.PrepareBootFilesAsync();
+            if (result.Success)
+            {
+                _bootFiles = result.Data;
+                Snackbar.Add(UiText.Get(LocKeys.Ui.PxeTftpTab.PXEBootFilesPrepared), Severity.Success);
+            }
+            else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _preparing = false; }
+    }
+
+    private async Task OnRefreshStatusClicked()
+    {
+        var result = await Settings.GetStatusAsync();
+        if (result.HasData) _status = result.Data;
+        else if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+    }
+
+    private async Task OnRefreshBindAddressesClicked()
+    {
+        var result = await Settings.GetBindAddressesAsync();
+        if (result.HasData) _bindAddresses = result.Data;
+        else if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+    }
+
+    private async Task OnLoadClicked()
+    {
+        _loading = true;
+        _loadError = null;
+        try
+        {
+            var result = await Settings.ReadAsync();
+            if (!result.Success)
+            {
+                _loadError = Loc[result.Error.Code, result.Error.Args];
+                return;
+            }
+            _settings = result.Data;
+            await OnRefreshBindAddressesClicked();
+            await OnRefreshStatusClicked();
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task OnSaveClicked()
+    {
+        if (_busy || _settings is null) return;
+        _busy = true;
+
+        try
+        {
+            var result = await Settings.SaveAsync(_settings);
+            if (!result.Success)
+            {
+                Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+                return;
+            }
+            _settings = result.Data;
+            Snackbar.Add(UiText.Get(LocKeys.Ui.PxeTftpTab.TFTPSettingsSavedRefreshStatusInFiveSecondsTo), Severity.Success);
+            await OnRefreshStatusClicked();
+        }
+        finally { _busy = false; }
+    }
+}

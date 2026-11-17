@@ -1,0 +1,25 @@
+<section>
+    <DeviceInventoryHeading Title="@Loc[LocKeys.Ui.DeviceWindowsUpdateActivity.RecentWindowsUpdateActivity]" Icon="@Icons.Material.Outlined.History" />
+    @if (Activity is null)
+    {
+        <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.DeviceWindowsUpdateActivity.ActivityHasNotBeenCollectedRunInventoryWithAn]</MudText>
+    }
+    else
+    {
+        var installation = new[] { Activity.LastInstallationSuccessAtUtc, Activity.LastAutomaticInstallationSuccessAtUtc }.Max();
+        <MudGrid Spacing="0">
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.DeviceWindowsUpdateActivity.LastObservedInstallationSuccess]" Value="@(installation)" />
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.DeviceWindowsUpdateActivity.LastObservedSuccessfulDownload]" Value="@(Activity.LastDownloadSuccessAtUtc)" />
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.DeviceWindowsUpdateActivity.MostRecentObservedFailure]" Value="@(Activity.LastFailureAtUtc is null ? UiText.Get(LocKeys.Ui.DeviceWindowsUpdateActivity.NoneReported) : $"{(Activity.LastFailureAtUtc is DateTime displayDate1 && displayDate1 != default ? displayDate1.ToLocalTime().ToString("g") : "—")} — {Activity.LastFailureOperation} — {Activity.LastFailureErrorCode ?? UiText.Get(LocKeys.Ui.DeviceWindowsUpdateActivity.ErrorCodeUnavailable)}")" />
+        </MudGrid>
+        
+        @if (Activity.UnavailableSources.Count > 0)
+        {
+            <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.DeviceWindowsUpdateActivity.UnavailableActivitySources0, (string.Join("; ", Activity.UnavailableSources)))</MudText>
+        }
+    }
+</section>
+
+@code {
+    [Parameter] public InventoryWindowsUpdateActivity? Activity { get; set; }
+}

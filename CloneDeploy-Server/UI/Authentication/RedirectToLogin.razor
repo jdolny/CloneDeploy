@@ -1,0 +1,21 @@
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IAuthorizationService Authorization
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var returnUrl = Navigation.ToBaseRelativePath(Navigation.Uri);
+        var user = (await AuthenticationStateProvider.GetAuthenticationStateAsync()).User;
+        var destination = "/login";
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var enrollment = await Authorization.AuthorizeAsync(user, resource: null,
+                requirements: new[] { new MfaEnrollmentRequirement() });
+            var invalidSession = enrollment.Failure?.FailureReasons
+                .Any(reason => reason.Message == MfaEnrollmentHandler.InvalidSession) == true;
+            destination = invalidSession ? "/login" : enrollment.Succeeded ? "/access-denied" : "/account/mfa";
+        }
+        Navigation.NavigateTo($"{destination}?returnUrl={Uri.EscapeDataString("/" + returnUrl)}", forceLoad: true);
+    }
+}

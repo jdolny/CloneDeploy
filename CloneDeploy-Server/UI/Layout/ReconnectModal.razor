@@ -1,0 +1,31 @@
+<script type="module" src="@Assets["Components/Layout/ReconnectModal.razor.js"]"></script>
+
+<dialog id="components-reconnect-modal" data-nosnippet>
+    <div class="components-reconnect-container">
+        <div class="components-rejoining-animation" aria-hidden="true">
+            <div></div>
+            <div></div>
+        </div>
+        <p class="components-reconnect-first-attempt-visible">
+            @Loc[LocKeys.Ui.ReconnectModal.RejoiningTheServer]
+        </p>
+        <p class="components-reconnect-repeated-attempt-visible">
+            @Loc[LocKeys.Ui.ReconnectModal.RejoinFailedTryingAgainIn] <span id="components-seconds-to-next-attempt"></span> @Loc[LocKeys.Ui.ReconnectModal.Seconds]
+        </p>
+        <p class="components-reconnect-failed-visible">
+            @Loc[LocKeys.Ui.ReconnectModal.FailedToRejoin]<br/>@Loc[LocKeys.Ui.ReconnectModal.PleaseRetryOrReloadThePage]
+        </p>
+        <button id="components-reconnect-button" class="components-reconnect-failed-visible">
+            @Loc[LocKeys.Common.Retry]
+        </button>
+        <p class="components-pause-visible">
+            @Loc[LocKeys.Ui.ReconnectModal.TheSessionHasBeenPausedByTheServer]
+        </p>
+        <p class="components-resume-failed-visible">
+            @Loc[LocKeys.Ui.ReconnectModal.FailedToResumeTheSession]<br/>@Loc[LocKeys.Ui.ReconnectModal.PleaseRetryOrReloadThePage]
+        </p>
+        <button id="components-resume-button" class="components-pause-visible components-resume-failed-visible">
+            @Loc[LocKeys.Device.Resume]
+        </button>
+    </div>
+</dialog>

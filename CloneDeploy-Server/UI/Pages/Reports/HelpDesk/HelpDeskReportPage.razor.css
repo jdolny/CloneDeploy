@@ -1,0 +1,14 @@
+.report-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.report-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.report-panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.trend-legend { display: flex; gap: 20px; margin: 16px 0; }
+.trend-legend span:first-child { color: var(--mud-palette-primary); }
+.trend-legend span:last-child { color: var(--mud-palette-success); }
+.trend-chart { display: flex; gap: 10px; overflow-x: auto; padding: 4px; }
+.trend-column { flex: 1; min-width: 50px; text-align: center; }
+.trend-column:focus { outline: 2px solid var(--mud-palette-primary); }
+.trend-bars { display: flex; align-items: end; justify-content: center; gap: 3px; height: 150px; border-bottom: 1px solid var(--mud-palette-divider); }
+.trend-bars span { display: block; width: 16px; background: var(--mud-palette-primary); border-radius: 3px 3px 0 0; }
+.trend-bars span:last-child { background: var(--mud-palette-success); }
+.trend-column small { display: block; margin-top: 8px; font-size: 11px; }
+@media (max-width: 800px) { .report-cards { grid-template-columns: repeat(2, 1fr); } .report-panels { grid-template-columns: 1fr; } }

@@ -1,0 +1,58 @@
+@inject SiteService Services
+@inject AuthenticationStateProvider Authentication
+@inject IJSRuntime JavaScript
+@using CloneDeploy.SiteServices
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.NewSiteServiceDialog.AddSiteService]</MudText></TitleContent>
+    <DialogContent>
+        @if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+        @if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert> }
+        <MudForm @ref="_form">
+            <MudCheckBox @bind-Value="_worker" Label="@Loc[LocKeys.Ui.NewSiteServiceDialog.WindowsWorkerOnePerLinuxMainServer]" Disabled="@(!_canCreateWorker || _saving || _package is not null)" />
+            <MudTextField @bind-Value="_name" Label="@Loc[LocKeys.Ui.NewSiteServiceDialog.ServiceName]" Required="true" MaxLength="100" Variant="Variant.Outlined" Disabled="@(_saving || _package is not null)" />
+        </MudForm>
+        <MudText Typo="Typo.body2" Class="mt-4">@UiText.Get(LocKeys.Ui.NewSiteServiceDialog.SelectTheDownloadedJSONInThe0InstallerIt, ((_worker ? UiText.Get(LocKeys.Ui.NewSiteServiceDialog.WindowsWorker) : UiText.Get(LocKeys.Ui.NewSiteServiceDialog.SiteService))))</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_saving" OnClick="Close">@(_package is null ? UiText.Get(LocKeys.Common.Cancel) : UiText.Get(LocKeys.Ui.NewSiteServiceDialog.OpenService))</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="@(_saving || _loading)" OnClick="@Snackbar.GuardAction(() => _saving || _loading || _public is null, UiText.Get(LocKeys.Ui.NewSiteServiceDialog.SaveThePublicApplicationURLInServerSettingsBefore), CreateAsync)">@(_package is null ? UiText.Get(LocKeys.Ui.NewSiteServiceDialog.CreateAndDownloadSetupFile) : UiText.Get(LocKeys.Ui.SiteServiceEnrollmentTab.DownloadSetupFileAgain))</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public string InitialName { get; set; } = "";
+    [Parameter] public bool InitialWorker { get; set; }
+    private MudForm _form = null!;
+    private string _name = "";
+    private string? _public, _error;
+    private bool _saving, _loading = true;
+    private bool _worker, _canCreateWorker;
+    private SiteEnrollmentPackage? _package;
+    protected override async Task OnInitializedAsync()
+    {
+        _name = InitialName;
+        _worker = InitialWorker;
+        try { var user = (await Authentication.GetAuthenticationStateAsync()).User; _public = await Services.PublicUrlAsync(user); _canCreateWorker = await Services.CanCreateWorkerAsync(user); }
+        catch (InvalidDataException ex) { _error = ex.Message; }
+        catch { _error = UiText.Get(LocKeys.Ui.NewSiteServiceDialog.UnableToLoadPublicApplicationURLCheckServerSettings); }
+        finally { _loading = false; }
+    }
+    private void Close() { if (_package is null) MudDialog.Cancel(); else MudDialog.Close(DialogResult.Ok(_package.RegistrationId)); }
+    private async Task CreateAsync()
+    {
+        if (_saving) return;
+        await _form.ValidateAsync(); if (!_form.IsValid) return;
+        _saving = true; _error = null;
+        try
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            _package ??= _worker ? await Services.CreateWorkerAsync(user, _name) : await Services.CreateAsync(user, _name);
+            await SiteServicePresentation.DownloadAsync(JavaScript, _package);
+            MudDialog.Close(DialogResult.Ok(_package.RegistrationId));
+        }
+        catch (InvalidDataException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        catch { Snackbar.Add(_package is null ? UiText.Get(LocKeys.Ui.NewSiteServiceDialog.UnableToCreateTheSiteServiceTryAgain) : UiText.Get(LocKeys.Ui.NewSiteServiceDialog.TheServiceWasCreatedButTheDownloadFailedTry), Severity.Error); }
+        finally { _saving = false; }
+    }
+}

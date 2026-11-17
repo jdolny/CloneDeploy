@@ -1,0 +1,58 @@
+@using System.Globalization
+@if (ShowUpdates)
+{
+<MudItem xs="12" lg="6">
+    <MudPaper Elevation="2" Class="pa-4 fleet-card" Style="height:100%">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.h6">@Loc[LocKeys.Dashboard.Fleet.Updates]</MudText>
+            <MudLink Href="/reports/windowsupdates">@Loc[LocKeys.Dashboard.Fleet.ReviewUpdates]</MudLink>
+        </MudStack>
+        <MudText Typo="Typo.caption" Class="d-block mb-2">@Loc[LocKeys.Dashboard.Fleet.Scope, Summary.Devices]</MudText>
+        @foreach (var row in Summary.Updates)
+        {
+            <a class="fleet-row" href="@Link(row.Bucket)" aria-label="@($"{Loc[$"Dashboard.Fleet.{row.Bucket}"]}: {row.Count:N0}")">
+                <span><strong>@Loc[$"Dashboard.Fleet.{row.Bucket}"]</strong><small>@Loc[$"Dashboard.Fleet.{row.Bucket}.Hint"]</small></span>
+                <b>@row.Count.ToString("N0")</b><MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" />
+            </a>
+        }
+        <MudText Typo="Typo.caption" Class="d-block mt-2">@Loc[LocKeys.Dashboard.Fleet.UpdateCaveat]</MudText>
+    </MudPaper>
+</MudItem>
+}
+@if (ShowAgents)
+{
+<MudItem xs="12" lg="6">
+    <MudPaper Elevation="2" Class="pa-4 fleet-card" Style="height:100%">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.h6">@Loc[LocKeys.Dashboard.Fleet.Agents]</MudText>
+            @if (IsAdmin) { <MudLink Href="/administration/agent/general">@Loc[LocKeys.Dashboard.Fleet.AgentSettings]</MudLink> }
+        </MudStack>
+        <MudText Typo="Typo.caption" Class="d-block mb-2">@Loc[LocKeys.Dashboard.Fleet.Scope, Summary.Devices]</MudText>
+        @if (Summary.PreparedVersion is null)
+        {
+            <MudText Class="my-4">@Loc[LocKeys.Dashboard.Fleet.NoRelease]</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="mb-2">@Loc[LocKeys.Dashboard.Fleet.Prepared, CloneDeploy_Agent.Contracts.AgentUpdateOffer.DisplayVersion(Summary.PreparedVersion)]</MudText>
+            @foreach (var row in Summary.Agents)
+            {
+                <a class="fleet-row" href="@Link(row.Bucket)" aria-label="@($"{Loc[$"Dashboard.Fleet.{row.Bucket}"]}: {row.Count:N0}")">
+                    <span><strong>@Loc[$"Dashboard.Fleet.{row.Bucket}"]</strong></span>
+                    <b>@row.Count.ToString("N0")</b><MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" />
+                </a>
+            }
+            <MudText Typo="Typo.caption" Class="d-block mt-2">@Loc[LocKeys.Dashboard.Fleet.AgentCaveat]</MudText>
+        }
+    </MudPaper>
+</MudItem>
+}
+@code {
+    [Parameter] public bool ShowUpdates { get; set; } = true;
+    [Parameter] public bool ShowAgents { get; set; } = true;
+    [Parameter] public bool IsAdmin { get; set; }
+    [Parameter, EditorRequired] public DashboardFleetDto Summary { get; set; } = null!;
+    [Parameter] public DateTime AsOf { get; set; }
+    private string Link(string bucket) => $"/dashboard/fleet/{bucket}?asOf={Uri.EscapeDataString(AsOf.ToString("O", CultureInfo.InvariantCulture))}" +
+        (bucket.StartsWith("agent-", StringComparison.Ordinal) ? $"&version={Uri.EscapeDataString(Summary.PreparedVersion!)}" : "");
+}

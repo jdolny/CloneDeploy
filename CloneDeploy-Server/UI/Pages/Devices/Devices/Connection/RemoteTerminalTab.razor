@@ -1,0 +1,106 @@
+@using System.Security.Claims
+@inject AgentService TerminalService
+@inject AuthenticationStateProvider Authentication
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<MudStack Spacing="2">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+        <MudSelect T="AgentTerminalShell" @bind-Value="_shell" Label="@Loc[LocKeys.Ui.RemoteTerminalTab.Shell]" Disabled="@(_session is not null || _busy)">
+            @if (IsMac)
+            {
+                <MudSelectItem Value="AgentTerminalShell.Zsh">@Loc[LocKeys.Ui.RemoteTerminalTab.ZshRoot]</MudSelectItem>
+            }
+            else
+            {
+                <MudSelectItem Value="AgentTerminalShell.PowerShell">@Loc[LocKeys.Ui.RemoteTerminalTab.WindowsPowerShell]</MudSelectItem>
+                <MudSelectItem Value="AgentTerminalShell.CommandPrompt">@Loc[LocKeys.Ui.RemoteTerminalTab.CommandPrompt]</MudSelectItem>
+            }
+        </MudSelect>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _session is not null || _busy, UiText.Get(LocKeys.Ui.RemoteTerminalTab.DisconnectTheCurrentTerminalSessionBeforeConnectingAgain), ConnectAsync)" Disabled="@(_busy)" Variant="Variant.Filled" Color="Color.Primary">@Loc[LocKeys.Ui.RemoteTerminalTab.ConnectTerminal]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _session is null, UiText.Get(LocKeys.Ui.RemoteDesktopTab.ThereIsNoActiveSessionToDisconnect), DisconnectAsync)" Color="Color.Error">@Loc[LocKeys.Device.Disconnect]</MudButton>
+    </MudStack>
+    <MudText Typo="Typo.caption" role="status">@_status</MudText>
+    <div @ref="_host" class="remote-terminal-host" style="height: min(60vh, 650px); min-height: 250px; background: #111827; padding: 8px; overflow: hidden;" aria-label="@Loc[LocKeys.Device.RemoteTerminal]"></div>
+</MudStack>
+
+@code {
+    [Parameter] public int DeviceId { get; set; }
+    [Parameter] public bool IsMac { get; set; }
+    protected override void OnInitialized() => _shell = IsMac ? AgentTerminalShell.Zsh : AgentTerminalShell.PowerShell;
+    private ElementReference _host;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<RemoteTerminalTab>? _reference;
+    private readonly CancellationTokenSource _stop = new();
+    private Guid? _session;
+    private AgentTerminalShell _shell;
+    private bool _busy, _disposed;
+    private string _status = UiText.Get(LocKeys.Ui.RemoteDesktopTab.NotConnected);
+
+    private async Task ConnectAsync()
+    {
+        if (_busy || _disposed || _session is not null) return;
+        _busy = true;
+        _status = "Connecting…";
+        try
+        {
+            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/remoteTerminal.js");
+            _reference ??= DotNetObjectReference.Create(this);
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            if (!await _module.InvokeAsync<bool>("ensureSession", user.FindFirstValue(ClaimTypes.NameIdentifier))) return;
+            var id = await TerminalService.StartTerminalAsync(user, DeviceId, _shell, _stop.Token);
+            if (_disposed)
+            {
+                await TerminalService.StopTerminalAsync(user, id);
+                return;
+            }
+            _session = id;
+            await _module.InvokeVoidAsync("connect", _host, id.ToString(), _reference, IsMac ? "root" : "NT AUTHORITY\\SYSTEM");
+        }
+        catch (Exception ex)
+        {
+            await DisconnectAsync();
+            _status = ex is InvalidOperationException ? ex.Message : UiText.Get(LocKeys.Ui.RemoteTerminalTab.CouldNotStartTheTerminalCheckTheAgentConnection);
+        }
+        finally { _busy = false; }
+    }
+
+    [JSInvokable]
+    public async Task ConnectionChanged(string id, bool connected, string detail)
+    {
+        if (_disposed || !Guid.TryParse(id, out var session) || _session != session) return;
+        if (!connected) await DisconnectAsync();
+        _status = detail;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task DisconnectAsync()
+    {
+        var id = _session;
+        _session = null;
+        if (_module is not null)
+            try { await _module.InvokeVoidAsync("disconnect", _host); }
+            catch (Exception ex) when (ex is JSDisconnectedException or JSException or TaskCanceledException) { }
+        if (id is not null)
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            await TerminalService.StopTerminalAsync(user, id.Value);
+        }
+        _status = "Disconnected.";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _stop.Cancel();
+        try { await DisconnectAsync(); }
+        finally
+        {
+            _reference?.Dispose();
+            if (_module is not null)
+                try { await _module.DisposeAsync(); } catch (JSDisconnectedException) { }
+            _stop.Dispose();
+        }
+    }
+}

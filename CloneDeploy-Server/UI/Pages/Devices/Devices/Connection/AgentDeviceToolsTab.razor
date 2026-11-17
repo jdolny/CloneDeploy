@@ -1,0 +1,135 @@
+@inject AgentService Tools
+@inject AuthenticationStateProvider Authentication
+@inject ILogger<AgentDeviceToolsTab> Logger
+@implements IDisposable
+
+@if (_message is not null) { <MudAlert Severity="@(_success ? Severity.Success : Severity.Warning)" Dense="true" Class="mb-2">@_message</MudAlert> }
+@if (_busy) { <MudProgressLinear Indeterminate="true" Class="mb-2"/> }
+
+@if (Processes)
+{
+    <MudDataGrid T="AgentProcessRow" Items="@_processes.Where(x => Matches(x.Name) || Matches(x.Id.ToString()))" Dense="true" Elevation="0" Class="device-list-grid connection-tool-grid" Hover="true">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">@Loc[LocKeys.Device.Processes]</MudText>
+            <MudSpacer />
+            <MudButton OnClick="OnRefreshClicked" Disabled="_busy" StartIcon="@Icons.Material.Filled.Refresh">@Loc[LocKeys.Common.Refresh]</MudButton>
+            <MudTextField T="string" @bind-Value="_filter" Immediate="true" Label="@Loc[LocKeys.Device.SearchProcesses]"
+                          Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/>
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Device.Process]"/>
+            <PropertyColumn Property="x => x.Id" Title="@Loc[LocKeys.Device.PID]"/>
+            <TemplateColumn Title="@Loc[LocKeys.Ui.AgentDeviceToolsTab.CPUTime]" Sortable="false"><CellTemplate>@(context.Item.CpuSeconds is { } cpu ? TimeSpan.FromSeconds(cpu).ToString(@"d\.hh\:mm\:ss") : "—")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="@Loc[LocKeys.Device.Memory]" Sortable="false"><CellTemplate>@(context.Item.MemoryBytes is { } bytes ? UiText.Get(LocKeys.Ui.AgentDeviceToolsTab.Text0N1MiB, (bytes / 1048576d)) : "—")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" Sortable="false"><CellTemplate>
+                <MudButton Size="Size.Small" Color="Color.Error" Disabled="@(_busy)"
+                           OnClick="@Snackbar.GuardAction(() => _busy || context.Item.Id <= 4 || context.Item.StartedUtcTicks is null, context.Item.Id <= 4 ? UiText.Get(LocKeys.Ui.AgentDeviceToolsTab.SystemProcessesCannotBeEnded) : UiText.Get(LocKeys.Ui.AgentDeviceToolsTab.TheProcessStartTimeIsUnavailableRefreshTheProcess), () => OnDeviceOperationClicked(AgentDeviceOperation.EndProcess, process: context.Item))">@Loc[LocKeys.Device.EndProcess]</MudButton>
+            </CellTemplate></TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="AgentProcessRow"/></PagerContent>
+        <NoRecordsContent><div class="connection-tool-empty"><MudIcon Icon="@Icons.Material.Outlined.Article"/><MudText>@Loc[LocKeys.Ui.AgentDeviceToolsTab.NoProcessesToDisplay]</MudText></div></NoRecordsContent>
+    </MudDataGrid>
+}
+else
+{
+    <MudDataGrid T="AgentServiceRow" Items="@_services.Where(x => Matches(x.Name) || Matches(x.DisplayName))" Dense="true" Elevation="0" Class="device-list-grid connection-tool-grid" Hover="true">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">@Loc[LocKeys.Device.Services]</MudText>
+            <MudSpacer />
+            <MudButton OnClick="OnRefreshClicked" Disabled="_busy" StartIcon="@Icons.Material.Filled.Refresh">@Loc[LocKeys.Common.Refresh]</MudButton>
+            <MudTextField T="string" @bind-Value="_filter" Immediate="true" Label="@Loc[LocKeys.Device.SearchServices]"
+                          Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/>
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.DisplayName" Title="@Loc[LocKeys.Device.Service]"/>
+            <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]"/>
+            <PropertyColumn Property="x => x.Status" Title="@Loc[LocKeys.Image.VersionStatus]"/>
+            <PropertyColumn Property="x => x.StartupType" Title="@Loc[LocKeys.Device.StartupType]"/>
+            <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" Sortable="false"><CellTemplate>
+                <MudButton Size="Size.Small" Disabled="@(_busy)" OnClick="@Snackbar.GuardAction(() => _busy || context.Item.Status != "Stopped" || IsAgent(context.Item), UiText.Get(LocKeys.Ui.AgentDeviceToolsTab.OnlyAStoppedServiceCanBeStarted), () => OnDeviceOperationClicked(AgentDeviceOperation.StartService, context.Item))">@Loc[LocKeys.Device.Start]</MudButton>
+                <MudButton Size="Size.Small" Disabled="@(_busy)" OnClick="@Snackbar.GuardAction(() => _busy || context.Item.Status != "Running" || IsAgent(context.Item), UiText.Get(LocKeys.Ui.AgentDeviceToolsTab.OnlyARunningServiceThatSupportsStoppingCanBe), () => OnDeviceOperationClicked(AgentDeviceOperation.StopService, context.Item))">@Loc[LocKeys.Device.Stop]</MudButton>
+                <MudButton Size="Size.Small" Disabled="@(_busy)" OnClick="@Snackbar.GuardAction(() => _busy || context.Item.Status != "Running" || IsAgent(context.Item), UiText.Get(LocKeys.Ui.AgentDeviceToolsTab.OnlyARunningServiceThatSupportsStoppingCanBe), () => OnDeviceOperationClicked(AgentDeviceOperation.RestartService, context.Item))">@Loc[LocKeys.Device.Restart]</MudButton>
+            </CellTemplate></TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="AgentServiceRow"/></PagerContent>
+        <NoRecordsContent><div class="connection-tool-empty"><MudIcon Icon="@Icons.Material.Outlined.MiscellaneousServices"/><MudText>@Loc[LocKeys.Ui.AgentDeviceToolsTab.NoServicesToDisplay]</MudText></div></NoRecordsContent>
+    </MudDataGrid>
+}
+
+@code {
+    [Parameter] public int DeviceId { get; set; }
+    [Parameter] public bool Processes { get; set; }
+    private readonly CancellationTokenSource _stop = new();
+    private AgentServiceRow[] _services = [];
+    private AgentProcessRow[] _processes = [];
+    private bool _busy, _success;
+    private string _filter = "";
+    private string? _message;
+    private DateTime? _updated;
+    private bool Matches(string value) => value.Contains(_filter, StringComparison.OrdinalIgnoreCase);
+    private static bool IsAgent(AgentServiceRow row) => row.Name.Equals("CloneDeployAgent", StringComparison.OrdinalIgnoreCase);
+    protected override Task OnInitializedAsync() => OnRefreshClicked();
+
+    private async Task OnRefreshClicked()
+    {
+        if (_busy) return;
+        _busy = true;
+        _message = null;
+        try { await LoadAsync(); }
+        catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
+        catch (Exception ex) { ShowError(ex); }
+        finally { _busy = false; }
+    }
+
+    private async Task LoadAsync()
+    {
+        _services = []; _processes = []; _updated = null;
+        var services = new List<AgentServiceRow>();
+        var processes = new List<AgentProcessRow>();
+        var user = (await Authentication.GetAuthenticationStateAsync()).User;
+        for (var offset = 0; offset <= 100000; offset += AgentDeviceToolReply.PageSize)
+        {
+            var reply = await Tools.ExecuteDeviceToolAsync(user, DeviceId, Processes ? AgentDeviceOperation.Processes : AgentDeviceOperation.Services, offset, ct: _stop.Token);
+            if (!reply.Success) { _message = reply.Detail; _success = false; return; }
+            services.AddRange(reply.Services); processes.AddRange(reply.Processes);
+            if (!reply.HasMore) break;
+        }
+        _services = services.DistinctBy(x => x.Name).ToArray();
+        _processes = processes.DistinctBy(x => x.Id).ToArray();
+        _updated = DateTime.Now;
+    }
+
+    private async Task OnDeviceOperationClicked(AgentDeviceOperation operation, AgentServiceRow? service = null, AgentProcessRow? process = null)
+    {
+        if (_busy) return;
+        var title = operation switch { AgentDeviceOperation.StartService => UiText.Get(LocKeys.Ui.AgentDeviceToolsTab.StartService), AgentDeviceOperation.StopService => UiText.Get(LocKeys.Ui.AgentDeviceToolsTab.StopService), AgentDeviceOperation.RestartService => UiText.Get(LocKeys.Ui.AgentDeviceToolsTab.RestartService), _ => UiText.Get(LocKeys.Device.EndProcess) };
+        var target = service?.DisplayName ?? UiText.Get(LocKeys.Ui.AgentDeviceToolsTab.Text0PID1, (process!.Name), (process.Id));
+        if (await Dialog.ShowMessageBoxAsync(title, $"{title}: {target}?" + (process is null ? "" : UiText.Get(LocKeys.Ui.AgentDeviceToolsTab.UnsavedWorkMayBeLost)), yesText: title, cancelText: UiText.Get(LocKeys.Common.Cancel)) != true || _stop.IsCancellationRequested) return;
+        _busy = true;
+        try
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            var reply = await Tools.ExecuteDeviceToolAsync(user, DeviceId, operation, serviceName: service?.Name, processId: process?.Id ?? 0,
+                processStartedUtcTicks: process?.StartedUtcTicks ?? 0, ct: _stop.Token);
+            _message = null;
+            await LoadAsync();
+            _success = reply.Success && _updated is not null;
+            var message = _message is null ? reply.Detail : UiText.Get(LocKeys.Ui.AgentDeviceToolsTab.Text0RefreshFailed1, (reply.Detail), (_message));
+            if (_success) _message = message;
+            else { _message = null; Snackbar.Add(message, Severity.Error); }
+        }
+        catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
+        catch (Exception ex) { ShowError(ex); Snackbar.Add(_message!, Severity.Error); _message = null; }
+        finally { _busy = false; }
+    }
+
+    private void ShowError(Exception ex)
+    {
+        Logger.LogWarning(ex, "Device tools failed for device {DeviceId}", DeviceId);
+        _success = false;
+        _message = ex is UnauthorizedAccessException ? UiText.Get(LocKeys.Ui.AgentDeviceToolsTab.YouDoNotHavePermissionToUseThisDevice) : UiText.Get(LocKeys.Ui.AgentDeviceToolsTab.CouldNotContactTheAgentRefreshToTryAgain);
+    }
+    public void Dispose() { _stop.Cancel(); }
+}

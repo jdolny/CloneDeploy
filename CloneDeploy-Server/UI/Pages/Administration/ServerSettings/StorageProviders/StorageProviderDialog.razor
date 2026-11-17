@@ -1,0 +1,225 @@
+@using CloneDeploy_Server.UI.Pages.Administration.ServerSettings.ManagedCredentials
+@using StorageProviderModel = CloneDeploy_Server.Backend.Data.Models.StorageProvider
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@inject ManagedCredentialService ManagedCredentialService
+@inject StorageProviderService StorageProviderService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(_isNew ? Loc[LocKeys.StorageProvider.NewStorageProvider] : Loc[LocKeys.StorageProvider.EditStorageProvider])
+        </MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_storageProvider.Name" Label="@Loc[LocKeys.Common.Name]" Variant="Variant.Outlined"
+                          Required="true"/>
+            <MudSelect T="Guid?" Value="_storageProvider.SiteServiceId" ValueChanged="OnHostChanged" Label="@Loc[LocKeys.Ui.StorageProviderDialog.StorageHost]"
+                       Variant="Variant.Outlined" Disabled="@(!_isNew)" Clearable="true"
+                       HelperText="@Loc[LocKeys.Ui.StorageProviderDialog.LeaveEmptyForMainTheHostIsTheService]">
+                @foreach (var site in _sites)
+                {
+                    <MudSelectItem T="Guid?" Value="@((Guid?)site.Id)">@site.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSwitch @bind-Value="_storageProvider.IsEnabled"
+                         Label="@Loc[LocKeys.StorageProvider.Enabled]"
+                         Color="Color.Primary"/>
+            <MudText Class="mt-3">@Loc[LocKeys.Ui.StorageProviderDialog.Purposes]</MudText>
+            <MudSwitch T="bool" @bind-Value="_imaging" Label="@Loc[LocKeys.Device.Imaging]" Color="Color.Primary" />
+            <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.StorageProviderDialog.ImagesCurrentWinPEBootImagesBootFilesAndDrivers]</MudText>
+            <MudSwitch T="bool" @bind-Value="_deviceManagement" Label="@Loc[LocKeys.Ui.StorageProviderDialog.DeviceManagement]" Color="Color.Primary" />
+            <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.StorageProviderDialog.SoftwareInstallersAndActionPolicyFiles]</MudText>
+            @if (!_storageProvider.SiteServiceId.HasValue)
+            {
+                <MudText Class="mt-3">@Loc["Storage.DefaultsTitle"]</MudText>
+                <MudSwitch T="bool" @bind-Value="_storageProvider.IsImagingDefault" Label="@Loc["Storage.DefaultImaging"]" Disabled="@(!_imaging || !_storageProvider.IsEnabled)" Color="Color.Primary" />
+                <MudSwitch T="bool" @bind-Value="_storageProvider.IsManagementDefault" Label="@Loc["Storage.DefaultManagement"]" Disabled="@(!_deviceManagement || !_storageProvider.IsEnabled)" Color="Color.Primary" />
+            }
+            <MudTextField @bind-Value="_storageProvider.PreferredClientNetworks" Label="@Loc[LocKeys.Ui.StorageProviderDialog.PreferredClientNetworks]" Lines="3"
+                          Variant="Variant.Outlined" HelperText="@(_storageProvider.SiteServiceId.HasValue ? UiText.Get(LocKeys.Ui.StorageProviderDialog.IPv4OrIPv6CIDRsSeparatedByLinesOrCommas) : UiText.Get(LocKeys.Ui.StorageProviderDialog.OptionalIPv4OrIPv6CIDRsSeparatedByLinesOr))" />
+            <MudSelect @bind-Value="_storageProvider.Type" Label="@Loc[LocKeys.StorageProvider.Type]"
+                       Variant="Variant.Outlined"
+                       Required="true">
+                @foreach (var type in Enum.GetValues<StorageProviderType>())
+                {
+                    <MudSelectItem Value="@type">@UiText.Label(type)</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="_storageProvider.Path" Label="@(_storageProvider.Type == StorageProviderType.Smb ? UiText.Get(LocKeys.Ui.StorageProviderDialog.UNCSharePath) : Loc[LocKeys.StorageProvider.Path].ToString())"
+                          Variant="Variant.Outlined"
+                          Required="true" HelperText="@Loc[LocKeys.Ui.StorageProviderDialog.AbsolutePathOnTheSelectedHostForExampleC]"/>
+            @if (_storageProvider.Type == StorageProviderType.Smb && (HostOs != "Windows" || _storageProvider.LinuxMountPath is not null))
+            {
+                <MudTextField @bind-Value="_storageProvider.LinuxMountPath" Label="@Loc[LocKeys.Ui.StorageProviderDialog.LinuxMountPath]" Variant="Variant.Outlined"
+                              Required="@(HostOs == "Linux")" HelperText="@Loc[LocKeys.Ui.StorageProviderDialog.MountTheSMBShareUsingLinuxThenEnterIts]" />
+                @if (HostOs is null)
+                {
+                    <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.StorageProviderDialog.TheSiteHasNotReportedItsOSYetSet]</MudText>
+                }
+            }
+            @if (_storageProvider.Type == StorageProviderType.Smb)
+            {
+                @if (!_storageProvider.SiteServiceId.HasValue)
+                {
+                    <MudSwitch @bind-Value="_storageProvider.ImagingDirectConnect" Label="@Loc[LocKeys.Ui.StorageProviderDialog.ImagingDirectConnect]" Color="Color.Primary" />
+                    @if (_storageProvider.ImagingDirectConnect && _imaging)
+                    {
+                        <MudTextField @bind-Value="_storageProvider.WinPeSmbPath" Label="@Loc["Storage.WinPeSmbPath"]"
+                                      Variant="Variant.Outlined" HelperText="@Loc["Storage.WinPeSmbPathHelp"]" />
+                    }
+                    <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.StorageProviderDialog.AllowsWIMAndFFUCaptureAndDeploymentDirectlyOver]</MudText>
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.StorageProviderDialog.WindowsReceivesTheseCredentialsSecurelyLeaveEmptyToUse]</MudText>
+                }
+                <MudGrid>
+                    <MudItem xs="12" sm="9">
+                        <MudSelect T="int?" @bind-Value="_storageProvider.ManagedCredentialId"
+                                   Label="@Loc[LocKeys.Common.ManagedCredentials]"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true">
+                            @foreach (var credential in _managedCredentials)
+                            {
+                                <MudSelectItem T="int?" Value="@((int?)credential.Id)">@credential.Name (@credential.Username)</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="3" Class="d-flex align-center">
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Primary"
+                                   OnClick="@OnCreateManagedCredentialClicked"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   Class="mt-2">
+                            @Loc[LocKeys.StorageProvider.NewCredential]
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            }
+        </MudForm>
+        @if (!_isNew && StorageProvider is not null)
+        {
+            <StorageMovePanel Source="StorageProvider" />
+        }
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="@OnCancelClicked">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@Snackbar.GuardAction(() => !_credentialsLoaded, UiText.Get(LocKeys.Ui.StorageProviderDialog.ManagedCredentialsCouldNotBeLoadedReopenThisDialog), OnSaveClicked)">
+            @(_isNew ? Loc[LocKeys.Common.Create] : Loc[LocKeys.Common.Save])
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public StorageProviderDto? StorageProvider { get; set; }
+    [Parameter] public Guid? InitialSiteServiceId { get; set; }
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private StorageProviderModel _storageProvider = null!;
+    private List<ManagedCredentialDto> _managedCredentials = [];
+    private string? HostOs => _storageProvider.SiteServiceId is { } id
+        ? _sites.FirstOrDefault(x => x.Id == id)?.HostOs
+        : OperatingSystem.IsWindows() ? UiText.Get(LocKeys.Ui.StorageProviderDialog.Windows) : OperatingSystem.IsLinux() ? UiText.Get(LocKeys.Ui.StorageProviderDialog.Linux) : UiText.Get(LocKeys.Ui.PolicyAudiencesTab.Other);
+    private bool _isNew => StorageProvider is null || StorageProvider.Id == 0;
+    private bool _credentialsLoaded;
+    private List<StorageSiteDto> _sites = [];
+    private bool _sitesLoaded;
+    private bool _imaging = true, _deviceManagement = true;
+    private MudForm _form = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _storageProvider = StorageProvider is null
+            ? new StorageProviderModel { SiteServiceId = InitialSiteServiceId, IsEnabled = !InitialSiteServiceId.HasValue }
+            : new StorageProviderModel
+            {
+                Id = StorageProvider.Id,
+                Name = StorageProvider.Name,
+                Type = StorageProvider.Type,
+                Path = StorageProvider.Path,
+                LinuxMountPath = StorageProvider.LinuxMountPath,
+                IsEnabled = StorageProvider.IsEnabled,
+                IsImagingDefault = StorageProvider.IsImagingDefault,
+                IsManagementDefault = StorageProvider.IsManagementDefault,
+                ImagingDirectConnect = StorageProvider.ImagingDirectConnect,
+                WinPeSmbPath = StorageProvider.WinPeSmbPath,
+                Purposes = StorageProvider.Purposes,
+                PreferredClientNetworks = StorageProvider.PreferredClientNetworks,
+                SiteServiceId = StorageProvider.SiteServiceId,
+                ManagedCredentialId = StorageProvider.ManagedCredentialId
+            };
+
+        _imaging = _storageProvider.Purposes.HasFlag(StoragePurpose.Imaging);
+        _deviceManagement = _storageProvider.Purposes.HasFlag(StoragePurpose.DeviceManagement);
+        var sites = await StorageProviderService.GetSitesAsync();
+        _sitesLoaded = sites.Success;
+        _sites = sites.Data ?? [];
+        if (StorageProvider?.SiteServiceId is { } existingSite && !_sites.Any(x => x.Id == existingSite))
+            _sites.Add(new(existingSite, StorageProvider.SiteServiceName ?? existingSite.ToString()));
+        if (!sites.Success) Snackbar.Add(Loc[sites.Error.Code, sites.Error.Args], Severity.Error);
+        await LoadCredentialsAsync();
+    }
+
+    private void OnHostChanged(Guid? id)
+    {
+        _storageProvider.SiteServiceId = id;
+        _storageProvider.IsEnabled = !id.HasValue;
+        if (HostOs == "Windows") _storageProvider.LinuxMountPath = null;
+    }
+
+    private void OnCancelClicked()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task OnCreateManagedCredentialClicked()
+    {
+        var dialog = await Dialog.ShowAsync<ManagedCredentialDialog>(Constants.UI.StandardDialogBox);
+        var result = await dialog.Result;
+
+        if (result is not { Canceled: false, Data: ManagedCredentialDto managedCredential })
+            return;
+
+        await LoadCredentialsAsync();
+        _storageProvider.ManagedCredentialId = managedCredential.Id;
+    }
+
+    private async Task LoadCredentialsAsync()
+    {
+        var result = await ManagedCredentialService.GetAsync();
+        _credentialsLoaded = result.Success;
+        _managedCredentials = result.Data ?? [];
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+    }
+
+    private async Task OnSaveClicked()
+    {
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid || !_credentialsLoaded || !_sitesLoaded)
+            return;
+
+        ServiceResult<StorageProviderModel> result;
+        _storageProvider.Purposes = (_imaging ? StoragePurpose.Imaging : 0) | (_deviceManagement ? StoragePurpose.DeviceManagement : 0);
+        _storageProvider.IsImagingDefault &= _imaging && _storageProvider.IsEnabled && !_storageProvider.SiteServiceId.HasValue;
+        _storageProvider.IsManagementDefault &= _deviceManagement && _storageProvider.IsEnabled && !_storageProvider.SiteServiceId.HasValue;
+        if (_storageProvider.SiteServiceId.HasValue || !_imaging || _storageProvider.Type != StorageProviderType.Smb) _storageProvider.ImagingDirectConnect = false;
+
+        if (_isNew)
+            result = await StorageProviderService.CreateAsync(_storageProvider);
+        else
+            result = await StorageProviderService.UpdateAsync(_storageProvider);
+
+        if (result.Success)
+        {
+            Snackbar.Add(_isNew ? Loc[LocKeys.Common.Created, _storageProvider.Name] : Loc[LocKeys.Common.Updated, _storageProvider.Name], Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+            Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+    }
+}

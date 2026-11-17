@@ -1,0 +1,47 @@
+@inject WinPeService Service
+
+<MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Ui.WinPeDeleteButton.DeleteEnvironment]">
+    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Primary" Disabled="@(_busy || Disabled)"
+                   OnClick="OnDeleteClicked" aria-label="@(UiText.Get(LocKeys.Ui.ActionFiles.Delete0_7eab122c, (Definition.Name)))"/>
+</MudTooltip>
+
+@code {
+    [Parameter, EditorRequired] public WinPeDefinition Definition { get; set; } = null!;
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback Deleted { get; set; }
+    private bool _busy;
+
+    private async Task OnDeleteClicked()
+    {
+        if (_busy || Disabled) return;
+        _busy = true;
+        try
+        {
+            var parameters = new DialogParameters<ConfirmationDialog>
+            {
+                {
+                    x => x.ContentText, UiText.Get(LocKeys.Ui.WinPeDeleteButton.Delete0AndItsBootFilesBuildRecordsAnd, (Definition.Name)) +
+                                        (Definition.IsDefault ? UiText.Get(LocKeys.Ui.WinPeDeleteButton.ThisIsTheDefaultBootEnvironmentDevicesWithoutMatching) : "")
+                },
+                { x => x.ButtonText, UiText.Get(LocKeys.Common.Delete) },
+                { x => x.Color, Color.Error }
+            };
+            var dialog = await Dialog.ShowAsync<ConfirmationDialog>(UiText.Get(LocKeys.Ui.WinPeDeleteButton.DeleteWinPEEnvironment), parameters, Constants.UI.StandardDialogBox);
+            if (await dialog.Result is not { Canceled: false, Data: true }) return;
+            var result = await Service.DeleteAsync(Definition.Id);
+            if (!result.Success)
+            {
+                Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+                return;
+            }
+
+            Snackbar.Add(UiText.Get(LocKeys.Ui.WinPeDeleteButton.WinPEEnvironmentDeleted), Severity.Success);
+            await Deleted.InvokeAsync();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+}

@@ -1,0 +1,37 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@inject DirectoryService Directories
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@UiText.Get(LocKeys.Ui.NewDirectoryDialog.Add0Directory, ((Provider == DirectoryProvider.ActiveDirectory ? "LDAP" : UiText.Get(LocKeys.Ui.NewDirectoryDialog.Entra))))</MudText></TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_name" Label="@Loc[LocKeys.Common.Name]" Required="true" MaxLength="200" Variant="Variant.Outlined" Disabled="_busy" />
+        <MudTextField @bind-Value="_description" Label="@Loc[LocKeys.Common.Description]" Lines="3" MaxLength="2000" Variant="Variant.Outlined" Disabled="_busy" />
+        <MudCheckBox @bind-Value="_accessOnly" Label="@Loc[LocKeys.Ui.NewDirectoryDialog.ApplicationAccessOnlyUsersGroupsAndMemberships]" />
+        <MudText Class="mt-3">@Loc[LocKeys.Ui.NewDirectoryDialog.TheDirectoryStartsWithSyncDisabledCompleteItsConfiguration]</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_busy">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _busy || string.IsNullOrWhiteSpace(_name), UiText.Get(LocKeys.Ui.NewDirectoryDialog.EnterADirectoryConnectionName), Create)" Disabled="@(_busy)" Color="Color.Primary" Variant="Variant.Filled">@Loc[LocKeys.Common.Create]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public DirectoryProvider Provider { get; set; }
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private string _name = "", _description = "";
+    private bool _busy, _accessOnly;
+    protected override void OnInitialized() => _name = Provider == DirectoryProvider.ActiveDirectory ? UiText.Get(LocKeys.Ui.NewDirectoryDialog.ActiveDirectory) : UiText.Get(LocKeys.Ui.DirectorySettingsTab.MicrosoftEntraID);
+    private void Cancel() => MudDialog.Cancel();
+    private async Task Create()
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var result = await Directories.CreateAsync(new DirectorySource { Name = _name, Description = _description, Provider = Provider, ApplicationAccessOnly = _accessOnly });
+            if (result.Success) MudDialog.Close(DialogResult.Ok(result.Data));
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _busy = false; }
+    }
+}

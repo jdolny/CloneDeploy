@@ -1,0 +1,70 @@
+@inject PolicyReportService Reports
+<MudDialog>
+    <DialogContent>
+        @if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+        else if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+        else if (History)
+        {
+            <MudText Class="mb-3">@Loc[LocKeys.Ui.PolicyReportDevicesDialog.Latest200ExecutionsAcrossAllVersionsIncludingPreviousTargets]</MudText>
+            <MudTable T="PolicyReportRun" Items="_history" Dense="true" Hover="true" RowsPerPage="25">
+                <HeaderContent><MudTh>@Loc[LocKeys.Dashboard.Device]</MudTh><MudTh>@Loc[LocKeys.User.UserMembership]</MudTh><MudTh>@Loc[LocKeys.Dashboard.Result]</MudTh><MudTh>@Loc[LocKeys.Device.Started]</MudTh><MudTh>@Loc[LocKeys.Dashboard.FinishedAt]</MudTh><MudTh>@Loc[LocKeys.Device.VersionHash]</MudTh><MudTh>@Loc[LocKeys.User.ObjectJson]</MudTh></HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="@Loc[LocKeys.Dashboard.Device]">@context.Device</MudTd><MudTd DataLabel="@Loc[LocKeys.User.UserMembership]">@context.User</MudTd><MudTd DataLabel="@Loc[LocKeys.Dashboard.Result]">@UiText.Label(context.Status)</MudTd>
+                    <MudTd DataLabel="@Loc[LocKeys.Device.Started]">@Time(context.StartedAtUtc)</MudTd><MudTd DataLabel="@Loc[LocKeys.Dashboard.FinishedAt]">@Time(context.FinishedAtUtc)</MudTd>
+                    <MudTd DataLabel="@Loc[LocKeys.Device.VersionHash]"><MudTooltip Text="@context.Hash">@context.Hash[..Math.Min(12, context.Hash.Length)]</MudTooltip></MudTd>
+                    <MudTd DataLabel="@Loc[LocKeys.User.ObjectJson]"><div style="white-space: pre-wrap; overflow-wrap: anywhere; max-width: 32rem; max-height: 12rem; overflow: auto;">@context.Detail</div></MudTd>
+                </RowTemplate>
+                <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.PolicyReportDevicesDialog.NoExecutionHistory]</MudText></NoRecordsContent>
+                <PagerContent><MudTablePager /></PagerContent>
+            </MudTable>
+        }
+        else
+        {
+            <MudText Class="mb-3">@Loc[LocKeys.Ui.PolicyReportDevicesDialog.CurrentPublishedVersionLastCheckInProvidesConnectivityContext]</MudText>
+            <MudTable T="PolicyReportDevice" Items="_devices" Filter="Matches" Dense="true" Hover="true" RowsPerPage="25">
+                <ToolBarContent><MudTextField @bind-Value="_search" Immediate="true" Placeholder="@Loc[LocKeys.Ui.ManageDevicesPage.SearchDevices_3aebaefc]" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" /></ToolBarContent>
+                <HeaderContent><MudTh>@Loc[LocKeys.Dashboard.Device]</MudTh><MudTh>@Loc[LocKeys.Ui.PolicyReportDevicesDialog.DeviceTarget]</MudTh><MudTh>@Loc[LocKeys.Dashboard.Result]</MudTh><MudTh>@Loc[LocKeys.Device.Started]</MudTh><MudTh>@Loc[LocKeys.Dashboard.FinishedAt]</MudTh><MudTh>@Loc[LocKeys.Device.LastCheckinTime]</MudTh><MudTh>@Loc[LocKeys.User.ObjectJson]</MudTh></HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="@Loc[LocKeys.Dashboard.Device]">@context.Name</MudTd><MudTd DataLabel="@Loc[LocKeys.Ui.PolicyReportDevicesDialog.DeviceTarget]">@(context.Targeted ? UiText.Get(LocKeys.User.Yes) : UiText.Get(LocKeys.Ui.PolicyReportDevicesDialog.ReportedRun))</MudTd>
+                    <MudTd DataLabel="@Loc[LocKeys.Dashboard.Result]">@UiText.Label(context.Status)</MudTd><MudTd DataLabel="@Loc[LocKeys.Device.Started]">@Time(context.StartedAtUtc)</MudTd>
+                    <MudTd DataLabel="@Loc[LocKeys.Dashboard.FinishedAt]">@Time(context.FinishedAtUtc)</MudTd><MudTd DataLabel="@Loc[LocKeys.Device.LastCheckinTime]">@Time(context.LastCheckinAtUtc)</MudTd>
+                    <MudTd DataLabel="@Loc[LocKeys.User.ObjectJson]"><div style="white-space: pre-wrap; overflow-wrap: anywhere; max-width: 32rem; max-height: 12rem; overflow: auto;">@context.Detail</div></MudTd>
+                </RowTemplate>
+                <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.PolicyReportDevicesDialog.NoMatchingAgents]</MudText></NoRecordsContent>
+                <PagerContent><MudTablePager /></PagerContent>
+            </MudTable>
+        }
+    </DialogContent>
+    <DialogActions><MudButton OnClick="@(() => MudDialog.Close())">@Loc[LocKeys.Ui.ActionFiles.Close]</MudButton></DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public int PolicyId { get; set; }
+    [Parameter] public string? Status { get; set; }
+    [Parameter] public bool History { get; set; }
+    private bool _loading = true;
+    private string? _error, _search;
+    private List<PolicyReportDevice> _devices = [];
+    private List<PolicyReportRun> _history = [];
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            if (History)
+            {
+                var result = await Reports.HistoryAsync(PolicyId);
+                if (result.HasData) _history = result.Data;
+                else _error = Loc[result.Error!.Code, result.Error.Args];
+            }
+            else
+            {
+                var result = await Reports.DevicesAsync(PolicyId);
+                if (result.HasData) _devices = result.Data.Where(x => Status is null || x.Status == Status).ToList();
+                else _error = Loc[result.Error!.Code, result.Error.Args];
+            }
+        }
+        finally { _loading = false; }
+    }
+    private bool Matches(PolicyReportDevice row) => string.IsNullOrWhiteSpace(_search) || row.Name.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+    private static string Time(DateTime? value) => value?.ToLocalTime().ToString("g") ?? "—";
+}

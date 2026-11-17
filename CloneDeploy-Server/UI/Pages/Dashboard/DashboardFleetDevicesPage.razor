@@ -1,0 +1,46 @@
+@using System.Globalization
+@page "/dashboard/fleet/{Bucket}"
+@attribute [Authorize]
+@inject DashboardService DashboardService
+@inject TimeProvider Clock
+
+<AppPageTitle Text="@Loc[$"Dashboard.Fleet.{Bucket}"]">
+    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Href="/dashboard" aria-label="@Loc[LocKeys.Dashboard.Back]" />
+</AppPageTitle>
+
+@if (Bucket.StartsWith("agent-", StringComparison.Ordinal) && Version is not null)
+{
+    <MudText Typo="Typo.body2" Class="mb-3">@Loc[LocKeys.Dashboard.Fleet.Prepared, Version]</MudText>
+}
+<MudDataGrid T="DashboardFleetDeviceDto" Items="_devices" Loading="_loading" Dense="true" Hover="true" RowsPerPage="25" Filterable="true">
+    <Columns>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Name]"><CellTemplate><MudLink Href="@($"/devices/manage/{context.Item.Id}")">@context.Item.Name</MudLink></CellTemplate></TemplateColumn>
+        <PropertyColumn Property="x => x.AgentVersion" Title="@Loc[LocKeys.Dashboard.AgentVersion]" />
+        <TemplateColumn Title="@Loc[LocKeys.Dashboard.LastCheckin]"><CellTemplate>@(context.Item.LastCheckin?.ToLocalTime().ToString("g") ?? Loc[LocKeys.Dashboard.Never].Value)</CellTemplate></TemplateColumn>
+        @if (Bucket.StartsWith("updates-", StringComparison.Ordinal))
+        {
+            <TemplateColumn Title="@Loc[LocKeys.Dashboard.Fleet.LastScan]"><CellTemplate>@(context.Item.LastOnlineScan?.ToLocalTime().ToString("g") ?? Loc[LocKeys.Dashboard.Never].Value)</CellTemplate></TemplateColumn>
+        }
+    </Columns>
+    <PagerContent><MudDataGridPager T="DashboardFleetDeviceDto" /></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Dashboard.NoDevices]</MudText></NoRecordsContent>
+</MudDataGrid>
+@code {
+    [Parameter] public string Bucket { get; set; } = "updates-missing";
+    [SupplyParameterFromQuery] public string? AsOf { get; set; }
+    [SupplyParameterFromQuery] public string? Version { get; set; }
+    private List<DashboardFleetDeviceDto> _devices = [];
+    private bool _loading;
+    private int _loadVersion;
+    protected override async Task OnParametersSetAsync()
+    {
+        var request = ++_loadVersion;
+        _loading = true;
+        var asOf = DateTime.TryParse(AsOf, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var parsed) ? parsed : Clock.GetUtcNow().UtcDateTime;
+        var result = await DashboardService.GetFleetDevicesAsync(Bucket, asOf, Version);
+        if (request != _loadVersion) return;
+        _devices = result.Data ?? [];
+        if (!result.Success) Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        _loading = false;
+    }
+}

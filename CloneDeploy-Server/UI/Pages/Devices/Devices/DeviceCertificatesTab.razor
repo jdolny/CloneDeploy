@@ -1,0 +1,22 @@
+<DeviceInventoryTable TItem="Certificate" Title="@Loc[LocKeys.Device.Certificates]"
+                      Items="@(Device.Certificates.Where(x => x.Certificate != null).Select(x => x.Certificate!).OrderBy(x => x.Subject))"
+                      SearchText="@(item => $"{item.Subject} {item.Issuer} {item.Store} {item.FriendlyName} {item.Thumbprint} {item.Serial} {(item.NotBeforeUtc is DateTime displayDate1 && displayDate1 != default ? displayDate1.ToLocalTime().ToString("g") : "—")} {(item.NotAfterUtc is DateTime displayDate2 && displayDate2 != default ? displayDate2.ToLocalTime().ToString("g") : "—")}")">
+    <Columns>
+        <PropertyColumn T="Certificate" TProperty="string" Property="x => x.Subject" Title="@Loc[LocKeys.Device.Subject]"/>
+        <PropertyColumn T="Certificate" TProperty="string" Property="x => x.Issuer" Title="@Loc[LocKeys.Device.Issuer]"/>
+        <PropertyColumn T="Certificate" TProperty="string" Property="x => x.Store" Title="@Loc[LocKeys.Device.Store]"/>
+        <PropertyColumn T="Certificate" TProperty="string" Property="x => x.FriendlyName" Title="@Loc[LocKeys.Device.FriendlyName]"/>
+        <PropertyColumn T="Certificate" TProperty="string" Property="x => x.Thumbprint" Title="@Loc[LocKeys.Device.Thumbprint]"/>
+        <PropertyColumn T="Certificate" TProperty="string" Property="x => x.Serial" Title="@Loc[LocKeys.Device.Serial]"/>
+        <TemplateColumn T="Certificate" Title="@Loc[LocKeys.Device.ValidFrom]" Sortable="false" Filterable="false">
+            <CellTemplate>@(context.Item.NotBeforeUtc is DateTime displayDate3 && displayDate3 != default ? displayDate3.ToLocalTime().ToString("g") : "—")</CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="Certificate" Title="@Loc[LocKeys.Device.Expires]" Sortable="false" Filterable="false">
+            <CellTemplate>@(context.Item.NotAfterUtc is DateTime displayDate4 && displayDate4 != default ? displayDate4.ToLocalTime().ToString("g") : "—")</CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</DeviceInventoryTable>
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+}

@@ -1,0 +1,228 @@
+@inject AuthenticationStateProvider SharedCatalogAuthentication
+@inject IAuthorizationService SharedCatalogAuthorization
+@page "/images/manage"
+@page "/images"
+
+@attribute [Authorize(Policy = Constants.Permissions.ImageView)]
+
+@inject ImagingService ImagingService
+
+<ImagingEditScope Policy="@Constants.Permissions.ImageEdit" Context="canEditImage">
+<AppPageTitle Text="@Loc[LocKeys.Image.Images]" />
+
+<ActionButtons><MainButton><PermissionView Policy="@Constants.Permissions.ImageCreate"><MudButton OnClick="OnCreateClicked" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">@Loc[LocKeys.Image.NewImage]</MudButton></PermissionView></MainButton></ActionButtons>
+<TagSearchPanel SelectedCount="_selectedTags.Count" ClearTags="OnClearTags">
+    <SearchControls>
+        <div class="device-list-search">
+            <MudTextField T="string" Value="_search" ValueChanged="OnSearchChanged" DebounceInterval="300" Placeholder="@Loc[LocKeys.Ui.ImagesPage.SearchImages]" aria-label="@Loc[LocKeys.Ui.ImagesPage.SearchImages_9e13d826]"
+                          Clearable="true" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Disabled="_loading"/>
+        </div>
+        <div class="device-list-limit"><MudCheckBox T="bool" Value="_includeDisabled" ValueChanged="OnIncludeDisabledChanged" Label="@Loc[LocKeys.Image.IncludeDisabled]" Disabled="_loading"/></div>
+    </SearchControls>
+    <TagControls>
+        <div class="device-manage-tags">
+            <MudAutocomplete T="Tag" @ref="_tagPicker" Label="@Loc[LocKeys.Common.Tags]" Placeholder="@Loc[LocKeys.Ui.ManageDevicesPage.FilterByTag]" ShrinkLabel="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                             SearchFunc="SearchTags" ValueChanged="OnAddTag" ToStringFunc="@(tag => tag?.Name ?? string.Empty)" Clearable="true" ResetValueOnEmptyText="true"/>
+            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-2">
+                @foreach (var tag in _selectedTags)
+                {
+                    <MudChip T="int" Value="tag.Id" Color="Color.Primary" Variant="Variant.Filled" OnClose="@(() => OnRemoveTag(tag))">@tag.Name</MudChip>
+                }
+            </MudStack>
+        </div>
+        <div class="device-manage-tag-match">
+            <MudSelect T="bool" Value="_matchAll" ValueChanged="OnMatchChanged" Label="@Loc[LocKeys.Ui.ManageDevicesPage.Match]" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem Value="false">@Loc[LocKeys.Ui.ManageDevicesPage.AnyTagOR]</MudSelectItem><MudSelectItem Value="true">@Loc[LocKeys.Ui.ManageDevicesPage.AllTagsAND]</MudSelectItem>
+            </MudSelect>
+        </div>
+    </TagControls>
+</TagSearchPanel>
+
+@if (_loading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true"/>
+}
+
+<MudDataGrid SelectOnRowClick="false" T="Image" Items="FilteredItems" Dense="true" MultiSelection="true" @bind-SelectedItems="_selectedImages"
+             RowsPerPage="@Constants.UI.DefaultPageSize" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu"
+             ColumnResizeMode="ResizeMode.Column" Hover="true" Elevation="0" Outlined="true" Class="device-list-grid"><ToolBarContent><MudIcon Icon="@Icons.Material.Outlined.Storage" Color="Color.Primary"/><MudText Typo="Typo.h6">@Loc[LocKeys.Image.Images]</MudText>
+        <MudSpacer/>
+        <div class="grid-toolbar-actions">
+            <GridSelectionCount Count="_selectedImages.Count"/>
+            @if (_selectedImages.Count > 0)
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="@(!canEditImage || (_saving || _loading))" OnClick="@OnDeleteSelectedClicked" StartIcon="@Icons.Material.Filled.Delete">
+                @Loc[LocKeys.Common.DeleteSelected]
+            </MudButton>
+        }
+        </div>
+    </ToolBarContent>
+
+    <Columns>
+        <SelectColumn T="Image"/>
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]">
+            <CellTemplate>
+                <MudLink Class="device-name-link" Href="@($"/images/manage/{context.Item.Id}")">@context.Item.Name</MudLink>
+            </CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Description" Title="@Loc[LocKeys.Common.Description]"/>
+        <PropertyColumn Property="x => x.Enabled" Title="@Loc[LocKeys.Image.Enabled]"/>
+        <PropertyColumn Property="x => x.Protected" Title="@Loc[LocKeys.Image.Protected]"/>
+        <PropertyColumn Property="x => x.Devices.Count" Title="@Loc[LocKeys.Group.Devices]"/>
+        <TemplateColumn Title="@Loc[LocKeys.Image.Content]">
+            <CellTemplate>
+                @Loc[context.Item.LastUploadGuid == Guid.Empty ? LocKeys.Image.NotUploaded : LocKeys.Image.Uploaded]
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <MudTooltip Text="@($"{Loc[LocKeys.Common.Delete]} - {context.Item.Name}")" Placement="Placement.Left"
+                            Arrow="true" Delay="200">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Medium"
+                                   Color="Color.Primary"
+                                   Disabled="@(!canEditImage || (_saving || _loading))" OnClick="@(() => OnDeleteClicked(context.Item))"/>
+                </MudTooltip>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+    <PagerContent><MudDataGridPager T="Image"/></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Image.NoImagesFound]</MudText></NoRecordsContent>
+</MudDataGrid>
+
+</ImagingEditScope>
+@code {
+    private List<Tag> _tags = [], _selectedTags = [];
+    private MudAutocomplete<Tag> _tagPicker = null!;
+    private bool _matchAll;
+    private IEnumerable<Image> FilteredItems => _images.Where(item => _selectedTags.Count == 0 || (_matchAll
+        ? _selectedTags.All(tag => item.Tags.Any(x => x.TagId == tag.Id))
+        : _selectedTags.Any(tag => item.Tags.Any(x => x.TagId == tag.Id))));
+    private Task<IEnumerable<Tag>> SearchTags(string? text, CancellationToken ct) => Task.FromResult(_tags.Where(tag =>
+        _selectedTags.All(x => x.Id != tag.Id) && (string.IsNullOrWhiteSpace(text) || tag.Name.Contains(text.Trim(), StringComparison.OrdinalIgnoreCase))));
+    private async Task OnAddTag(Tag? tag)
+    {
+        if (tag is null || _selectedTags.Any(x => x.Id == tag.Id)) return;
+        _selectedTags.Add(tag); _selectedImages.Clear(); await _tagPicker.ClearAsync();
+    }
+    private void OnClearTags()
+    {
+        foreach (var tag in _selectedTags.ToArray()) OnRemoveTag(tag);
+    }
+
+    private void OnRemoveTag(Tag tag) { _selectedTags.Remove(tag); _selectedImages.Clear(); }
+    private void OnMatchChanged(bool value) { _matchAll = value; _selectedImages.Clear(); }
+
+    private async Task OnCreateClicked()
+    {
+        var dialog = await Dialog.ShowAsync<ImageCreateDialog>(Constants.UI.StandardDialogBox);
+        if (await dialog.Result is { Canceled: false }) await LoadAsync();
+    }
+
+    private bool _saving;
+    private List<Image> _images = [];
+    private HashSet<Image> _selectedImages = [];
+    private bool _loading = true;
+    private string? _search;
+    private bool _includeDisabled;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var tags = ((await SharedCatalogAuthorization.AuthorizeAsync((await SharedCatalogAuthentication.GetAuthenticationStateAsync()).User, Constants.Permissions.TagView)).Succeeded ? await ImagingService.GetTagsAsync() : ServiceResult<List<Tag>>.Ok([])); _tags = tags.Data ?? [];
+        if (!tags.Success) Snackbar.Add(Loc[tags.Error!.Code, tags.Error.Args], Severity.Error);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        var result = await ImagingService.GetImagesAsync(_search, _includeDisabled);
+        if (!result.Success)
+        {
+            _images = [];
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        else if (result.HasData)
+            _images = result.Data;
+
+        _selectedImages.Clear();
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task OnSearchChanged(string? value)
+    {
+        _search = value;
+        await LoadAsync();
+    }
+
+    private async Task OnIncludeDisabledChanged(bool value)
+    {
+        _includeDisabled = value;
+        await LoadAsync();
+    }
+
+    private async Task OnDeleteClicked(Image item)
+    {
+        if (_saving || _loading) return;
+        _saving = true;
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, Loc[LocKeys.Image.ConfirmDelete, item.Name!] },
+            { x => x.ButtonText, Loc[LocKeys.Common.Delete] },
+            { x => x.Color, Color.Error }
+        };
+
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        var dialogResult = await dialog.Result;
+
+        if (dialogResult is { Canceled: false, Data: true })
+        {
+            var result = await ImagingService.DeleteImageAsync(item.Id);
+
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[LocKeys.Common.Deleted, item.Name!], Severity.Success);
+                await LoadAsync();
+            }
+            else
+                Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+
+        _saving = false;
+    }
+
+    private async Task OnDeleteSelectedClicked()
+    {
+        if (_saving || _loading) return;
+        _saving = true;
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, Loc[LocKeys.Image.ConfirmDeleteMany] },
+            { x => x.ButtonText, Loc[LocKeys.Common.Delete] },
+            { x => x.Color, Color.Error }
+        };
+
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        var dialogResult = await dialog.Result;
+
+        if (dialogResult is { Canceled: false, Data: true })
+        {
+            var result = await ImagingService.DeleteImagesAsync(_selectedImages.Select(x => x.Id).ToList());
+
+            await LoadAsync();
+            if (result.Success)
+                Snackbar.Add(Loc[LocKeys.Common.DeletedMany], Severity.Success);
+            else
+            {
+                Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+                Snackbar.Add(Loc[LocKeys.Image.DeleteStopped], Severity.Warning);
+            }
+        }
+
+        _saving = false;
+    }
+}

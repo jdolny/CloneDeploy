@@ -1,0 +1,94 @@
+@inject DriverService Service
+<ImagingEditScope Policy="@Constants.Permissions.DriverPackEdit" Context="canEditImage">
+<MudStack Spacing="3">
+    <MudSelect T="DriverVendor" Value="_vendor" ValueChanged="VendorChangedAsync" Label="@Loc[LocKeys.Device.Manufacturer]" Variant="Variant.Outlined" Disabled="_busy">
+        @foreach (var vendor in System.Enum.GetValues<DriverVendor>()) { <MudSelectItem T="DriverVendor" Value="vendor">@vendor</MudSelectItem> }
+    </MudSelect>
+    <MudSelect T="bool" Value="_winPe" ValueChanged="PackTypeChangedAsync" Label="@Loc[LocKeys.Ui.DriverLibraryTab.PackType]" Variant="Variant.Outlined" Disabled="_busy">
+        <MudSelectItem T="bool" Value="false">@Loc[LocKeys.Ui.DriverLibraryTab.WindowsModelDrivers]</MudSelectItem>
+        <MudSelectItem T="bool" Value="true">@Loc[LocKeys.Ui.DriverLibraryTab.WinPEBootDrivers]</MudSelectItem>
+    </MudSelect>
+    @if (_winPe)
+    {
+        <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.DriverLibraryTab.WinPEPacksProvideBootEnvironmentDriversPreparingAPack]</MudText>
+        @if (_vendor == DriverVendor.Lenovo)
+        {
+            <MudText>@Loc[LocKeys.Ui.DriverLibraryTab.TheLenovoCatalogUsedHereContainsWindowsModelPacks] <MudLink Href="https://support.lenovo.com/us/en/solutions/ht074984" Target="_blank">@Loc[LocKeys.Ui.DriverLibraryTab.LenovoPackageIndex]</MudLink> @Loc[LocKeys.Ui.DriverLibraryTab.AndUploadAnExtractedDriverZIP]</MudText>
+        }
+        @if (_vendor == DriverVendor.Microsoft)
+        {
+            <MudText>@Loc[LocKeys.Ui.DriverLibraryTab.SurfaceDownloadsProvideModelSpecificDriverBundlesSelectThe]</MudText>
+        }
+    }
+    <MudButton OnClick="OnRefreshClicked" Disabled="_busy">@Loc[LocKeys.Ui.DriverLibraryTab.LoadRefreshCatalog]</MudButton>
+    <MudAutocomplete T="DriverCatalogModelDto" Value="_model" ValueChanged="ModelChangedAsync" SearchFunc="SearchModelsAsync"
+                     Label="@Loc[LocKeys.Device.Model]" ToStringFunc="@(m => m?.Name ?? "")" Variant="Variant.Outlined"
+                     Disabled="_busy" Clearable="true" ResetValueOnEmptyText="true" Strict="false"
+                     MaxItems="@((int?)null)" MaxHeight="400" Placeholder="@Loc[LocKeys.Ui.DriverLibraryTab.SearchModelsByName]"
+                     HelperText="@(UiText.Get(LocKeys.Ui.DriverLibraryTab.Text0N0EntriesLoadedTypeToSearchOrScroll, (VisibleModels.Count())))" />
+    <MudCheckBox T="bool" @bind-Value="_follow" Label="@Loc[LocKeys.Ui.DriverLibraryTab.FollowNewerReleasesForThisModelOSBuildAnd]" Disabled="_busy" />
+    @if (_busy) { <MudProgressLinear Indeterminate="true" /> }
+    @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+    <MudDataGrid T="DriverCatalogPackageDto" Items="_packages" Dense="true" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" RowsPerPage="10" Elevation="0" Outlined="true" Class="device-list-grid" QuickFilter="@(x => string.IsNullOrWhiteSpace(_gridSearch0) || (x.FileName + " " + x.OperatingSystem).Contains(_gridSearch0.Trim(), StringComparison.OrdinalIgnoreCase))"><ToolBarContent><MudIcon Icon="@Icons.Material.Outlined.CloudDownload" Color="Color.Primary"/><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DriverLibraryTab.AvailablePackages]</MudText><MudSpacer/><MudTextField T="string" @bind-Value="_gridSearch0" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" aria-label="@Loc[LocKeys.Ui.DriverLibraryTab.SearchAvailablePackages]" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/></ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.OperatingSystem" Title="@Loc[LocKeys.Ui.DriverLibraryTab.OSBuild]" />
+            <PropertyColumn Property="x => x.Architecture" Title="@Loc[LocKeys.Device.Architecture]" />
+            <PropertyColumn Property="x => x.Release" Title="@Loc[LocKeys.Device.Release]" />
+            <PropertyColumn Property="x => x.ReleasedAtUtc" Title="@Loc[LocKeys.Ui.DriverLibraryTab.ReleasedUTC]" />
+            <PropertyColumn Property="x => x.FileName" Title="@Loc[LocKeys.Ui.DriverLibraryTab.Package]" />
+            <PropertyColumn Property="x => x.DownloadSizeBytes" Title="@Loc[LocKeys.Ui.DriverLibraryTab.DownloadSize]">
+                <CellTemplate><MudText>@FormatSize(context.Item.DownloadSizeBytes)</MudText></CellTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false"><CellTemplate><MudButton OnClick="@(() => OnImportClicked(context.Item))" Disabled="@(!canEditImage || (_busy))" Color="Color.Primary">@Loc[LocKeys.Ui.DriverLibraryTab.AddAndDownload]</MudButton></CellTemplate></TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="DriverCatalogPackageDto" /></PagerContent>
+        <NoRecordsContent><MudText>@Loc[LocKeys.Ui.DriverLibraryTab.LoadACatalogAndSelectAModelToSee]</MudText></NoRecordsContent>
+    </MudDataGrid>
+</MudStack>
+
+</ImagingEditScope>
+@code {
+    private string? _gridSearch0;
+
+    [Parameter] public int ProfileId { get; set; }
+    private static string FormatSize(long? bytes) => bytes switch
+    {
+        null => UiText.Get(LocKeys.Scheduler.StatusUnknown),
+        >= 1_000_000_000 => UiText.Get(LocKeys.Ui.DriverLibraryTab.Text0N2GB, (bytes.Value / 1_000_000_000d)),
+        >= 1_000_000 => UiText.Get(LocKeys.Ui.DriverLibraryTab.Text0N1MB, (bytes.Value / 1_000_000d)),
+        >= 1_000 => UiText.Get(LocKeys.Ui.DriverLibraryTab.Text0N1KB, (bytes.Value / 1_000d)),
+        _ => UiText.Get(LocKeys.Ui.DriverLibraryTab.Text0N0Bytes, (bytes.Value))
+    };
+    private DriverVendor _vendor;
+    private DriverCatalogModelDto? _model;
+    private List<DriverCatalogModelDto> _models = [];
+    private List<DriverCatalogPackageDto> _packages = [];
+    private bool _busy, _follow, _winPe;
+    private IEnumerable<DriverCatalogModelDto> VisibleModels => _models.Where(x => x.IsWinPe == _winPe);
+    private Task PackTypeChangedAsync(bool value) { _winPe = value; _model = null; _packages = []; return Task.CompletedTask; }
+    private string? _error;
+    private Task<IEnumerable<DriverCatalogModelDto>> SearchModelsAsync(string? text, CancellationToken token) =>
+        Task.FromResult(VisibleModels.Where(x => string.IsNullOrWhiteSpace(text) || x.Name.Contains(text, StringComparison.OrdinalIgnoreCase)));
+    private async Task VendorChangedAsync(DriverVendor value) { _vendor = value; _model = null; _packages = []; await OnRefreshClicked(); }
+    private async Task OnRefreshClicked()
+    {
+        _busy = true; _error = null; _model = null; _packages = [];
+        var result = await Service.GetCatalogModelsAsync(_vendor, true);
+        _models = result.Data ?? []; if (!result.Success) _error = Loc[result.Error!.Code, result.Error.Args]; _busy = false;
+    }
+    private async Task ModelChangedAsync(DriverCatalogModelDto? model)
+    {
+        _model = model; _packages = []; if (model is null) return;
+        _busy = true; _error = null;
+        var result = await Service.GetCatalogPackagesAsync(_vendor, model);
+        _packages = result.Data ?? []; if (!result.Success) _error = Loc[result.Error!.Code, result.Error.Args]; _busy = false;
+    }
+    private async Task OnImportClicked(DriverCatalogPackageDto package)
+    {
+        if (_busy) return;
+        _busy = true; _error = null;
+        var result = await Service.ImportAsync(ProfileId, package, _follow);
+        if (result.Success) Snackbar.Add(UiText.Get(LocKeys.Ui.DriverLibraryTab.DriverPackageQueuedViewFilesForDownloadStatus), Severity.Success);
+        else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); _busy = false;
+    }
+}

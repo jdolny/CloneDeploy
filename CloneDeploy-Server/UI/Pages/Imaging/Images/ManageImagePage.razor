@@ -1,0 +1,126 @@
+@page "/images/manage/{Id:int}"
+@page "/images/manage/{Id:int}/{Tab}"
+
+@attribute [Authorize(Policy = Constants.Permissions.ImageView)]
+@inject ImagingService ImagingService
+
+@if (_isLoading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true"/>
+}
+else if (_image is not null)
+{
+    <PageTitle>@(UiText.Get(LocKeys.Ui.ManageImagePage.Images0, (_image.Name)))</PageTitle>
+    <SectionContent SectionName="page-title">
+        <div class="device-page-heading"><div class="device-heading-row">
+            <MudIconButton Href="/images/manage" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" aria-label="@Loc[LocKeys.Image.BackToImages]"/>
+            <div class="device-heading-icon"><MudIcon Icon="@Icons.Material.Outlined.Storage" Size="Size.Large"/></div>
+            <div class="device-heading-copy"><div class="device-heading-name"><h1>@_image.Name</h1></div></div>
+        </div></div>
+    </SectionContent>
+    <ActionButtons>
+        <Content>
+            <MudMenuItem Label="@Loc[LocKeys.Common.Delete]" Icon="@Icons.Material.Filled.Delete"
+                         Disabled="_deleting" OnClick="OnDeleteClicked" />
+        </Content>
+    </ActionButtons>
+
+    <div class="device-detail device-workspace">
+        <ResponsiveTabs PanelOrder="@(new int[] { 0, 4, 1, 3, 2 })" KeepPanelsAlive="true" ActivePanelIndex="_activePanelIndex" ActivePanelIndexChanged="OnTabChanged" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.Image.General]" Icon="@Icons.Material.Outlined.Info">
+                <TabHelp Href="ui/imaging/images-general.html" Title="@Loc[LocKeys.Image.General]" />
+                @if (_activePanelIndex == 0)
+                {
+                    <MudStack Class="pb-4"><ImageGeneralTab Image="@_image" @key="_image.Id" OnSaved="RefreshHeaderAsync"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ManageImagePage.Replication]" Icon="@Icons.Material.Outlined.Sync">
+                <TabHelp Href="ui/imaging/images-replication.html" Title="@Loc[LocKeys.Ui.ManageImagePage.Replication]" />
+                @if (_activePanelIndex == 4)
+                {
+                    <MudStack Class="pb-4"><ImageReplicationTab Image="@_image" @key="_image.Id"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Image.Versions]" Icon="@Icons.Material.Outlined.History">
+                <TabHelp Href="ui/imaging/images-versions.html" Title="@Loc[LocKeys.Image.Versions]" />
+                @if (_activePanelIndex == 1)
+                {
+                    <MudStack Class="py-4"><ImageVersionsTab Image="@_image" @key="_image.Id"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Class="page-tab-divider" Text="@Loc[LocKeys.Policy.Activity]" Icon="@Icons.Material.Outlined.History">
+                <TabHelp Href="ui/imaging/images-audit.html" Title="@Loc[LocKeys.Policy.Activity]" />
+                @if (_activePanelIndex == 3)
+                {
+                    <MudStack Class="py-4"><ImagingHistoryTab Kind="ImagingItemKind.Image" ItemId="Id"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Device.Relations]" Icon="@Icons.Material.Outlined.Devices">
+                <TabHelp Href="ui/imaging/images-used-by.html" Title="@Loc[LocKeys.Device.Relations]" />
+                @if (_activePanelIndex == 2)
+                {
+                    <MudStack Class="py-4"><ImagingRelationsTab Kind="ImagingItemKind.Image" ItemId="Id"/></MudStack>
+                }
+            </MudTabPanel>
+        </ResponsiveTabs>
+    </div>
+}
+
+@code
+{
+    [Parameter] public int Id { get; set; }
+    [Parameter] public string? Tab { get; set; }
+
+    private static readonly string[] TabRoutes = ["general", "versions", "relations", "history", "replication"];
+    private int _activePanelIndex;
+    private bool _isLoading = true;
+
+    private Image? _image;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.Equals(Tab, "profiles", StringComparison.OrdinalIgnoreCase)) Tab = "used-by";
+        if (string.Equals(Tab, "configuration", StringComparison.OrdinalIgnoreCase)) Tab = "general";
+        if (string.Equals(Tab, "used-by", StringComparison.OrdinalIgnoreCase)) Tab = "relations";
+        if (string.Equals(Tab, "audit", StringComparison.OrdinalIgnoreCase)) Tab = "history";
+        var index = Array.FindIndex(TabRoutes, x => string.Equals(x, Tab, StringComparison.OrdinalIgnoreCase));
+        _activePanelIndex = index < 0 ? 0 : index;
+        if (_image?.Id == Id) return;
+        await GetImage();
+    }
+
+    private void OnTabChanged(int index)
+    {
+        if (_deleting || index == _activePanelIndex) return;
+        _activePanelIndex = index;
+    }
+    private async Task RefreshHeaderAsync()
+    {
+        var result = await ImagingService.GetImageAsync(Id);
+        if (result.Success && result.HasData) _image = result.Data;
+    }
+    private bool _deleting;
+    private async Task OnDeleteClicked()
+    {
+        if (_deleting || _image is null) return;
+        if (await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.ManageImagePage.DeleteImages), UiText.Get("Image.ConfirmDelete", _image.Name), yesText: UiText.Get(LocKeys.Common.Delete), cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+        _deleting = true;
+        var result = await ImagingService.DeleteImageAsync(Id);
+        if (result.Success) Navigation.NavigateTo("/images/manage");
+        else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        _deleting = false;
+    }
+    private async Task GetImage()
+    {
+        _isLoading = true;
+        _image = null;
+
+        var result = await ImagingService.GetImageAsync(Id);
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args],Severity.Error);
+        else if (result.HasData)
+            _image = result.Data;
+
+        _isLoading = false;
+    }
+}

@@ -1,0 +1,57 @@
+@inject ActionDeploymentUiService Deployments
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText>@Loc[LocKeys.Ui.DeviceSoftwareTab.Uninstall] <b>@Software.Name</b> @Loc[LocKeys.Ui.DeviceSoftwareUninstallDialog.From] <b>@DeviceName</b>?</MudText>
+            <MudText Typo="Typo.body2">@UiText.Get(LocKeys.Ui.SoftwareReportUninstallDialog.Version0, ((string.IsNullOrEmpty(Software.Version) ? UiText.Get(LocKeys.Ui.SoftwareReportUninstallDialog.NotReportedMatchesOnlyAnEmptyVersion) : Software.Version)))</MudText>
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.DeviceSoftwareUninstallDialog.QueuedToRunNowIfTheDeviceIsOffline]</MudText>
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.DeviceSoftwareUninstallDialog.RunsAsTheDeviceSSystemAccountSoftwareInstalled]</MudText>
+            <MudTextField T="string" @bind-Value="_arguments" Label="@Loc[LocKeys.Ui.SoftwareReportUninstallDialog.SilentUninstallArgumentsOptional]"
+                          Variant="Variant.Outlined" Disabled="_busy" MaxLength="4096"
+                          HelperText="@Loc[LocKeys.Ui.DeviceSoftwareUninstallDialog.MSIUsesSilentUninstallAutomaticallyOtherInstallersUseTheir]" />
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.DeviceSoftwareUninstallDialog.TheTaskExpiresAfter7DaysFollowItsStatus]</MudText>
+            </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked" Disabled="_busy">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="OnUninstallClicked" Disabled="_busy" Variant="Variant.Filled" Color="Color.Error">@Loc[LocKeys.Ui.DeviceSoftwareUninstallDialog.QueueUninstall]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public int DeviceId { get; set; }
+    [Parameter] public string DeviceName { get; set; } = "";
+    [Parameter, EditorRequired] public Software Software { get; set; } = null!;
+    private readonly Guid _requestId = Guid.NewGuid();
+    private bool _busy;
+    private string? _arguments;
+
+    private void OnCancelClicked() => MudDialog.Cancel();
+
+    private async Task OnUninstallClicked()
+    {
+        if (_busy) return;
+        _busy = true;
+
+        try
+        {
+            var request = new DeploymentRequestDto
+            {
+                RequestId = _requestId, DeviceIds = [DeviceId], Timing = DeviceTaskTiming.Now,
+                SoftwareUninstall = new(Software.Id, Software.Name ?? "", Software.Version ?? "", _arguments)
+            };
+            var preview = await Deployments.PreviewAsync(request);
+            if (!preview.Success)
+            {
+                Snackbar.Add(Loc[preview.Error!.Code, preview.Error.Args], Severity.Error);
+                return;
+            }
+            var result = await Deployments.DeployAsync(request, preview.Data!.ConfirmationHash);
+            if (result.Success) MudDialog.Close(DialogResult.Ok(result.Data));
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _busy = false; }
+    }
+}

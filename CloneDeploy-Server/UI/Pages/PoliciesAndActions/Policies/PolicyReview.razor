@@ -1,0 +1,219 @@
+@using CloneDeploy_Agent.Contracts
+@inject PolicyService PolicyService
+@inject PolicyService Audiences
+@inject PolicyService UserAudiences
+@inject IAuthorizationService Authorization
+@inject AuthenticationStateProvider Authentication
+
+@if (_loading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+}
+else if (!_validated)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">
+        <MudText Typo="Typo.subtitle2">@Loc[LocKeys.Ui.PolicyReview.ReviewChecksFailed]</MudText>
+        <MudText>@_error</MudText>
+        <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.PolicyReview.CloseThisReviewAndCorrectThePolicyBeforeActivating]</MudText>
+    </MudAlert>
+}
+else if (_details is not null && _targets is not null && _audience is not null)
+{
+    <MudStack Spacing="3">
+        <MudAlert Severity="Severity.Success" Variant="Variant.Outlined">@Loc[LocKeys.Ui.PolicyReview.ReviewChecksPassed]</MudAlert>
+        @foreach (var warning in _warnings)
+        {
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">@warning</MudAlert>
+        }
+        <MudText Typo="Typo.h6">@_details.Policy.Name</MudText>
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudPaper Outlined="true" Class="pa-4">
+                    <MudText Typo="Typo.subtitle2">@Loc[LocKeys.Ui.DeviceEffectivePolicyTab.Trigger]</MudText>
+                    <MudText>@Label(_details.Policy.Trigger)</MudText>
+                    <MudText Typo="Typo.body2">@Label(_details.Policy.Frequency) @FrequencyDetail</MudText>
+                    <MudText Typo="Typo.body2">@UiText.Get(LocKeys.Ui.PolicyReview.RunAs0, (RunAs))</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Outlined="true" Class="pa-4">
+                    <MudText Typo="Typo.subtitle2">@UiText.Get(LocKeys.Ui.PolicyReview.Actions0, (_details.Policy.PolicyActions.Count))</MudText>
+                    @foreach (var action in _details.Policy.PolicyActions.OrderBy(x => x.Order))
+                    {
+                        <MudText Typo="Typo.body2">@(_details.Actions.FirstOrDefault(x => x.Guid == action.ActionGuid)?.Name ?? UiText.Get(LocKeys.Ui.PolicyReview.UnavailableAction))</MudText>
+                    }
+                    @if (_details.Policy.RunInventory) { <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.PolicyReview.CollectInventory]</MudText> }
+                    @if (_details.Policy.RunLoginTracker) { <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.PolicyReview.TrackLogins]</MudText> }
+                    @if (_details.Policy.RemoteAccess != PolicyRemoteAccess.NotConfigured) { <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.PolicyReview.ConfigureRemoteAccess]</MudText> }
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Outlined="true" Class="pa-4">
+                    <MudText Typo="Typo.subtitle2">@Loc[LocKeys.Ui.PolicyReview.DeviceTargets]</MudText>
+                    <MudText Typo="Typo.body2">@UiText.Get(LocKeys.Ui.PolicyReview.Text0AssignedTargets, (_targets.Selected.Count))</MudText>
+                    @if (_devices is not null)
+                    {
+                        <MudButton OnClick="ShowTargets" Color="Color.Primary" Size="Size.Small">@UiText.Get(LocKeys.Ui.PolicyReview.Text0MatchingDevices, (_devices.Total))</MudButton>
+                    }
+                    else if (_targets.Selected.Count > 0)
+                    {
+                        <MudButton OnClick="ShowTargets" Color="Color.Primary" Size="Size.Small">@Loc[LocKeys.Ui.PolicyReview.ViewTargets]</MudButton>
+                        <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.PolicyReview.DevicePreviewRequiresPermissionToViewDevices]</MudText>
+                    }
+                    @if (_details.Policy.Trigger == PolicyTrigger.Login && _audience.LoginAudienceId.HasValue)
+                    {
+                        <MudText Typo="Typo.caption">@(_targets.Selected.Count == 0 ? UiText.Get(LocKeys.Ui.PolicyReview.ThePolicyFollowsTheAudienceAcrossEnrolledDevices) : UiText.Get(LocKeys.Ui.PolicyReview.BothTheDeviceTargetsAndUserAudienceMustMatch))</MudText>
+                    }
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Outlined="true" Class="pa-4">
+                    <MudText Typo="Typo.subtitle2">@Loc[LocKeys.Ui.PolicyReview.Audience]</MudText>
+                    @if (_details.Policy.Trigger == PolicyTrigger.Login || _audience.LoginAudienceId.HasValue)
+                    {
+                        <MudText Typo="Typo.body2">@(_details.Policy.Trigger == PolicyTrigger.Login ? UiText.Get(LocKeys.Ui.DeviceEffectivePolicyTab.Login) : UiText.Get(LocKeys.Ui.PolicyReview.NotificationRecipients)): @AudienceName(_audience.LoginAudienceId, UiText.Get(LocKeys.Ui.PolicyReview.UsersOnTargetedDevices))</MudText>
+                        @if (_audience.LoginAudienceId is int loginId)
+                        {
+                            <MudButton OnClick="@(() => ShowAudience(loginId))" Color="Color.Primary" Size="Size.Small">@Loc[LocKeys.Ui.PolicyReview.ViewAudience]</MudButton>
+                        }
+                    }
+                    @if (_audience.SelfServiceEnabled)
+                    {
+                        <MudText Typo="Typo.body2">@UiText.Get(LocKeys.Ui.PolicyReview.SelfService0, ((_audience.AnyInteractiveUser ? UiText.Get(LocKeys.Ui.PolicyAudiencesTab.AnyInteractiveUserOnTargetedDevices) : AudienceName(_audience.SelfServiceAudienceId, UiText.Get(LocKeys.Ui.PolicyReview.NoAudienceSelected)))))</MudText>
+                        @if (!_audience.AnyInteractiveUser && _audience.SelfServiceAudienceId is int portalId)
+                        {
+                            <MudButton OnClick="@(() => ShowAudience(portalId))" Color="Color.Primary" Size="Size.Small">@Loc[LocKeys.Ui.PolicyReview.ViewSelfServiceAudience]</MudButton>
+                            <MudText Typo="Typo.caption">@(_audience.RestrictSelfServiceToDeviceTargets ? UiText.Get(LocKeys.Ui.PolicyReview.LimitedToTargetedDevices) : UiText.Get(LocKeys.Ui.PolicyReview.AvailableAcrossEnrolledDevices))</MudText>
+                        }
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.PolicyReview.SelfServiceIsDisabled]</MudText>
+                    }
+                    @if (_details.Policy.Trigger != PolicyTrigger.Login && !_audience.SelfServiceEnabled)
+                    {
+                        <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.PolicyReview.ThisPolicyUsesDeviceTargets]</MudText>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+        <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.PolicyReview.ActivationPublishesTheSavedConfigurationForTheNextEligible]</MudText>
+    </MudStack>
+}
+
+@code {
+    [Parameter] public int PolicyId { get; set; }
+    [Parameter] public EventCallback<bool> OnValidated { get; set; }
+    [Parameter] public EventCallback<PolicyActivationPreviewDto?> PreviewReady { get; set; }
+    private PolicyDetailsDto? _details;
+    private PolicyTargetStateDto? _targets;
+    private PolicyAudienceState? _audience;
+    private PolicyTargetPreviewDto? _devices;
+    private readonly Dictionary<int, UserAudience> _audienceDetails = [];
+    private List<string> _warnings = [];
+    private string? _error;
+    private bool _loading = true, _validated;
+    private int _version, _loadedId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedId == PolicyId) return;
+        _loadedId = PolicyId;
+        var version = ++_version;
+        _loading = true; _validated = false;
+        _warnings = []; _audienceDetails.Clear(); _devices = null; _error = null;
+        await OnValidated.InvokeAsync(false);
+        await PreviewReady.InvokeAsync(null);
+        try
+        {
+            var validation = await PolicyService.PreviewActivationAsync(PolicyId);
+            if (version != _version) return;
+            if (!validation.Success) { _error = Loc[validation.Error!.Code, validation.Error.Args]; return; }
+            _warnings = [.. validation.Data!.Warnings];
+            var details = await PolicyService.GetSectionAsync(PolicyId, "actions");
+            if (version != _version) return;
+            if (!details.Success) { _error = Loc[details.Error!.Code, details.Error.Args]; return; }
+            _details = details.Data ?? throw new InvalidOperationException(UiText.Get(LocKeys.Ui.PolicyReview.PolicyDetailsWereNotReturned));
+            var targets = await PolicyService.GetPolicyTargetsAsync(PolicyId);
+            if (version != _version) return;
+            if (!targets.Success) { _error = Loc[targets.Error!.Code, targets.Error.Args]; return; }
+            _targets = targets.Data!;
+            var audience = await Audiences.GetAudienceAsync(PolicyId);
+            if (version != _version) return;
+            if (!audience.Success) { _error = Loc[audience.Error!.Code, audience.Error.Args]; return; }
+            _audience = audience.Data!;
+            var audienceIds = new[] {
+                _audience.LoginAudienceId,
+                _audience.SelfServiceEnabled && !_audience.AnyInteractiveUser ? _audience.SelfServiceAudienceId : null
+            }.OfType<int>().Distinct();
+            foreach (var id in audienceIds)
+            {
+                var result = await UserAudiences.GetUserAudienceAsync(id);
+                if (version != _version) return;
+                if (!result.Success) { _error = Loc[result.Error!.Code, result.Error.Args]; return; }
+                _audienceDetails[id] = result.Data!;
+                if (!result.Data!.Members.Any(x => !x.Exclude))
+                    _warnings.Add(UiText.Get(LocKeys.Ui.PolicyReview.Audience0HasNoInclusionsAndGrantsNoAccess, (result.Data.Name)));
+                if (result.Data.Members.Any(x => !_audience.Options.Any(o => o.SourceId == x.DirectorySourceId && o.ObjectGuid == x.ObjectGuid && o.Available)))
+                    _warnings.Add(UiText.Get(LocKeys.Ui.PolicyReview.Audience0ContainsUnavailableDirectorySelectionsReviewItsMembership, (result.Data.Name)));
+            }
+            if (_audience.SelfServiceEnabled && !_audience.AnyInteractiveUser && !_audience.SelfServiceAudienceId.HasValue)
+            { _error = UiText.Get(LocKeys.Ui.PolicyReview.SelfServiceRequiresAUserAudience); return; }
+            if (_audience.SelfServiceEnabled && (_audience.AnyInteractiveUser || _audience.RestrictSelfServiceToDeviceTargets) && _targets.Selected.Count == 0)
+                _warnings.Add(UiText.Get(LocKeys.Ui.PolicyReview.SelfServiceIsLimitedToDeviceTargetsButNo));
+            if (_targets.Selected.Any(x => _targets.Options.FirstOrDefault(o => o.Key == x.Key)?.Available != true))
+            { _error = UiText.Get(LocKeys.Ui.PolicyReview.ASavedDeviceTargetIsUnavailableUpdateThePolicy); return; }
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            if ((await Authorization.AuthorizeAsync(user, Constants.Permissions.DeviceView)).Succeeded)
+            {
+                var preview = await PolicyService.PreviewAsync(_targets);
+                if (version != _version) return;
+                if (!preview.Success) { _error = Loc[preview.Error!.Code, preview.Error.Args]; return; }
+                _devices = preview.Data;
+                if (_targets.Selected.Count > 0 && _devices!.Total == 0)
+                    _warnings.Add(UiText.Get(LocKeys.Ui.PolicyReview.NoDevicesCurrentlyMatchTheSavedDeviceTargets));
+            }
+            if (_targets.Selected.Count == 0 && !(_details.Policy.Trigger == PolicyTrigger.Login && _audience.LoginAudienceId.HasValue)
+                && !(_audience.SelfServiceEnabled && !_audience.AnyInteractiveUser && !_audience.RestrictSelfServiceToDeviceTargets))
+                _warnings.Add(UiText.Get(LocKeys.Ui.PolicyReview.NoDeviceTargetsAreAssigned));
+            if (_details.Policy.Trigger == PolicyTrigger.SelfServiceOnly && !_audience.SelfServiceEnabled)
+                _warnings.Add(UiText.Get(LocKeys.Ui.PolicyReview.ThisPolicyOnlyRunsThroughSelfServiceButSelf));
+            if (validation.Data is { Changed: true, OnceOnly: true })
+                _warnings.Add(UiText.Get(LocKeys.Ui.PolicyReview.PreviouslyCompletedDevicesOrUsersWillNotRunAgain));
+            _validated = true;
+            await OnValidated.InvokeAsync(true);
+            await PreviewReady.InvokeAsync(validation.Data);
+        }
+        catch
+        {
+            if (version == _version)
+            {
+                _validated = false;
+                _error = UiText.Get(LocKeys.Ui.PolicyReview.CouldNotCompleteTheReviewChecksCloseTheDialog);
+                await OnValidated.InvokeAsync(false);
+                await PreviewReady.InvokeAsync(null);
+            }
+        }
+        finally { if (version == _version) _loading = false; }
+    }
+
+    private string RunAs => _details!.Policy.Trigger == PolicyTrigger.Login ? UiText.Get(LocKeys.Ui.PolicyReview.LoggedInUser)
+        : _details.Policy.SelfServiceRunAsUser ? UiText.Get(LocKeys.Ui.PolicyTriggers.RequestingUser) : UiText.Get(LocKeys.Ui.PolicyReview.SYSTEMActionRunAsSettingsApply);
+    private string AudienceName(int? id, string fallback) => id is int value
+        ? _audienceDetails.GetValueOrDefault(value)?.Name ?? UiText.Get(LocKeys.Ui.PolicyReview.UnavailableAudience) : fallback;
+    private Task ShowTargets() => Dialog.ShowAsync<PolicyReviewTargetsDialog>(UiText.Get(LocKeys.Ui.PolicyReview.DeviceTargets),
+        new DialogParameters { ["Targets"] = _targets!, ["Preview"] = _devices! },
+        new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Medium, CloseButton = true });
+    private Task ShowAudience(int id) => Dialog.ShowAsync<PolicyReviewAudienceDialog>(_audienceDetails[id].Name,
+        new DialogParameters { ["Audience"] = _audienceDetails[id], ["Options"] = _audience!.Options },
+        new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Medium, CloseButton = true });
+    private static string Label(object value) => UiText.Label(value);
+    private string FrequencyDetail => _details!.Policy.Frequency switch
+    {
+        PolicyFrequency.OncePerWeek => $"({_details.Policy.SubFrequency switch { >= 0 and <= 6 => ((DayOfWeek)_details.Policy.SubFrequency).ToString(), _ => UiText.Get(LocKeys.Ui.PolicyReview.InvalidDay) }})",
+        PolicyFrequency.OncePerMonth => UiText.Get(LocKeys.Ui.PolicyReview.Day0, (_details.Policy.SubFrequency)),
+        PolicyFrequency.EveryXhours => UiText.Get(LocKeys.Ui.PolicyReview.Text0Hours, (_details.Policy.SubFrequency)),
+        PolicyFrequency.EveryXdays => UiText.Get(LocKeys.Ui.PolicyReview.Text0Days, (_details.Policy.SubFrequency)),
+        _ => ""
+    };
+}

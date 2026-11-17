@@ -1,0 +1,222 @@
+
+<div class="query-node @(Node.Field is null ? "query-group" : "query-condition") @(IsRoot ? "query-root" : "")">
+    @if (Node.Field is not null)
+    {
+        <div class="query-row query-condition-row">
+            <label>@Loc[LocKeys.Ui.DeviceQueryEditor.Text0Field, UiText.Label(DeviceGroupService.GetQueryScope(ContextScope).Label.Split(" (")[0])]
+                <select value="@Node.Field" @onchange="ChangeField">
+                    @foreach (var field in DeviceGroupService.GetQueryScope(ContextScope).Fields)
+                    { <option value="@field">@UiText.Label(DeviceGroupService.QueryLabel(field))</option> }
+                </select>
+            </label>
+            <label>@Loc[LocKeys.Ui.HelpRoutingRulesTab.Operator]
+                <select @bind="Node.Operator" @bind:after="Notify">
+                    @foreach (var op in DeviceGroupService.GetQueryOperators(ContextScope, Node.Field))
+                    { <option value="@op">@UiText.Label(DeviceGroupService.QueryLabel(op.ToString()))</option> }
+                </select>
+            </label>
+            @if (Node.Operator != QueryOperator.IsEmpty)
+            {
+                var type = DeviceGroupService.GetQueryProperty(ContextScope, Node.Field).PropertyType;
+                type = Nullable.GetUnderlyingType(type) ?? type;
+                <label>@Loc[LocKeys.Device.Value]
+                    @if (ContextScope == "" && Node.Field == "AgentPlatform")
+                    {
+                        <select @bind="Node.Value" @bind:after="Notify">
+                            <option value="@CloneDeploy_Agent.Contracts.AgentPlatform.Windows">Windows</option>
+                            <option value="@CloneDeploy_Agent.Contracts.AgentPlatform.MacOS">macOS</option>
+                        </select>
+                    }
+                    else if (Node.Field is "CustomAttributeId" or "ScriptActionId")
+                    {
+                        <select @bind="Node.Value" @bind:after="Notify">
+                            <option value="">@Loc[LocKeys.Ui.DeviceQueryEditor.SelectAnItem]</option>
+                            @if (Node.Value != "" && !ValueChoices.Any(x => x.Field == Node.Field && x.Value == Node.Value))
+                            { <option value="@Node.Value">@Loc[LocKeys.Ui.DeviceQueryEditor.UnavailableItemSelectAReplacement]</option> }
+                            @foreach (var choice in ValueChoices.Where(x => x.Field == Node.Field))
+                            { <option value="@choice.Value">@choice.Label</option> }
+                        </select>
+                    }
+                    else if (type == typeof(bool) || type.IsEnum)
+                    {
+                        <select @bind="Node.Value" @bind:after="Notify">
+                            @foreach (var choice in type == typeof(bool) ? new[] { "true", "false" } : Enum.GetNames(type))
+                            { <option value="@choice">@UiText.Label(DeviceGroupService.QueryLabel(choice))</option> }
+                        </select>
+                    }
+                    else
+                    {
+                        <input @bind="Node.Value" @bind:event="oninput" @bind:after="Notify" maxlength="1000"
+                               placeholder="@(type == typeof(DateTime) ? "2026-01-01T00:00:00Z" : type == typeof(int) ? Loc[LocKeys.Ui.DeviceQueryEditor.WholeNumber].Value : Loc[LocKeys.Ui.DeviceQueryEditor.TextCaseInsensitive].Value)" />
+                    }
+                </label>
+            }
+            <label class="query-check"><input type="checkbox" @bind="Node.Negate" @bind:after="Notify" /> @Loc[LocKeys.Ui.DeviceQueryEditor.Not]</label>
+            <div class="query-remove"><MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="OnRemoveClicked" aria-label="@Loc[LocKeys.Ui.HelpRoutingRulesTab.RemoveCondition]" /></div>
+        </div>
+    }
+    else
+    {
+        <div class="query-row query-header">
+            @if (!IsRoot && Depth == 1)
+            {
+                <label>@Loc[LocKeys.Device.Category]
+                    <select value="@Node.Scope" @onchange="ChangeScope">
+                        @foreach (var category in DeviceGroupService.QueryScopes)
+                        { <option value="@category.Id">@UiText.Label(category.Label)</option> }
+                        <option value="DeviceGroup">@Loc[LocKeys.Ui.DeviceQueryEditor.DeviceGroupMembership]</option>
+                        <option value="DirectoryGroup">@Loc[LocKeys.Ui.DeviceQueryEditor.DirectoryGroupMembership]</option>
+                        <option value="DirectoryOu">@Loc[LocKeys.Ui.DeviceQueryEditor.DirectoryOUPlacement]</option>
+                    </select>
+                </label>
+            }
+            else if (!IsRoot)
+            {
+                <div class="query-context">
+                    <span>@Loc[LocKeys.Ui.DeviceQueryEditor.ConditionGroup]</span>
+                    <strong>@UiText.Label(DeviceGroupService.GetQueryScope(EffectiveScope).Label.Split(" (")[0])</strong>
+                    <small>@Loc[LocKeys.Ui.DeviceQueryEditor.UsesTheParentCategory]</small>
+                </div>
+            }
+            @if (Node.Scope == "DeviceGroup")
+            {
+                <label>@Loc[LocKeys.Ui.DeviceQueryEditor.DeviceGroup]
+                    <select @bind="Node.Value" @bind:after="Notify">
+                        <option value="">@Loc[LocKeys.Ui.DeviceQueryEditor.SelectADeviceGroup]</option>
+                        @if (Node.Value != "" && !ValueChoices.Any(x => x.Field == "DeviceGroup" && x.Value == Node.Value))
+                        { <option value="@Node.Value">@Loc[LocKeys.Ui.DeviceQueryEditor.UnavailableDeviceGroupSelectAReplacement]</option> }
+                        @foreach (var choice in ValueChoices.Where(x => x.Field == "DeviceGroup"))
+                        { <option value="@choice.Value">@choice.Label</option> }
+                    </select>
+                </label>
+            }
+            else if (Node.Scope is "DirectoryGroup" or "DirectoryOu")
+            {
+                var kind = Node.Scope == "DirectoryGroup" ? DirectoryObjectKind.Group : DirectoryObjectKind.OrganizationalUnit;
+                <div class="query-directory-picker">
+                    <MudAutocomplete T="QueryDirectoryChoiceDto" @key="Node.Scope" Value="SelectedDirectoryChoice" ValueChanged="SelectDirectory"
+                                     SearchFunc="SearchDirectory" ToStringFunc="@(choice => choice?.Label ?? "")"
+                                     Label="@Loc[kind == DirectoryObjectKind.Group ? LocKeys.Ui.DeviceQueryEditor.DirectoryGroup : LocKeys.Ui.DomainJoinActionConfigurationTab.OrganizationalUnit]"
+                                     Placeholder="@Loc[LocKeys.Ui.DeviceQueryEditor.TypeToSearch]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="true" CoerceValue="false"
+                                     MinCharacters="0" MaxItems="50" DebounceInterval="200">
+                        <ItemTemplate Context="choice">
+                            <div title="@choice.DistinguishedName">
+                                <MudText Typo="Typo.body2">@choice.Label</MudText>
+                                @if (choice.Kind == DirectoryObjectKind.Group)
+                                { <MudText Typo="Typo.caption">@choice.Path</MudText> }
+                            </div>
+                        </ItemTemplate>
+                        <NoItemsTemplate><MudText Class="pa-3">@Loc[LocKeys.Ui.DeviceQueryEditor.NoMatchingDirectoryObjects]</MudText></NoItemsTemplate>
+                        <MoreItemsTemplate><MudText Class="pa-3" Typo="Typo.caption">@Loc[LocKeys.Ui.DeviceQueryEditor.TypeMoreToNarrowTheResults]</MudText></MoreItemsTemplate>
+                    </MudAutocomplete>
+                    @if (Node.ObjectGuid != null && SelectedDirectoryChoice == null)
+                    { <MudText Color="Color.Error" Typo="Typo.caption">@Loc[LocKeys.Ui.DeviceQueryEditor.UnavailableDirectoryObjectSelectAReplacement]</MudText> }
+                </div>
+                @if (kind == DirectoryObjectKind.OrganizationalUnit)
+                { <label class="query-check"><input type="checkbox" @bind="Node.IncludeDescendants" @bind:after="Notify" /> @Loc[LocKeys.Ui.DeviceQueryEditor.IncludeDescendants]</label> }
+            }
+            else
+            {
+                <label>@Loc[LocKeys.Ui.ManageDevicesPage.Match]
+                    <select @bind="Node.Match" @bind:after="Notify">
+                        <option value="All">@Loc[IsRoot ? LocKeys.Ui.DeviceQueryEditor.AllMatchGroupsAND : LocKeys.Ui.DeviceQueryEditor.AllConditionsAND]</option>
+                        <option value="Any">@Loc[IsRoot ? LocKeys.Ui.DeviceQueryEditor.AnyMatchGroupOR : LocKeys.Ui.DeviceQueryEditor.AnyConditionOR]</option>
+                    </select>
+                </label>
+            }
+            @if (!IsRoot)
+            {
+                <label class="query-check"><input type="checkbox" @bind="Node.Negate" @bind:after="Notify" /> @Loc[LocKeys.Ui.DeviceQueryEditor.Not]</label>
+                <div class="query-remove"><MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="OnRemoveClicked" aria-label="@Loc[Depth == 1 ? LocKeys.Ui.DeviceQueryEditor.RemoveMatchGroup : LocKeys.Ui.DeviceQueryEditor.RemoveConditionGroup]" /></div>
+            }
+        </div>
+        @if (Node.Scope is not ("DirectoryGroup" or "DirectoryOu" or "DeviceGroup"))
+        {
+            <div class="query-body">
+            @if (IsRoot)
+            {
+                <MudText Typo="Typo.caption" Class="mt-2">@Loc[LocKeys.Ui.DeviceQueryEditor.EachMatchGroupSelectsADeviceInventoryOrDirectory]</MudText>
+            }
+            <div class="query-children @(!IsRoot ? "query-children-inset" : "")">
+            @{ var children = Node.Children.ToArray(); }
+            @for (var index = 0; index < children.Length; index++)
+            {
+                var child = children[index];
+                @if (index > 0)
+                {
+                    <div class="query-connector"><span>@Loc[Node.Match == QueryMatch.All ? LocKeys.Ui.DeviceQueryEditor.AND : LocKeys.Ui.DeviceQueryEditor.OR]</span></div>
+                }
+                <DeviceQueryEditor @key="child" Node="child" ContextScope="@EffectiveScope" Depth="@(Depth + 1)"
+                                   DirectoryChoices="DirectoryChoices" ValueChoices="ValueChoices" Changed="Notify" Remove="@(() => RemoveChild(child))" />
+            }
+            </div>
+            </div>
+            <div class="query-row query-footer">
+                @if (!IsRoot)
+                {
+                    <MudButton Size="Size.Small" OnClick="@Snackbar.GuardAction(() => Depth >= 6, UiText.Get(LocKeys.Ui.DeviceQueryEditor.TheMaximumQueryNestingDepthHasBeenReachedAdd), OnAddConditionClicked)" StartIcon="@Icons.Material.Filled.Add">@Loc[LocKeys.Ui.HelpRoutingRulesTab.AddCondition]</MudButton>
+                }
+                <MudButton Size="Size.Small" OnClick="@Snackbar.GuardAction(() => Depth >= 5, UiText.Get(LocKeys.Ui.DeviceQueryEditor.TheMaximumQueryNestingDepthHasBeenReachedAdd), OnAddGroupClicked)" StartIcon="@Icons.Material.Filled.AccountTree">@Loc[IsRoot ? LocKeys.Ui.DeviceQueryEditor.AddMatchGroup : LocKeys.Ui.DeviceQueryEditor.AddConditionGroup]</MudButton>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public DeviceQueryNodeDto Node { get; set; } = null!;
+    [Parameter] public string ContextScope { get; set; } = "";
+    [Parameter] public bool IsRoot { get; set; }
+    [Parameter] public int Depth { get; set; }
+    [Parameter] public List<QueryDirectoryChoiceDto> DirectoryChoices { get; set; } = [];
+    [Parameter] public List<QueryValueChoiceDto> ValueChoices { get; set; } = [];
+    [Parameter] public EventCallback Changed { get; set; }
+    [Parameter] public EventCallback Remove { get; set; }
+    private string EffectiveScope => Node.Scope == "" ? ContextScope : Node.Scope;
+    private QueryDirectoryChoiceDto? SelectedDirectoryChoice => DirectoryChoices.SingleOrDefault(x => x.DirectorySourceId == Node.DirectorySourceId && x.ObjectGuid == Node.ObjectGuid);
+
+    private Task OnRemoveClicked() => Remove.InvokeAsync();
+
+    private Task Notify() => Changed.InvokeAsync();
+    private async Task OnAddConditionClicked() { Node.Children.Add(NewRule(EffectiveScope)); await Notify(); }
+    private async Task OnAddGroupClicked() { Node.Children.Add(new() { Children = [NewRule(EffectiveScope)] }); await Notify(); }
+    private async Task RemoveChild(DeviceQueryNodeDto child) { Node.Children.Remove(child); await Notify(); }
+    private static DeviceQueryNodeDto NewRule(string scope)
+    {
+        var field = DeviceGroupService.GetQueryScope(scope).Fields[0];
+        var type = DeviceGroupService.GetQueryProperty(scope, field).PropertyType;
+        return new() { Field = field, Value = type == typeof(bool) ? "true" : type.IsEnum ? Enum.GetNames(type)[0] : "" };
+    }
+    private async Task ChangeScope(ChangeEventArgs args)
+    {
+        if (IsRoot || Depth != 1) return;
+        Node.Scope = args.Value?.ToString() ?? ""; Node.DirectorySourceId = null; Node.ObjectGuid = null;
+        Node.Value = "";
+        Node.Children = Node.Scope is "DirectoryGroup" or "DirectoryOu" or "DeviceGroup" ? [] : [NewRule(Node.Scope)];
+        await Notify();
+    }
+    private async Task ChangeField(ChangeEventArgs args)
+    {
+        Node.Field = args.Value?.ToString(); Node.Operator = QueryOperator.Equal; Node.Value = "";
+        var type = DeviceGroupService.GetQueryProperty(ContextScope, Node.Field!).PropertyType;
+        if (ContextScope == "" && Node.Field == "AgentPlatform") Node.Value = CloneDeploy_Agent.Contracts.AgentPlatform.Windows;
+        else if (type == typeof(bool)) Node.Value = "true";
+        else if (type.IsEnum) Node.Value = Enum.GetNames(type)[0];
+        await Notify();
+    }
+    private Task<IEnumerable<QueryDirectoryChoiceDto>> SearchDirectory(string? text, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        var kind = Node.Scope == "DirectoryGroup" ? DirectoryObjectKind.Group : DirectoryObjectKind.OrganizationalUnit;
+        var search = text?.Trim() ?? "";
+        return Task.FromResult(DirectoryChoices.Where(x => x.Kind == kind &&
+            (search.Length == 0 || x.Label.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+             x.Path.Contains(search, StringComparison.OrdinalIgnoreCase) || x.DistinguishedName.Contains(search, StringComparison.OrdinalIgnoreCase))));
+    }
+    private async Task SelectDirectory(QueryDirectoryChoiceDto? choice)
+    {
+
+        Node.DirectorySourceId = choice?.DirectorySourceId; Node.ObjectGuid = choice?.ObjectGuid;
+        await Notify();
+    }
+}

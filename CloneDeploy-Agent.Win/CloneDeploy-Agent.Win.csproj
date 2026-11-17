@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <Import Project="AgentVersion.props" />
+    <PropertyGroup>
+        <TargetFramework>net10.0-windows</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <AssemblyName>CloneDeploy-Agent</AssemblyName>
+        <RootNamespace>CloneDeploy_Agent</RootNamespace>
+        <ApplicationIcon>../Branding/CloneDeploy.ico</ApplicationIcon>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Remove="Portal/**/*.cs" />
+        <Content Remove="Portal/**/*" />
+        <None Remove="Portal/**/*" />
+        <EmbeddedResource Remove="Portal/**/*" />
+        <Content Remove="Packaging/**/*" />
+        <Compile Remove="Packaging/**/*" />
+        <Content Update="appsettings*.json" CopyToPublishDirectory="Never" />
+
+        <EmbeddedResource Include="Execution/Prepare-WinGet.ps1" LogicalName="CloneDeploy_Agent.Prepare-WinGet.ps1" />
+        <EmbeddedResource Include="Execution/RunAs/RunAsHelper.ps1" LogicalName="CloneDeploy_Agent.RunAsHelper.ps1" />
+        <EmbeddedResource Include="PortalService/UsbMedia.ps1" LogicalName="CloneDeploy_Agent.UsbMedia.ps1" />
+        <EmbeddedResource Include="Updates/Install-AgentUpdate.ps1" LogicalName="CloneDeploy_Agent.InstallAgentUpdate.ps1" />
+        <EmbeddedResource Include="Updates/Verify-AgentPublisher.ps1" LogicalName="CloneDeploy_Agent.VerifyAgentPublisher.ps1" />
+        <PackageReference Include="System.Management" Version="10.0.15" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.15" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.15" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.15" />
+        <ProjectReference Include="../CloneDeploy-Agent.Core/CloneDeploy-Agent.Core.csproj" />
+        <PackageReference Include="System.Drawing.Common" Version="10.0.15" />
+        <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.15" />
+        <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5"/>
+        <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.15" />
+    </ItemGroup>
+</Project>

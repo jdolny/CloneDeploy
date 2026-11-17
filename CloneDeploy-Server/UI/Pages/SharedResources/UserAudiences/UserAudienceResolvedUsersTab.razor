@@ -1,0 +1,59 @@
+@inject UserAudienceService Audiences
+
+@if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+<MudDataGrid T="ResolvedAudienceUser" Items="_users" QuickFilter="Matches" Loading="_loading"
+             Dense="true" Hover="true" Elevation="0" Outlined="true" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">@Loc["Audience.ResolvedCount", _users.Count]</MudText>
+        <MudSpacer />
+        <MudTextField T="string" @bind-Value="_search" DebounceInterval="300" Clearable="true"
+                      Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" aria-label="@Loc["Audience.SearchResolved"]"
+                      Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="RefreshAsync" Disabled="_loading" aria-label="@Loc["Audience.RefreshResolved"]" />
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]" />
+        <PropertyColumn Property="x => x.Username" Title="@Loc["Audience.Username"]" />
+        <PropertyColumn Property="x => x.Directory" Title="@Loc["Audience.Directory"]" />
+    </Columns>
+    <PagerContent><MudDataGridPager T="ResolvedAudienceUser" /></PagerContent>
+    <NoRecordsContent><MudText>@Loc["Audience.NoResolvedUsers"]</MudText></NoRecordsContent>
+</MudDataGrid>
+@foreach (var directory in _directories)
+{
+    <MudText Typo="Typo.caption" Class="mt-2">
+        @Loc["Audience.LastSync", directory.Name, directory.LastSuccessfulSyncAtUtc?.ToLocalTime().ToString("g") ?? Loc["Audience.NeverSynced"].Value]
+        @if (!directory.Enabled) { <span> — @Loc["Audience.SourceUnavailable"]</span> }
+    </MudText>
+}
+
+@code {
+    [Parameter] public int AudienceId { get; set; }
+    private List<ResolvedAudienceUser> _users = [];
+    private List<AudienceDirectorySync> _directories = [];
+    private string? _search, _error;
+    private bool _loading;
+    protected override Task OnInitializedAsync() => RefreshAsync();
+    private bool Matches(ResolvedAudienceUser user) => string.IsNullOrWhiteSpace(_search) ||
+        user.Name.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase) ||
+        user.Username.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase) ||
+        user.Directory.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+    private async Task RefreshAsync()
+    {
+        if (_loading) return;
+        _loading = true; _error = null;
+        try
+        {
+            var result = await Audiences.ResolvedUsersAsync(AudienceId);
+            if (!result.Success)
+            {
+                _users = []; _directories = [];
+                _error = Loc[result.Error!.Code, result.Error.Args];
+                return;
+            }
+            _users = result.Data!.Users; _directories = result.Data.Directories;
+        }
+        catch { _users = []; _directories = []; _error = Loc["Audience.ResolvedLoadFailed"]; }
+        finally { _loading = false; }
+    }
+}

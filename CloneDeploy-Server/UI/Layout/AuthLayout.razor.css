@@ -1,0 +1,46 @@
+.auth-main {
+    min-height: 100vh;
+    min-height: 100dvh;
+    color-scheme: dark;
+    background: radial-gradient(ellipse at top left, #4b586c 0%, transparent 65%),
+                radial-gradient(ellipse at top right, #303b4d 0%, transparent 65%), #141b26;
+}
+.auth-container {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+.auth-card {
+    width: 100%;
+    max-width: 460px;
+    padding: 30px 36px 32px;
+    background: linear-gradient(135deg, #2d3747 0%, #202835 65%, #232c3a 100%);
+    border: 1px solid #ffffff20;
+    border-radius: 8px;
+    box-shadow: 0 18px 45px #00000035, inset 0 1px 0 #ffffff08;
+}
+.auth-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 32px;
+    color: #f3f5f9;
+    font-size: clamp(26px, 4vw, 32px);
+    font-weight: 700;
+    letter-spacing: -1.2px;
+    line-height: 1.2;
+}
+.auth-brand img { width: 60px; height: auto; flex-shrink: 0; }
+.auth-brand-accent { color: #4785ff; }
+/* MFA and initial setup share the outer card without a second raised surface. */
+.auth-card ::deep > .mud-paper { padding: 0 !important; background: transparent; box-shadow: none; }
+@media (max-width: 599px) {
+    .auth-container { padding: 24px 16px; }
+    .auth-card { padding: 28px 24px; }
+    .auth-brand { font-size: clamp(24px, 7vw, 32px); letter-spacing: -1px; }
+    .auth-brand img { width: 52px; }
+}

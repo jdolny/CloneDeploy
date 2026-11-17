@@ -1,0 +1,139 @@
+@implements IDisposable
+@inject WinGetService Catalog
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.WinGetPackageDialog.BrowseWinGetPackages]</MudText></TitleContent>
+    <DialogContent>
+        <MudDataGrid T="WinGetPackageSummaryDto" @ref="_table" ServerData="LoadPackagesAsync" Dense="true" Hover="true"
+                  Elevation="0" Outlined="true" Class="device-list-grid" RowsPerPage="10">
+            <ToolBarContent><MudIcon Icon="@Icons.Material.Outlined.Apps" Color="Color.Primary"/><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.WinGetPackageDialog.Packages]</MudText><MudSpacer/>
+        <MudTextField T="string" Value="_search" ValueChanged="SearchChangedAsync" Label="@Loc[LocKeys.Ui.WinGetPackageDialog.SearchPackages]"
+                      Placeholder="@Loc[LocKeys.Ui.WinGetPackageDialog.PackageNameIDPublisherMonikerOrTag]" Variant="Variant.Outlined"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      DebounceInterval="300" Clearable="true" Margin="Margin.Dense" Class="device-inventory-search" />
+            </ToolBarContent>
+            <Columns>
+                <TemplateColumn Title="@Loc[LocKeys.Ui.DriverLibraryTab.Package]" Sortable="false" Filterable="false"><CellTemplate><MudText>@context.Item.Name</MudText><MudText Typo="Typo.caption" Style="overflow-wrap:anywhere">@context.Item.PackageIdentifier</MudText></CellTemplate></TemplateColumn>
+                <PropertyColumn Property="x => x.Publisher" Title="@Loc[LocKeys.Ui.WinGetPackageDialog.Publisher]" Sortable="false" Filterable="false"/>
+                <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" Sortable="false" Filterable="false"><CellTemplate>
+                    <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined" Disabled="_loadingVersions" OnClick="@(() => OnSelectPackageClicked(context.Item))"
+                               aria-label="@(UiText.Get(LocKeys.Ui.WinGetPackageDialog.Choose0, (context.Item.Name)))">@(_selected?.PackageIdentifier == context.Item.PackageIdentifier ? UiText.Get(LocKeys.Ui.WinGetPackageDialog.Selected) : UiText.Get(LocKeys.Ui.WinGetPackageDialog.Choose))</MudButton>
+                </CellTemplate></TemplateColumn>
+            </Columns>
+            <PagerContent><MudDataGridPager T="WinGetPackageSummaryDto" PageSizeOptions="@(new[] { 10, 25, 50 })" /></PagerContent>
+            <NoRecordsContent>
+                <MudText>@(string.IsNullOrWhiteSpace(_search)
+                    ? UiText.Get(LocKeys.Ui.WinGetPackageDialog.NoPackagesAreAvailableImportTheCatalogUnderAdmin)
+                    : UiText.Get(LocKeys.Ui.WinGetPackageDialog.NoMatchingPackagesTryAnotherSearch))</MudText>
+            </NoRecordsContent>
+        </MudDataGrid>
+        @if (_loadingVersions)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="my-3" />
+        }
+        @if (_selected is not null)
+        {
+            <MudPaper Outlined="true" Elevation="0" Class="pa-4 mt-4">
+                <MudText Typo="Typo.h6">@_selected.Name</MudText>
+                <MudText Typo="Typo.caption">@_selected.PackageIdentifier</MudText>
+                <MudText Typo="Typo.body2" Class="my-2">@_selected.Description</MudText>
+                <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.WinGetPackageDialog.Publisher0Scope1License2, ((_selected.Publisher ?? UiText.Get(LocKeys.Ui.WinGetPackageDialog.NotSpecified))), (_selected.Scope), ((_selected.License ?? UiText.Get(LocKeys.Ui.WinGetPackageDialog.NotSpecified))))</MudText>
+                @if (AllowVersionSelection)
+                {
+                    <MudCheckBox @bind-Value="_installLatest" Label="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.InstallLatestVersion]" Color="Color.Primary" />
+                    <MudSelect T="string" Value="_selected.Version" ValueChanged="VersionChanged" Label="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.PackageVersion]"
+                               Variant="Variant.Outlined" Disabled="_installLatest" Margin="Margin.Dense">
+                        @foreach (var version in _versions)
+                        {
+                            <MudSelectItem T="string" Value="@version.Version">@version.Version</MudSelectItem>
+                        }
+                    </MudSelect>
+                    @if (_installLatest)
+                    {
+                        <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.WinGetPackageDialog.WinGetWillResolveTheLatestVersionWhenThisAction]</MudText>
+                    }
+                }
+
+            </MudPaper>
+        }
+        <MudText Typo="Typo.caption" Class="mt-3">@Loc[LocKeys.Ui.WinGetPackageDialog.ApplyAPackageThenSaveTheActionConfiguration]</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _selected is null || _loadingVersions, UiText.Get(LocKeys.Ui.WinGetPackageDialog.SelectAPackageFirst), OnApplyClicked)" Color="Color.Primary" Variant="Variant.Filled"
+                   Disabled="@(_loadingVersions)">@Loc[LocKeys.Ui.WinGetPackageDialog.UsePackage]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private void OnCancelClicked() => MudDialog.Cancel();
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public string? CurrentPackageId { get; set; }
+    [Parameter] public string? CurrentVersion { get; set; }
+    [Parameter] public bool InstallLatest { get; set; }
+    [Parameter] public bool AllowVersionSelection { get; set; } = true;
+    private MudDataGrid<WinGetPackageSummaryDto>? _table;
+    private bool _disposed;
+    private List<WinGetPackageVersionDto> _versions = [];
+    private WinGetPackageVersionDto? _selected;
+    private string? _search;
+    private bool _loadingVersions;
+    private bool _installLatest;
+
+    protected override void OnInitialized()
+    {
+        _search = CurrentPackageId;
+        _installLatest = InstallLatest || !AllowVersionSelection || string.IsNullOrWhiteSpace(CurrentPackageId);
+    }
+
+    private async Task<GridData<WinGetPackageSummaryDto>> LoadPackagesAsync(GridState<WinGetPackageSummaryDto> state, CancellationToken ct)
+    {
+        var page = await Catalog.SearchAsync(_search, state.Page, state.PageSize, ct);
+        if (_disposed || ct.IsCancellationRequested) return new();
+        if (!page.Success)
+        {
+            Snackbar.Add(Loc[page.Error.Code, page.Error.Args], Severity.Error);
+            return new();
+        }
+        return new GridData<WinGetPackageSummaryDto> { Items = page.Data!.Items, TotalItems = page.Data.Total };
+    }
+
+    private async Task SearchChangedAsync(string value)
+    {
+        _search = value;
+        if (_table is null) return;
+        if (_table.CurrentPage != 0) _table.NavigateTo(Page.First);
+        else await _table.ReloadServerData();
+    }
+
+    private async Task OnSelectPackageClicked(WinGetPackageSummaryDto package)
+    {
+        if (_loadingVersions) return;
+        _loadingVersions = true;
+        _selected = null;
+        var result = await Catalog.GetVersionsAsync(package.PackageIdentifier);
+        if (!result.Success)
+        {
+            if (!_disposed) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+            _loadingVersions = false;
+            return;
+        }
+        _versions = result.Data ?? [];
+        if (_disposed) return;
+        _selected = _versions.FirstOrDefault(x => x.PackageIdentifier == CurrentPackageId && x.Version == CurrentVersion)
+            ?? _versions.FirstOrDefault();
+        if (_selected is null)
+            Snackbar.Add(UiText.Get(LocKeys.Ui.WinGetPackageDialog.ThisPackageIsNoLongerInTheCatalogRefresh), Severity.Warning);
+        _loadingVersions = false;
+    }
+
+    private void VersionChanged(string version) => _selected = _versions.First(x => x.Version == version);
+
+    private void OnApplyClicked()
+    {
+        if (_selected is not null && !_loadingVersions)
+            MudDialog.Close(DialogResult.Ok(new WinGetPackageSelectionDto(_selected, _installLatest)));
+    }
+
+    public void Dispose() => _disposed = true;
+}

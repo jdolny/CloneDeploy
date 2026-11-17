@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <BundledWimlibRoot>$(MSBuildThisFileDirectory)../../third_party/wimlib/1.14.5</BundledWimlibRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(BundledWimlibRoot)/x64/*" LogicalName="CloneDeploy.Wimlib.x64.%(Filename)%(Extension)" Link="Resources/wimlib/x64/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="$(BundledWimlibRoot)/a64/*" LogicalName="CloneDeploy.Wimlib.a64.%(Filename)%(Extension)" Link="Resources/wimlib/a64/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="$(BundledWimlibRoot)/wimlib-1.14.5.tar.gz" LogicalName="CloneDeploy.Wimlib.wimlib-1.14.5.tar.gz" Link="Resources/wimlib/%(Filename)%(Extension)" />
+  </ItemGroup>
+  <Target Name="RequireWimlibResources" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('$(BundledWimlibRoot)/x64/wimlib-imagex.exe') Or !Exists('$(BundledWimlibRoot)/x64/libwim-15.dll') Or !Exists('$(BundledWimlibRoot)/a64/wimlib-imagex.exe') Or !Exists('$(BundledWimlibRoot)/a64/libwim-15.dll')"
+           Text="Restore the bundled x64 and ARM64 third_party/wimlib files from source control." />
+  </Target>
+</Project>

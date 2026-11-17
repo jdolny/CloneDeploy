@@ -1,0 +1,30 @@
+@using System.Security.Claims
+
+@* Keep parameters scalar so layout renders do not restart default-policy authorization. *@
+<AuthorizeView>
+    <Authorized Context="authState">
+        <MudMenu Label="@authState.User.Identity?.Name" StartIcon="@Icons.Material.Filled.AccountCircle"
+                 EndIcon="@Icons.Material.Filled.ExpandMore" Color="Color.Inherit" Class="cd-user"
+                 AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+            <ChildContent>
+                <MudMenuItem Href="@($"/users/manage/{authState.User.FindFirstValue(ClaimTypes.NameIdentifier)}/options")" Label="@Loc[LocKeys.User.Options]" />
+                @if (IsEntra.HasValue)
+                {
+                    <MudMenuItem Href="/account/password" Label='@(IsEntra.Value ? UiText.Get(LocKeys.Ui.AccountMenu.ChangeImagerPassword) : UiText.Get(LocKeys.Ui.AccountMenu.ChangePassword))' />
+                }
+                <MudMenuItem Href="/account/mfa" Label="@Loc[LocKeys.Auth.Mfa]" />
+                <MudMenuItem Href="/about/licenses" Label="@Loc[LocKeys.Ui.AccountMenu.LicensesAndNotices]" />
+                <form class="cd-account-logout-form" method="post" action="/auth/logout">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" Color="Color.Default" FullWidth="true"
+                               StartIcon="@Icons.Material.Filled.Logout" role="menuitem">
+                        @Loc[LocKeys.Ui.AccountMenu.Logout]
+                    </MudButton>
+                </form>
+            </ChildContent>
+        </MudMenu>
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    [Parameter] public bool? IsEntra { get; set; }
+}

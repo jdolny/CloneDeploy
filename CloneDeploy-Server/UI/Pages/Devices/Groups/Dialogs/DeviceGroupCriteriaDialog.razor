@@ -1,0 +1,107 @@
+@inject DeviceGroupService DeviceGroupService
+
+<MudDialog>
+    <DialogContent>
+        @if (_loading) { <MudProgressLinear Indeterminate="true"/> }
+        else if (_loadFailed) { <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.DeviceGroupCriteriaDialog.UnableToLoadCriteriaCloseAndReopenTheEditor]</MudAlert> }
+        else
+        {
+            <MudText>@Loc[LocKeys.Group.ConditionsHint]</MudText>
+            <fieldset disabled="@_busy" style="border:0; padding:0; min-width:0">
+                <DeviceQueryEditor Node="_definition.Root" IsRoot="true" DirectoryChoices="_directory" ValueChoices="_values" Changed="ClearPreview"/>
+            </fieldset>
+            <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.DeviceGroupCriteriaDialog.DeviceGroupPreviewsUseCurrentMembershipsRecalculationRefreshesReferenced]</MudText>
+            <MudButton OnClick="OnPreviewClicked" Disabled="_busy" Variant="Variant.Outlined" Class="my-3">@Loc[LocKeys.Group.Preview]</MudButton>
+            @if (_preview is not null)
+            {
+                <MudText Typo="Typo.caption">@Loc[LocKeys.Group.PreviewLimit]</MudText>
+                <MudDataGrid T="QueryDeviceDto" Items="_preview.Devices" Dense="true" Outlined="true" Elevation="0" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize">
+                    <ToolBarContent>
+                        <MudIcon Icon="@Icons.Material.Outlined.Preview" Color="Color.Primary"/>
+                        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DeviceGroupCriteriaDialog.MatchingDevices]</MudText>
+                    </ToolBarContent>
+                    <Columns>
+                        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]"/>
+                        <PropertyColumn Property="x => x.Id" Title="@Loc[LocKeys.Device.Id]"/>
+                    </Columns>
+                    <PagerContent><MudDataGridPager T="QueryDeviceDto"/></PagerContent>
+                </MudDataGrid>
+            }
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked" Disabled="_busy">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _busy || _loading || _loadFailed, UiText.Get(LocKeys.Ui.DeviceGroupCriteriaDialog.GroupCriteriaCouldNotBeLoadedReopenTheEditor), OnSaveClicked)" Disabled="@(_busy || _loading)" Variant="Variant.Filled" Color="Color.Primary">@Loc[LocKeys.Common.Save]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int GroupId { get; set; }
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private DeviceQueryDefinitionDto _definition = new();
+    private List<QueryDirectoryChoiceDto> _directory = [];
+    private List<QueryValueChoiceDto> _values = [];
+    private QueryPreviewDto? _preview;
+    private bool _loading = true, _loadFailed, _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var group = await DeviceGroupService.GetByIdAsync(GroupId);
+        var directory = await DeviceGroupService.DirectoryChoicesAsync();
+        var values = await DeviceGroupService.ValueChoicesAsync();
+        if (!group.Success || !directory.Success || !values.Success)
+        {
+            var error = group.Error ?? directory.Error ?? values.Error!;
+            Snackbar.Add(Loc[error.Code, error.Args], Severity.Error);
+            _loadFailed = true;
+        }
+        else
+        {
+            _directory = directory.Data!;
+            _values = values.Data!.Where(x => x.Field != "DeviceGroup" || x.Value != GroupId.ToString()).ToList();
+            if (group.Data!.QueryDefinitionJson is { } json)
+            {
+                var parsed = DeviceGroupService.ParseDefinition(json);
+                if (parsed.Success) _definition = parsed.Data!;
+                else
+                {
+                    _loadFailed = true;
+                    Snackbar.Add(Loc[parsed.Error.Code, parsed.Error.Args], Severity.Error);
+                }
+            }
+            else _definition = new() { Root = new() { Children = [new() { Children = [new() { Field = "Name", Operator = QueryOperator.Contains }] }] } };
+        }
+        _loading = false;
+    }
+    private void ClearPreview() => _preview = null;
+    private void OnCancelClicked() => MudDialog.Cancel();
+    private async Task OnPreviewClicked()
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            _preview = null;
+            var result = await DeviceGroupService.PreviewAsync(_definition);
+            if (result.Success) _preview = result.Data;
+            else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _busy = false; }
+    }
+    private async Task OnSaveClicked()
+    {
+        if (_busy || _loading || _loadFailed) return;
+        _busy = true;
+        try
+        {
+            var result = await DeviceGroupService.UpdateMembersAsync(GroupId, DeviceGroupType.Dynamic, _definition, [], true);
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[LocKeys.Group.RebuildQueued], Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _busy = false; }
+    }
+}

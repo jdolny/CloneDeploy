@@ -1,0 +1,60 @@
+<MudGrid Spacing="3">
+    <MudItem xs="12">
+        <MudTextField @bind-Value="Model.Name" Label="@Loc[LocKeys.Common.Name]" Required="true" Variant="Variant.Outlined" />
+        <MudTextField @bind-Value="Model.Description" Label="@Loc[LocKeys.Common.Description]" Lines="3" Variant="Variant.Outlined" />
+    </MudItem>
+    <MudItem xs="12">
+        <MudStack Spacing="0">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudText Typo="Typo.subtitle2">@Loc[LocKeys.Ui.PolicyGeneral.RunInventory]</MudText>
+                <MudSwitch T="bool" @bind-Value="Model.RunInventory" Color="Color.Primary" Disabled="ReadOnly" aria-label="@Loc[LocKeys.Ui.PolicyGeneral.RunInventory]" />
+            </MudStack>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">@Loc[LocKeys.Ui.PolicyGeneral.RefreshInventoryAfterPolicyActions]</MudText>
+        </MudStack>
+    </MudItem>
+    <MudItem xs="12">
+        <MudText Typo="Typo.subtitle2" Class="mb-2">@Loc[LocKeys.Common.Tags]</MudText>
+        @if (Details.SelectedTags.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Class="mb-2">@Loc[LocKeys.Ui.PolicyGeneral.NoTagsSelected]</MudText>
+        }
+        else
+        {
+            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mb-2">
+                @foreach (var id in Details.SelectedTags)
+                {
+                    var name = Details.Tags.FirstOrDefault(x => x.Id == id)?.Name ?? UiText.Get(LocKeys.Ui.PolicyGeneral.Tag0, (id));
+                    <MudChip T="int" @key="id" Value="id" Color="Color.Primary" Variant="Variant.Outlined"
+                             Disabled="ReadOnly" OnClose="@(() => RemoveTag(id))">@name</MudChip>
+                }
+            </MudStack>
+        }
+        <MudAutocomplete T="Tag" @ref="_tagPicker" Label="@Loc[LocKeys.Image.AddTag]" Placeholder="@Loc[LocKeys.Ui.PolicyGeneral.SearchTags]" Class="mt-4"
+                         Variant="Variant.Outlined" Margin="Margin.Dense" SearchFunc="SearchTags"
+                         ToStringFunc="@(tag => tag?.Name ?? "")" ValueChanged="AddTagAsync"
+                         Clearable="true" ResetValueOnEmptyText="true" MaxItems="20" Disabled="ReadOnly"
+                         AdornmentIcon="@Icons.Material.Filled.Search"
+                         HelperText="@Loc[LocKeys.Ui.PolicyGeneral.SelectATagToAddItUseTheOn]">
+            <NoItemsTemplate>
+                <MudText Class="pa-3">@(Details.Tags.Count == 0 ? UiText.Get(LocKeys.Ui.PolicyGeneral.NoTagsAreAvailable) : Details.Tags.All(x => Details.SelectedTags.Contains(x.Id)) ? UiText.Get(LocKeys.Ui.PolicyGeneral.AllAvailableTagsAreSelected) : UiText.Get(LocKeys.Ui.PolicyGeneral.NoMatchingTags))</MudText>
+            </NoItemsTemplate>
+            <MoreItemsTemplate>
+                <MudText Typo="Typo.caption" Class="pa-3">@Loc[LocKeys.Ui.PolicyGeneral.KeepTypingToNarrowTheResults]</MudText>
+            </MoreItemsTemplate>
+        </MudAutocomplete>
+    </MudItem>
+</MudGrid>
+@code {
+[Parameter, EditorRequired] public PolicyDetailsDto Details { get; set; } = null!;
+private Policy Model => Details.Policy;
+[Parameter] public bool ReadOnly { get; set; }
+private MudAutocomplete<Tag>? _tagPicker;
+private Task<IEnumerable<Tag>> SearchTags(string? text, CancellationToken cancellationToken) => Task.FromResult(Details.Tags.Where(x => !Details.SelectedTags.Contains(x.Id) && (string.IsNullOrWhiteSpace(text) || x.Name.Contains(text.Trim(), StringComparison.OrdinalIgnoreCase))).AsEnumerable());
+private async Task AddTagAsync(Tag? tag)
+{
+    if (ReadOnly || tag is null) return;
+    Details.SelectedTags = Details.SelectedTags.Append(tag.Id).Distinct().ToArray();
+    if (_tagPicker is not null) await _tagPicker.ClearAsync();
+}
+private void RemoveTag(int id) { if (!ReadOnly) { Details.SelectedTags = Details.SelectedTags.Where(x => x != id).ToArray(); } }
+}

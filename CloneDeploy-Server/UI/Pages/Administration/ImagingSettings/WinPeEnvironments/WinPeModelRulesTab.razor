@@ -1,0 +1,96 @@
+@inject WinPeService Service
+
+<MudStack Spacing="3">
+    @if (_inventoryError is not null)
+    {
+        <MudAlert Severity="Severity.Warning">@_inventoryError</MudAlert>
+    }
+    <MudSelect T="InventoriedModelDto" Label="@Loc[LocKeys.Ui.WinPeModelRulesTab.AddAModelFromInventory]" ValueChanged="AddModel" Variant="Variant.Outlined" Disabled="Busy">
+        @foreach (var model in _inventory)
+        {
+            <MudSelectItem Value="model">@model.Manufacturer / @model.Model (@model.Devices)</MudSelectItem>
+        }
+    </MudSelect>
+    @foreach (var rule in Rules)
+    {
+        <MudPaper @key="rule" Class="pa-3" Outlined="true">
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="rule.Manufacturer" Label="@Loc[LocKeys.Ui.ManageDeploymentRulePage.ExactManufacturer]" MaxLength="500" Variant="Variant.Outlined" Disabled="Busy"/>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="rule.Model" Label="@Loc[LocKeys.Ui.ManageDeploymentRulePage.ExactModel]" MaxLength="500" Variant="Variant.Outlined" Disabled="Busy"/>
+                </MudItem>
+                <MudItem xs="12" md="5">
+                    <MudTextField @bind-Value="rule.ManufacturerRegex" Label="@Loc[LocKeys.Ui.ManageDeploymentRulePage.ManufacturerRegex]" MaxLength="500" Variant="Variant.Outlined" Disabled="Busy"/>
+                </MudItem>
+                <MudItem xs="12" md="5">
+                    <MudTextField @bind-Value="rule.ModelRegex" Label="@Loc[LocKeys.Ui.ManageDeploymentRulePage.ModelRegex]" MaxLength="500" Variant="Variant.Outlined" Disabled="Busy"/>
+                </MudItem>
+                <MudItem xs="12" md="2">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => OnRemoveRuleClicked(rule))" Disabled="Busy" aria-label="@Loc[LocKeys.Ui.WinPeModelRulesTab.RemoveModelRule]"/>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    }
+    <MudButton StartIcon="@Icons.Material.Filled.Add" OnClick="@Snackbar.GuardAction(() => Busy || Rules.Count >= 100, UiText.Get(LocKeys.Ui.WinPeModelRulesTab.ABootEnvironmentCanHaveAtMost100Model), () => OnAddRuleClicked())" Disabled="@(Busy)">@Loc[LocKeys.Ui.ManageOuNamingRulePage.AddRule]</MudButton>
+    @if (Save.HasDelegate)
+    {
+        <MudButton OnClick="OnSaveClicked" Disabled="Busy" Variant="Variant.Filled" Color="Color.Primary">@Loc[LocKeys.Ui.WinPeModelRulesTab.SaveModelMatching]</MudButton>
+    }
+    <MudDivider/>
+    <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.WinPeModelRulesTab.TestAutomaticSelection]</MudText>
+    <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.WinPeModelRulesTab.TestsSavedRulesAcrossAllReadyBootEnvironmentsSave]
+    </MudText>
+    <MudTextField @bind-Value="_manufacturer" Label="@Loc[LocKeys.Ui.WinPeModelRulesTab.TestManufacturer]" MaxLength="500" Variant="Variant.Outlined"/>
+    <MudTextField @bind-Value="_model" Label="@Loc[LocKeys.Ui.WinPeModelRulesTab.TestModel]" MaxLength="500" Variant="Variant.Outlined"/>
+    <MudButton OnClick="OnPreviewClicked" Disabled="@(Busy || _testing)" Variant="Variant.Outlined">@Loc[LocKeys.Ui.HelpRoutingRulesTab.TestMatch]</MudButton>
+    @if (_result is not null)
+    {
+        <MudAlert Severity="@(_matched ? Severity.Success : Severity.Warning)">@_result</MudAlert>
+    }
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public List<WinPeModelRuleDto> Rules { get; set; } = [];
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback Save { get; set; }
+    private List<InventoriedModelDto> _inventory = [];
+    private string? _inventoryError, _manufacturer, _model, _result;
+    private bool _testing, _matched;
+    private void OnRemoveRuleClicked(WinPeModelRuleDto rule) => Rules.Remove(rule);
+    private void OnAddRuleClicked() => Rules.Add(new());
+    private Task OnSaveClicked() => Save.InvokeAsync();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Service.GetModelsAsync();
+        if (result.Success) _inventory = result.Data!;
+        else _inventoryError = Loc[result.Error!.Code, result.Error.Args];
+    }
+
+    private void AddModel(InventoriedModelDto? model)
+    {
+        if (model is null || Busy || Rules.Count >= 100) return;
+        Rules.Add(new() { Manufacturer = model.Manufacturer, Model = model.Model });
+        _manufacturer = model.Manufacturer;
+        _model = model.Model;
+    }
+
+    private async Task OnPreviewClicked()
+    {
+        _testing = true;
+        try
+        {
+            var result = await Service.PreviewModelAsync(_manufacturer, _model);
+            _matched = result.Success;
+            _result = result.Success ? UiText.Get(LocKeys.Ui.WinPeModelRulesTab.Selected0, (result.Data!.Name)) : null;
+            if (!result.Success) Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        finally
+        {
+            _testing = false;
+        }
+    }
+
+}

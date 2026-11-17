@@ -1,0 +1,6 @@
+@page "/reports/user"
+@page "/reports/users"
+@attribute [Authorize(Policy = Constants.Permissions.ReportUsers)]
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.UserReportsPage.UserReports]" />
+<UserDeviceHistoryTab />

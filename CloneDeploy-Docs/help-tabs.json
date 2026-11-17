@@ -1,0 +1,1480 @@
+[
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/AgentSettings/AgentAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Ui.AgentAdministrationPage.Features]",
+    "title": "Features",
+    "href": "ui/administration/agent-features.html",
+    "label": "Features"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Command/ManageCommandActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.General]",
+    "title": "General",
+    "href": "ui/policies-actions/command-actions-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Command/ManageCommandActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.Configuration]",
+    "title": "Configuration",
+    "href": "ui/policies-actions/command-actions-configuration.html",
+    "label": "Configuration"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Command/ManageCommandActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.Files]",
+    "title": "Files",
+    "href": "ui/policies-actions/command-actions-files.html",
+    "label": "Files"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Command/ManageCommandActionPage.razor",
+    "tab": "@Loc[LocKeys.Device.Relations]",
+    "title": "Relations",
+    "href": "ui/policies-actions/command-actions-used-by.html",
+    "label": "Relations"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Command/ManageCommandActionPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/policies-actions/command-actions-audit.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/DomainJoin/ManageDomainJoinActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.General]",
+    "title": "General",
+    "href": "ui/policies-actions/domainjoin-actions-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/DomainJoin/ManageDomainJoinActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.Configuration]",
+    "title": "Configuration",
+    "href": "ui/policies-actions/domainjoin-actions-configuration.html",
+    "label": "Configuration"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/DomainJoin/ManageDomainJoinActionPage.razor",
+    "tab": "@Loc[LocKeys.Device.Relations]",
+    "title": "Relations",
+    "href": "ui/policies-actions/domainjoin-actions-used-by.html",
+    "label": "Relations"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/DomainJoin/ManageDomainJoinActionPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/policies-actions/domainjoin-actions-audit.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/File/ManageFileActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.General]",
+    "title": "General",
+    "href": "ui/policies-actions/file-actions-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/File/ManageFileActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.Configuration]",
+    "title": "Configuration",
+    "href": "ui/policies-actions/file-actions-configuration.html",
+    "label": "Configuration"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/File/ManageFileActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.Files]",
+    "title": "Files",
+    "href": "ui/policies-actions/file-actions-files.html",
+    "label": "Files"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/File/ManageFileActionPage.razor",
+    "tab": "@Loc[LocKeys.Device.Relations]",
+    "title": "Relations",
+    "href": "ui/policies-actions/file-actions-used-by.html",
+    "label": "Relations"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/File/ManageFileActionPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/policies-actions/file-actions-audit.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Notification/ManageNotificationActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.General]",
+    "title": "General",
+    "href": "ui/policies-actions/notification-actions-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Notification/ManageNotificationActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.Configuration]",
+    "title": "Configuration",
+    "href": "ui/policies-actions/notification-actions-configuration.html",
+    "label": "Configuration"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Notification/ManageNotificationActionPage.razor",
+    "tab": "@Loc[LocKeys.Device.Relations]",
+    "title": "Relations",
+    "href": "ui/policies-actions/notification-actions-used-by.html",
+    "label": "Relations"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Notification/ManageNotificationActionPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/policies-actions/notification-actions-audit.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Printer/ManagePrinterActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.General]",
+    "title": "General",
+    "href": "ui/policies-actions/printer-actions-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Printer/ManagePrinterActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.Configuration]",
+    "title": "Configuration",
+    "href": "ui/policies-actions/printer-actions-configuration.html",
+    "label": "Configuration"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Printer/ManagePrinterActionPage.razor",
+    "tab": "@Loc[LocKeys.Device.Relations]",
+    "title": "Relations",
+    "href": "ui/policies-actions/printer-actions-used-by.html",
+    "label": "Relations"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Printer/ManagePrinterActionPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/policies-actions/printer-actions-audit.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Script/ManageScriptActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.General]",
+    "title": "General",
+    "href": "ui/policies-actions/script-actions-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Script/ManageScriptActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.Configuration]",
+    "title": "Configuration",
+    "href": "ui/policies-actions/script-actions-configuration.html",
+    "label": "Configuration"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Script/ManageScriptActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.Files]",
+    "title": "Files",
+    "href": "ui/policies-actions/script-actions-files.html",
+    "label": "Files"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Script/ManageScriptActionPage.razor",
+    "tab": "@Loc[LocKeys.Device.Relations]",
+    "title": "Relations",
+    "href": "ui/policies-actions/script-actions-used-by.html",
+    "label": "Relations"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Script/ManageScriptActionPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/policies-actions/script-actions-audit.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Software/ManageSoftwareActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.General]",
+    "title": "General",
+    "href": "ui/policies-actions/software-actions-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Software/ManageSoftwareActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.Configuration]",
+    "title": "Configuration",
+    "href": "ui/policies-actions/software-actions-configuration.html",
+    "label": "Configuration"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Software/ManageSoftwareActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.Files]",
+    "title": "Files",
+    "href": "ui/policies-actions/software-actions-files.html",
+    "label": "Files"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Software/ManageSoftwareActionPage.razor",
+    "tab": "@Loc[LocKeys.Device.Relations]",
+    "title": "Relations",
+    "href": "ui/policies-actions/software-actions-used-by.html",
+    "label": "Relations"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Software/ManageSoftwareActionPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/policies-actions/software-actions-audit.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/WindowsUpdate/ManageWindowsUpdateActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.General]",
+    "title": "General",
+    "href": "ui/policies-actions/windowsupdate-actions-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/WindowsUpdate/ManageWindowsUpdateActionPage.razor",
+    "tab": "@Loc[LocKeys.Action.Configuration]",
+    "title": "Configuration",
+    "href": "ui/policies-actions/windowsupdate-actions-configuration.html",
+    "label": "Configuration"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/WindowsUpdate/ManageWindowsUpdateActionPage.razor",
+    "tab": "@Loc[LocKeys.Device.Relations]",
+    "title": "Relations",
+    "href": "ui/policies-actions/windowsupdate-actions-used-by.html",
+    "label": "Relations"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/WindowsUpdate/ManageWindowsUpdateActionPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/policies-actions/windowsupdate-actions-audit.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/SiteServices/ManageSiteServicePage.razor",
+    "tab": "@Loc[LocKeys.User.General]",
+    "title": "General",
+    "href": "ui/administration/site-services-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/SiteServices/ManageSiteServicePage.razor",
+    "tab": "@Loc[LocKeys.Image.Configuration]",
+    "title": "Configuration",
+    "href": "ui/administration/site-services-configuration.html",
+    "label": "Configuration"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/SiteServices/ManageSiteServicePage.razor",
+    "tab": "@Loc[LocKeys.Ui.AgentAdministrationPage.Enrollment]",
+    "title": "Enrollment",
+    "href": "ui/administration/site-services-enrollment.html",
+    "label": "Enrollment"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/AgentSettings/AgentAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.User.General]",
+    "title": "General",
+    "href": "ui/administration/agent-enrollment-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/AgentSettings/AgentAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Ui.AgentAdministrationPage.Enrollment]",
+    "title": "Enrollment",
+    "href": "ui/administration/agent-enrollment-overview.html",
+    "label": "Enrollment"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/AgentSettings/Enrollment/AgentEnrollmentTab.razor",
+    "tab": "@Loc[LocKeys.Ui.AgentEnrollmentTab.EnrollmentRules]",
+    "title": "Enrollment Rules",
+    "href": "ui/administration/agent-enrollment-rules.html",
+    "label": "Enrollment Rules"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/AgentSettings/Enrollment/AgentEnrollmentTab.razor",
+    "tab": "@Loc[LocKeys.Ui.AgentEnrollmentTab.EnrollmentKey]",
+    "title": "Enrollment Key",
+    "href": "ui/administration/agent-enrollment-key.html",
+    "label": "Enrollment Key"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/AgentSettings/AgentAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Ui.AgentAdministrationPage.InstallerUpdates]",
+    "title": "Installer & Updates",
+    "href": "ui/administration/agent-enrollment-installer.html",
+    "label": "Installer & Updates"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/ImagingInfrastructurePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ImagingInfrastructurePage.PXEProxy]",
+    "title": "PXE Proxy",
+    "href": "ui/administration/pxe-proxy.html",
+    "label": "PXE Proxy"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/PxeProxy/PxeProxyTab.razor",
+    "tab": "@Loc[LocKeys.Ui.PxeProxyTab.Settings]",
+    "title": "Settings",
+    "href": "ui/administration/pxe-proxy-settings.html",
+    "label": "Settings"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/ImagingInfrastructurePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ImagingInfrastructurePage.TFTPBootFiles]",
+    "title": "TFTP & Boot Files",
+    "href": "ui/administration/tftp-boot-files.html",
+    "label": "TFTP & Boot Files"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/Tftp/PxeTftpTab.razor",
+    "tab": "@Loc[LocKeys.Ui.PxeProxyTab.Settings]",
+    "title": "Settings",
+    "href": "ui/administration/tftp-settings.html",
+    "label": "Settings"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/ImagingInfrastructurePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ImagingInfrastructurePage.ImagingQueue]",
+    "title": "Imaging Queue",
+    "href": "ui/administration/imaging-infrastructure-queue.html",
+    "label": "Imaging Queue"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/ImagingInfrastructurePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ImagingInfrastructurePage.DeploymentPerformance]",
+    "title": "Deployment Performance",
+    "href": "ui/administration/imaging-infrastructure-performance.html",
+    "label": "Deployment Performance"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/ServerAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.User.General]",
+    "title": "General",
+    "href": "ui/administration/server-settings-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/ServerAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Common.StorageProviders]",
+    "title": "Storage Providers",
+    "href": "ui/administration/storage.html",
+    "label": "Storage Providers",
+    "occurrence": 0
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/ServerAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Device.Certificates]",
+    "title": "Certificates",
+    "href": "ui/administration/certificates.html",
+    "label": "Certificates"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/ServerAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Common.ManagedCredentials]",
+    "title": "Managed Credentials",
+    "href": "ui/shared-resources/credentials.html",
+    "label": "Managed Credentials"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/AgentSettings/AgentAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Ui.AgentAdministrationPage.Branding]",
+    "title": "Branding",
+    "href": "ui/administration/server-settings-branding.html",
+    "label": "Branding"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ApplicationUsers/ManageUserPage.razor",
+    "tab": "@Loc[LocKeys.User.General]",
+    "title": "General",
+    "href": "ui/administration/users-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ApplicationUsers/ManageUserPage.razor",
+    "tab": "@Loc[LocKeys.User.Options]",
+    "title": "Options",
+    "href": "ui/administration/users-options.html",
+    "label": "Options"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ApplicationUsers/ManageUserPage.razor",
+    "tab": "@Loc[LocKeys.User.Permissions]",
+    "title": "Permissions",
+    "href": "ui/administration/users-permissions.html",
+    "label": "Permissions"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ApplicationUsers/ManageUserPage.razor",
+    "tab": "@Loc[LocKeys.User.AuditHistory]",
+    "title": "Audit History",
+    "href": "ui/administration/users-audit.html",
+    "label": "Audit History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Tasks/ActionDeployments/DeploymentsPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Active]",
+    "title": "Active",
+    "href": "ui/tasks/deployments-active.html",
+    "label": "Active"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Tasks/ActionDeployments/DeploymentsPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/tasks/deployments-history.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/Connection/DeviceConnectionPanel.razor",
+    "tab": "@Loc[LocKeys.Ui.DeviceConnectionPanel.AgentLog]",
+    "title": "Agent log",
+    "href": "ui/devices/device-connect-client-log.html",
+    "label": "Agent log"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/Connection/DeviceConnectionPanel.razor",
+    "tab": "@Loc[LocKeys.Device.Terminal]",
+    "title": "Terminal",
+    "href": "ui/devices/device-connect-terminal.html",
+    "label": "Terminal"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/Connection/DeviceConnectionPanel.razor",
+    "tab": "@Loc[LocKeys.Device.Services]",
+    "title": "Services",
+    "href": "ui/devices/device-connect-services.html",
+    "label": "Services"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/Connection/DeviceConnectionPanel.razor",
+    "tab": "@Loc[LocKeys.Device.Processes]",
+    "title": "Processes",
+    "href": "ui/devices/device-connect-processes.html",
+    "label": "Processes"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/Connection/DeviceConnectionPanel.razor",
+    "tab": "@Loc[LocKeys.Ui.DeviceConnectionPanel.RemoteViewing]",
+    "title": "Remote viewing",
+    "href": "ui/devices/device-connect-remote-viewing.html",
+    "label": "Remote viewing"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DeviceHistoryTab.razor",
+    "tab": "@Loc[LocKeys.Common.Actions]",
+    "title": "Actions",
+    "href": "ui/devices/device-history-actions.html",
+    "label": "Actions"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DeviceHistoryTab.razor",
+    "tab": "@Loc[LocKeys.Policy.Policies]",
+    "title": "Policies",
+    "href": "ui/devices/device-history-policies.html",
+    "label": "Policies"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DeviceHistoryTab.razor",
+    "tab": "@Loc[LocKeys.Ui.DeviceHistoryTab.Notifications]",
+    "title": "Notifications",
+    "href": "ui/devices/device-history-notifications.html",
+    "label": "Notifications"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DeviceHistoryTab.razor",
+    "tab": "@Loc[LocKeys.Ui.DeviceHistoryTab.Audits]",
+    "title": "Audits",
+    "href": "ui/devices/device-history-audits.html",
+    "label": "Audits"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DeviceImagingTab.razor",
+    "tab": "@Loc[LocKeys.Device.DeploymentSettings]",
+    "title": "Deployment Settings",
+    "href": "ui/devices/device-imaging-deployment-settings.html",
+    "label": "Deployment Settings"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DeviceImagingTab.razor",
+    "tab": "@Loc[LocKeys.Device.ImagingLogsText]",
+    "title": "Imaging Logs",
+    "href": "ui/devices/device-imaging-imaging-logs.html",
+    "label": "Imaging Logs"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DeviceInventoryTab.razor",
+    "tab": "@Loc[LocKeys.Device.SystemInfo]",
+    "title": "System Info",
+    "href": "ui/devices/device-inventory-system-information.html",
+    "label": "System Info"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DeviceInventoryTab.razor",
+    "tab": "@Loc[LocKeys.Device.Software]",
+    "title": "Software",
+    "href": "ui/devices/device-inventory-software.html",
+    "label": "Software"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DeviceInventoryTab.razor",
+    "tab": "@Loc[LocKeys.Device.WindowsUpdates]",
+    "title": "Windows Updates",
+    "href": "ui/devices/device-inventory-windows-updates.html",
+    "label": "Windows Updates"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DeviceInventoryTab.razor",
+    "tab": "@Loc[LocKeys.Device.Certificates]",
+    "title": "Certificates",
+    "href": "ui/devices/device-inventory-certificates.html",
+    "label": "Certificates"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DeviceInventoryTab.razor",
+    "tab": "@Loc[LocKeys.Device.CustomInventoryText]",
+    "title": "Custom Inventory",
+    "href": "ui/devices/device-inventory-custom-inventory.html",
+    "label": "Custom Inventory"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DeviceInventoryTab.razor",
+    "tab": "@Loc[LocKeys.Device.UserLogins]",
+    "title": "User Logins",
+    "href": "ui/devices/device-inventory-user-logins.html",
+    "label": "User Logins"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DeviceOverviewTab.razor",
+    "tab": "@Loc[LocKeys.Device.General]",
+    "title": "General",
+    "href": "ui/devices/device-overview-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DeviceOverviewTab.razor",
+    "tab": "@Loc[LocKeys.Common.CustomAttributes]",
+    "title": "Custom Attributes",
+    "href": "ui/devices/device-overview-custom-attributes.html",
+    "label": "Custom Attributes"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DeviceOverviewTab.razor",
+    "tab": "@Loc[LocKeys.Device.Comments]",
+    "title": "Comments",
+    "href": "ui/devices/device-overview-comments.html",
+    "label": "Comments"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DeviceOverviewTab.razor",
+    "tab": "@Loc[LocKeys.Device.Attachments]",
+    "title": "Attachments",
+    "href": "ui/devices/device-overview-attachments.html",
+    "label": "Attachments"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DevicePolicyTab.razor",
+    "tab": "@Loc[LocKeys.Device.EffectivePolicyText]",
+    "title": "Effective Policy",
+    "href": "ui/devices/device-policies-effective-policy.html",
+    "label": "Effective Policy"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DevicePolicyTab.razor",
+    "tab": "@Loc[LocKeys.Ui.DevicePolicyTab.DirectAssignments]",
+    "title": "Direct assignments",
+    "href": "ui/devices/device-policies-direct-assignments.html",
+    "label": "Direct assignments"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/ManageDevicePage.razor",
+    "tab": "@Loc[LocKeys.Device.Overview]",
+    "title": "Overview",
+    "href": "ui/devices/device-details-overview.html",
+    "label": "Overview"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/ManageDevicePage.razor",
+    "tab": "@Loc[LocKeys.Device.Inventory]",
+    "title": "Inventory",
+    "href": "ui/devices/device-details-inventory.html",
+    "label": "Inventory"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/ManageDevicePage.razor",
+    "tab": "@Loc[LocKeys.Device.Policies]",
+    "title": "Policies",
+    "href": "ui/devices/device-details-policies.html",
+    "label": "Policies"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/ManageDevicePage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/devices/device-details-history.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/ManageDevicePage.razor",
+    "tab": "@Loc[LocKeys.Device.Imaging]",
+    "title": "Imaging",
+    "href": "ui/devices/device-details-imaging.html",
+    "label": "Imaging"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/ManageDevicePage.razor",
+    "tab": "@Loc[LocKeys.Device.Relations]",
+    "title": "Relations",
+    "href": "ui/devices/device-details-relations.html",
+    "label": "Relations"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DriverPacks/ManageDriverPage.razor",
+    "tab": "@Loc[LocKeys.User.General]",
+    "title": "General",
+    "href": "ui/imaging/drivers-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DriverPacks/ManageDriverPage.razor",
+    "tab": "@Loc[LocKeys.Action.Files]",
+    "title": "Files",
+    "href": "ui/imaging/drivers-files.html",
+    "label": "Files"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DriverPacks/ManageDriverPage.razor",
+    "tab": "@Loc[LocKeys.Ui.ManageDriverPage.OnlineLibrary]",
+    "title": "Online Library",
+    "href": "ui/imaging/drivers-library.html",
+    "label": "Online Library"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DriverPacks/ManageDriverPage.razor",
+    "tab": "@Loc[LocKeys.Ui.ManageDriverPage.Models]",
+    "title": "Models",
+    "href": "ui/imaging/drivers-models.html",
+    "label": "Models"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DriverPacks/ManageDriverPage.razor",
+    "tab": "@Loc[LocKeys.Image.Configuration]",
+    "title": "Configuration",
+    "href": "ui/imaging/drivers-configuration.html",
+    "label": "Configuration"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DriverPacks/ManageDriverPage.razor",
+    "tab": "@Loc[LocKeys.Device.Relations]",
+    "title": "Relations",
+    "href": "ui/imaging/drivers-used-by.html",
+    "label": "Relations"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DriverPacks/ManageDriverPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/imaging/drivers-audit.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Groups/ManageDeviceGroupPage.razor",
+    "tab": "@Loc[LocKeys.Group.General]",
+    "title": "General",
+    "href": "ui/devices/device-groups-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Groups/ManageDeviceGroupPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/devices/device-groups-history.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Groups/ManageDeviceGroupPage.razor",
+    "tab": "@Loc[LocKeys.Device.Relations]",
+    "title": "Relations",
+    "href": "ui/devices/device-groups-relations.html",
+    "label": "Relations"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Groups/ManageDeviceGroupPage.razor",
+    "tab": "@Loc[LocKeys.Device.Imaging]",
+    "title": "Imaging",
+    "href": "ui/devices/device-groups-imaging.html",
+    "label": "Imaging"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Groups/ManageDeviceGroupPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Policies]",
+    "title": "Policies",
+    "href": "ui/devices/device-groups-policies.html",
+    "label": "Policies"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Groups/ManageDeviceGroupPage.razor",
+    "tab": "@Loc[LocKeys.Group.Members]",
+    "title": "Group Members",
+    "href": "ui/devices/device-groups-members.html",
+    "label": "Group Members"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/Images/ManageImagePage.razor",
+    "tab": "@Loc[LocKeys.Image.General]",
+    "title": "General",
+    "href": "ui/imaging/images-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/Images/ManageImagePage.razor",
+    "tab": "@Loc[LocKeys.Image.Versions]",
+    "title": "Versions",
+    "href": "ui/imaging/images-versions.html",
+    "label": "Versions"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/Images/ManageImagePage.razor",
+    "tab": "@Loc[LocKeys.Device.Relations]",
+    "title": "Relations",
+    "href": "ui/imaging/images-used-by.html",
+    "label": "Relations"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/Images/ManageImagePage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/imaging/images-audit.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/ImagePrepProfiles/ManageImagePrepProfilePage.razor",
+    "tab": "@Loc[LocKeys.User.General]",
+    "title": "General",
+    "href": "ui/imaging/image-prep-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/ImagePrepProfiles/ManageImagePrepProfilePage.razor",
+    "tab": "@Loc[LocKeys.Image.Configuration]",
+    "title": "Configuration",
+    "href": "ui/imaging/image-prep-configuration.html",
+    "label": "Configuration"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/ImagePrepProfiles/ManageImagePrepProfilePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ManageImagePrepProfilePage.AnswerFile]",
+    "title": "Answer File",
+    "href": "ui/imaging/image-prep-answer-file.html",
+    "label": "Answer File"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/ImagePrepProfiles/ManageImagePrepProfilePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ManageImagePrepProfilePage.SetupComplete]",
+    "title": "SetupComplete",
+    "href": "ui/imaging/image-prep-setupcomplete.html",
+    "label": "SetupComplete"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/ImagePrepProfiles/ManageImagePrepProfilePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ManageImagePrepProfilePage.PreSysprepScript]",
+    "title": "Pre-Sysprep Script",
+    "href": "ui/imaging/image-prep-pre-sysprep-script.html",
+    "label": "Pre-Sysprep Script"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DeploymentProfiles/ManageImageProfilePage.razor",
+    "tab": "@Loc[LocKeys.User.General]",
+    "title": "General",
+    "href": "ui/imaging/deployment-profiles-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DeploymentProfiles/ManageImageProfilePage.razor",
+    "tab": "@Loc[LocKeys.Image.Configuration]",
+    "title": "Configuration",
+    "href": "ui/imaging/deployment-profiles-configuration.html",
+    "label": "Configuration"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DeploymentProfiles/ManageImageProfilePage.razor",
+    "tab": "@Loc[LocKeys.Ui.DeploymentDriversTab.Drivers]",
+    "title": "Drivers",
+    "href": "ui/imaging/deployment-profiles-drivers.html",
+    "label": "Drivers"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DeploymentProfiles/ManageImageProfilePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ManageImageProfilePage.PostDeploymentPolicies]",
+    "title": "Post-deployment Policies",
+    "href": "ui/imaging/deployment-profiles-policies.html",
+    "label": "Post-deployment Policies"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DeploymentProfiles/ManageImageProfilePage.razor",
+    "tab": "@Loc[LocKeys.Device.Relations]",
+    "title": "Relations",
+    "href": "ui/imaging/deployment-profiles-used-by.html",
+    "label": "Relations"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DeploymentProfiles/ManageImageProfilePage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/imaging/deployment-profiles-audit.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Policies/ManagePolicyPage.razor",
+    "tab": "@Loc[LocKeys.Policy.General]",
+    "title": "General",
+    "href": "ui/policies-actions/policies-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Policies/ManagePolicyPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Actions]",
+    "title": "Actions",
+    "href": "ui/policies-actions/policies-actions.html",
+    "label": "Actions"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Policies/ManagePolicyPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Targets]",
+    "title": "Targets",
+    "href": "ui/policies-actions/policies-targeting.html",
+    "label": "Targets"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Policies/ManagePolicyPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Schedule]",
+    "title": "Triggers & Timing",
+    "href": "ui/policies-actions/policies-schedule.html",
+    "label": "Triggers & Timing"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Policies/ManagePolicyPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Execution]",
+    "title": "Execution",
+    "href": "ui/policies-actions/policies-execution.html",
+    "label": "Execution"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Policies/ManagePolicyPage.razor",
+    "tab": "@Loc[LocKeys.Ui.ManagePolicyPage.SelfService]",
+    "title": "Self Service",
+    "href": "ui/policies-actions/policies-self-service.html",
+    "label": "Self Service"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Policies/ManagePolicyPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/policies-actions/policies-activity.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Reports/WindowsUpdates/WindowsUpdatesPage.razor",
+    "tab": "@Loc[LocKeys.Ui.DriverFilesTab.Updates]",
+    "title": "Updates",
+    "href": "ui/shared-resources/windows-updates-updates.html",
+    "label": "Updates"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Reports/WindowsUpdates/WindowsUpdatesPage.razor",
+    "tab": "@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.AutoApproveRules]",
+    "title": "Auto-Approve Rules",
+    "href": "ui/shared-resources/windows-updates-auto-approve-rules.html",
+    "label": "Auto-Approve Rules"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Tasks/Imaging/ImagingTasksPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Active]",
+    "title": "Active",
+    "href": "ui/tasks/imaging-tasks-active.html",
+    "label": "Active"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Tasks/Imaging/ImagingTasksPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/tasks/imaging-tasks-history.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ApplicationUserGroups/ManageUserGroupPage.razor",
+    "tab": "@Loc[LocKeys.User.General]",
+    "title": "General",
+    "href": "ui/administration/user-groups-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ApplicationUserGroups/ManageUserGroupPage.razor",
+    "tab": "@Loc[LocKeys.User.Permissions]",
+    "title": "Permissions",
+    "href": "ui/administration/user-groups-permissions.html",
+    "label": "Permissions"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ApplicationUserGroups/ManageUserGroupPage.razor",
+    "tab": "@Loc[LocKeys.UserGroup.Members]",
+    "title": "Assigned Users",
+    "href": "ui/administration/user-groups-members.html",
+    "label": "Assigned Users"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/WinPeEnvironments/ManageWinPe.razor",
+    "tab": "@Loc[LocKeys.User.General]",
+    "title": "General",
+    "href": "ui/administration/winpe-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/WinPeEnvironments/ManageWinPe.razor",
+    "tab": "@Loc[LocKeys.Image.Configuration]",
+    "title": "Configuration",
+    "href": "ui/administration/winpe-configuration.html",
+    "label": "Configuration"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/WinPeEnvironments/ManageWinPe.razor",
+    "tab": "@Loc[LocKeys.Ui.ManageWinPe.ModelMatching]",
+    "title": "Model matching",
+    "href": "ui/administration/winpe-model-matching.html",
+    "label": "Model matching"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/WinPeEnvironments/ManageWinPe.razor",
+    "tab": "@Loc[LocKeys.Ui.DeploymentDriversTab.Drivers]",
+    "title": "Drivers",
+    "href": "ui/administration/winpe-drivers.html",
+    "label": "Drivers"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/WinPeBuilder/WinPeBuilderSetup.razor",
+    "tab": "@Loc[LocKeys.Image.VersionStatus]",
+    "title": "Status",
+    "href": "ui/administration/winpe-builder-status.html",
+    "label": "Status"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/WinPeBuilder/WinPeBuilderSetup.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/administration/winpe-builder-history.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/ImagingInfrastructurePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ImagingInfrastructurePage.WinPEBootEnvironments]",
+    "title": "WinPE Boot Environments",
+    "href": "ui/administration/winpe-boot-variants.html",
+    "label": "WinPE Boot Environments"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/ImagingInfrastructurePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ImagingInfrastructurePage.WinPEBuilder]",
+    "title": "WinPE Builder",
+    "href": "ui/administration/winpe-builder.html",
+    "label": "WinPE Builder"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/SharedResources/UserAudiences/ManageUserAudiencePage.razor",
+    "tab": "@Loc[LocKeys.User.General]",
+    "title": "General",
+    "href": "ui/administration/user-audiences-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/SharedResources/UserAudiences/ManageUserAudiencePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ManageUserAudiencePage.IncludedMembers]",
+    "title": "Included members",
+    "href": "ui/administration/user-audiences-included-members.html",
+    "label": "Included members"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/SharedResources/UserAudiences/ManageUserAudiencePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ManageUserAudiencePage.ExcludedMembers]",
+    "title": "Excluded members",
+    "href": "ui/administration/user-audiences-excluded-members.html",
+    "label": "Excluded members"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/Directories/ManageDirectoryPage.razor",
+    "tab": "@Loc[LocKeys.Image.Configuration]",
+    "title": "Configuration",
+    "href": "ui/shared-resources/directories-connection-configuration.html",
+    "label": "Configuration"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/Directories/ManageDirectoryPage.razor",
+    "tab": "@Loc[LocKeys.Common.Users]",
+    "title": "Users",
+    "href": "ui/shared-resources/directory-users.html",
+    "label": "Users"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/Directories/ManageDirectoryPage.razor",
+    "tab": "@Loc[LocKeys.Device.Groups]",
+    "title": "Groups",
+    "href": "ui/shared-resources/directory-groups.html",
+    "label": "Groups"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/Directories/ManageDirectoryPage.razor",
+    "tab": "@Loc[LocKeys.Group.Devices]",
+    "title": "Devices",
+    "href": "ui/shared-resources/directory-devices.html",
+    "label": "Devices"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/Directories/ManageDirectoryPage.razor",
+    "tab": "@Loc[LocKeys.Ui.ManageDirectoryPage.OUs]",
+    "title": "OUs",
+    "href": "ui/shared-resources/directory-ous.html",
+    "label": "OUs"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ApplicationUserGroups/ManageUserGroupPage.razor",
+    "tab": "@Loc[LocKeys.Ui.ManageUserGroupPage.DirectoryGroups]",
+    "title": "Directory groups",
+    "href": "ui/administration/entra-directory-groups.html",
+    "label": "Directory groups"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Shared/ActionHistoryTab.razor",
+    "tab": "@Loc[LocKeys.Ui.ImagingHistoryTab.Audit]",
+    "title": "Audit",
+    "href": "ui/policies-actions/action-history-audit.html",
+    "label": "Audit"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Shared/ActionHistoryTab.razor",
+    "tab": "@Loc[LocKeys.Ui.ActionExecutionHistoryTab.Deployments]",
+    "title": "Deployments",
+    "href": "ui/policies-actions/action-history-deployments.html",
+    "label": "Deployments"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/SiteServices/ManageSiteServicePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ManageSiteServicePage.PXETFTP]",
+    "title": "PXE / TFTP",
+    "href": "ui/administration/site-services-pxe.html",
+    "label": "PXE / TFTP"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/PxeProxy/PxeProxyTab.razor",
+    "tab": "@Loc[LocKeys.Ui.PxeProxyTab.LiveActivity]",
+    "title": "Live Activity",
+    "href": "ui/administration/pxe-proxy-live-activity.html",
+    "label": "Live Activity"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/Tftp/PxeTftpTab.razor",
+    "tab": "@Loc[LocKeys.Ui.PxeProxyTab.LiveActivity]",
+    "title": "Live Activity",
+    "href": "ui/administration/tftp-live-activity.html",
+    "label": "Live Activity"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/ServerAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.User.Email]",
+    "title": "Email",
+    "href": "ui/administration/email-notifications.html",
+    "label": "Email"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/ServerAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Ui.ServerAdministrationPage.TaskScheduler]",
+    "title": "Task Scheduler",
+    "href": "ui/tasks/scheduler.html",
+    "label": "Task Scheduler"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/ServerAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Ui.ServerAdministrationPage.DirectoryConnections]",
+    "title": "Directory Connections",
+    "href": "ui/shared-resources/directories.html",
+    "label": "Directory Connections"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/Directories/Users/DirectoryUserPage.razor",
+    "tab": "@Loc[LocKeys.User.General]",
+    "title": "General",
+    "href": "ui/shared-resources/directory-user-details-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/Directories/Users/DirectoryUserPage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/shared-resources/directory-user-details-history.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/Directories/Users/DirectoryUserPage.razor",
+    "tab": "@Loc[LocKeys.Ui.ManagePolicyPage.SelfService]",
+    "title": "Self Service",
+    "href": "ui/shared-resources/directory-user-details-self-service.html",
+    "label": "Self Service"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/ImagePrepProfiles/ManageImagePrepProfilePage.razor",
+    "tab": "@Loc[LocKeys.Device.Relations]",
+    "title": "Relations",
+    "href": "ui/imaging/imaging-relations.html",
+    "label": "Relations"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/ImagePrepProfiles/ManageImagePrepProfilePage.razor",
+    "tab": "@Loc[LocKeys.Policy.Activity]",
+    "title": "History",
+    "href": "ui/imaging/image-prep-history.html",
+    "label": "History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/Shared/ImagingHistoryTab.razor",
+    "tab": "@Loc[LocKeys.Ui.ImagingHistoryTab.Audit]",
+    "title": "Audit",
+    "href": "ui/imaging/imaging-history-audit.html",
+    "label": "Audit"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/Shared/ImagingHistoryTab.razor",
+    "tab": "@(Kind == ImagingItemKind.ImagePrepProfile ? UiText.Get(LocKeys.Ui.ImagingHistoryTab.Authorizations) : UiText.Get(LocKeys.Ui.ActionExecutionHistoryTab.Deployments))",
+    "title": "Deployments",
+    "href": "ui/imaging/imaging-history-deployments.html",
+    "label": "Deployments",
+    "variants": [
+      {
+        "label": "Authorizations",
+        "href": "ui/imaging/imaging-history-authorizations.html"
+      }
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Policies/ManagePolicyPage.razor",
+    "tab": "@Loc[LocKeys.Device.Relations]",
+    "title": "Relations",
+    "href": "ui/policies-actions/policy-relations.html",
+    "label": "Relations"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Policies/PolicyActivityTab.razor",
+    "tab": "@Loc[LocKeys.Policy.ClientResults]",
+    "title": "Client results",
+    "href": "ui/policies-actions/policies-client-results.html",
+    "label": "Client results"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Policies/PolicyActivityTab.razor",
+    "tab": "@Loc[LocKeys.Policy.PublishedVersions]",
+    "title": "Published versions",
+    "href": "ui/policies-actions/policies-published-versions.html",
+    "label": "Published versions"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Policies/PolicyActivityTab.razor",
+    "tab": "@Loc[LocKeys.Policy.AuditHistory]",
+    "title": "Audit history",
+    "href": "ui/policies-actions/policies-audit-history.html",
+    "label": "Audit history"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Reports/Devices/DevicesReportPage.razor",
+    "tab": "@Loc[LocKeys.Ui.DevicesReportPage.Report]",
+    "title": "Report",
+    "href": "ui/reports/device-reports-report.html",
+    "label": "Report"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Reports/Devices/DevicesReportPage.razor",
+    "tab": "@Loc[LocKeys.Ui.DevicesReportPage.SavedReports]",
+    "title": "Saved Reports",
+    "href": "ui/reports/device-reports-saved-reports.html",
+    "label": "Saved Reports"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Reports/Devices/DevicesReportPage.razor",
+    "tab": "@Loc[LocKeys.Ui.DevicesReportPage.DeviceStats]",
+    "title": "Device Stats",
+    "href": "ui/reports/device-stats.html",
+    "label": "Device Stats"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Reports/Software/SoftwareReportPage.razor",
+    "tab": "@Loc[LocKeys.Device.Software]",
+    "title": "Software",
+    "href": "ui/reports/software-reports.html",
+    "label": "Software"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Reports/Users/UserDeviceHistoryTab.razor",
+    "tab": "@Loc[LocKeys.Ui.DevicesReportPage.SavedReports]",
+    "title": "Saved Reports",
+    "href": "ui/reports/user-reports-saved-reports.html",
+    "label": "Saved Reports"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Reports/Users/UserDeviceHistoryTab.razor",
+    "tab": "@Loc[LocKeys.Ui.ManagePolicyPage.SelfService]",
+    "title": "Self Service",
+    "href": "ui/reports/user-reports-self-service.html",
+    "label": "Self Service"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Reports/Users/UserDeviceHistoryTab.razor",
+    "tab": "@Loc[LocKeys.Ui.UserDeviceHistoryTab.DeviceHistory]",
+    "title": "Login History",
+    "href": "ui/reports/user-reports-login-history.html",
+    "label": "Login History"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/AgentSettings/AgentAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Ui.AgentAdministrationPage.AgentTools]",
+    "title": "Agent tools",
+    "href": "ui/administration/agent-tools.html",
+    "label": "Agent tools"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/AgentSettings/AgentAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Ui.AgentAdministrationPage.RemoteAccess]",
+    "title": "Remote access",
+    "href": "ui/administration/remote-access.html",
+    "label": "Remote access"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/AgentSettings/RemoteAccess/RemoteAccessSettingsTab.razor",
+    "tab": "@Loc[LocKeys.Ui.RemoteAccessSettingsTab.GlobalConfiguration]",
+    "title": "Global configuration",
+    "href": "ui/administration/remote-access-global.html",
+    "label": "Global configuration"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/AgentSettings/RemoteAccess/RemoteAccessSettingsTab.razor",
+    "tab": "@Loc[LocKeys.Ui.OuNamingRulesPage.Rules]",
+    "title": "Rules",
+    "href": "ui/administration/remote-access-rules.html",
+    "label": "Rules"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/HelpDeskSettings/HelpDeskAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Device.Categories]",
+    "title": "Categories",
+    "href": "ui/administration/helpdesk-categories.html",
+    "label": "Categories"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/HelpDeskSettings/HelpDeskAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Ui.HelpDeskAdministrationPage.Queues]",
+    "title": "Queues",
+    "href": "ui/administration/helpdesk-queues.html",
+    "label": "Queues"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/HelpDeskSettings/HelpDeskAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Ui.HelpDeskAdministrationPage.RoutingRules]",
+    "title": "Routing Rules",
+    "href": "ui/administration/helpdesk-routing.html",
+    "label": "Routing Rules"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/HelpDeskSettings/HelpDeskAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Ui.HelpDeskAdministrationPage.Categorization]",
+    "title": "Categorization",
+    "href": "ui/administration/helpdesk-categorization.html",
+    "label": "Categorization"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/HelpDeskSettings/HelpDeskAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Ui.HelpDeskAdministrationPage.QueueAssignment]",
+    "title": "Queue Assignment",
+    "href": "ui/administration/helpdesk-assignment.html",
+    "label": "Queue Assignment"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/ImagingInfrastructurePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ImagingInfrastructurePage.Multicast]",
+    "title": "Multicast",
+    "href": "ui/administration/imaging-multicast.html",
+    "label": "Multicast"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/Certificates/CertificateAuthorityTab.razor",
+    "tab": "@Loc[LocKeys.Ui.CertificateAuthorityTab.Root]",
+    "title": "Root CA",
+    "href": "ui/administration/certificates-authority.html",
+    "label": "Root CA"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/Certificates/CertificateAuthorityTab.razor",
+    "tab": "@Loc[LocKeys.Ui.CertificateAuthorityTab.Web]",
+    "title": "Server HTTPS",
+    "href": "ui/administration/certificates-https.html",
+    "label": "Server HTTPS"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/Directories/Users/DirectoryUserPage.razor",
+    "tab": "@Loc[LocKeys.Ui.DeviceHistoryTab.Notifications]",
+    "title": "Notifications",
+    "href": "ui/shared-resources/directory-user-notifications.html",
+    "label": "Notifications"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/Directories/Users/DirectoryUserPage.razor",
+    "tab": "@Loc[LocKeys.Ui.AdministrationNavigationGroup.HelpDesk]",
+    "title": "Help Desk",
+    "href": "ui/shared-resources/directory-user-helpdesk.html",
+    "label": "Help Desk"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/ServerAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Ui.ServerAdministrationPage.Backup]",
+    "title": "Backup",
+    "href": "ui/administration/server-backup.html",
+    "label": "Backup"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/ServerAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Ui.ServerAdministrationPage.MicrosoftEntra]",
+    "title": "Microsoft Entra",
+    "href": "ui/administration/entra.html",
+    "label": "Microsoft Entra"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/ServerAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Ui.ServerAdministrationPage.ReplicationSettings]",
+    "title": "Replication Settings",
+    "href": "ui/administration/storage-replication-settings.html",
+    "label": "Replication Settings"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/ServerAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Ui.ServerAdministrationPage.ReplicationStatus]",
+    "title": "Replication Status",
+    "href": "ui/administration/storage-replication-status.html",
+    "label": "Replication Status"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/ServerAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Ui.ProfessionalSupportTab.ProfessionalSupport]",
+    "title": "Professional Support",
+    "href": "resources/professional-support.html",
+    "label": "Professional Support"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/SiteServices/ManageSiteServicePage.razor",
+    "tab": "@Loc[LocKeys.Image.VersionStorage]",
+    "title": "Storage",
+    "href": "ui/administration/site-services-storage.html",
+    "label": "Storage"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/DeviceHistoryTab.razor",
+    "tab": "@Loc[LocKeys.Ui.AdministrationNavigationGroup.HelpDesk]",
+    "title": "Help Desk",
+    "href": "ui/devices/device-history-helpdesk.html",
+    "label": "Help Desk"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Groups/ManageDeviceGroupPage.razor",
+    "tab": "@Loc[LocKeys.Ui.DeviceGroupPowerSchedulesTab.PowerSchedules]",
+    "title": "Power schedules",
+    "href": "ui/devices/device-groups-power.html",
+    "label": "Power schedules"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DeploymentRules/ManageDeploymentRulePage.razor",
+    "tab": "@Loc[LocKeys.User.General]",
+    "title": "General",
+    "href": "ui/imaging/deployment-rules-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DeploymentRules/ManageDeploymentRulePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ManageDeploymentRulePage.Deployment]",
+    "title": "Deployment",
+    "href": "ui/imaging/deployment-rules-deployment.html",
+    "label": "Deployment"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DeploymentRules/ManageDeploymentRulePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ManageDeploymentRulePage.Matching]",
+    "title": "Matching",
+    "href": "ui/imaging/deployment-rules-matching.html",
+    "label": "Matching"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/Images/ManageImagePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ManageImagePage.Replication]",
+    "title": "Replication",
+    "href": "ui/imaging/images-replication.html",
+    "label": "Replication"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/OuNamingRules/ManageOuNamingRulePage.razor",
+    "tab": "@Loc[LocKeys.User.General]",
+    "title": "General",
+    "href": "ui/imaging/ou-naming-rules-general.html",
+    "label": "General"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/OuNamingRules/ManageOuNamingRulePage.razor",
+    "tab": "@Loc[LocKeys.Ui.ManageOuNamingRulePage.MatchingRules]",
+    "title": "Matching Rules",
+    "href": "ui/imaging/ou-naming-rules-matching-rules.html",
+    "label": "Matching Rules"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Tasks/Imaging/ImagingTasksPage.razor",
+    "tab": "@Loc[LocKeys.Ui.ImagingInfrastructurePage.Multicast]",
+    "title": "Multicast",
+    "href": "ui/tasks/imaging-multicast-sessions.html",
+    "label": "Multicast"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/HelpDeskSettings/HelpDeskAdministrationPage.razor",
+    "tab": "@Loc[\"HelpDesk.Scope\"]",
+    "title": "Scope",
+    "href": "ui/administration/helpdesk-settings-scope.html",
+    "label": "Scope"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/HelpDeskSettings/HelpDeskScopeTab.razor",
+    "tab": "@Loc[LocKeys.Ui.NavMenu.DeviceGroups]",
+    "title": "Device Groups",
+    "href": "ui/administration/helpdesk-settings-device-groups.html",
+    "label": "Device Groups"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/HelpDeskSettings/HelpDeskScopeTab.razor",
+    "tab": "@Loc[LocKeys.Ui.NavMenu.UserAudiences]",
+    "title": "User Audiences",
+    "href": "ui/administration/helpdesk-settings-user-audiences.html",
+    "label": "User Audiences"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/SharedResources/UserAudiences/ManageUserAudiencePage.razor",
+    "tab": "@Loc[\"Audience.ResolvedUsers\"]",
+    "title": "Resolved users",
+    "href": "ui/administration/user-audiences-resolved-users.html",
+    "label": "Resolved users"
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/ServerAdministrationPage.razor",
+    "tab": "@Loc[LocKeys.Common.StorageProviders]",
+    "title": "Storage Providers",
+    "href": "ui/administration/storage-providers.html",
+    "label": "Storage Providers",
+    "occurrence": 1
+  }
+]

@@ -1,0 +1,88 @@
+@using CloneDeploy_Server.UI.Pages.Devices.Devices.Shared
+@using CloneDeploy_Server.UI.Pages.Devices.Groups.Dialogs
+@inject PolicyService PolicyService
+@inject IAuthorizationService Authorization
+@inject AuthenticationStateProvider Authentication
+
+<div class="@(ActionSectionId is null ? "pb-4" : "")">
+    @if (_loading) { <MudProgressLinear Indeterminate="true"/> }
+    @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+    @if (_state is not null && !_loading)
+    {
+        <DeviceTabAction SectionId="ActionSectionId">
+        <MudStack Row="true" Justify="Justify.FlexEnd" Class="@(ActionSectionId is null ? "section-action-bar" : "")">
+            <MudButton OnClick="@Snackbar.GuardAction(() => _busy || !_canEdit, UiText.Get(LocKeys.Ui.TargetPolicies.YouDoNotHavePermissionToEditPolicies), OnEditClicked)" Disabled="@(_busy)" Variant="Variant.Filled"
+                       Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">@Loc[LocKeys.Ui.TargetPolicies.EditAssignedPolicies]</MudButton>
+        </MudStack>
+        </DeviceTabAction>
+        <MudDataGrid T="TargetPolicyAssignmentDto" Items="@_state.Assignments.Where(MatchesSearch).OrderBy(x => x.ExecutionPriority).ThenBy(x => x.PolicyId)"
+                     Dense="true" Elevation="0" Outlined="true" Hover="true" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize">
+            <ToolBarContent>
+                <MudIcon Icon="@Icons.Material.Outlined.VerifiedUser" Color="Color.Primary"/>
+                <MudText Typo="Typo.h6">@UiText.Get(LocKeys.Ui.TargetPolicies.AssignedPolicies0, (_state.Assignments.Count))</MudText>
+                <MudSpacer/>
+                <MudTextField T="string" @bind-Value="_search" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Common.Search]" aria-label="@Loc[LocKeys.Ui.TargetPolicies.SearchAssignedPolicies]"
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" Class="device-inventory-search"/>
+            </ToolBarContent>
+            <Columns>
+                <PropertyColumn Property="x => x.ExecutionPriority" Title="@Loc[LocKeys.Group.Priority]"/>
+                <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Group.Policy]">
+                    <CellTemplate><MudLink Href="@($"/policies/{context.Item.PolicyId}/targeting")">@context.Item.Name</MudLink></CellTemplate>
+                </PropertyColumn>
+                @if (Target.IsOu)
+                {
+                    <TemplateColumn Title="@Loc[LocKeys.Ui.TargetPolicies.Scope]" Sortable="false" Filterable="false">
+                        <CellTemplate>@(context.Item.IncludeDescendants ? UiText.Get(LocKeys.Ui.TargetPolicies.ThisLocationAndDescendants) : UiText.Get(LocKeys.Ui.TargetPolicies.ThisLocationOnly))</CellTemplate>
+                    </TemplateColumn>
+                }
+            </Columns>
+            <PagerContent><MudDataGridPager T="TargetPolicyAssignmentDto"/></PagerContent>
+            <NoRecordsContent><MudText>@Loc[LocKeys.Group.NoPolicies]</MudText></NoRecordsContent>
+        </MudDataGrid>
+    }
+</div>
+
+@code {
+    [Parameter] public object? ActionSectionId { get; set; }
+    [Parameter, EditorRequired] public PolicyTargetKeyDto Target { get; set; } = null!;
+    private PolicyTargetKeyDto? _loadedTarget;
+    private TargetPolicyStateDto? _state;
+    private bool _loading, _busy, _canEdit;
+    private string? _error, _search;
+    private int _version;
+    private bool MatchesSearch(TargetPolicyAssignmentDto policy) => string.IsNullOrWhiteSpace(_search)
+        || policy.Name.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedTarget != Target) { _loadedTarget = Target; _search = null; await LoadAsync(); }
+    }
+    private async Task LoadAsync()
+    {
+        var version = ++_version;
+        var target = Target;
+        _loading = true; _error = null; _state = null;
+        var canEdit = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.PolicyEdit)).Succeeded;
+        var result = await PolicyService.GetTargetPoliciesAsync(target);
+        if (version != _version) return;
+        _canEdit = canEdit;
+        _state = result.Data;
+        if (!result.Success) _error = Loc[result.Error!.Code, result.Error.Args];
+        _loading = false;
+    }
+    private async Task OnEditClicked()
+    {
+        if (_busy || !_canEdit || _loading) return;
+        _busy = true;
+        var target = Target;
+        try
+        {
+            var parameters = new DialogParameters<DeviceGroupPoliciesDialog> { { x => x.Target, target } };
+            var options = new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = false };
+            var dialog = await Dialog.ShowAsync<DeviceGroupPoliciesDialog>(UiText.Get(LocKeys.Ui.TargetPolicies.EditAssignedPolicies), parameters, options);
+            if (await dialog.Result is { Canceled: false } && Target == target) await LoadAsync();
+        }
+        finally { _busy = false; }
+    }
+}

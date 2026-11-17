@@ -1,0 +1,75 @@
+@using CloneDeploy_Agent.Contracts
+<MudStack Spacing="3">
+<MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DeviceEffectivePolicyTab.Trigger]</MudText>
+<PolicyEnumSelect T="PolicyTrigger" Value="Model.Trigger" ValueChanged="TriggerChanged" Label="@Loc[LocKeys.Ui.PolicyTriggers.RunWhen]" />
+@if (Model.Trigger == PolicyTrigger.SelfServiceOnly)
+{
+<MudSelect T="bool" @bind-Value="Model.SelfServiceRunAsUser" Label="@Loc[LocKeys.Ui.PolicyTriggers.RunAs]" Variant="Variant.Outlined">
+<MudSelectItem T="bool" Value="false">@Loc[LocKeys.Ui.PolicyTriggers.SYSTEM]</MudSelectItem>
+<MudSelectItem T="bool" Value="true">@Loc[LocKeys.Ui.PolicyTriggers.RequestingUser]</MudSelectItem>
+</MudSelect>
+}
+else
+{
+<MudText Typo="Typo.body2">@UiText.Get(LocKeys.Ui.PolicyReview.RunAs0, ((Model.Trigger == PolicyTrigger.Login ? UiText.Get(LocKeys.Ui.PolicyReview.LoggedInUser) : "SYSTEM")))</MudText>
+<MudDivider Class="my-2"/>
+<MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ManagePoliciesPage.Frequency]</MudText>
+<PolicyEnumSelect T="PolicyFrequency" Value="Model.Frequency" ValueChanged="FrequencyChanged" Label="@Loc[LocKeys.Ui.ManagePoliciesPage.Frequency]" Options="PolicyService.Frequencies(Model.Trigger)" />
+@if (Model.Frequency == PolicyFrequency.OncePerWeek)
+{
+<MudSelect T="int" @bind-Value="Model.SubFrequency" Label="@Loc[LocKeys.Ui.PolicyTriggers.DayOfWeek]" Variant="Variant.Outlined">
+@foreach (var day in System.Enum.GetValues<DayOfWeek>()) { <MudSelectItem Value="@((int)day)">@UiText.Label(day)</MudSelectItem> }
+</MudSelect>
+}
+else if (Model.Frequency == PolicyFrequency.OncePerMonth)
+{ <MudNumericField T="int" @bind-Value="Model.SubFrequency" Label="@Loc[LocKeys.Ui.PolicyTriggers.DayOfMonth]" Min="1" Max="31" Variant="Variant.Outlined" /> }
+else if (Model.Frequency is PolicyFrequency.EveryXhours or PolicyFrequency.EveryXdays)
+{ <MudNumericField T="int" @bind-Value="Model.SubFrequency" Label="@(Model.Frequency == PolicyFrequency.EveryXhours ? UiText.Get(LocKeys.Ui.PolicyTriggers.EveryXHours) : UiText.Get(LocKeys.Ui.PolicyTriggers.EveryXDays))" Min="1" Variant="Variant.Outlined" /> }
+<MudDivider Class="my-2"/>
+<MudText Typo="Typo.h6">@Loc[LocKeys.Ui.PolicyTriggers.Timing]</MudText>
+<MudDatePicker Date="Model.StartDateUtc" DateChanged="DateChanged" Label="@Loc[LocKeys.Ui.PolicyTriggers.StartDateUTC]" Required="true" Variant="Variant.Outlined" />
+@if (Model.Frequency is PolicyFrequency.OncePerWeek or PolicyFrequency.OncePerMonth)
+{ <PolicyEnumSelect T="PolicyFrequencyMissedAction" @bind-Value="Model.MissedAction" Label="@Loc[LocKeys.Ui.PolicyTriggers.IfScheduleIsMissed]"  /> }
+}
+<MudDivider Class="my-2"/>
+<MudText Typo="Typo.h6">@Loc[LocKeys.Ui.PolicyTriggers.AllowedStartWindow]</MudText>
+<MudSwitch T="bool" @bind-Value="Model.StartWindowEnabled" Label="@Loc[LocKeys.Ui.PolicyTriggers.LimitWhenADuePolicyMayStart]" Color="Color.Primary" />
+@if (Model.StartWindowEnabled)
+{
+    @if (UsesFrequencyDay)
+    {
+        <MudText Typo="Typo.body2">@UiText.Get(LocKeys.Ui.PolicyTriggers.TheWindowOpensOn0UsingTheFrequencyS, (((DayOfWeek)Model.SubFrequency)))</MudText>
+    }
+    else
+    {
+    <MudCheckBox T="bool" Value="@(Model.StartWindowDays == PolicyWindowDays.EveryDay)"
+                 ValueChanged="@(value => Model.StartWindowDays = value ? PolicyWindowDays.EveryDay : PolicyWindowDays.None)" Label="@Loc[LocKeys.Ui.PolicyTriggers.EveryDay]" />
+    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1">
+        @foreach (var day in System.Enum.GetValues<DayOfWeek>())
+        {
+            var selectedDay = day;
+            <MudCheckBox T="bool" Value="@HasDay(selectedDay)" ValueChanged="@(value => SetDay(selectedDay, value))" Label="@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetDayName(day)" />
+        }
+    </MudStack>
+    }
+    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="3">
+        <MudTimePicker @bind-Time="Model.StartWindowFrom" Label="@Loc[LocKeys.Ui.PolicyTriggers.From]" Required="true" Variant="Variant.Outlined" />
+        <MudTimePicker @bind-Time="Model.StartWindowUntil" Label="@Loc[LocKeys.Ui.PolicyTriggers.Until]" Required="true" Variant="Variant.Outlined" />
+    </MudStack>
+}
+</MudStack>
+@code {
+[Parameter, EditorRequired] public PolicyDetailsDto Details { get; set; } = null!;
+private Policy Model => Details.Policy;
+private bool UsesFrequencyDay => Model.Frequency == PolicyFrequency.OncePerWeek
+    && Model.MissedAction == PolicyFrequencyMissedAction.ScheduleDayOnly;
+private bool HasDay(DayOfWeek day) => (Model.StartWindowDays & (PolicyWindowDays)(1 << (int)day)) != 0;
+private void SetDay(DayOfWeek day, bool enabled)
+{
+    var flag = (PolicyWindowDays)(1 << (int)day);
+    Model.StartWindowDays = enabled ? Model.StartWindowDays | flag : Model.StartWindowDays & ~flag;
+}
+private void TriggerChanged(PolicyTrigger value) { Model.Trigger = value; if (value != PolicyTrigger.SelfServiceOnly) Model.SelfServiceRunAsUser = false; if (!PolicyService.Frequencies(value).Contains(Model.Frequency)) FrequencyChanged(PolicyFrequency.Ongoing); }
+private void FrequencyChanged(PolicyFrequency value) { Model.Frequency = value; Model.SubFrequency = value is PolicyFrequency.OncePerMonth or PolicyFrequency.EveryXdays or PolicyFrequency.EveryXhours ? 1 : 0; }
+private void DateChanged(DateTime? value) { if (value.HasValue) Model.StartDateUtc = DateTime.SpecifyKind(value.Value.Date, DateTimeKind.Utc); }
+}

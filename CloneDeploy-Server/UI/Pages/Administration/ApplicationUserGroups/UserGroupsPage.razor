@@ -1,0 +1,120 @@
+@page "/usergroups/manage"
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@inject AppUserService AppUserService
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.AdministrationNavigationGroup.ApplicationUserGroups]" />
+<ActionButtons>
+    <MainButton>
+        <MudButton OnClick="OnNewClicked" Disabled="_saving" StartIcon="@Icons.Material.Filled.Add">@Loc[LocKeys.UserGroup.NewGroup]</MudButton>
+    </MainButton>
+</ActionButtons>
+<MudPaper Class="device-list-filters device-search-panel" Elevation="0">
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudTextField T="string" ValueChanged="OnSearchChanged" DebounceInterval="300" Variant="Variant.Outlined"
+                          Placeholder="@($"{Loc[LocKeys.Common.Search]}...")" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+<MudDataGrid T="AppUserGroup" Items="_groups" Loading="_loading" Dense="true" Hover="true" Elevation="0"
+             MultiSelection="true" @bind-SelectedItems="_selectedGroups" RowsPerPage="@Constants.UI.DefaultPageSize"
+             Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" ColumnResizeMode="ResizeMode.Column" Class="device-list-grid mb-8" Outlined="true" SelectOnRowClick="false">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.Groups" Color="Color.Primary"/>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.AdministrationNavigationGroup.ApplicationUserGroups]</MudText>
+        <MudSpacer/>
+        <div class="grid-toolbar-actions">
+            <GridSelectionCount Count="_selectedGroups.Count"/>
+            @if (_selectedGroups.Count > 0)
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Delete"
+                       Disabled="@(_saving || _loading)" OnClick="@(() => OnDeleteClicked(_selectedGroups.ToArray()))">@Loc[LocKeys.Common.DeleteSelected]</MudButton>
+        }
+        </div>
+    </ToolBarContent>
+    <Columns>
+        <SelectColumn T="AppUserGroup" />
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]" ><CellTemplate><MudLink Class="device-name-link" Href="@($"/usergroups/manage/{context.Item.Id}")">@context.Item.Name</MudLink></CellTemplate></PropertyColumn>
+        <TemplateColumn Title="@Loc[LocKeys.User.Membership]">
+            <CellTemplate>@(context.Item.GrantAdministrator ? Constants.UserMembership.Admin : Constants.UserMembership.User)</CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.NewUserGroupDialog.RequireWebMFA]">
+            <CellTemplate><MudIcon Icon="@((context.Item.RequireWebMfa || context.Item.GrantAdministrator) ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" Color="@((context.Item.RequireWebMfa || context.Item.GrantAdministrator) ? Color.Success : Color.Default)" /></CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.NewUserGroupDialog.RequireImagingMFA]">
+            <CellTemplate><MudIcon Icon="@(context.Item.RequireImagingMfa ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" Color="@(context.Item.RequireImagingMfa ? Color.Success : Color.Default)" /></CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+            <CellTemplate>
+
+                <MudTooltip Placement="Placement.Left" Text="@($"{Loc[LocKeys.Common.Delete]} - {context.Item.Name}")">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Primary" Disabled="@(_saving || _loading)"
+                                   OnClick="@(() => OnDeleteClicked([context.Item]))" aria-label="@($"{Loc[LocKeys.Common.Delete]} {context.Item.Name}")" />
+                </MudTooltip>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent><MudDataGridPager T="AppUserGroup" /></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.UserGroup.NoGroups]</MudText></NoRecordsContent>
+</MudDataGrid>
+
+@code {
+    private List<AppUserGroup> _groups = [];
+    private HashSet<AppUserGroup> _selectedGroups = [];
+    private string? _search;
+    private bool _loading = true;
+    private bool _saving;
+    private int _loadVersion;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var version = ++_loadVersion;
+        _loading = true;
+        var result = await AppUserService.GetGroupsAsync(_search);
+        if (version != _loadVersion) return;
+        _groups = result.Data ?? [];
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _selectedGroups.Clear();
+        _loading = false;
+    }
+
+    private async Task OnSearchChanged(string? value)
+    {
+        _search = value;
+        await LoadAsync();
+    }
+
+    private async Task OnNewClicked()
+    {
+        var dialog = await Dialog.ShowAsync<NewUserGroupDialog>(Constants.UI.StandardDialogBox);
+        if (await dialog.Result is { Canceled: false, Data: true }) await LoadAsync();
+    }
+
+    private async Task OnDeleteClicked(AppUserGroup[] groups)
+    {
+        if (_saving || _loading || groups.Length == 0) return;
+        _saving = true;
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, groups.Length == 1 ? Loc[LocKeys.UserGroup.ConfirmDelete, groups[0].Name] : Loc[LocKeys.UserGroup.ConfirmDeleteMany, groups.Length] },
+            { x => x.ButtonText, Loc[LocKeys.Common.Delete] },
+            { x => x.Color, Color.Error }
+        };
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        if (await dialog.Result is { Canceled: false, Data: true })
+        {
+            var result = await AppUserService.DeleteGroupsAsync(groups.Select(x => x.Id));
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[LocKeys.Common.DeletedMany], Severity.Success);
+                await LoadAsync();
+            }
+            else
+                Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        _saving = false;
+    }
+}

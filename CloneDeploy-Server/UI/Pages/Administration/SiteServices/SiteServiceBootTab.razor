@@ -1,0 +1,90 @@
+@using CloneDeploy.SiteServices
+@using CloneDeploy_Server.UI.Pages.Devices.Devices.Shared
+@inject SiteService Services
+@inject AuthenticationStateProvider Authentication
+
+@if (Service.State != SiteRegistrationState.Approved)
+{
+    <MudAlert Severity="Severity.Info">@Loc[LocKeys.Ui.SiteServiceBootTab.ApproveThisSiteServiceBeforeConfiguringProxyDHCPAndTFTP]</MudAlert>
+}
+else
+{
+    <div class="section-action-bar">
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Disabled="_saving" OnClick="SaveAsync">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+    </div>
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="6">
+            <MudStack Spacing="3">
+                <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.SiteServiceBootTab.BootServices]</MudText>
+                <MudSwitch @bind-Value="_settings.PxeEnabled" Label="@Loc[LocKeys.Ui.SiteServiceBootTab.EnableProxyDHCP]" Color="Color.Primary" Disabled="_saving" />
+                <MudSwitch @bind-Value="_settings.TftpEnabled" Label="@Loc[LocKeys.Ui.SiteServiceBootTab.EnableTFTP]" Color="Color.Primary" Disabled="_saving" />
+                <MudTextField @bind-Value="_settings.ListenAddress" Label="@Loc[LocKeys.Ui.SiteServiceBootTab.ListeningIPv4Address]" Variant="Variant.Outlined" Disabled="_saving" />
+                <MudSelect T="int" @bind-Value="_proxyPorts" Label="@Loc[LocKeys.Ui.SiteServiceBootTab.ProxyDHCPPortsUDP]" Variant="Variant.Outlined" Disabled="@(_saving || !_settings.PxeEnabled)">
+                    <MudSelectItem T="int" Value="3">@Loc[LocKeys.Ui.SiteServiceBootTab.Text67And4011]</MudSelectItem>
+                    <MudSelectItem T="int" Value="1">67</MudSelectItem>
+                    <MudSelectItem T="int" Value="2">4011</MudSelectItem>
+                    <MudSelectItem T="int" Value="0">@Loc[LocKeys.Ui.SiteServiceBootTab.None]</MudSelectItem>
+                </MudSelect>
+                <MudTextField T="string" Value="@("69")" Label="@Loc[LocKeys.Ui.SiteServiceBootTab.TFTPPortUDP]" Variant="Variant.Outlined" ReadOnly="true" />
+            </MudStack>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudStack Class="device-general device-system-information" Spacing="3">
+                <DeviceInventoryHeading Title="@Loc[LocKeys.Ui.SiteServiceBootTab.ReportedStatus]" Icon="@Icons.Material.Outlined.MonitorHeart" />
+                @if (Service.BootStatus is { } status)
+                {
+                    <MudGrid Spacing="0">
+                        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.SiteServiceBootTab.ProxyDHCP]" Value='@(status.PxeRunning ? UiText.Get(LocKeys.Scheduler.StatusRunning) : UiText.Get(LocKeys.Ui.SiteServiceBootTab.Stopped))' />
+                        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.SiteServiceBootTab.TFTP]" Value='@(status.TftpRunning ? UiText.Get(LocKeys.Scheduler.StatusRunning) : UiText.Get(LocKeys.Ui.SiteServiceBootTab.Stopped))' />
+                        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Image.Configuration]" Value='@(status.AppliedRevision == Service.Revision ? UiText.Get(LocKeys.Ui.SiteServiceBootTab.Applied) : UiText.Get(LocKeys.Ui.SiteServiceBootTab.Pending))' />
+                        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.SiteServiceBootTab.ActiveTransfers]" Value="@status.ActiveTransfers" />
+                    </MudGrid>
+                    @if (!string.IsNullOrWhiteSpace(status.Error))
+                    {
+                        <MudAlert Severity="Severity.Warning">@status.Error</MudAlert>
+                    }
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.SiteServiceBootTab.NoBootStatusHasBeenReported]</MudText>
+                }
+            </MudStack>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [Parameter, EditorRequired] public SiteServiceDetails Service { get; set; } = null!;
+    [Parameter] public EventCallback OnSaved { get; set; }
+    private SiteBootSettings _settings = new();
+    private int _proxyPorts;
+    private bool _saving;
+
+    protected override void OnInitialized()
+    {
+        _settings = Service.Boot;
+        _proxyPorts = (_settings.ListenDhcp ? 1 : 0) | (_settings.ListenProxy ? 2 : 0);
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_saving) return;
+        _saving = true;
+        try
+        {
+            var settings = _settings with
+            {
+                ListenAddress = _settings.ListenAddress.Trim(),
+                NextServer = _settings.ListenAddress.Trim(),
+                ListenDhcp = (_proxyPorts & 1) != 0,
+                ListenProxy = (_proxyPorts & 2) != 0
+            };
+            await Services.SaveBootAsync((await Authentication.GetAuthenticationStateAsync()).User, Service.Id, Service.Revision, settings);
+            await OnSaved.InvokeAsync();
+            Snackbar.Add(UiText.Get(LocKeys.Ui.SiteServiceBootTab.BootConfigurationSaved), Severity.Success);
+        }
+        catch (InvalidDataException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        catch { Snackbar.Add(UiText.Get(LocKeys.Ui.SiteServiceBootTab.UnableToSaveBootConfigurationRefreshAndTryAgain), Severity.Error); }
+        finally { _saving = false; }
+    }
+}

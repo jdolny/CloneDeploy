@@ -1,0 +1,13 @@
+--- a/socklib.h
++++ b/socklib.h
+@@ -216,6 +216,10 @@
+ ssize_t sendmsg(int s, const struct msghdr *msg, int flags);
+ ssize_t recvmsg (int fd, struct msghdr *msg, int flags);
+ 
++#ifndef _MSC_VER
++/* Read MinGW's usleep declaration before defining the Windows wrapper. */
++#include <unistd.h>
++#endif
+ #define usleep(x) Sleep((x)/1000)
+ #define sleep(x) Sleep(1000L*(x))
+ #endif /* __MINGW32__ */

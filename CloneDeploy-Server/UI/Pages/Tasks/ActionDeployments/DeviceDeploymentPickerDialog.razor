@@ -1,0 +1,36 @@
+@inject ActionDeploymentUiService Service
+@inject IStringLocalizer<LocalizationResources> Loc
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" Value="_search" ValueChanged="SearchAsync" DebounceInterval="300" Label="@Loc[LocKeys.Ui.ManageDevicesPage.SearchDevices_3aebaefc]" Variant="Variant.Outlined" />
+        <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.DeviceDeploymentPickerDialog.ShowingUpTo100MatchesSearchToNarrowThe]</MudText>
+        @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+        <MudDataGrid T="PolicyTargetDeviceDto" Items="_items" Loading="_loading" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" Dense="true">
+            <Columns>
+                <TemplateColumn Title="@Loc[LocKeys.Ui.DeviceDeploymentPickerDialog.Select]"><CellTemplate><MudCheckBox T="bool" Value="_selected.ContainsKey(context.Item.Id)" ValueChanged="@((bool value) => Select(context.Item, value))" aria-label="@(UiText.Get(LocKeys.Ui.DeviceDeploymentPickerDialog.Select0, (context.Item.Name)))" /></CellTemplate></TemplateColumn>
+                <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Dashboard.Device]" />
+                <PropertyColumn Property="x => x.Id" Title="@Loc[LocKeys.Ui.DeployActionPage.ID]" />
+            </Columns>
+        </MudDataGrid>
+    </DialogContent>
+    <DialogActions><MudText>@UiText.Get(LocKeys.Ui.GridSelectionCount.Text0Selected, (_selected.Count))</MudText><MudSpacer /><MudButton OnClick="MudDialog.Cancel">@Loc[LocKeys.Common.Cancel]</MudButton><MudButton OnClick="@(() => MudDialog.Close(DialogResult.Ok(_selected)))" Color="Color.Primary">@Loc[LocKeys.Ui.DeviceDeploymentPickerDialog.UseSelectedDevices]</MudButton></DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public Func<string?, Task<CloneDeploy_Server.Backend.Common.ServiceResult<List<PolicyTargetDeviceDto>>>>? SearchDevices { get; set; }
+    [Parameter] public Dictionary<int, string> Selected { get; set; } = [];
+    private Dictionary<int, string> _selected = [];
+    private List<PolicyTargetDeviceDto> _items = [];
+    private string? _search, _error;
+    private bool _loading;
+    private int _version;
+    protected override async Task OnInitializedAsync() { _selected = new(Selected); await SearchAsync(null); }
+    private void Select(PolicyTargetDeviceDto device, bool value) { if (value) _selected[device.Id] = device.Name; else _selected.Remove(device.Id); }
+    private async Task SearchAsync(string? text)
+    {
+        _search = text; _loading = true; var version = ++_version;
+        var result = await (SearchDevices is null ? Service.SearchDevicesAsync(text) : SearchDevices(text));
+        if (version != _version) return;
+        _items = result.Data ?? []; _error = result.Success ? null : Loc[result.Error!.Code, result.Error.Args].Value; _loading = false;
+    }
+}

@@ -1,0 +1,42 @@
+<MudBreakpointProvider OnBreakpointChanged="OnBreakpointChanged" />
+
+<MudTabs Outlined="true" Position="@_position" Rounded="false" Border="true"
+         ActivePanelIndex="@DisplayPanelIndex" ActivePanelIndexChanged="OnPanelChanged"
+         ApplyEffectsToContainer="true" Class="@Class" ActiveTabClass="@ActiveTabClass"
+         TabPanelsClass="@TabPanelsClass" Elevation="0" AlwaysShowScrollButtons="false"
+         KeepPanelsAlive="@KeepPanelsAlive">
+    @ChildContent
+</MudTabs>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public int ActivePanelIndex { get; set; }
+    [Parameter] public EventCallback<int> ActivePanelIndexChanged { get; set; }
+    [Parameter] public string? Class { get; set; } = "mt-2";
+    [Parameter] public string? ActiveTabClass { get; set; } = "active-tab";
+    [Parameter] public string? TabPanelsClass { get; set; } = "pa-4 detail-tab-content";
+    [Parameter] public bool KeepPanelsAlive { get; set; }
+    // Display positions map to the page's stable indexes, preserving routes and lazy content.
+    [Parameter] public int[]? PanelOrder { get; set; }
+
+    private int DisplayPanelIndex => PanelOrder is null
+        ? ActivePanelIndex
+        : Math.Max(0, Array.IndexOf(PanelOrder, ActivePanelIndex));
+
+    private async Task OnPanelChanged(int displayIndex)
+    {
+        if (PanelOrder is not null && (displayIndex < 0 || displayIndex >= PanelOrder.Length)) return;
+        var index = PanelOrder is null ? displayIndex : PanelOrder[displayIndex];
+        if (ActivePanelIndexChanged.HasDelegate)
+            await ActivePanelIndexChanged.InvokeAsync(index);
+        else
+            ActivePanelIndex = index;
+    }
+
+    private Position _position = Position.Left;
+
+    private void OnBreakpointChanged(Breakpoint breakpoint)
+    {
+        _position = breakpoint < Breakpoint.Md ? Position.Top : Position.Left;
+    }
+}

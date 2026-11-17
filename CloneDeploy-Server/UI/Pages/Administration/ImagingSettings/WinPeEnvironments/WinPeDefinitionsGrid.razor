@@ -1,0 +1,77 @@
+<div class="section-action-bar">
+    <MudButton OnClick="@(() => OnCreateClicked())" Color="Color.Primary" Variant="Variant.Filled"
+               StartIcon="@Icons.Material.Filled.Add">@(IsBase ? UiText.Get(LocKeys.Ui.WinPeDefinitionsGrid.CreateBase) : UiText.Get(LocKeys.Ui.ManageWinPe.CreateBootEnvironment))</MudButton>
+</div>
+<MudDataGrid T="StableGridRow<WinPeDefinition>" Items="_rows.Items" Dense="true" Hover="true"
+             RowsPerPage="15" QuickFilter="@(row => Matches(row.Value))" Class="device-list-grid winpe-grid" Outlined="true" Elevation="0">
+    <ToolBarContent>
+        <div class="winpe-grid-toolbar">
+            <MudIcon Icon="@Icons.Material.Outlined.DiscFull" Color="Color.Primary"/><MudText Typo="Typo.h6">@(IsBase ? UiText.Get(LocKeys.Ui.WinPeDefinitionsGrid.BaseImages) : UiText.Get(LocKeys.Ui.WinPeDefinitionsGrid.BootEnvironments))</MudText>
+
+            <MudTextField @bind-Value="_search" Immediate="true" Placeholder="@Loc[LocKeys.Common.Search]" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search" Clearable="true" Class="winpe-grid-search"/>
+
+        </div>
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Value.Name" Title="@Loc[LocKeys.Common.Name]">
+            <CellTemplate>
+                <MudLink OnClick="@(() => OnEditClicked(context.Item.Value.Id))">@context.Item.Value.Name</MudLink>
+                @if (context.Item.Value.NativePxe)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Info">@Loc[LocKeys.Ui.ManageWinPe.NativePXE]</MudChip>
+                }
+                @if (context.Item.Value.IsDefault)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Primary">@Loc[LocKeys.Ui.WinPeDefinitionsGrid.DefaultX64]</MudChip>
+                }
+                @if (context.Item.Value.IsArm64Default)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Primary">@Loc[LocKeys.Ui.WinPeDefinitionsGrid.DefaultARM64]</MudChip>
+                }
+            </CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Value.Description" Title="@Loc[LocKeys.Common.Description]"/>
+        <TemplateColumn Title="@(IsBase ? UiText.Get(LocKeys.Ui.WinPeDefinitionsGrid.LatestBuild) : UiText.Get(LocKeys.Ui.WinPeDefinitionsGrid.BootImage))">
+            <CellTemplate>@Version(context.Item.Value)</CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <WinPeDeleteButton Definition="context.Item.Value" Deleted="Changed"/>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <NoRecordsContent>
+        <MudText Class="pa-4">@UiText.Get(LocKeys.Ui.WinPeDefinitionsGrid.NoMatching0, ((IsBase ? UiText.Get(LocKeys.Ui.WinPeDefinitionsGrid.BaseImages_7c68bbce) : UiText.Get(LocKeys.Ui.WinPeDefinitionsGrid.BootEnvironments_e62fcb62))))</MudText>
+    </NoRecordsContent>
+    <PagerContent>
+        <MudDataGridPager T="StableGridRow<WinPeDefinition>"/>
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    private readonly StableGridRows<WinPeDefinition, int> _rows = new(x => x.Id);
+    protected override void OnParametersSet() => _rows.Update(Catalog.Definitions.Where(x => x.IsBase == IsBase));
+    [Parameter, EditorRequired] public WinPeCatalogDto Catalog { get; set; } = null!;
+    [Parameter] public bool IsBase { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+    [Parameter] public EventCallback<int> Edit { get; set; }
+    [Parameter] public EventCallback Create { get; set; }
+    private string? _search;
+    private Task OnCreateClicked() => Create.InvokeAsync();
+    private Task OnEditClicked(int id) => Edit.InvokeAsync(id);
+
+    private bool Matches(WinPeDefinition item) => string.IsNullOrWhiteSpace(_search) ||
+                                                  item.Name.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+                                                  (item.Description?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false);
+
+    private string Version(WinPeDefinition item)
+    {
+        var row = Catalog.Builds.Where(x => x.Build.DefinitionId == item.Id).OrderByDescending(x => x.Build.Number).FirstOrDefault();
+        if (row is null) return UiText.Get(LocKeys.Ui.WinPeDefinitionsGrid.NotBuilt);
+        if (IsBase) return UiText.Get(LocKeys.Ui.WinPeDefinitionsGrid.Version01, (row.Build.Number), (row.Status.State));
+        if (row.Status.State == "Ready") return item.PublishedBuildId == row.Build.Id ? UiText.Get(LocKeys.Ui.WinPeBuildHistoryTab.Ready) : UiText.Get(LocKeys.Ui.WinPeBuildHistoryTab.PreparingBootImage);
+        return row.Status.State switch { "BootPreparationFailed" => UiText.Get(LocKeys.Ui.WinPeBuildHistoryTab.BootPreparationFailed), "StorageFailed" => UiText.Get(LocKeys.Ui.WinPeBuildHistoryTab.StorageTransferFailed), "SavingToStorage" => UiText.Get(LocKeys.Ui.WinPeBuildHistoryTab.SavingToStorage), _ => row.Status.State };
+    }
+
+}

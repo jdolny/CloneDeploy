@@ -1,0 +1,35 @@
+<MudTabs @bind-ActivePanelIndex="ActivePanelIndex" KeepPanelsAlive="false"
+         TabPanelsClass="pt-4 detail-tab-content" Class="device-subtabs">
+    <MudTabPanel Text="@Loc[LocKeys.Ui.ImagingHistoryTab.Audit]">
+        <TabHelp Href="ui/policies-actions/action-history-audit.html" Title="@Loc[LocKeys.Ui.ImagingHistoryTab.Audit]" />
+        @if (_section == "audit")
+        {
+            <MudStack Class="stack-full"><ActionAuditTab ActionGuid="ActionGuid" Load="LoadAudit" /></MudStack>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Loc[LocKeys.Ui.ActionExecutionHistoryTab.Deployments]">
+        <TabHelp Href="ui/policies-actions/action-history-deployments.html" Title="@Loc[LocKeys.Ui.ActionExecutionHistoryTab.Deployments]" />
+        @if (_section == "deployments")
+        {
+            <MudStack Class="stack-full"><ActionExecutionHistoryTab ActionGuid="ActionGuid" /></MudStack>
+        }
+    </MudTabPanel>
+</MudTabs>
+@code {
+    [Parameter] public Guid ActionGuid { get; set; }
+    [Parameter, EditorRequired] public Func<Guid, Task<ServiceResult<List<AuditLog>>>> LoadAudit { get; set; } = null!;
+    [Parameter] public string InitialSection { get; set; } = "audit";
+    private string _section = "audit";
+    private int ActivePanelIndex
+    {
+        get => _section == "deployments" ? 1 : 0;
+        set => _section = value == 1 ? "deployments" : "audit";
+    }
+    private (Guid, string)? _loaded;
+    protected override void OnParametersSet()
+    {
+        if (_loaded == (ActionGuid, InitialSection)) return;
+        _loaded = (ActionGuid, InitialSection);
+        _section = InitialSection == "deployments" ? "deployments" : "audit";
+    }
+}

@@ -1,0 +1,246 @@
+@page "/devices/manage/{Id:int}"
+@attribute [Authorize(Policy = Constants.Permissions.DeviceView)]
+
+
+@inject DeviceService DeviceService
+@inject DeviceService ActivityService
+@implements IDisposable
+
+
+@if (_device is null)
+{
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true"/>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Error">@_loadError</MudAlert>
+        <MudButton OnClick="OnRetryClicked" Class="mt-2">@Loc[LocKeys.Common.Retry]</MudButton>
+    }
+}
+else
+{
+    <PageTitle>@UiText.Get(LocKeys.Ui.ManageDevicePage.Devices0, (_device.Name))</PageTitle>
+    <SectionContent SectionName="page-title">
+        <div class="device-page-heading">
+            <div class="device-heading-row">
+                <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Href="/devices/manage"
+                               Class="flex-shrink-0" aria-label="@Loc[LocKeys.Device.BackToDevices]"/>
+                <div class="device-heading-icon"><MudIcon Icon="@Icons.Material.Outlined.Computer" Size="Size.Large"/></div>
+                <div class="device-heading-copy">
+                    <div class="device-heading-name">
+                        <h1>@_device.Name</h1>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                                 Color="@(_device.ProvisionStatus == DeviceProvisionStatus.Provisioned ? Color.Success : Color.Default)">@DeviceEnrollmentLabels.Status(_device.ProvisionStatus)</MudChip>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </SectionContent>
+    <DeviceConnectionPanel Device="_device" @key="_device.Id" InventorySaved="RefreshInventoryAsync" ViewInventory="ShowInventoryAsync">
+        <HeaderActions Context="connect">
+            <DeviceDetailActions DeviceId="_device.Id" Archived="_device.ArchivedAtUtc.HasValue" Busy="_actionBusy"
+                                 ShowImaging="@(!IsMac)" Connect="connect" Rename="OnRenameClicked" Deploy="OnDeployImageClicked"
+                                 Archive="@(() => OnArchiveOrDeleteClicked(false))" Delete="@(() => OnArchiveOrDeleteClicked(true))" />
+        </HeaderActions>
+    </DeviceConnectionPanel>
+    <SectionContent SectionName="selected-device-navigation">
+        <div class="ml-4">
+            <MudNavLink Href="@($"/devices/manage/{_device.Id}")" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Computer">
+                <span style="overflow-wrap: anywhere;">@_device.Name</span>
+            </MudNavLink>
+        </div>
+    </SectionContent>
+    <div class="device-detail device-workspace">
+        <ResponsiveTabs PanelOrder="@(IsMac ? new int[] { 1, 0, 2, 3, 4 } : new int[] { 4, 1, 0, 2, 3, 5 })" @bind-ActivePanelIndex="_activePanelIndex" KeepPanelsAlive="true" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            @if (!IsMac)
+            {
+                <MudTabPanel Text="@Loc[LocKeys.Device.Imaging]" Icon="@Icons.Material.Outlined.Storage">
+                    <TabHelp Href="ui/devices/device-details-imaging.html" Title="@Loc[LocKeys.Device.Imaging]" />
+                    <DeviceImagingTab Device="_device" IsActive="@(_activePanelIndex == 4)" @key="_device.Id"/>
+                </MudTabPanel>
+            }
+            <MudTabPanel Text="@Loc[LocKeys.Device.Inventory]" Icon="@Icons.Material.Outlined.DesktopWindows">
+                <TabHelp Href="ui/devices/device-details-inventory.html" Title="@Loc[LocKeys.Device.Inventory]" />
+                <DeviceInventoryTab @ref="_inventoryTabs" Device="_device" IsActive="@(_activePanelIndex == 1)" @key="_device.Id"/>
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Device.Overview]" Icon="@Icons.Material.Outlined.Dashboard">
+                <TabHelp Href="ui/devices/device-details-overview.html" Title="@Loc[LocKeys.Device.Overview]" />
+                <DeviceOverviewTab Device="_device" IsActive="@(_activePanelIndex == 0)" @key="_device.Id"/>
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Device.Policies]" Icon="@Icons.Material.Outlined.VerifiedUser">
+                <TabHelp Href="ui/devices/device-details-policies.html" Title="@Loc[LocKeys.Device.Policies]" />
+                <DevicePolicyTab Device="_device" IsActive="@(_activePanelIndex == 2)" @key="_device.Id"/>
+            </MudTabPanel>
+            <MudTabPanel Class="page-tab-divider" Text="@Loc[LocKeys.Policy.Activity]" Icon="@Icons.Material.Outlined.History">
+                <TabHelp Href="ui/devices/device-details-history.html" Title="@Loc[LocKeys.Policy.Activity]" />
+                <DeviceHistoryTab Device="_device" IsActive="@(_activePanelIndex == 3)" @key="_device.Id"/>
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Device.Relations]" Icon="@Icons.Material.Outlined.AccountTree">
+                <TabHelp Href="ui/devices/device-details-relations.html" Title="@Loc[LocKeys.Device.Relations]" />
+                @if (_activePanelIndex == (IsMac ? 4 : 5))
+                {
+                    <MudStack Class="stack-full pt-4">
+                        <DeviceRelationsTab Device="_device" @key="_device.Id"/>
+                    </MudStack>
+                }
+            </MudTabPanel>
+        </ResponsiveTabs>
+    </div>
+}
+
+@code {
+    private IDisposable? _activitySubscription;
+    private DeviceActivitySnapshot? _activity;
+    private int _activityGeneration;
+    private bool _disposed;
+
+    private async Task WatchActivityAsync()
+    {
+        if (_disposed) return;
+        _activitySubscription?.Dispose();
+        _activity = null;
+        var generation = ++_activityGeneration;
+        var subscription = await ActivityService.SubscribeAsync([Id], snapshots => InvokeAsync(() =>
+        {
+            if (_disposed || generation != _activityGeneration) return;
+            _activity = snapshots.FirstOrDefault();
+            if (_device is not null && _activity is not null)
+            {
+                if (_activity.DeviceName is { } name) _device.Name = name;
+                _device.ClientVersion = _activity.ClientVersion;
+                _device.LastCheckinAtUtc = _activity.LastCheckinAtUtc;
+                _device.LastKnownIp = _activity.LastKnownIp;
+            }
+            StateHasChanged();
+        }));
+        if (_disposed || generation != _activityGeneration) subscription.Dispose();
+        else _activitySubscription = subscription;
+    }
+
+    public void Dispose() { _disposed = true; _activitySubscription?.Dispose(); }
+    [Parameter] public int Id { get; set; }
+
+    private int _activePanelIndex;
+    private Device? _device;
+    private bool IsMac => _device?.AgentPlatform == CloneDeploy_Agent.Contracts.AgentPlatform.MacOS;
+    private DeviceInventoryTab? _inventoryTabs;
+    private bool _isLoading = true;
+    private bool _actionBusy;
+    private string? _loadError;
+    private int? _loadedDeviceId;
+
+    private async Task OnRenameClicked()
+    {
+        if (_actionBusy || _device is null) return;
+        _actionBusy = true;
+        try
+        {
+            var parameters = new DialogParameters<DeviceRenameDialog> { { x => x.DeviceId, _device.Id }, { x => x.Name, _device.Name } };
+            var dialog = await Dialog.ShowAsync<DeviceRenameDialog>(UiText.Get(LocKeys.Ui.DeviceDetailActions.RenameDevice), parameters,
+                new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Small, BackdropClick = false, CloseOnEscapeKey = false });
+            if (await dialog.Result is { Canceled: false }) await OnRetryClicked();
+        }
+        finally { _actionBusy = false; }
+    }
+
+    private async Task OnDeployImageClicked()
+    {
+        if (_actionBusy || _device is null || IsMac || _device.ArchivedAtUtc.HasValue) return;
+        _actionBusy = true;
+        try
+        {
+            var parameters = new DialogParameters<DeviceDeployImageDialog> { { x => x.DeviceId, _device.Id } };
+            var dialog = await Dialog.ShowAsync<DeviceDeployImageDialog>(Loc[LocKeys.Device.DeployImage], parameters,
+                new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Small, BackdropClick = false, CloseOnEscapeKey = false });
+            if (await dialog.Result is { Canceled: false })
+                Snackbar.Add(Loc[LocKeys.Ui.ManageDevicePage.DeviceDeploymentQueued], Severity.Success);
+        }
+        finally { _actionBusy = false; }
+    }
+
+    private Task ShowInventoryAsync()
+    {
+        _activePanelIndex = 1;
+        _inventoryTabs?.ShowSystemInformation();
+        return Task.CompletedTask;
+    }
+
+    private async Task OnArchiveOrDeleteClicked(bool delete)
+    {
+        if (_actionBusy || _device is null || (!delete && _device.ArchivedAtUtc.HasValue)) return;
+        var deviceId = _device.Id;
+        var deviceName = _device.Name;
+        var action = Loc[delete ? LocKeys.Common.Delete : LocKeys.Device.Archive].Value;
+        _actionBusy = true;
+        try
+        {
+            var parameters = new DialogParameters<ConfirmationDialog>
+            {
+                { x => x.ContentText, Loc[delete ? LocKeys.Device.ConfirmDelete : LocKeys.Device.ConfirmArchive, deviceName] },
+                { x => x.ButtonText, action },
+                { x => x.Color, Color.Error }
+            };
+            var dialog = await Dialog.ShowAsync<ConfirmationDialog>(action, parameters, Constants.UI.StandardDialogBox);
+            if (await dialog.Result is not { Canceled: false, Data: true }) return;
+
+            var result = delete
+                ? await DeviceService.DeleteDeviceAsync(deviceId)
+                : await DeviceService.ArchiveDeviceAsync(deviceId);
+            if (!result.Success)
+            {
+                Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+                return;
+            }
+
+            Snackbar.Add(Loc[delete ? LocKeys.Device.Deleted : LocKeys.Device.Archived, deviceName], Severity.Success);
+            if (Id == deviceId) Navigation.NavigateTo("/devices/manage");
+        }
+        finally
+        {
+            _actionBusy = false;
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_disposed || _loadedDeviceId == Id) return;
+        _loadedDeviceId = Id;
+        _device = null;
+        _inventoryTabs = null;
+        _activePanelIndex = 0;
+        await OnRetryClicked();
+    }
+
+    private async Task OnRetryClicked()
+    {
+        if (_disposed) return;
+        var id = Id;
+        _isLoading = true;
+        _loadError = null;
+        try
+        {
+            var result = await DeviceService.GetByIdAsync(id);
+            if (_disposed || id != Id) return;
+            if (result.Success && result.Data is not null)
+            {
+                _device = result.Data;
+                try { await WatchActivityAsync(); }
+                catch when (_disposed) { }
+                catch { Snackbar.Add(UiText.Get(LocKeys.Ui.ManageDevicePage.LiveDeviceActivityIsUnavailableReloadToRetry), Severity.Warning); }
+            }
+            else
+                _loadError = result.Error is { } error
+                    ? Loc[error.Code, error.Args].Value
+                    : Loc[LocKeys.Device.NotFound];
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private Task RefreshInventoryAsync() => OnRetryClicked();
+}

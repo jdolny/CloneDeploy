@@ -1,0 +1,149 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@inject AgentService Agents
+
+@if (!Embedded)
+{
+    <AppPageTitle Text="@Loc[LocKeys.Ui.AgentEnrollmentTab.AgentEnrollment]" />
+}
+@if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+@if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+
+<MudTabs @bind-ActivePanelIndex="_tab" Class="device-subtabs" KeepPanelsAlive="false" TabPanelsClass="pt-4 detail-tab-content">
+    <Header>
+        <div class="device-overview-save">
+            @if (_tab == 0)
+            {
+                <MudButton OnClick="@Snackbar.GuardAction(() => ControlsDisabled, UiText.Get(LocKeys.Ui.AgentEnrollmentTab.EnrollmentSettingsCouldNotBeLoadedRefreshThePage), OnSaveClicked)" Disabled="@(_busy || _loading)" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+            }
+            else
+            {
+                <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+                    <MudButton OnClick="@Snackbar.GuardAction(() => ControlsDisabled, UiText.Get(LocKeys.Ui.AgentEnrollmentTab.EnrollmentSettingsCouldNotBeLoadedRefreshThePage), OnGenerateKeyClicked)" Disabled="@(_busy || _loading)">@(_hasKey ? UiText.Get(LocKeys.Ui.AgentEnrollmentTab.RotateKey) : UiText.Get(LocKeys.Ui.AgentEnrollmentTab.GenerateKey))</MudButton>
+                    @if (_key is not null)
+                    {
+                        <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Style="align-self: auto;" Disabled="_busy" aria-label="@Loc[LocKeys.Ui.AgentEnrollmentTab.MoreEnrollmentKeyActions]">
+                            <MudMenuItem OnClick="OnHideKeyClicked">@Loc[LocKeys.Ui.AgentEnrollmentTab.HideKey]</MudMenuItem>
+                        </MudMenu>
+                    }
+                </MudButtonGroup>
+            }
+        </div>
+    </Header>
+    <ChildContent>
+        <MudTabPanel Text="@Loc[LocKeys.Ui.AgentEnrollmentTab.EnrollmentRules]">
+            <TabHelp Href="ui/administration/agent-enrollment-rules.html" Title="@Loc[LocKeys.Ui.AgentEnrollmentTab.EnrollmentRules]" />
+            <MudPaper Class="pa-4 mb-4" Elevation="0" Outlined="true">
+                <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.AgentEnrollmentTab.EnrollmentRules_76e8aea2]</MudText>
+
+                <MudSelect T="bool" @bind-Value="_requirePreProvision" Label="@Loc[LocKeys.Ui.AgentEnrollmentTab.EnrollmentMode]" Variant="Variant.Outlined" Class="mt-3" Style="width:100%;max-width:440px" Disabled="ControlsDisabled">
+                    <MudSelectItem T="bool" Value="false">@Loc[LocKeys.Ui.AgentEnrollmentTab.AllowNewDeviceRecords]</MudSelectItem>
+                    <MudSelectItem T="bool" Value="true">@Loc[LocKeys.Ui.AgentEnrollmentTab.RequireAnExistingDeviceRecord]</MudSelectItem>
+                </MudSelect>
+                @if (_requirePreProvision)
+                {
+                    <MudText Typo="Typo.body2" Class="mt-2">@Loc[LocKeys.Ui.AgentEnrollmentTab.DevicesMustExistBeforeEnrollmentAddDeviceRecordsOn]</MudText>
+                    <MudSelect T="bool" @bind-Value="_preProvisionApproval" Label="@Loc[LocKeys.Ui.AgentEnrollmentTab.ApprovalForExistingDevices]" Variant="Variant.Outlined" Class="mt-3" Style="width:100%;max-width:440px" Disabled="ControlsDisabled">
+                        <MudSelectItem T="bool" Value="true">@Loc[LocKeys.Ui.AgentEnrollmentTab.RequireApproval]</MudSelectItem>
+                        <MudSelectItem T="bool" Value="false">@Loc[LocKeys.Ui.AgentEnrollmentTab.EnrollAutomatically]</MudSelectItem>
+                    </MudSelect>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Class="mt-2">@Loc[LocKeys.Ui.AgentEnrollmentTab.AgentsWithTheEnrollmentKeyCanRequestEnrollmentWithout]</MudText>
+                    <MudSelect T="bool" @bind-Value="_requireApproval" Label="@Loc[LocKeys.Ui.AgentEnrollmentTab.EnrollmentApproval]" Variant="Variant.Outlined" Class="mt-3" Style="width:100%;max-width:440px" Disabled="ControlsDisabled">
+                        <MudSelectItem T="bool" Value="true">@Loc[LocKeys.Ui.AgentEnrollmentTab.RequireApproval]</MudSelectItem>
+                        <MudSelectItem T="bool" Value="false">@Loc[LocKeys.Ui.AgentEnrollmentTab.EnrollAutomatically]</MudSelectItem>
+                    </MudSelect>
+                }
+                <MudSwitch T="bool" @bind-Value="_autoApproveResetRequests" Label="Auto approve reset requests" Color="Color.Primary" Disabled="ControlsDisabled" />
+                <MudNumericField T="int" @bind-Value="_pendingRetentionDays" Label="Expire inactive pending requests after (days)"
+                                 Min="1" Max="3650" Variant="Variant.Outlined" Class="mt-3" Style="width:100%;max-width:440px" Disabled="ControlsDisabled" />
+            </MudPaper>
+        </MudTabPanel>
+        <MudTabPanel Text="@Loc[LocKeys.Ui.AgentEnrollmentTab.EnrollmentKey]">
+            <TabHelp Href="ui/administration/agent-enrollment-key.html" Title="@Loc[LocKeys.Ui.AgentEnrollmentTab.EnrollmentKey]" />
+            <MudPaper Class="pa-4 mb-4" Elevation="0" Outlined="true">
+                <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.AgentEnrollmentTab.SharedEnrollmentKey]</MudText>
+                <MudText Class="my-3">@UiText.Get(LocKeys.Ui.AgentEnrollmentTab.Text0SupplyThisKeyInYourAgentInstallationConfiguration, ((_hasKey ? UiText.Get(LocKeys.Ui.AgentEnrollmentTab.AnEnrollmentKeyIsConfigured) : UiText.Get(LocKeys.Ui.AgentEnrollmentTab.GenerateAnEnrollmentKeyAfterCreatingTheCertificateAuthority))))</MudText>
+                @if (_key is not null)
+                {
+
+                    <MudTextField Value="@_key" ReadOnly="true" Label="@Loc[LocKeys.Ui.AgentEnrollmentTab.EnrollmentKey_bcc21e98]" Variant="Variant.Outlined" />
+                }
+
+            </MudPaper>
+
+        </MudTabPanel>
+    </ChildContent>
+</MudTabs>
+
+@code {
+    private int _tab;
+    private void OnHideKeyClicked() => _key = null;
+    [Parameter] public bool Embedded { get; set; }
+    private bool _requirePreProvision;
+    private int _pendingRetentionDays = 30;
+    private bool _requireApproval = true;
+    private bool _preProvisionApproval;
+    private bool _autoApproveResetRequests;
+    private bool _hasKey;
+    private string? _key;
+    private string? _error;
+    private bool _busy;
+    private bool _loading = true;
+    private bool ControlsDisabled => _busy || _loading || _error is not null;
+    protected override Task OnInitializedAsync() => OnLoadClicked();
+    private async Task OnLoadClicked()
+    {
+        _loading = true;
+        _error = null;
+        var result = await Agents.GetConfigurationAsync();
+        if (result.HasData)
+        {
+            _requirePreProvision = result.Data.Options.RequirePreProvision;
+            _pendingRetentionDays = result.Data.Options.PendingRetentionDays;
+            _requireApproval = result.Data.Options.RequireApproval;
+            _preProvisionApproval = result.Data.Options.PreProvisionRequiresApproval;
+            _autoApproveResetRequests = result.Data.Options.AutoApproveResetRequests;
+            _hasKey = result.Data.HasProvisioningKey;
+        }
+        else
+        {
+            _error = Loc[result.Error!.Code, result.Error.Args];
+            _key = null;
+        }
+        _loading = false;
+    }
+
+    private async Task OnSaveClicked()
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var result = await Agents.SaveConfigurationAsync(new(_requirePreProvision, _requireApproval, _preProvisionApproval) { PendingRetentionDays = _pendingRetentionDays, AutoApproveResetRequests = _autoApproveResetRequests });
+            if (!result.Success) { Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error); return; }
+            Snackbar.Add(UiText.Get(LocKeys.Ui.AgentEnrollmentTab.EnrollmentRulesSaved), Severity.Success);
+            await OnLoadClicked();
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnGenerateKeyClicked()
+    {
+        if (_busy) return;
+        if (_hasKey && await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.AgentEnrollmentTab.RotateEnrollmentKey),
+            UiText.Get(LocKeys.Ui.AgentEnrollmentTab.AgentsStillWaitingToEnrollWillNeedTheNew),
+            yesText: UiText.Get(LocKeys.Ui.AgentEnrollmentTab.RotateKey), cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+        _busy = true;
+        _key = null;
+        try
+        {
+            var result = await Agents.GenerateProvisioningKeyAsync(_hasKey);
+            if (!result.HasData) { Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); return; }
+            _key = result.Data;
+            _hasKey = true;
+        }
+        finally { _busy = false; }
+    }
+}

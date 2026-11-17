@@ -1,0 +1,31 @@
+<DeviceInventoryTable TItem="DeviceImagingLog" Title="@Loc[LocKeys.Device.ImagingLogs]" Items="@(Device.ImagingLogs.OrderByDescending(x => x.LoggedAtUtc))"
+                      EmptyText="@Loc[LocKeys.Device.NoImagingHistoryIsRecordedForThisDevice]">
+    <Columns>
+        <TemplateColumn T="DeviceImagingLog" Title="@Loc[LocKeys.Device.Date]" Sortable="false" Filterable="false">
+            <CellTemplate>@(context.Item.LoggedAtUtc is DateTime displayDate1 && displayDate1 != default ? displayDate1.ToLocalTime().ToString("g") : "—")</CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn T="DeviceImagingLog" TProperty="string" Property="x => x.Type" Title="@Loc[LocKeys.Device.Type]"/>
+        <PropertyColumn T="DeviceImagingLog" TProperty="string" Property="x => x.SubType" Title="@Loc[LocKeys.Device.Result]"/>
+        <PropertyColumn T="DeviceImagingLog" TProperty="string" Property="x => x.Mac" Title="@Loc[LocKeys.Device.MACAddress]"/>
+        <TemplateColumn T="DeviceImagingLog" Title="@Loc[LocKeys.Device.Log]" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <MudButton Color="Color.Primary" OnClick="@(() => ViewLogAsync(context.Item))">@Loc[LocKeys.Device.ViewLog]</MudButton>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</DeviceInventoryTable>
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+
+    private async Task ViewLogAsync(DeviceImagingLog entry)
+    {
+        var parameters = new DialogParameters<DeviceHistoryResultDialog>
+        {
+            { x => x.Result, entry.Contents },
+            { x => x.Summary, $"{entry.LoggedAtUtc.ToLocalTime():g} — {entry.Type} — {entry.SubType}" }
+        };
+        await Dialog.ShowAsync<DeviceHistoryResultDialog>(Loc[LocKeys.Device.ImagingLogs], parameters,
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, CloseButton = true, CloseOnEscapeKey = true });
+    }
+}

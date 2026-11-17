@@ -1,0 +1,42 @@
+@using CloneDeploy_Server.UI.Pages.Administration.HelpDeskSettings.QueuesAndCategories
+@using CloneDeploy_Server.UI.Pages.Administration.HelpDeskSettings.RoutingRules
+@using CloneDeploy_Server.UI.Pages.HelpDesk
+@inject HelpDeskUiService Help
+@inject AuthenticationStateProvider Authentication
+
+<MudText Typo="Typo.body2" Class="mb-4">@Loc[LocKeys.Ui.DeviceHelpHistoryTab.RequestsOriginatingFromThisDeviceLimitedToTicketsYou]</MudText>
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+<MudDataGrid @ref="_grid" T="HelpTicketSummary" ServerData="Load" Dense="true" Hover="true" Outlined="true" Elevation="0" RowsPerPage="25"
+             Class="device-list-grid" HorizontalScrollbar="true" SortMode="SortMode.None" Filterable="false">
+    <ToolBarContent><MudSpacer /><MudButton OnClick="@(() => _grid!.ReloadServerData())" StartIcon="@Icons.Material.Filled.Refresh">@Loc[LocKeys.Dashboard.Refresh]</MudButton></ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Id" Title="@Loc[LocKeys.Ui.DeviceHelpHistoryTab.Request]" />
+        <TemplateColumn Title="@Loc[LocKeys.Device.Subject]"><CellTemplate><MudLink Href="@($"/helpdesk/{context.Item.Id}")">@context.Item.Subject</MudLink></CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Image.VersionStatus]"><CellTemplate><HelpStatusBadge Status="context.Item.Status" /></CellTemplate></TemplateColumn>
+        <PropertyColumn Property="x => x.Requester" Title="@Loc[LocKeys.Ui.HelpDeskPage.Requester]" />
+        <PropertyColumn Property="x => x.Category" Title="@Loc[LocKeys.Device.Category]" />
+        <PropertyColumn Property="x => x.Queue" Title="@Loc[LocKeys.Ui.HelpDeskPage.Queue]" />
+        <PropertyColumn Property="x => x.AssignedTo" Title="@Loc[LocKeys.Ui.HelpDeskPage.AssignedTo]" />
+        <TemplateColumn Title="@Loc[LocKeys.Ui.HelpDeskPage.Updated]"><CellTemplate>@context.Item.UpdatedAtUtc.ToLocalTime().ToString("g")</CellTemplate></TemplateColumn>
+    </Columns>
+    <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.DeviceHelpHistoryTab.NoVisibleHelpDeskRequestsFoundForThisDevice]</MudText></NoRecordsContent>
+    <PagerContent><MudDataGridPager T="HelpTicketSummary" PageSizeOptions="@(new[] { 10, 25, 50, 100 })" /></PagerContent>
+</MudDataGrid>
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+    private MudDataGrid<HelpTicketSummary>? _grid;
+    private string? _error;
+    private async Task<GridData<HelpTicketSummary>> Load(GridState<HelpTicketSummary> state, CancellationToken ct)
+    {
+        _error = null;
+        try
+        {
+            var page = await Help.DeviceHistoryAsync((await Authentication.GetAuthenticationStateAsync()).User, Device.Id, state.Page, state.PageSize, ct);
+            return new() { Items = page.Tickets, TotalItems = page.Total };
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { return new() { Items = [], TotalItems = 0 }; }
+        catch (UnauthorizedAccessException) { _error = UiText.Get(LocKeys.Ui.DeviceHelpHistoryTab.YouDoNotHavePermissionToViewHelpDesk); }
+        catch { _error = UiText.Get(LocKeys.Ui.DeviceHelpHistoryTab.HelpDeskHistoryCouldNotBeLoadedTryRefreshing); }
+        return new() { Items = [], TotalItems = 0 };
+    }
+}

@@ -1,0 +1,78 @@
+@using System.Globalization
+@inject DeviceService Stats
+
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+@if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+else if (_stats is not null)
+{
+    <div class="stats-cards">
+        @foreach (var card in Cards())
+        {
+            <button type="button" class="stats-card @card.Style" @onclick="@(() => ViewAsync(card.Title, card.Devices))">
+                <span class="stats-card-label">@card.Title</span><strong>@card.Devices.Count.ToString("N0")</strong><span>@card.Description</span>
+            </button>
+        }
+    </div>
+    <MudPaper Outlined="true" Elevation="0" Class="pa-4 my-4">
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DeviceStatsTab.ReportedStorage]</MudText>
+        <MudText>@UiText.Get(LocKeys.Ui.DeviceStatsTab.Text0FreeOf1AcrossValidFixedVolumes, (Size(_stats.FreeGiB)), (Size(_stats.CapacityGiB)))</MudText>
+        @if (_stats.CapacityGiB > 0)
+        {
+            <div class="storage-track" role="img" aria-label="@(UiText.Get(LocKeys.Ui.DeviceStatsTab.Text0N1FreeStorage, (100d * _stats.FreeGiB / _stats.CapacityGiB)))"><div class="storage-used" style="@($"width:{(100d * (_stats.CapacityGiB - _stats.FreeGiB) / _stats.CapacityGiB).ToString("0.##", CultureInfo.InvariantCulture)}%")"></div></div>
+            <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.DeviceStatsTab.Text0UsedValuesAreRoundedInventoryMeasurements, (((100d * (_stats.CapacityGiB - _stats.FreeGiB) / _stats.CapacityGiB).ToString("N1"))))</MudText>
+        }
+    </MudPaper>
+    <div class="stats-charts">
+        @foreach (var chart in _stats.Charts)
+        {
+            <section class="stats-chart">
+                <MudText Typo="Typo.h6">@chart.Title</MudText><MudText Typo="Typo.body2" Class="mb-4">@chart.Description</MudText>
+                @foreach (var bucket in chart.Buckets)
+                {
+                    var percent = 100d * bucket.Devices.Count / Math.Max(1, _stats.Devices.Count);
+                    <button type="button" class="chart-row" @onclick="@(() => ViewAsync($"{chart.Title}: {bucket.Label}", bucket.Devices))" aria-label="@(UiText.Get(LocKeys.Ui.DeviceStatsTab.Text01Devices2N1Percent, (bucket.Label), (bucket.Devices.Count), (percent)))">
+                        <span class="chart-label">@bucket.Label</span><span class="chart-count">@bucket.Devices.Count.ToString("N0") <small>(@percent.ToString("N1")%)</small></span>
+                        <span class="chart-track"><span class="chart-fill" style="@($"width:{percent.ToString("0.##", CultureInfo.InvariantCulture)}%")"></span></span>
+                    </button>
+                }
+                @if (chart.Buckets.Count == 0) { <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.DeviceStatsTab.NoDataYet]</MudText> }
+            </section>
+        }
+    </div>
+}
+else { <MudButton OnClick="LoadAsync">@Loc[LocKeys.Ui.DeviceStatsTab.RetryLoadingStats]</MudButton> }
+
+@code {
+    private DeviceStatsSnapshot? _stats;
+    private string? _error;
+    private bool _loading = true;
+    protected override Task OnInitializedAsync() => LoadAsync();
+    private async Task LoadAsync()
+    {
+        _loading = true; _error = null;
+        try
+        {
+            var result = await Stats.GetStatsAsync();
+            if (result.HasData) _stats = result.Data;
+            else _error = Loc[result.Error!.Code, result.Error.Args];
+        }
+        finally { _loading = false; }
+    }
+    private IEnumerable<(string Title, string Description, string Style, List<DeviceStatsRow> Devices)> Cards()
+    {
+        var data = _stats!;
+        yield return (UiText.Get(LocKeys.Group.Devices), UiText.Get(LocKeys.Ui.DeviceStatsTab.InTheNonArchivedFleet), "", data.Devices);
+        yield return (UiText.Get(LocKeys.Ui.DeviceStatsTab.RecentCheckIns), UiText.Get(LocKeys.Ui.DeviceStatsTab.WithinThePast24Hours), "positive", data.Devices.Where(x => x.Checkin >= data.AsOfUtc.AddDays(-1)).ToList());
+        yield return (UiText.Get(LocKeys.Ui.DeviceStatsTab.LowDiskSpace), UiText.Get(LocKeys.Ui.DeviceStatsTab.AtMost10GiBOr10Free), "warning", data.Devices.Where(x => x.LowDisk).ToList());
+        yield return (UiText.Get(LocKeys.Ui.DeviceStatsDevicesDialog.DiskWarnings), UiText.Get(LocKeys.Ui.DeviceStatsTab.ADiskReportsAWarningStatus), "danger", data.Devices.Where(x => x.DiskWarning).ToList());
+        yield return (UiText.Get(LocKeys.Ui.DeviceStatsTab.StaleCheckIns), UiText.Get(LocKeys.Ui.DeviceStatsTab.Over30DaysAgoOrNever), "warning", data.Devices.Where(x => x.Checkin is null || x.Checkin < data.AsOfUtc.AddDays(-30)).ToList());
+        yield return (UiText.Get(LocKeys.Ui.DeviceStatsTab.NoInventory), UiText.Get(LocKeys.Ui.DeviceStatsTab.NoInventoryTimestampReceived), "", data.Devices.Where(x => x.Inventory is null).ToList());
+    }
+    private static string Size(long gib) => gib >= 1024 ? UiText.Get(LocKeys.Ui.DeviceStatsTab.Text0N1TiB, (gib / 1024d)) : UiText.Get(LocKeys.Ui.DeviceStatsTab.Text0N0GiB, (gib));
+    private async Task ViewAsync(string title, List<DeviceStatsRow> devices)
+    {
+        var parameters = new DialogParameters<DeviceStatsDevicesDialog> { { x => x.Devices, devices } };
+        await Dialog.ShowAsync<DeviceStatsDevicesDialog>(title, parameters,
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, CloseButton = true, CloseOnEscapeKey = true });
+    }
+}

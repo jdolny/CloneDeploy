@@ -1,0 +1,33 @@
+@inject DriverService Service
+@if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+<MudButton OnClick="OnLoadClicked" Disabled="_loading">@Loc[LocKeys.Ui.DriverAudit.RefreshHistory]</MudButton>
+<MudDataGrid T="AuditLog" Items="_items" Loading="_loading" Dense="true" Filterable="true" RowsPerPage="25" Elevation="0" Outlined="true" Class="device-list-grid" QuickFilter="@(x => string.IsNullOrWhiteSpace(_gridSearch0) || (x.UserName + " " + x.AuditType).Contains(_gridSearch0.Trim(), StringComparison.OrdinalIgnoreCase))"><ToolBarContent><MudIcon Icon="@Icons.Material.Outlined.History" Color="Color.Primary"/><MudText Typo="Typo.h6">@Loc[LocKeys.Policy.AuditHistory]</MudText><MudSpacer/><MudTextField T="string" @bind-Value="_gridSearch0" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" aria-label="@Loc[LocKeys.Ui.DriverAudit.SearchAuditHistory]" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/></ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.LoggedAtUtc" Title="@Loc[LocKeys.Image.LoggedAtUtc]" />
+        <PropertyColumn Property="x => x.UserName" Title="@Loc[LocKeys.User.UserMembership]" />
+        <PropertyColumn Property="x => x.AuditType" Title="@Loc[LocKeys.Image.AuditType]" />
+        <PropertyColumn Property="x => x.ObjectJson" Title="@Loc[LocKeys.User.ObjectJson]" />
+    </Columns>
+    <PagerContent><MudDataGridPager T="AuditLog" /></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Image.NoAuditLogs]</MudText></NoRecordsContent>
+</MudDataGrid>
+<MudText Typo="Typo.caption">@Loc[LocKeys.Ui.DriverAudit.Latest200Entries]</MudText>
+@code {
+    private string? _gridSearch0;
+
+    [Parameter] public int ProfileId { get; set; }
+    private List<AuditLog> _items = [];
+    private string? _error;
+    private bool _loading;
+    private int _version;
+    protected override Task OnParametersSetAsync() => OnLoadClicked();
+    private async Task OnLoadClicked()
+    {
+        var version = ++_version; _loading = true;
+        var result = await Service.GetAuditAsync(ProfileId);
+        if (version != _version) return;
+        _items = result.Data ?? [];
+        _error = result.Success ? null : Loc[result.Error!.Code, result.Error.Args].Value;
+        _loading = false;
+    }
+}

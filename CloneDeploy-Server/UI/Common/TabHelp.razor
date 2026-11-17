@@ -1,0 +1,7 @@
+@* Kept inside the panel so hidden, kept-alive tabs cannot override the visible tab. *@
+<span hidden data-help-href="@Href" data-help-title="@Title"></span>
+
+@code {
+    [Parameter, EditorRequired] public string Href { get; set; } = "";
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+}

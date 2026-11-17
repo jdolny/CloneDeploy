@@ -1,0 +1,297 @@
+@inject AgentService Agents
+@inject AuthenticationStateProvider Authentication
+@inject IAuthorizationService Authorization
+@implements IDisposable
+
+@if (ShowConnectButton)
+{
+    @if (HeaderActions is not null)
+    {
+        @HeaderActions(EventCallback.Factory.Create(this, OnConnectClicked))
+    }
+    else
+    {
+    <ActionButtons Content="Actions">
+        <MainButton>
+            <MudButton StartIcon="@Icons.Material.Filled.Power" OnClick="OnConnectClicked">@Loc[LocKeys.Device.Connect]</MudButton>
+        </MainButton>
+    </ActionButtons>
+    }
+}
+
+<MudDrawer @bind-Open="_open" Anchor="Anchor.Right" Variant="DrawerVariant.Temporary"
+           ClipMode="DrawerClipMode.Never" Fixed="true" Elevation="8"
+           Width="@(_expanded ? "100vw" : "min(900px, 100vw)")">
+    <div class="connection-panel">
+        <header class="connection-header">
+            <div class="connection-heading">
+                <div class="connection-device-icon"><MudIcon Icon="@Icons.Material.Outlined.Computer" Size="Size.Large"/></div>
+                <div class="connection-device">
+                    <MudText Typo="Typo.h6" Class="connection-device-name">@Device.Name</MudText>
+                    <MudText Typo="Typo.caption" Class="connection-device-meta">@(Device.LastKnownIp ?? Loc[LocKeys.Device.IPAddressUnavailable].Value)</MudText>
+                    <MudText Typo="Typo.caption" Class="connection-device-meta">@Loc[LocKeys.Device.LastCheckin, Device.LastCheckinAtUtc?.ToLocalTime().ToString("g") ?? Loc[LocKeys.Device.Never].Value]</MudText>
+                    @if (_open && _canView)
+                    {
+                        <AgentSystemStatusPanel DeviceId="Device.Id" @key="Device.Id" />
+                    }
+                </div>
+            </div>
+            <div class="connection-window-actions">
+                @if (_open && (_canCheckIn || _canInventory || _canActions || _canImage || _canPower))
+                {
+                    <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
+                        @if (_canCheckIn)
+                        {
+                            <MudButton StartIcon="@Icons.Material.Filled.Sync" Disabled="_checkinBusy" OnClick="OnCheckInClicked">
+                                @(_checkinBusy ? Loc[LocKeys.Device.Requesting].Value : Loc[LocKeys.Device.CheckInNow].Value)
+                            </MudButton>
+                        }
+                        @if (_canInventory || _canActions || _canImage || _canPower)
+                        {
+                            <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Label="@(_canCheckIn ? null : UiText.Get(LocKeys.Common.Actions))"
+                                     Style="align-self: auto;" aria-label="@Loc[LocKeys.Device.DeviceQuickActions]">
+                                @if (_canInventory)
+                                {
+                                    <MudMenuItem Icon="@Icons.Material.Filled.Inventory2" Disabled="_inventoryBusy" OnClick="OnCollectInventoryClicked">
+                                        @(_inventoryBusy ? Loc[LocKeys.Device.CollectingInventory].Value : Loc[LocKeys.Device.InventoryNow].Value)
+                                    </MudMenuItem>
+                                }
+                                @if (_canActions) { <MudMenuItem Icon="@Icons.Material.Filled.PlaylistPlay" OnClick="OnDeployActionsClicked">@Loc[LocKeys.Ui.DeviceConnectionPanel.DeployActionsNow]</MudMenuItem> }
+                                @if (_canImage && !IsMac) { <MudMenuItem Icon="@Icons.Material.Filled.InstallDesktop" OnClick="OnDeployThroughAgentClicked">@Loc[LocKeys.Ui.DeviceConnectionPanel.DeployImageThroughAgent]</MudMenuItem> }
+                                @if (_canPower) { <MudDivider /><SectionOutlet SectionId="_powerActionsSection" /> }
+                            </MudMenu>
+                        }
+                    </MudButtonGroup>
+                }
+                <MudTooltip Text="@(_expanded ? Loc[LocKeys.Device.RestorePanelWidth].Value : Loc[LocKeys.Device.ExpandPanel].Value)">
+                    <MudIconButton Icon="@(_expanded ? Icons.Material.Filled.FullscreenExit : Icons.Material.Filled.Fullscreen)"
+                                   OnClick="OnToggleExpandedClicked"
+                                   aria-label="@(_expanded ? Loc[LocKeys.Device.RestorePanelWidth].Value : Loc[LocKeys.Device.ExpandPanel].Value)"/>
+                </MudTooltip>
+                <MudTooltip Text="@Loc[LocKeys.Device.ClosePanel]">
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="OnCloseClicked" aria-label="@Loc[LocKeys.Device.CloseConnectionPanel]"/>
+                </MudTooltip>
+            </div>
+        </header>
+
+        @if (_open && _canPower)
+        {
+            <AgentPowerButtons DelaySeconds="@(IsMac ? 60 : 30)" DeviceId="Device.Id" DeviceName="@Device.Name" MenuSectionId="_powerActionsSection" @key="(Device.Id, nameof(AgentPowerButtons))" />
+        }
+        @if (_checkinResult is not null || _inventoryResult is not null)
+        {
+            <section class="connection-results" aria-live="polite">
+                @if (_checkinResult is not null)
+                {
+                    <MudAlert Severity="@(_checkinResult.Acknowledged ? Severity.Success : Severity.Warning)" Dense="true" Class="mt-2">
+                        @_checkinResult.Detail
+                    </MudAlert>
+                }
+                @if (_inventoryResult is not null)
+                {
+                    <MudAlert Severity="@(_inventoryResult.Acknowledged ? Severity.Success : Severity.Warning)" Dense="true" Class="mt-2">
+                        @_inventoryResult.Detail
+                    </MudAlert>
+                    @if (_inventoryResult.Acknowledged)
+                    {
+                        @if (ViewInventory.HasDelegate)
+                        {
+                            <MudLink OnClick="OnViewInventoryClicked">@Loc[LocKeys.Device.ViewInventory]</MudLink>
+                        }
+                        else
+                        {
+                            <MudLink Href="@($"/devices/manage/{Device.Id}")">@Loc[LocKeys.Device.ViewDevice]</MudLink>
+                        }
+                    }
+                }
+            </section>
+        }
+
+        <div class="connection-workspace">
+            <MudTabs @bind-ActivePanelIndex="_activeTab" Elevation="0" KeepPanelsAlive="true" MinimumTabWidth="110px" Class="device-subtabs"
+                     TabPanelsClass="connection-tab-content" AlwaysShowScrollButtons="false">
+                <MudTabPanel Text="@Loc[LocKeys.Ui.DeviceConnectionPanel.AgentLog]" Icon="@Icons.Material.Filled.Article">
+                    <TabHelp Href="ui/devices/device-connect-client-log.html" Title="@Loc[LocKeys.Ui.DeviceConnectionPanel.AgentLog]" />
+                    @if (_canView)
+                    {
+                            @if (_open && _activeTab == 0)
+                            {
+                                <AgentLogTab DeviceId="Device.Id" @key="Device.Id"/>
+                            }
+
+                    }
+                    else
+                    {
+                            <MudText>@Loc[LocKeys.Ui.DeviceConnectionPanel.DeviceViewingPermissionIsRequiredToViewAgentLogs]</MudText>
+
+                    }
+                </MudTabPanel>
+                <MudTabPanel Text="@Loc[LocKeys.Device.Terminal]" Icon="@Icons.Material.Filled.Terminal">
+                    <TabHelp Href="ui/devices/device-connect-terminal.html" Title="@Loc[LocKeys.Device.Terminal]" />
+                    @if (_canTerminal)
+                    {
+                        @if (_open && _activeTab == 1)
+                        {
+                            <RemoteTerminalTab DeviceId="Device.Id" IsMac="IsMac" @key="Device.Id" />
+                        }
+                    }
+                    else
+                    {
+                        <MudText>@Loc[LocKeys.Ui.DeviceConnectionPanel.PermissionIsRequiredToUseTheTerminal]</MudText>
+                    }
+                </MudTabPanel>
+                @if (!IsMac)
+                {
+                <MudTabPanel Text="@Loc[LocKeys.Device.Services]" Icon="@Icons.Material.Filled.MiscellaneousServices">
+                    <TabHelp Href="ui/devices/device-connect-services.html" Title="@Loc[LocKeys.Device.Services]" />
+                    @if (_canServices)
+                    {
+                            @if (_open && _activeTab == 2)
+                            {
+                                <AgentDeviceToolsTab DeviceId="Device.Id" @key="Device.Id"/>
+                            }
+
+                    }
+                    else
+                    {<MudText>@Loc[LocKeys.Ui.DeviceConnectionPanel.PermissionIsRequiredToManageServices]</MudText>
+                    }
+                </MudTabPanel>
+                <MudTabPanel Text="@Loc[LocKeys.Device.Processes]" Icon="@Icons.Material.Filled.Memory">
+                    <TabHelp Href="ui/devices/device-connect-processes.html" Title="@Loc[LocKeys.Device.Processes]" />
+                    @if (_canProcesses)
+                    {
+                            @if (_open && _activeTab == 3)
+                            {
+                                <AgentDeviceToolsTab DeviceId="Device.Id" Processes="true" @key="Device.Id"/>
+                            }
+
+                    }
+                    else
+                    {<MudText>@Loc[LocKeys.Ui.DeviceConnectionPanel.PermissionIsRequiredToManageProcesses]</MudText>
+                    }
+                </MudTabPanel>
+                }
+                <MudTabPanel Text="@Loc[LocKeys.Ui.DeviceConnectionPanel.RemoteViewing]" Icon="@Icons.Material.Filled.DesktopWindows">
+                    <TabHelp Href="ui/devices/device-connect-remote-viewing.html" Title="@Loc[LocKeys.Ui.DeviceConnectionPanel.RemoteViewing]" />
+                    @if (_canRemote)
+                    {
+                            @if (_open && _activeTab == (IsMac ? 2 : 4))
+                            {
+                                <RemoteDesktopTab DeviceId="Device.Id" IsMac="IsMac" @key="Device.Id"/>
+                            }
+
+                    }
+                    else
+                    {<MudText>@Loc[LocKeys.Ui.DeviceConnectionPanel.PermissionIsRequiredForRemoteViewing]</MudText>
+                    }
+                </MudTabPanel>
+            </MudTabs>
+        </div>
+
+    </div>
+</MudDrawer>
+
+@code {
+    private bool IsMac => Device.AgentPlatform == CloneDeploy_Agent.Contracts.AgentPlatform.MacOS;
+    private bool _disposed;
+    public void Dispose() => _disposed = true;
+    private void OnConnectClicked() => _open = true;
+    private void OnToggleExpandedClicked() => _expanded = !_expanded;
+    private void OnCloseClicked() => _open = false;
+
+    private async Task OnDeployActionsClicked()
+    {
+        var parameters = new DialogParameters<DeviceDeployActionsDialog>
+        {
+            { x => x.DeviceId, Device.Id }, { x => x.DeviceName, Device.Name }
+        };
+        await Dialog.ShowAsync<DeviceDeployActionsDialog>(UiText.Get(LocKeys.Ui.DeviceConnectionPanel.DeployActionsNow), parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, BackdropClick = false, CloseOnEscapeKey = false });
+    }
+
+    private async Task OnDeployThroughAgentClicked()
+    {
+        var parameters = new DialogParameters<AgentImagingBootDialog> { { x => x.DeviceId, Device.Id } };
+        await Dialog.ShowAsync<AgentImagingBootDialog>(UiText.Get(LocKeys.Ui.DeviceConnectionPanel.ReviewAgentDeployment), parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+    }
+
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+    [Parameter] public bool ShowConnectButton { get; set; } = true;
+    [Parameter] public bool InitiallyOpen { get; set; }
+    [Parameter] public EventCallback InventorySaved { get; set; }
+    [Parameter] public EventCallback ViewInventory { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public RenderFragment<EventCallback>? HeaderActions { get; set; }
+
+    private async Task OnViewInventoryClicked()
+    {
+        _open = false;
+        await ViewInventory.InvokeAsync();
+    }
+
+    private int _activeTab;
+    private bool _open;
+    private bool _expanded;
+    private bool _inventoryBusy;
+    private bool _checkinBusy;
+    private AgentSendResultDto? _checkinResult;
+    private AgentSendResultDto? _inventoryResult;
+
+    private async Task OnCheckInClicked()
+    {
+        if (_disposed || _checkinBusy) return;
+        _checkinBusy = true;
+        _checkinResult = null;
+        try
+        {
+            var result = await Agents.RequestCheckInAsync(Device.Id);
+            if (_disposed) return;
+            _checkinResult = result.HasData ? result.Data : new(false, Loc[result.Error!.Code, result.Error.Args]);
+            if (!_checkinResult!.Acknowledged) { Snackbar.Add(_checkinResult.Detail, Severity.Error); _checkinResult = null; }
+        }
+        finally
+        {
+            _checkinBusy = false;
+        }
+    }
+
+    private async Task OnCollectInventoryClicked()
+    {
+        if (_disposed || _inventoryBusy) return;
+        _inventoryBusy = true;
+        _inventoryResult = null;
+        try
+        {
+            var result = await Agents.CollectInventoryAsync(Device.Id);
+            if (_disposed) return;
+            _inventoryResult = result.HasData ? result.Data : new(false, Loc[result.Error!.Code, result.Error.Args]);
+            if (_inventoryResult.Acknowledged) await InventorySaved.InvokeAsync();
+            else { Snackbar.Add(_inventoryResult.Detail, Severity.Error); _inventoryResult = null; }
+        }
+        finally
+        {
+            _inventoryBusy = false;
+        }
+    }
+
+    // AuthorizeView clears its child while awaiting each permission check. Keeping the
+    // display decision here prevents normal parent renders from destroying live sessions.
+    // Every command and WebSocket connection still authorizes on the server.
+    private bool _canView, _canTerminal, _canServices, _canProcesses, _canRemote, _canActions, _canImage, _canPower, _canCheckIn, _canInventory;
+    private readonly object _powerActionsSection = new();
+    protected override async Task OnInitializedAsync()
+    {
+        _open = InitiallyOpen;
+        var user = (await Authentication.GetAuthenticationStateAsync()).User;
+        _canView = (await Authorization.AuthorizeAsync(user, Constants.Permissions.DeviceView)).Succeeded;
+        _canTerminal = (await Authorization.AuthorizeAsync(user, Constants.Permissions.DeviceTerminal)).Succeeded;
+        _canServices = (await Authorization.AuthorizeAsync(user, Constants.Permissions.DeviceServices)).Succeeded;
+        _canProcesses = (await Authorization.AuthorizeAsync(user, Constants.Permissions.DeviceProcesses)).Succeeded;
+        _canRemote = (await Authorization.AuthorizeAsync(user, Constants.Permissions.DeviceRemoteView)).Succeeded;
+        _canActions = (await Authorization.AuthorizeAsync(user, Constants.Permissions.DeviceDeployActions)).Succeeded;
+        _canImage = (await Authorization.AuthorizeAsync(user, Constants.Permissions.DeviceDeployImageThroughAgent)).Succeeded;
+        _canPower = (await Authorization.AuthorizeAsync(user, Constants.Permissions.DeviceReboot)).Succeeded || (await Authorization.AuthorizeAsync(user, Constants.Permissions.DeviceShutdown)).Succeeded;
+        _canCheckIn = (await Authorization.AuthorizeAsync(user, Constants.Permissions.DeviceCheckIn)).Succeeded;
+        _canInventory = (await Authorization.AuthorizeAsync(user, Constants.Permissions.DeviceInventory)).Succeeded;
+    }
+}

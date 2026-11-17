@@ -1,0 +1,14 @@
+
+@if (SectionId is not null)
+{
+    <SectionContent SectionId="SectionId">@ChildContent</SectionContent>
+}
+else
+{
+    @ChildContent
+}
+
+@code {
+    [Parameter] public object? SectionId { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

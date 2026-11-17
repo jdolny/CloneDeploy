@@ -1,0 +1,192 @@
+@inject AuthenticationStateProvider SharedCatalogAuthentication
+@inject IAuthorizationService SharedCatalogAuthorization
+@inject TagService TagService
+@inject IAuthorizationService Authorization
+@inject AuthenticationStateProvider Authentication
+@inject PolicyService PolicyService
+@page "/policies/manage"
+@page "/policies"
+@attribute [Authorize(Policy = Constants.Permissions.PolicyView)]
+
+
+<AppPageTitle Text="@Loc[LocKeys.Policy.Policies]" />
+<ActionButtons>
+    <MainButton>
+        <MudTooltip Placement="Placement.Left" Text="@(_canEdit ? UiText.Get(LocKeys.Ui.ManagePoliciesPage.CreateANewPolicy) : UiText.Get(LocKeys.Ui.ManagePoliciesPage.PolicyEditPermissionIsRequiredToCreateAPolicy))">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Snackbar.GuardAction(() => _busy || !_canEdit, UiText.Get(LocKeys.Ui.TargetPolicies.YouDoNotHavePermissionToEditPolicies), OnNewClicked)" StartIcon="@Icons.Material.Filled.Add" Disabled="@(_busy)">@Loc[LocKeys.Ui.ManagePoliciesPage.NewPolicy]</MudButton>
+        </MudTooltip>
+    </MainButton>
+</ActionButtons>
+
+<TagSearchPanel SelectedCount="_selectedTags.Count" ClearTags="OnClearTags">
+    <SearchControls>
+        <div class="device-list-search">
+            <MudTextField T="string" Value="_search" ValueChanged="SearchChanged" DebounceInterval="300" Placeholder="@Loc[LocKeys.Ui.ManagePoliciesPage.SearchPolicies]" aria-label="@Loc[LocKeys.Ui.ManagePoliciesPage.SearchPolicies_3d8d234e]"
+                          Clearable="true" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Disabled="_busy"/>
+        </div>
+        <div class="device-list-limit"><MudCheckBox T="bool" Value="_includeArchived" ValueChanged="ArchivedChanged" Label="@Loc[LocKeys.Action.IncludeArchived]" Disabled="_busy"/></div>
+    </SearchControls>
+    <TagControls>
+        <div class="device-manage-tags">
+            <MudAutocomplete T="Tag" @ref="_tagPicker" Label="@Loc[LocKeys.Common.Tags]" Placeholder="@Loc[LocKeys.Ui.ManageDevicesPage.FilterByTag]" ShrinkLabel="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                             SearchFunc="SearchTags" ValueChanged="OnAddTag" ToStringFunc="@(tag => tag?.Name ?? string.Empty)" Clearable="true" ResetValueOnEmptyText="true"/>
+            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-2">
+                @foreach (var tag in _selectedTags)
+                {
+                    <MudChip T="int" Value="tag.Id" Color="Color.Primary" Variant="Variant.Filled" OnClose="@(() => OnRemoveTag(tag))">@tag.Name</MudChip>
+                }
+            </MudStack>
+        </div>
+        <div class="device-manage-tag-match">
+            <MudSelect T="bool" Value="_matchAll" ValueChanged="OnMatchChanged" Label="@Loc[LocKeys.Ui.ManageDevicesPage.Match]" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem Value="false">@Loc[LocKeys.Ui.ManageDevicesPage.AnyTagOR]</MudSelectItem><MudSelectItem Value="true">@Loc[LocKeys.Ui.ManageDevicesPage.AllTagsAND]</MudSelectItem>
+            </MudSelect>
+        </div>
+    </TagControls>
+</TagSearchPanel>
+@if (_loading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true"/>
+}
+<MudDataGrid T="Policy" Items="FilteredPolicies" Loading="_loading" Dense="true" Hover="true" Elevation="0" Outlined="true" MultiSelection="true" SelectOnRowClick="false"
+             @bind-SelectedItems="_selectedItems" RowsPerPage="@Constants.UI.DefaultPageSize" Filterable="true"
+             FilterMode="DataGridFilterMode.ColumnFilterMenu" ColumnResizeMode="ResizeMode.Column" Class="device-list-grid mb-8">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.VerifiedUser" Color="Color.Primary"/>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Policy.Policies]</MudText>
+        <MudSpacer/>
+        <div class="grid-toolbar-actions">
+            <GridSelectionCount Count="_selectedItems.Count"/>
+            @if (_canEdit && _selectedItems.Count > 0)
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Archive" OnClick="OnArchiveSelectedClicked" Disabled="_busy">@Loc[LocKeys.Action.ArchiveSelected]</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Delete" OnClick="OnDeleteSelectedClicked" Disabled="_busy">@Loc[LocKeys.Common.DeleteSelected]</MudButton>
+        }
+        </div>
+    </ToolBarContent>
+    <Columns>
+        <SelectColumn T="Policy" DisabledFunc="@(_ => _busy || !_canEdit)" />
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]"><CellTemplate><MudLink Class="device-name-link" Href="@($"/policies/{context.Item.Id}")">@context.Item.Name</MudLink></CellTemplate></PropertyColumn>
+        <PropertyColumn Property="x => x.Description" Title="@Loc[LocKeys.Common.Description]" />
+        <PropertyColumn Property="x => x.Trigger" Title="@Loc[LocKeys.Ui.DeviceEffectivePolicyTab.Trigger]" />
+        <PropertyColumn Property="x => x.Frequency" Title="@Loc[LocKeys.Ui.ManagePoliciesPage.Frequency]" />
+        <TemplateColumn Title="@Loc[LocKeys.Image.VersionStatus]" Sortable="false" Filterable="false">
+            <CellTemplate>
+                @if (context.Item.Archived || context.Item.ArchivedAtUtc is not null)
+                {
+                    @UiText.Get(LocKeys.Device.ArchivedText)
+                }
+                else
+                {
+                    var active = _activeIds.Contains(context.Item.Id);
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(active ? Color.Success : Color.Error)">@(active ? UiText.Get(LocKeys.Policy.Active) : UiText.Get(LocKeys.Policy.Inactive))</MudChip>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+            <CellTemplate>
+                @if (!context.Item.Archived && context.Item.ArchivedAtUtc is null)
+                {
+                    <MudTooltip Placement="Placement.Left" Text="@(UiText.Get(LocKeys.Ui.ManagePoliciesPage.Archive0, (context.Item.Name)))"><MudIconButton Icon="@Icons.Material.Filled.Archive" Color="Color.Primary" OnClick="@Snackbar.GuardAction(() => _busy || !_canEdit, UiText.Get(LocKeys.Ui.TargetPolicies.YouDoNotHavePermissionToEditPolicies), () => OnPolicyActionClicked(UiText.Get(LocKeys.Policy.Archive), [context.Item]))" Disabled="@(_busy)" aria-label="@Loc[LocKeys.Ui.ManagePoliciesPage.ArchivePolicy]" /></MudTooltip>
+                }
+                else
+                {
+                    <MudTooltip Placement="Placement.Left" Text="@(UiText.Get(LocKeys.Ui.ManagePoliciesPage.Restore0, (context.Item.Name)))"><MudIconButton Icon="@Icons.Material.Filled.Restore" Color="Color.Primary" OnClick="@Snackbar.GuardAction(() => _busy || !_canEdit, UiText.Get(LocKeys.Ui.TargetPolicies.YouDoNotHavePermissionToEditPolicies), () => OnPolicyActionClicked(UiText.Get(LocKeys.Policy.Restore), [context.Item]))" Disabled="@(_busy)" aria-label="@Loc[LocKeys.Ui.ManagePoliciesPage.RestorePolicy]" /></MudTooltip>
+                }
+                <MudTooltip Placement="Placement.Left" Text="@(UiText.Get(LocKeys.Ui.ActionFiles.Delete0, (context.Item.Name)))"><MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Primary" OnClick="@Snackbar.GuardAction(() => _busy || !_canEdit, UiText.Get(LocKeys.Ui.TargetPolicies.YouDoNotHavePermissionToEditPolicies), () => OnPolicyActionClicked(UiText.Get(LocKeys.Common.Delete), [context.Item]))" Disabled="@(_busy)" aria-label="@Loc[LocKeys.Ui.ManagePoliciesPage.DeletePolicy]" /></MudTooltip>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent><MudDataGridPager T="Policy" /></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Ui.ManagePoliciesPage.NoPoliciesFound]</MudText></NoRecordsContent>
+</MudDataGrid>
+
+@code {
+    private List<Policy> _items = [];
+    private List<Tag> _tags = [], _selectedTags = [];
+    private MudAutocomplete<Tag> _tagPicker = null!;
+    private bool _matchAll;
+    private IEnumerable<Policy> FilteredPolicies => _items.Where(p => _selectedTags.Count == 0 || (_matchAll
+        ? _selectedTags.All(t => p.PolicyTags.Any(x => x.TagId == t.Id))
+        : _selectedTags.Any(t => p.PolicyTags.Any(x => x.TagId == t.Id))));
+    private Task<IEnumerable<Tag>> SearchTags(string? text, CancellationToken ct) => Task.FromResult(_tags.Where(t =>
+        _selectedTags.All(s => s.Id != t.Id) && (string.IsNullOrWhiteSpace(text) || t.Name.Contains(text.Trim(), StringComparison.OrdinalIgnoreCase))));
+    private async Task OnAddTag(Tag? tag)
+    {
+        if (tag is null || _selectedTags.Any(x => x.Id == tag.Id)) return;
+        _selectedTags.Add(tag); _selectedItems.Clear(); await _tagPicker.ClearAsync();
+    }
+    private void OnClearTags()
+    {
+        foreach (var tag in _selectedTags.ToArray()) OnRemoveTag(tag);
+    }
+
+    private void OnRemoveTag(Tag tag) { _selectedTags.Remove(tag); _selectedItems.Clear(); }
+    private void OnMatchChanged(bool value) { _matchAll = value; _selectedItems.Clear(); }
+    private HashSet<int> _activeIds = [];
+    private HashSet<Policy> _selectedItems = [];
+    private bool _loading = true;
+    private bool _busy;
+    private bool _canEdit;
+    private bool _includeArchived;
+    private string? _search;
+    protected override async Task OnInitializedAsync()
+    {
+        _canEdit = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.PolicyEdit)).Succeeded;
+        var tags = ((await SharedCatalogAuthorization.AuthorizeAsync((await SharedCatalogAuthentication.GetAuthenticationStateAsync()).User, Constants.Permissions.TagView)).Succeeded ? await TagService.GetAsync() : ServiceResult<List<Tag>>.Ok([]));
+        _tags = tags.Data ?? [];
+        if (!tags.Success) Snackbar.Add(Loc[tags.Error!.Code, tags.Error.Args], Severity.Error);
+        await LoadAsync();
+    }
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        var result = await PolicyService.GetAsync(_search, _includeArchived);
+        var active = await PolicyService.GetActiveIdsAsync();
+        _items = result.Data ?? [];
+        _activeIds = active.Data?.ToHashSet() ?? [];
+        _selectedItems.Clear();
+        var error = !result.Success ? result.Error : active.Error;
+        if (error is not null)
+            Snackbar.Add(Loc[error.Code, error.Args], Severity.Error);
+        _loading = false;
+    }
+    private async Task SearchChanged(string? value) { _search = value; await LoadAsync(); }
+    private async Task ArchivedChanged(bool value) { _includeArchived = value; await LoadAsync(); }
+    private async Task OnNewClicked()
+    {
+        if (_busy || !_canEdit) return;
+        var dialog = await Dialog.ShowAsync<PolicyDialog>(Constants.UI.StandardDialogBox);
+        if (await dialog.Result is { Canceled: false, Data: int id }) Navigation.NavigateTo($"/policies/{id}");
+    }
+    private Task OnArchiveSelectedClicked() => OnPolicyActionClicked("Archive", _selectedItems.ToArray());
+    private Task OnDeleteSelectedClicked() => OnPolicyActionClicked("Delete", _selectedItems.ToArray());
+    private async Task OnPolicyActionClicked(string operation, Policy[] selected)
+    {
+        if (_busy || !_canEdit || selected.Length == 0) return;
+        _busy = true;
+        var target = selected.Length == 1 ? selected[0].Name : UiText.Get(LocKeys.Ui.ManagePoliciesPage.The0SelectedPolicies, (selected.Length));
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, UiText.Get(LocKeys.Policy.ConfirmOperation, UiText.Label(operation), target) + (operation == "Delete" ? UiText.Get(LocKeys.Ui.ManagePoliciesPage.ThisPermanentlyDeletesThePolicies) : "") },
+            { x => x.ButtonText, UiText.Label(operation) }, { x => x.Color, operation == "Delete" ? Color.Error : Color.Primary }
+        };
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        if (await dialog.Result is { Canceled: false, Data: true })
+        {
+            var result = operation switch
+            {
+                "Archive" => await PolicyService.ArchiveManyAsync(selected.Select(x => x.Guid)),
+                "Restore" => await PolicyService.RestoreAsync(selected[0].Guid),
+                _ => await PolicyService.DeleteManyAsync(selected.Select(x => x.Guid))
+            };
+            if (result.Success)
+            {
+                Snackbar.Add(operation == "Archive" ? UiText.Get(LocKeys.Ui.ManagePoliciesPage.PoliciesArchived) : operation == "Restore" ? UiText.Get(LocKeys.Ui.ManagePoliciesPage.PolicyRestored) : UiText.Get(LocKeys.Ui.ManagePoliciesPage.PoliciesDeleted), Severity.Success);
+                await LoadAsync();
+            }
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        _busy = false;
+    }
+}

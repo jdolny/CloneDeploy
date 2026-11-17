@@ -1,0 +1,63 @@
+@page "/settings/site-services"
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@inject SiteService Services
+@inject AuthenticationStateProvider Authentication
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.AdministrationNavigationGroup.SiteServices]" />
+<ActionButtons><MainButton>
+    <MudButton Disabled="_loading" OnClick="OnNewClicked" StartIcon="@Icons.Material.Filled.Add">@Loc[LocKeys.Ui.NewSiteServiceDialog.AddSiteService]</MudButton>
+</MainButton></ActionButtons>
+<MudPaper Class="device-list-filters device-search-panel" Elevation="0">
+    <MudGrid><MudItem xs="12" md="6">
+        <MudTextField T="string" ValueChanged="OnSearchChanged" DebounceInterval="300" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Immediate="false"
+                      HelperText="@Loc[LocKeys.Ui.SiteServicesPage.SearchByNameHostnameOrMainServerIP]" Variant="Variant.Outlined" Class="mt-0" />
+    </MudItem></MudGrid>
+</MudPaper>
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert> }
+@if (_loading) { <MudProgressLinear Color="Color.Primary" Indeterminate="true" /> }
+<MudDataGrid T="SiteServiceDetails" Items="FilteredServices" Dense="true" Elevation="0"
+             RowsPerPage="@Constants.UI.DefaultPageSize" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu"
+             ColumnResizeMode="ResizeMode.Column" Hover="true" Class="device-list-grid mb-8" Outlined="true">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.Dns" Color="Color.Primary" />
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.AdministrationNavigationGroup.SiteServices]</MudText><MudSpacer />
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]"><CellTemplate>
+            <button type="button" class="resource-name-link" @onclick="@(() => Navigation.NavigateTo($"/settings/site-services/{context.Item.Id}"))">@context.Item.Name</button>
+        </CellTemplate></PropertyColumn>
+        <PropertyColumn Property="x => x.State" Title="@Loc[LocKeys.Ui.AgentAdministrationPage.Enrollment]"><CellTemplate>@SiteServicePresentation.Enrollment(context.Item)</CellTemplate></PropertyColumn>
+        <TemplateColumn Title="@Loc[LocKeys.StorageProvider.Type]"><CellTemplate>@(context.Item.IsWindowsWorker ? UiText.Get(LocKeys.Ui.NewSiteServiceDialog.WindowsWorker) : UiText.Get(LocKeys.Ui.NewSiteServiceDialog.SiteService))</CellTemplate></TemplateColumn>
+        <PropertyColumn Property="x => x.Hostname" Title="@Loc[LocKeys.Ui.SiteServicesPage.Host]" />
+        <PropertyColumn Property="x => x.BackendAddress" Title="@Loc[LocKeys.Ui.SiteServiceGeneralTab.MainServerIP]" />
+        <PropertyColumn Property="x => x.LastContactAtUtc" Title="@Loc[LocKeys.Ui.SiteServicesPage.LastContactUTC]" Format="u" />
+        <TemplateColumn Title="@Loc[LocKeys.Ui.SiteServicesPage.Proxy]" Sortable="false" Filterable="false"><CellTemplate>@SiteServicePresentation.Proxy(context.Item)</CellTemplate></TemplateColumn>
+    </Columns>
+    <PagerContent><MudDataGridPager T="SiteServiceDetails" /></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Ui.SiteServicesPage.NoSiteServicesFound]</MudText></NoRecordsContent>
+</MudDataGrid>
+
+@code {
+    private IReadOnlyList<SiteServiceDetails> _services = [];
+    private bool _loading = true;
+    private string? _search, _error;
+    private IEnumerable<SiteServiceDetails> FilteredServices => _services.Where(x => string.IsNullOrWhiteSpace(_search) ||
+        new[] { x.Name, x.Hostname, x.BackendAddress }.Any(v => v?.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase) == true));
+    protected override async Task OnAfterRenderAsync(bool firstRender) { if (firstRender) await LoadAsync(); }
+    private void OnSearchChanged(string? value) => _search = value;
+    private async Task LoadAsync()
+    {
+        _loading = true; _error = null; StateHasChanged();
+        try { _services = await Services.ListAsync((await Authentication.GetAuthenticationStateAsync()).User); }
+        catch { _error = UiText.Get(LocKeys.Ui.SiteServicesPage.UnableToLoadSiteServicesRefreshAndTryAgain); }
+        finally { _loading = false; StateHasChanged(); }
+    }
+    private async Task OnNewClicked()
+    {
+        var dialog = await Dialog.ShowAsync<NewSiteServiceDialog>(Constants.UI.StandardDialogBox);
+        var result = await dialog.Result;
+        if (result is { Canceled: false, Data: Guid id }) Navigation.NavigateTo($"/settings/site-services/{id}/enrollment");
+        else await LoadAsync();
+    }
+}

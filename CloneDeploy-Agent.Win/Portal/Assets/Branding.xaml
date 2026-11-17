@@ -1,0 +1,21 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Vector paths and gradient from Branding/CloneDeploy.svg. -->
+    <DrawingImage x:Key="CloneDeployLogo">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Brush="{DynamicResource PortalText}" Geometry="M91.37,44.609h-34.435c-2.053,0-3.717,1.664-3.717,3.717v86.478c0,2.053,1.664,3.717,3.717,3.717h70.826c2.053,0,3.717,1.664,3.717,3.717v39.13c0,2.053-1.664,3.717-3.717,3.717H24.261c-13.399,0-24.261-10.862-24.261-24.261V24.261C0,10.862,10.862,0,24.261,0h103.5C129.814,0,131.478,1.664,131.478,3.717v57.913c0,2.053-1.664,3.717-3.717,3.717h-28.957c-2.053,0-3.717-1.664-3.717-3.717v-13.304c0-2.053-1.664-3.717-3.717-3.717Z" />
+                <GeometryDrawing Geometry="M177.065,140.478h34.435c2.053,0,3.717-1.664,3.717-3.717V50.283c0-2.053-1.664-3.717-3.717-3.717h-70.826c-2.053,0-3.717-1.664-3.717-3.717V3.717C136.957,1.664,138.621,0,140.674,0h103.5c13.399,0,24.261,10.862,24.261,24.261v136.565c0,13.399-10.862,24.261-24.261,24.261h-103.5c-2.053,0-3.717-1.664-3.717-3.717v-57.913c0-2.053,1.664-3.717,3.717-3.717h28.957c2.053,0,3.717,1.664,3.717,3.717v13.304c0,2.053,1.664,3.717,3.717,3.717Z">
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush MappingMode="Absolute" StartPoint="202.696,0" EndPoint="202.696,185.087">
+                            <GradientStop Offset=".134" Color="#3ba7ff" />
+                            <GradientStop Offset=".36" Color="#35a1ff" />
+                            <GradientStop Offset=".661" Color="#2490ff" />
+                            <GradientStop Offset=".933" Color="#0f7bff" />
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+</ResourceDictionary>

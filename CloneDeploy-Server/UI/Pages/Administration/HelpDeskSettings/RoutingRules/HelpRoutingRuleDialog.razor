@@ -1,0 +1,136 @@
+@using System.Text.Json
+@inject HelpDeskUiService Settings
+@inject AuthenticationStateProvider Authentication
+
+<MudDialog>
+    <DialogContent>
+        @if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert> }
+        @if (_loaded)
+        {
+        <MudGrid>
+            <MudItem xs="12" md="8"><MudTextField T="string" @bind-Value="_editing.Name" Label="@Loc[LocKeys.Ui.ManageOuNamingRulePage.RuleName]" MaxLength="100" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="_busy" /></MudItem>
+            <MudItem xs="12" md="4"><MudNumericField T="int" @bind-Value="_editing.Order" Label="@Loc[LocKeys.Ui.DeploymentPoliciesTab.Order]" Min="0" Max="100000" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="_busy" /></MudItem>
+        </MudGrid>
+        <MudSwitch T="bool" @bind-Value="_editing.Enabled" Label="@Loc[LocKeys.StorageProvider.Enabled]" Color="Color.Primary" Disabled="_busy" />
+        <MudSelect T="bool" @bind-Value="_editing.MatchAll" Label="@Loc[LocKeys.Ui.HelpRoutingRulesTab.MatchConditions]" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="_busy">
+            <MudSelectItem T="bool" Value="true">@Loc[LocKeys.Ui.HelpRoutingRulesTab.AllConditions]</MudSelectItem><MudSelectItem T="bool" Value="false">@Loc[LocKeys.Ui.HelpRoutingRulesTab.AnyCondition]</MudSelectItem>
+        </MudSelect>
+        @foreach (var condition in _conditions)
+        {
+            <MudGrid @key="condition" Class="mt-1">
+                <MudItem xs="12" md="3"><MudSelect T="HelpRuleField" Value="condition.Field" ValueChanged="@(field => ChangeField(condition, field))" Label="@Loc[LocKeys.Ui.HelpRoutingRulesTab.Field]" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="_busy">
+                    @foreach (var field in Enum.GetValues<HelpRuleField>().Where(x => Stage == HelpRuleStage.Assignment || x != HelpRuleField.Category && !HelpDeskUiService.IsDirectoryCondition(x)))
+                    { <MudSelectItem Value="field">@FieldLabel(field)</MudSelectItem> }
+                </MudSelect></MudItem>
+                <MudItem xs="12" md="3"><MudSelect T="HelpRuleOperator" @bind-Value="condition.Operator" Label="@Loc[LocKeys.Ui.HelpRoutingRulesTab.Operator]" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="_busy">
+                    @foreach (var op in Operators(condition.Field)) { <MudSelectItem Value="op">@OperatorLabel(op)</MudSelectItem> }
+                </MudSelect></MudItem>
+                <MudItem xs="10" md="5">
+                    @if (condition.Field == HelpRuleField.Category)
+                    {
+                        <MudSelect T="string" @bind-Value="condition.Value" Label="@Loc[LocKeys.Device.Category]" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="_busy">
+                            @foreach (var category in _settings.Categories) { <MudSelectItem T="string" Value="@(category.Id.ToString())">@category.Name</MudSelectItem> }
+                        </MudSelect>
+                    }
+                    else if (HelpDeskUiService.IsDirectoryCondition(condition.Field))
+                    {
+                        <HelpDirectoryPicker Value="@condition.Value" ValueChanged="@(value => condition.Value = value ?? string.Empty)"
+                                             Kind="@(HelpDeskUiService.IsOuCondition(condition.Field) ? DirectoryObjectKind.OrganizationalUnit : DirectoryObjectKind.Group)"
+                                             Label="@(HelpDeskUiService.IsOuCondition(condition.Field) ? UiText.Get(LocKeys.Ui.HelpRoutingRulesTab.OUIncludesChildOUs) : UiText.Get(LocKeys.Ui.HelpRoutingRulesTab.GroupIncludesNestedMembers))" Disabled="_busy" />
+                    }
+                    else { <MudTextField T="string" @bind-Value="condition.Value" Label="@(condition.Field == HelpRuleField.DeviceIp ? UiText.Get(LocKeys.Ui.HelpRoutingRulesTab.SubnetOrStartEndRange) : condition.Operator == HelpRuleOperator.Regex ? UiText.Get(LocKeys.Ui.HelpRoutingRulesTab.RegularExpressionCaseInsensitive) : UiText.Get(LocKeys.Ui.HelpRoutingRulesTab.ValueCaseInsensitive))" MaxLength="500" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="_busy" /> }
+                </MudItem>
+                <MudItem xs="2" md="1"><MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => _conditions.Remove(condition))" Disabled="_busy" aria-label="@Loc[LocKeys.Ui.HelpRoutingRulesTab.RemoveCondition]" /></MudItem>
+            </MudGrid>
+            @if (condition.Operator == HelpRuleOperator.Regex)
+            {
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-2">
+                    <MudTextField T="string" @bind-Value="condition.Sample" Label="@Loc[LocKeys.Ui.HelpRoutingRulesTab.SampleText]" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="4000" Disabled="_busy" />
+                    <MudButton OnClick="@(() => condition.TestResult = HelpDeskUiService.RoutingRegexMatch(condition.Sample, condition.Value))" Disabled="_busy">@Loc[LocKeys.Ui.HelpRoutingRulesTab.TestMatch]</MudButton>
+                </MudStack>
+                @if (condition.TestResult is not null) { <MudText Typo="Typo.body2">@condition.TestResult</MudText> }
+            }
+        }
+        @if (_conditions.Count == 0) { <MudAlert Severity="Severity.Info" Class="mt-3">@Loc[LocKeys.Ui.HelpRoutingRulesTab.ThisIsACatchAllRulePlaceItAfter]</MudAlert> }
+        <MudButton OnClick="@(() => _conditions.Add(new()))" Disabled="@(_busy || _conditions.Count >= 20)" StartIcon="@Icons.Material.Filled.Add" Class="my-3">@Loc[LocKeys.Ui.HelpRoutingRulesTab.AddCondition]</MudButton>
+        @if (Stage == HelpRuleStage.Categorization)
+        {
+            <MudSelect T="int?" @bind-Value="_editing.CategoryId" Label="@Loc[LocKeys.Ui.HelpRoutingRulesTab.SetCategory]" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="_busy">
+                @foreach (var category in _settings.Categories) { <MudSelectItem T="int?" Value="category.Id">@category.Name</MudSelectItem> }
+            </MudSelect>
+        }
+        else
+        {
+            <MudSelect T="int?" @bind-Value="_editing.QueueId" Label="@Loc[LocKeys.Ui.HelpRoutingRulesTab.AssignToQueue]" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="_busy">
+                @foreach (var queue in _settings.Queues) { <MudSelectItem T="int?" Value="queue.Id">@queue.Name</MudSelectItem> }
+            </MudSelect>
+        }
+        }
+        else if (_error is null) { <MudProgressLinear Indeterminate="true" /> }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_busy">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="Save" Disabled="@(_busy || !_loaded)" Variant="Variant.Filled" Color="Color.Primary">@Loc[LocKeys.Ui.RemoteAccessRuleDialog.SaveRule]</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public HelpRuleStage Stage { get; set; }
+    [Parameter] public HelpRoutingRule? Rule { get; set; }
+    private HelpRoutingSettings _settings = new([], [], []);
+    private HelpRoutingRule _editing = new();
+    private List<ConditionEditor> _conditions = [];
+    private string? _error;
+    private bool _busy, _loaded;
+    private sealed class ConditionEditor
+    {
+        public HelpRuleField Field { get; set; } = HelpRuleField.TitleOrDescription;
+        public HelpRuleOperator Operator { get; set; } = HelpRuleOperator.Contains;
+        public string Value { get; set; } = "";
+        public string Sample { get; set; } = "";
+        public string? TestResult { get; set; }
+    }
+    private static void ChangeField(ConditionEditor c, HelpRuleField field) { c.Field = field; c.Value = ""; c.Operator = Operators(field).First(); }
+    private static HelpRuleOperator[] Operators(HelpRuleField field) => field switch
+    {
+        HelpRuleField.Category => [HelpRuleOperator.Equals], HelpRuleField.DeviceIp => [HelpRuleOperator.InRange],
+        _ when HelpDeskUiService.IsDirectoryCondition(field) => [HelpRuleOperator.Equals],
+        _ => [HelpRuleOperator.Contains, HelpRuleOperator.StartsWith, HelpRuleOperator.Equals, HelpRuleOperator.Regex]
+    };
+    private static string FieldLabel(HelpRuleField field) => field switch
+    { HelpRuleField.UserDirectoryGroup => UiText.Get(LocKeys.Ui.HelpRoutingRulesTab.UserDirectoryGroup), HelpRuleField.UserDirectoryOu => UiText.Get(LocKeys.Ui.HelpRoutingRulesTab.UserDirectoryOU),
+        HelpRuleField.DeviceDirectoryGroup => UiText.Get(LocKeys.Ui.HelpRoutingRulesTab.DeviceDirectoryGroup), HelpRuleField.DeviceDirectoryOu => UiText.Get(LocKeys.Ui.HelpRoutingRulesTab.DeviceDirectoryOU), HelpRuleField.TitleOrDescription => UiText.Get(LocKeys.Ui.HelpRoutingRulesTab.TitleOrDescription), HelpRuleField.DeviceName => UiText.Get(LocKeys.Ui.HelpRoutingPreviewTab.DeviceName), HelpRuleField.DeviceIp => UiText.Get(LocKeys.Ui.HelpRoutingRulesTab.DeviceInventoryIP), _ => UiText.Label(field) };
+    private static string OperatorLabel(HelpRuleOperator op) => op switch { HelpRuleOperator.Regex => UiText.Get(LocKeys.Ui.HelpRoutingRulesTab.MatchesRegex), HelpRuleOperator.StartsWith => UiText.Get(LocKeys.Ui.HelpRoutingRulesTab.StartsWith), HelpRuleOperator.InRange => UiText.Get(LocKeys.Ui.HelpRoutingRulesTab.InSubnetRange), _ => UiText.Label(op) };
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            _settings = await Settings.ReadRoutingAsync(user);
+            _editing = Rule is null
+                ? new() { Stage = Stage, Order = Math.Min(100000, _settings.Rules.Where(x => x.Stage == Stage).Select(x => x.Order).DefaultIfEmpty(0).Max() + 10) }
+                : JsonSerializer.Deserialize<HelpRoutingRule>(JsonSerializer.Serialize(Rule))!;
+            _conditions = Rule is null ? [new()] : HelpDeskUiService.RoutingConditions(_editing)
+                .Select(x => new ConditionEditor { Field = x.Field, Operator = x.Operator, Value = x.Value }).ToList();
+            _loaded = true;
+        }
+        catch (InvalidOperationException ex) { _error = ex.Message; }
+        catch { _error = UiText.Get(LocKeys.Ui.HelpRoutingRulesTab.RoutingRulesCouldNotBeSavedOrLoadedReload); }
+    }
+    private void Cancel() => MudDialog.Cancel();
+    private async Task Save()
+    {
+        if (_busy || !_loaded) return;
+        _busy = true; _error = null;
+        try
+        {
+            _editing.ConditionsJson = JsonSerializer.Serialize(_conditions.Select(x => new HelpRuleCondition(x.Field, x.Operator, x.Value)));
+            await Settings.SaveRoutingRuleAsync((await Authentication.GetAuthenticationStateAsync()).User, _editing);
+            Snackbar.Add(UiText.Get(LocKeys.Ui.HelpRoutingRulesTab.RoutingRuleSaved), Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (InvalidOperationException ex) { _error = ex.Message; }
+        catch { _error = UiText.Get(LocKeys.Ui.HelpRoutingRulesTab.RoutingRulesCouldNotBeSavedOrLoadedReload); }
+        finally { _busy = false; }
+    }
+}

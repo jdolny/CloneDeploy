@@ -1,0 +1,38 @@
+@using System.Globalization
+@page "/dashboard/devices/{Bucket}"
+@attribute [Authorize(Policy = Constants.Permissions.DeviceView)]
+@inject DashboardService DashboardService
+@inject TimeProvider Clock
+
+<AppPageTitle Text="@($"{Loc[LocKeys.Dashboard.Devices]} | {Loc[$"Dashboard.Age.{Bucket}"]}")">
+    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Href="/" aria-label="@Loc[LocKeys.Dashboard.Back]" />
+</AppPageTitle>
+
+<MudDataGrid T="DashboardDeviceDto" Items="_devices" Loading="_loading" Dense="true" Hover="true" Elevation="2" RowsPerPage="@Constants.UI.DefaultPageSize"
+             Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <Columns>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Name]"><CellTemplate><MudLink Href="@($"/devices/manage/{context.Item.Id}")">@context.Item.Name</MudLink></CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Dashboard.LastCheckin]"><CellTemplate>@(context.Item.LastCheckin?.ToLocalTime().ToString("g") ?? Loc[LocKeys.Dashboard.Never].Value)</CellTemplate></TemplateColumn>
+        <PropertyColumn Property="x => x.AgentVersion" Title="@Loc[LocKeys.Dashboard.AgentVersion]" />
+    </Columns>
+    <PagerContent><MudDataGridPager T="DashboardDeviceDto" /></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Dashboard.NoDevices]</MudText></NoRecordsContent>
+</MudDataGrid>
+
+@code {
+    [Parameter] public string Bucket { get; set; } = "all";
+    [SupplyParameterFromQuery] public string? AsOf { get; set; }
+    private DateTime _asOf;
+    private List<DashboardDeviceDto> _devices = [];
+    private bool _loading = true;
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _asOf = DateTime.TryParse(AsOf, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var asOf) ? asOf : Clock.GetUtcNow().UtcDateTime;
+        if (Bucket is not ("all" or "overdue" or "recent" or "day" or "week" or "older" or "never")) Bucket = "all";
+        var result = await DashboardService.GetDevicesAsync(Bucket, _asOf);
+        _devices = result.Success ? result.Data ?? [] : [];
+        if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loading = false;
+    }
+}

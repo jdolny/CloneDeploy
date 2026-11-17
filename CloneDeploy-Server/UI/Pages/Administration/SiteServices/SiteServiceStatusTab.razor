@@ -1,0 +1,77 @@
+@using CloneDeploy_Server.UI.Pages.Devices.Devices.Shared
+
+<MudStack Class="device-general device-system-information" Spacing="8">
+    <div class="device-inventory-timestamp">
+        <MudIcon Icon="@Icons.Material.Outlined.Schedule" Size="Size.Small" aria-hidden="true" />
+        <MudText Typo="Typo.body2">@UiText.Get(LocKeys.Ui.SiteServiceStatusTab.LastContactUTC0, ((Service.LastContactAtUtc?.ToString("u") ?? UiText.Get(LocKeys.Dashboard.Never))))</MudText>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Service.LastError))
+    {
+        <MudAlert Severity="Severity.Warning">@Service.LastError</MudAlert>
+    }
+
+    <section>
+        <DeviceInventoryHeading Title="@Loc[LocKeys.Ui.SiteServiceStatusTab.ServiceStatus]" Icon="@Icons.Material.Outlined.MonitorHeart" />
+        <MudGrid Spacing="0">
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.NewSiteServiceDialog.ServiceName]" Value="@Service.Name" />
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.SiteServiceGeneralTab.RegistrationID]" Value="@Service.Id.ToString()" />
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.SiteServiceGeneralTab.MainServerIP]" Value="@Service.BackendAddress" />
+            @if (!Service.IsWindowsWorker)
+            {
+                <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.SiteServiceGeneralTab.AgentImagingServiceURL]" Value="@Service.PublicUrl" />
+            }
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.AgentAdministrationPage.Enrollment]" Value="@SiteServicePresentation.Enrollment(Service)" />
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Image.Configuration]" Value="@ConfigurationStatus" />
+            @if (Service.IsWindowsWorker)
+            {
+                <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.SiteServiceStatusTab.WorkerCapabilities]" Value='@(Service.State == SiteRegistrationState.Approved && Service.WindowsWorkerRoles != 0 ? UiText.Get(LocKeys.StorageProvider.Enabled) : UiText.Get(LocKeys.Ui.CertificateAuthorityTab.Disabled))' />
+            }
+            else
+            {
+                <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.SiteServiceStatusTab.HTTPSListener]" Value="@SiteServicePresentation.Proxy(Service)" />
+            }
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.SiteServiceStatusTab.CertificateExpiryUTC]" Value='@(Service.CertificateExpiresAtUtc?.ToString("u") ?? UiText.Get(LocKeys.Ui.SiteServiceStatusTab.NotIssued))' />
+        </MudGrid>
+    </section>
+
+    <section>
+        <DeviceInventoryHeading Title="@Loc[LocKeys.Ui.SiteServiceStatusTab.HostInformation]" Icon="@Icons.Material.Outlined.Computer" />
+        <MudGrid Spacing="0">
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.SiteServiceStatusTab.Hostname]" Value='@(Service.Hostname ?? UiText.Get(LocKeys.Ui.SiteServiceStatusTab.NotReported))' />
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.OsName]" Value='@(Service.HostOs ?? UiText.Get(LocKeys.Ui.SiteServiceStatusTab.NotReported))' />
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.IPAddresses]" Value='@(Service.Addresses ?? UiText.Get(LocKeys.Ui.SiteServiceStatusTab.NotReported))' />
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.SiteServiceStatusTab.ServiceType]" Value='@(Service.IsWindowsWorker ? UiText.Get(LocKeys.Ui.NewSiteServiceDialog.WindowsWorker) : UiText.Get(LocKeys.Ui.NewSiteServiceDialog.SiteService))' />
+        </MudGrid>
+    </section>
+
+    @if (!Service.IsWindowsWorker)
+    {
+        <section>
+            <DeviceInventoryHeading Title="@Loc[LocKeys.Ui.ManageSiteServicePage.PXETFTP]" Icon="@Icons.Material.Outlined.SettingsEthernet" />
+            @if (Service.BootStatus is { } boot)
+            {
+                <MudGrid Spacing="0">
+                    <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.SiteServiceBootTab.ProxyDHCP]" Value='@(boot.PxeRunning ? UiText.Get(LocKeys.Scheduler.StatusRunning) : UiText.Get(LocKeys.Ui.SiteServiceBootTab.Stopped))' />
+                    <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.SiteServiceBootTab.TFTP]" Value='@(boot.TftpRunning ? UiText.Get(LocKeys.Scheduler.StatusRunning) : UiText.Get(LocKeys.Ui.SiteServiceBootTab.Stopped))' />
+                    <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.SiteServiceStatusTab.BootConfiguration]" Value='@(boot.AppliedRevision == Service.Revision ? UiText.Get(LocKeys.Ui.SiteServiceBootTab.Applied) : UiText.Get(LocKeys.Ui.SiteServiceBootTab.Pending))' />
+                </MudGrid>
+                @if (!string.IsNullOrWhiteSpace(boot.Error))
+                {
+                    <MudAlert Severity="Severity.Warning" Class="mt-3">@boot.Error</MudAlert>
+                }
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@Loc[LocKeys.Ui.SiteServiceBootTab.NoBootStatusHasBeenReported]</MudText>
+            }
+        </section>
+    }
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public SiteServiceDetails Service { get; set; } = null!;
+    private string ConfigurationStatus => Service.State == SiteRegistrationState.Approved
+        ? Service.AppliedRevision == Service.Revision ? UiText.Get(LocKeys.Ui.SiteServiceBootTab.Applied) : UiText.Get(LocKeys.Ui.SiteServiceStatusTab.WaitingForService)
+        : UiText.Get(LocKeys.Device.PolicyNotApplicable);
+}

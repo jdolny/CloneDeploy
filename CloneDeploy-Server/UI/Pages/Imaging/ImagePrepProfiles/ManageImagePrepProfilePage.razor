@@ -1,0 +1,135 @@
+@page "/images/prepprofiles/{Id:int}"
+@attribute [Authorize(Policy = Constants.Permissions.ImagePrepProfileView)]
+@using CloneDeploy_Agent.Contracts
+@inject ImagingService Profiles
+
+<ImagingEditScope Policy="@Constants.Permissions.ImagePrepProfileEdit" Context="canEditImage">
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_entity is not null)
+{
+    <PageTitle>@(UiText.Get(LocKeys.Ui.ManageImagePrepProfilePage.ImagePrepProfile0, ((Id == 0 ? UiText.Get(LocKeys.Ui.ImagePrepProfilesPage.NewImagePrepProfile) : _entity.Name))))</PageTitle>
+    <SectionContent SectionName="page-title">
+        <div class="device-page-heading"><div class="device-heading-row">
+            <MudIconButton Href="/images/prepprofiles" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" aria-label="@Loc[LocKeys.Ui.ManageImagePrepProfilePage.BackToImagePrepProfiles]"/>
+            <div class="device-heading-icon"><MudIcon Icon="@Icons.Material.Outlined.SettingsSuggest" Size="Size.Large"/></div>
+            <div class="device-heading-copy"><div class="device-heading-name"><h1>@(Id == 0 ? UiText.Get(LocKeys.Ui.ImagePrepProfilesPage.NewImagePrepProfile) : _entity.Name)</h1></div></div>
+        </div></div>
+    </SectionContent>
+    <MudForm Disabled="@(!canEditImage || (_busy))">
+        <div class="device-detail device-workspace">
+            <ResponsiveTabs PanelOrder="@(new int[] { 0, 2, 1, 4, 3, 6, 5 })" @bind-ActivePanelIndex="_tab" Class="device-primary-tabs" TabPanelsClass="device-section-content" KeepPanelsAlive="true">
+            <MudTabPanel Text="@Loc[LocKeys.User.General]" Icon="@Icons.Material.Outlined.Info">
+                <TabHelp Href="ui/imaging/image-prep-general.html" Title="@Loc[LocKeys.User.General]" />
+                    <MudStack Class="pb-4" Spacing="3">
+                        <div class="section-action-bar"><MudButton OnClick="SaveAsync" Disabled="@(!canEditImage || (_busy))" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton></div>
+                        <MudTextField Disabled="@(!canEditImage)" @bind-Value="_entity.Name" Label="@Loc[LocKeys.Common.Name]" Required="true" MaxLength="200" Variant="Variant.Outlined" />
+                        <MudTextField Disabled="@(!canEditImage)" @bind-Value="_entity.Description" Label="@Loc[LocKeys.Common.Description]" Lines="3" MaxLength="2000" Variant="Variant.Outlined" />
+                        <MudCheckBox Disabled="@(!canEditImage)" @bind-Value="_entity.Enabled" Label="@Loc[LocKeys.StorageProvider.Enabled]" />
+                    </MudStack>
+                </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ManageImagePrepProfilePage.AnswerFile]" Icon="@Icons.Material.Outlined.Code">
+                <TabHelp Href="ui/imaging/image-prep-answer-file.html" Title="@Loc[LocKeys.Ui.ManageImagePrepProfilePage.AnswerFile]" />
+                    <MudStack Class="pb-4" Spacing="3">
+                        <div class="section-action-bar"><MudButton OnClick="SaveAsync" Disabled="@(!canEditImage || (_busy))" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton></div>
+                        <ImagePrepAnswerEditor Model="_entity" Disabled="@(!canEditImage || _busy)" />
+                    </MudStack>
+                </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Image.Configuration]" Icon="@Icons.Material.Outlined.Settings">
+                <TabHelp Href="ui/imaging/image-prep-configuration.html" Title="@Loc[LocKeys.Image.Configuration]" />
+                    <MudStack Class="pb-4" Spacing="3">
+                        <div class="section-action-bar"><MudButton OnClick="SaveAsync" Disabled="@(!canEditImage || (_busy))" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton></div>
+                        <MudCheckBox Disabled="@(!canEditImage)" @bind-Value="_entity.DisableHibernate" Label="@Loc[LocKeys.Ui.ManageImagePrepProfilePage.DisableHibernation]" />
+                        <MudCheckBox Disabled="@(!canEditImage)" @bind-Value="_entity.DisableBitLocker" Label="@Loc[LocKeys.Ui.ManageImagePrepProfilePage.TurnOffBitLockerOnFixedVolumesAndWaitFor]" />
+                        <MudSelect T="ImagePrepAgentMode" Disabled="@(!canEditImage)" @bind-Value="_entity.AgentMode" Label="@Loc[LocKeys.Ui.ManageImagePrepProfilePage.CloneDeployAgent]" Variant="Variant.Outlined">
+                            <MudSelectItem T="ImagePrepAgentMode" Value="ImagePrepAgentMode.Keep">@Loc[LocKeys.Ui.ManageImagePrepProfilePage.KeepInstalledWithoutResetting]</MudSelectItem>
+                            <MudSelectItem T="ImagePrepAgentMode" Value="ImagePrepAgentMode.Reset">@Loc[LocKeys.Ui.ManageImagePrepProfilePage.ResetForImageCapture]</MudSelectItem>
+                            <MudSelectItem T="ImagePrepAgentMode" Value="ImagePrepAgentMode.Uninstall">@Loc[LocKeys.Ui.ManageImagePrepProfilePage.UninstallBeforeImageCapture]</MudSelectItem>
+                        </MudSelect>
+                        <MudCheckBox Disabled="@(!canEditImage)" @bind-Value="_entity.RunSysprep" Label="@Loc[LocKeys.Ui.ManageImagePrepProfilePage.RunSysprepGeneralizeAndOOBE]" />
+                        <MudCheckBox Disabled="@(!canEditImage)" @bind-Value="_entity.RebootAndCapture" Label="@Loc[LocKeys.Ui.ManageImagePrepProfilePage.RebootAndCaptureImage]" />
+                    </MudStack>
+                </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ManageImagePrepProfilePage.PreSysprepScript]" Icon="@Icons.Material.Outlined.Terminal">
+                <TabHelp Href="ui/imaging/image-prep-pre-sysprep-script.html" Title="@Loc[LocKeys.Ui.ManageImagePrepProfilePage.PreSysprepScript]" />
+                    <MudStack Class="pb-4" Spacing="3">
+                        <div class="section-action-bar"><MudButton OnClick="SaveAsync" Disabled="@(!canEditImage || (_busy))" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton></div>
+                        <MudTextField Disabled="@(!canEditImage)" @bind-Value="_entity.PreSysprepScript" Label="@Loc[LocKeys.Ui.ManageImagePrepProfilePage.PowerShellCommands]" Lines="20"
+                                      MaxLength="@ImagePrepAnswerFile.MaximumContentLength" Variant="Variant.Outlined" />
+                    </MudStack>
+                </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ManageImagePrepProfilePage.SetupComplete]" Icon="@Icons.Material.Outlined.Terminal">
+                <TabHelp Href="ui/imaging/image-prep-setupcomplete.html" Title="@Loc[LocKeys.Ui.ManageImagePrepProfilePage.SetupComplete]" />
+                    <MudStack Class="pb-4" Spacing="3">
+                        <div class="section-action-bar"><MudButton OnClick="SaveAsync" Disabled="@(!canEditImage || (_busy))" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton></div>
+                        <MudTextField Disabled="@(!canEditImage)" @bind-Value="_entity.SetupComplete" Label="@Loc[LocKeys.Ui.ManageImagePrepProfilePage.SetupCompleteCommandsCMD]" Lines="20"
+                                      MaxLength="@ImagePrepAnswerFile.MaximumContentLength" Variant="Variant.Outlined" />
+                    </MudStack>
+                </MudTabPanel>
+            <MudTabPanel Class="page-tab-divider" Text="@Loc[LocKeys.Policy.Activity]" Icon="@Icons.Material.Outlined.History" Disabled="@(Id == 0)">
+                <TabHelp Href="ui/imaging/image-prep-history.html" Title="@Loc[LocKeys.Policy.Activity]" />
+                    @if (_tab == 6) { <MudStack Class="py-4"><ImagingHistoryTab Kind="ImagingItemKind.ImagePrepProfile" ItemId="Id" /></MudStack> }
+                </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Device.Relations]" Icon="@Icons.Material.Outlined.AccountTree" Disabled="@(Id == 0)">
+                <TabHelp Href="ui/imaging/imaging-relations.html" Title="@Loc[LocKeys.Device.Relations]" />
+                    @if (_tab == 5) { <MudStack Class="py-4"><ImagingRelationsTab Kind="ImagingItemKind.ImagePrepProfile" ItemId="Id" /></MudStack> }
+                </MudTabPanel>
+        </ResponsiveTabs>
+        </div>
+    </MudForm>
+}
+else
+{
+    <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.ManageImagePrepProfilePage.ImagePrepProfileNotFound]</MudAlert>
+}
+
+
+</ImagingEditScope>
+@code {
+    [Parameter] public int Id { get; set; }
+    private ImagePrepProfile? _entity;
+    private int _tab;
+    private bool _loading = true, _busy;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        if (Id == 0)
+            _entity = new()
+            {
+                Name = "",
+                PreSysprepScript = "Get-AppxPackage -AllUsers -Name Microsoft.OneDrive.Photos | Remove-AppxPackage -AllUsers"
+            };
+        else
+        {
+            var result = await Profiles.GetImagePrepProfilesAsync();
+            _entity = result.Data?.SingleOrDefault(x => x.Id == Id);
+            if (!result.Success)
+                Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        _loading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy || _entity is null)
+            return;
+
+        _entity.GenerateAnswerFile = false; // Save the XML as edited, without regenerating it.
+        _busy = true;
+        try
+        {
+            var result = await Profiles.SaveImagePrepAsync(_entity);
+            Snackbar.Add(result.Success ? UiText.Get(LocKeys.Ui.ManageImagePrepProfilePage.ImagePrepProfileSaved) : Loc[result.Error.Code, result.Error.Args],
+                result.Success ? Severity.Success : Severity.Error);
+            if (result.Success && Id == 0)
+                Navigation.NavigateTo($"/images/prepprofiles/{_entity.Id}");
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

@@ -1,0 +1,71 @@
+@implements IAsyncDisposable
+@inject IConfiguration Configuration
+@inject IJSRuntime JS
+
+<MudTooltip Text="@(UiText.Get(LocKeys.Ui.PageHelp.Text0DocumentationOpensInANewTab, (_topic)))">
+    <MudIconButton Icon="@Icons.Material.Outlined.HelpOutline" Color="Color.Inherit"
+                   Href="@_url" Target="_blank" rel="noopener noreferrer"
+                   aria-label="@(UiText.Get(LocKeys.Ui.PageHelp.Help0OpensInANewTab, (_topic)))" />
+</MudTooltip>
+
+@code {
+    private string _url = PageHelpTopics.DefaultRoot;
+    private string _topic = "CloneDeploy";
+    private string? _tabHref;
+    private string? _tabTitle;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _observer;
+    private DotNetObjectReference<PageHelp>? _reference;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        _module = await JS.InvokeAsync<IJSObjectReference>("import", "./UI/Common/PageHelp.razor.js");
+        _reference = DotNetObjectReference.Create(this);
+        _observer = await _module.InvokeAsync<IJSObjectReference>("observe", _reference);
+    }
+
+    [JSInvokable]
+    public Task SetTabHelp(string href, string title) => InvokeAsync(() =>
+    {
+        _tabHref = href;
+        _tabTitle = title;
+        UpdateTopic();
+        StateHasChanged();
+    });
+
+    protected override void OnInitialized()
+    {
+        UpdateTopic();
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private void UpdateTopic()
+    {
+        var topic = PageHelpTopics.Resolve(Navigation.ToBaseRelativePath(Navigation.Uri));
+        if (!string.IsNullOrEmpty(_tabHref))
+            topic = new PageHelpTopics.Topic(topic.Route, _tabTitle ?? topic.Title, _tabHref);
+        _url = PageHelpTopics.GetUrl(topic, Configuration["Documentation:BaseUrl"]);
+        _topic = UiText.Label(topic.Title);
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs args)
+    {
+        _tabHref = null;
+        _tabTitle = null;
+        UpdateTopic();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+        try
+        {
+            if (_observer is not null) { await _observer.InvokeVoidAsync("dispose"); await _observer.DisposeAsync(); }
+            if (_module is not null) await _module.DisposeAsync();
+        }
+        catch (JSDisconnectedException) { }
+        _reference?.Dispose();
+    }
+}

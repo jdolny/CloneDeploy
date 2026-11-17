@@ -1,0 +1,23 @@
+@inject ImagingService ImagingService
+
+<MudText Class="mb-3">@Loc[LocKeys.Ui.DeploymentDevicesTab.DevicesUsingThisSelectionAsTheirDeploymentDefault]</MudText>
+<MudDataGrid T="Device" Items="_items" Loading="_loading" Dense="true" Hover="true" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" ColumnResizeMode="ResizeMode.Column" RowsPerPage="25" Elevation="0" Outlined="true" Class="device-list-grid" QuickFilter="@(x => string.IsNullOrWhiteSpace(_gridSearch0) || (x.Name).Contains(_gridSearch0.Trim(), StringComparison.OrdinalIgnoreCase))"><ToolBarContent><MudIcon Icon="@Icons.Material.Outlined.Devices" Color="Color.Primary"/><MudText Typo="Typo.h6">@Loc[LocKeys.Group.Devices]</MudText><MudButton OnClick="OnLoadClicked" Disabled="_loading">@Loc[LocKeys.Dashboard.Refresh]</MudButton><MudSpacer/><MudTextField T="string" @bind-Value="_gridSearch0" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" aria-label="@Loc[LocKeys.Ui.ManageDevicesPage.SearchDevices_3aebaefc]" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/></ToolBarContent>
+    <Columns><PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Dashboard.Device]"><CellTemplate><MudLink Href="@($"/devices/manage/{context.Item.Id}")">@context.Item.Name</MudLink></CellTemplate></PropertyColumn><PropertyColumn Property="x => x.Description" Title="@Loc[LocKeys.Common.Description]" /></Columns>
+    <PagerContent><MudDataGridPager T="Device" /></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Ui.DeploymentDevicesTab.NoDevicesUseThisDefault]</MudText></NoRecordsContent>
+</MudDataGrid>
+@code {
+    private string? _gridSearch0;
+
+    [Parameter] public int? ImageId { get; set; }
+    [Parameter] public int? ProfileId { get; set; }
+    private List<Device> _items = [];
+    private bool _loading;
+    protected override Task OnInitializedAsync() => OnLoadClicked();
+    private async Task OnLoadClicked()
+    {
+        _loading = true; var result = await ImagingService.GetDevicesAsync(ImageId, ProfileId); _items = result.Data ?? [];
+        if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loading = false;
+    }
+}

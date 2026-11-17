@@ -1,0 +1,71 @@
+@using CloneDeploy_Agent.Contracts
+@inject WindowsUpdateService Service
+
+<div class="section-action-bar">
+    <MudButton OnClick="@Snackbar.GuardAction(() => _busy || !_canEdit, UiText.Get(LocKeys.Ui.TargetPolicies.YouDoNotHavePermissionToEditPolicies), () => OnEditClicked(null))" Disabled="@(_busy)" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.NewRule]</MudButton>
+</div>
+<MudDataGrid T="WindowsUpdateAutoApprovalRule" Items="_rules" Loading="_busy" Dense="true" Hover="true" Outlined="true" Elevation="0" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize" QuickFilter="MatchesSearch" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.Rule" Color="Color.Primary"/>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.AutoApproveRules]</MudText>
+        <MudSpacer/>
+        <MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.RefreshRules]"><MudIconButton OnClick="OnRefreshClicked" Disabled="_busy" Icon="@Icons.Material.Filled.Refresh" aria-label="@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.RefreshRules]"/></MudTooltip>
+        <MudTextField T="string" @bind-Value="_search" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.SearchRules]" aria-label="@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.SearchRules_0cfd5ddd]" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/>
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]"><CellTemplate><button type="button" class="resource-name-link" disabled="@_busy" @onclick="@Snackbar.GuardAction(() => !_canEdit, UiText.Get(LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.YouDoNotHavePermissionToEditApprovalRules), () => OnEditClicked(context.Item))">@context.Item.Name</button></CellTemplate></PropertyColumn>
+        <PropertyColumn Property="x => x.Enabled" Title="@Loc[LocKeys.StorageProvider.Enabled]"><CellTemplate>@(context.Item.Enabled ? UiText.Get(LocKeys.User.Yes) : UiText.Get(LocKeys.User.No))</CellTemplate></PropertyColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Device.Severity]" Sortable="false" Filterable="false"><CellTemplate>@(context.Item.Severities.Length == 0 ? UiText.Get(LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.AnyNotSpecified) : string.Join(", ", context.Item.Severities))</CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.Classification]" Sortable="false" Filterable="false"><CellTemplate>@(context.Item.ClassificationIds.Length == 0 ? UiText.Get(LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.Any) : string.Join(", ", context.Item.ClassificationIds.Select(ClassificationName)))</CellTemplate></TemplateColumn>
+        <PropertyColumn Property="x => x.DelayDays" Title="@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.DelayDays]"/>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" Sortable="false" Filterable="false"><CellTemplate>
+            <MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.DeleteRule]"><MudIconButton OnClick="@(() => OnDeleteClicked(context.Item))" Disabled="_busy" Icon="@Icons.Material.Filled.Delete" Color="Color.Primary" aria-label="@(UiText.Get(LocKeys.Ui.ActionFiles.Delete0_7eab122c, (context.Item.Name)))"/></MudTooltip>
+        </CellTemplate></TemplateColumn>
+    </Columns>
+    <PagerContent><MudDataGridPager T="WindowsUpdateAutoApprovalRule"/></PagerContent>
+    <NoRecordsContent><MudText>@(string.IsNullOrWhiteSpace(_search) ? UiText.Get(LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.NoRulesUpdatesRequireManualApproval) : UiText.Get(LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.NoRulesMatchYourSearch))</MudText></NoRecordsContent>
+</MudDataGrid>
+@code {
+    private List<WindowsUpdateAutoApprovalRule> _rules = [];
+    private List<InventoryUpdateCategory> _categories = [];
+    private bool _busy, _canEdit;
+    private string? _search;
+    protected override Task OnInitializedAsync() => OnRefreshClicked();
+    private string ClassificationName(string id) => _categories.FirstOrDefault(x => Guid.Parse(x.Id).ToString() == id)?.Name ?? id;
+    private bool MatchesSearch(WindowsUpdateAutoApprovalRule rule) => string.IsNullOrWhiteSpace(_search) ||
+        $"{rule.Name} {string.Join(' ', rule.Severities)} {string.Join(' ', rule.ClassificationIds.Select(ClassificationName))}".Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+    private async Task OnEditClicked(WindowsUpdateAutoApprovalRule? rule)
+    {
+        if (_busy || !_canEdit) return;
+        var parameters = new DialogParameters<WindowsUpdateAutoApprovalRuleDialog> { { x => x.Rule, rule }, { x => x.Categories, _categories } };
+        var dialog = await Dialog.ShowAsync<WindowsUpdateAutoApprovalRuleDialog>("", parameters,
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Medium, BackdropClick = false });
+        if (await dialog.Result is { Canceled: false }) await OnRefreshClicked();
+    }
+    private async Task OnRefreshClicked()
+    {
+        _busy = true;
+        _canEdit = false;
+        try
+        {
+            var rules = await Service.GetAutoApprovalAsync();
+            var categories = await Service.AutoApprovalClassificationsAsync();
+            _canEdit = rules.Success && categories.Success;
+            if (rules.Success) _rules = rules.Data!; else Snackbar.Add(Loc[rules.Error!.Code, rules.Error.Args], Severity.Error);
+            if (categories.Success) _categories = categories.Data!; else Snackbar.Add(Loc[categories.Error!.Code, categories.Error.Args], Severity.Error);
+        }
+        finally { _busy = false; }
+    }
+    private async Task OnDeleteClicked(WindowsUpdateAutoApprovalRule rule)
+    {
+        if (await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.DeleteAutoApprovalRule), UiText.Get(LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.Delete0ExistingApprovalsWillRemain, (rule.Name)), yesText: UiText.Get(LocKeys.Common.Delete), cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+        _busy = true;
+        try
+        {
+            var result = await Service.DeleteAutoApprovalAsync(rule.Id);
+            if (!result.Success) { Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); return; }
+            await OnRefreshClicked();
+        }
+        finally { _busy = false; }
+    }
+}

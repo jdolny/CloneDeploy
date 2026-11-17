@@ -1,0 +1,21 @@
+<Project>
+  <PropertyGroup>
+    <BundledUdpcastRoot>$(MSBuildThisFileDirectory)20250223</BundledUdpcastRoot>
+    <UdpcastArchitectures Condition="'$(NativeToolArchitecture)' != ''">$(NativeToolArchitecture)</UdpcastArchitectures>
+    <UdpcastArchitectures Condition="'$(UdpcastArchitectures)' == ''">x64;a64</UdpcastArchitectures>
+  </PropertyGroup>
+  <ItemGroup>
+    <_UdpcastArchitecture Include="$(UdpcastArchitectures)" />
+    <_UdpcastRequired Include="@(_UdpcastArchitecture->'$(BundledUdpcastRoot)/%(Identity)/udp-sender.exe');@(_UdpcastArchitecture->'$(BundledUdpcastRoot)/%(Identity)/udp-receiver.exe')" />
+    <Content Include="@(_UdpcastRequired)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest">
+      <Link>Tools/udpcast/$([System.IO.Path]::GetFileName($([System.IO.Path]::GetDirectoryName('%(Identity)'))))/%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="$(BundledUdpcastRoot)/*"
+             Link="Tools/udpcast/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="RequireBundledUdpcast" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('%(_UdpcastRequired.Identity)')" Text="Restore %(_UdpcastRequired.Identity) from source control; the bundled UDPcast binary is required." />
+    <Error Condition="!Exists('$(BundledUdpcastRoot)/source.zip') Or !Exists('$(BundledUdpcastRoot)/COPYING-UDPCAST.txt') Or !Exists('$(BundledUdpcastRoot)/COPYING-TOOLCHAIN.txt')"
+           Text="Restore the bundled UDPcast source and license files from source control." />
+  </Target>
+</Project>

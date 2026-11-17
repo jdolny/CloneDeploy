@@ -1,0 +1,54 @@
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DeviceReportColumnsDialog.AvailableColumns]</MudText>
+                <MudTextField @bind-Value="_search" Label="@Loc[LocKeys.Ui.DeviceReportColumnsDialog.SearchColumns]" Immediate="true" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <div style="max-height:55vh;overflow:auto">
+                    @foreach (var column in Catalog.Where(x => !_selected.Contains(x.Key) && (string.IsNullOrWhiteSpace(_search) || x.Title.Contains(_search, StringComparison.OrdinalIgnoreCase))))
+                    {
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Class="pa-2">
+                            <MudText>@column.Title</MudText><MudSpacer />
+                            <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="@(() => _selected.Add(column.Key))" aria-label="@(UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.Add0, (column.Title)))" />
+                        </MudStack>
+                    }
+                </div>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudText Typo="Typo.h6">@UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.SelectedColumns0, (_selected.Count))</MudText>
+                <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.DeviceReportColumnsDialog.ThePreviewAndCSVUseThisOrder]</MudText>
+                <div style="max-height:55vh;overflow:auto">
+                    @foreach (var key in _selected.ToArray())
+                    {
+                        var title = Catalog.FirstOrDefault(x => x.Key == key)?.Title ?? UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.UnavailableColumn0, (key));
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="0" Class="pa-2">
+                            <MudText>@title</MudText><MudSpacer />
+                            <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.ArrowUpward" OnClick="@Snackbar.GuardAction(() => _selected.IndexOf(key) == 0, UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.ThisColumnIsAlreadyFirst), () => Move(key, -1))" aria-label="@(UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.Move0Up, (title)))" />
+                            <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.ArrowDownward" OnClick="@Snackbar.GuardAction(() => _selected.IndexOf(key) == _selected.Count - 1, UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.ThisColumnIsAlreadyLast), () => Move(key, 1))" aria-label="@(UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.Move0Down, (title)))" />
+                            <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Close" OnClick="@(() => _selected.Remove(key))" aria-label="@(UiText.Get(LocKeys.Group.RemoveDevice, (title)))" />
+                        </MudStack>
+                    }
+                </div>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="MudDialog.Cancel">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _selected.Count is < 1 or > 100, UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.SelectBetween1And100Columns), () => MudDialog.Close(DialogResult.Ok(_selected.ToList())))" Variant="Variant.Filled" Color="Color.Primary">@Loc[LocKeys.Ui.DeviceReportColumnsDialog.UseColumns]</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public List<DeviceReportColumn> Catalog { get; set; } = [];
+    [Parameter] public List<string> Selected { get; set; } = [];
+    private List<string> _selected = [];
+    private string? _search;
+    protected override void OnInitialized() => _selected = Selected.ToList();
+    private void Move(string key, int direction)
+    {
+        var index = _selected.IndexOf(key);
+        var next = index + direction;
+        if (index < 0 || next < 0 || next >= _selected.Count) return;
+        (_selected[index], _selected[next]) = (_selected[next], _selected[index]);
+    }
+}

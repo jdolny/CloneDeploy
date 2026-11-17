@@ -1,0 +1,377 @@
+@using CloneDeploy_Server.Backend.Services.Files
+@using CloneDeploy_Server.UI.Pages.SharedResources.Schedules
+@implements IAsyncDisposable
+@inject IAuthorizationService Authorization
+@inject AuthenticationStateProvider Authentication
+@inject ActionService Files
+@inject ScheduleService ScheduleService
+
+@if (_denied)
+{
+    <MudAlert Severity="Severity.Info">@Loc[LocKeys.Ui.ActionFiles.PoliciesAndActionsViewPermissionIsRequiredToView]</MudAlert>
+}
+else if (!_initialized)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+<MudStack Spacing="6">
+    <MudStack Row="true" Justify="Justify.FlexEnd">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" Disabled="@(!_canEdit || (_busy || _loading))" OnClick="OnSaveScheduleClicked">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+    </MudStack>
+
+    <div>
+
+        @foreach (var pending in _pendingUploads.ToArray())
+        {
+            <MudAlert Severity="Severity.Warning" Class="mt-3">
+                @pending.FileName @Loc[LocKeys.Ui.ActionFiles.WasUploadedButCouldNotBeAttached]
+                <MudButton OnClick="@(() => OnAttachClicked(pending))" Disabled="@(!_canEdit || _busy)">@Loc[LocKeys.Ui.ActionFiles.RetryAttaching]</MudButton>
+            </MudAlert>
+        }
+    </div>
+    
+    <div>
+
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert>
+        }
+        <MudDataGrid T="ActionFileItemDto" Items="_items" QuickFilter="@(file => string.IsNullOrWhiteSpace(_search) || (file.Name + " " + file.Url).Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase))"
+                     Dense="true" Hover="true" Elevation="0" Outlined="true" Class="device-list-grid" Loading="_loading" RowsPerPage="@Constants.UI.DefaultPageSize">
+            <ToolBarContent>
+        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+            <MudButton Disabled="@(!_canEdit)" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.UploadFile" OnClick="OnUploadClicked">@Loc[LocKeys.Ui.ActionFiles.UploadFiles]</MudButton>
+            <MudButton Disabled="@(!_canEdit)" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Link" OnClick="@(() => OnEditExternalClicked(null))">@Loc[LocKeys.Ui.ActionFiles.AddFromURL]</MudButton>
+            <MudButton StartIcon="@Icons.Material.Filled.Refresh" OnClick="OnRefreshClicked" Disabled="_loading">@Loc[LocKeys.Dashboard.Refresh]</MudButton>
+        </MudStack>
+                <MudSpacer/>
+                <MudTextField T="string" @bind-Value="_search" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" aria-label="@Loc[LocKeys.Ui.ActionFiles.SearchFiles]"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/>
+            </ToolBarContent>
+            <Columns><TemplateColumn Title="@Loc[LocKeys.Ui.ActionFiles.NameSource]" Sortable="false" Filterable="false"><CellTemplate>
+                    <MudText>@context.Item.Name</MudText>
+                    @if (context.Item.Id == InstallerFileId)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary">@Loc[LocKeys.Ui.ActionFiles.Installer]</MudChip>
+                    }
+                    <MudText Typo="Typo.caption">@(context.Item.External ? "URL" : UiText.Get(LocKeys.Ui.ChunkedFileUpload.Upload))</MudText>
+                    @if (context.Item.Url is not null)
+                    {
+                        <MudText Typo="Typo.caption" Style="overflow-wrap:anywhere; max-width:32rem;">@context.Item.Url</MudText>
+                    }
+                    @if (context.Item.Sha256 is { Length: >= 12 })
+                    {
+                        <MudTooltip Text="@(UiText.Get(LocKeys.Ui.ActionFiles.SHA2560, (context.Item.Sha256)))"><MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.ActionFiles.SHA2560_08991825, (context.Item.Sha256[..12]))</MudText></MudTooltip>
+                    }
+                </CellTemplate></TemplateColumn><TemplateColumn Title="@Loc[LocKeys.Image.VersionSize]" Sortable="false" Filterable="false"><CellTemplate>@SizeText(context.Item.Size)</CellTemplate></TemplateColumn><TemplateColumn Title="@Loc[LocKeys.Image.VersionStatus]" Sortable="false" Filterable="false"><CellTemplate>
+                    <MudText Color="@(context.Item.Error is null ? Color.Default : Color.Error)">@UiText.Label(context.Item.Status) @context.Item.Progress</MudText>
+                    @if (context.Item.Busy)
+                    {
+                        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+                    }
+                    @if (context.Item.Error is not null)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Error">@context.Item.Error</MudText>
+                    }
+                    @if (context.Item.External && context.Item.Size.HasValue && context.Item.Status != "Complete")
+                    {
+                        <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.ActionFiles.PreviousDownloadedVersionRetained]</MudText>
+                    }
+                </CellTemplate></TemplateColumn><TemplateColumn Title="@Loc[LocKeys.Ui.ActionFiles.LastUpdated]" Sortable="false" Filterable="false"><CellTemplate>
+                    @(context.Item.UpdatedAtUtc?.ToLocalTime().ToString("g") ?? "—")
+                    @if (context.Item.External)
+                    {
+                        <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.ActionFiles.LastChecked0, ((context.Item.LastCheckedAtUtc?.ToLocalTime().ToString("g") ?? "—")))</MudText>
+                        <MudText Typo="Typo.caption">@(context.Item.ExpectedSha256 is not null ? UiText.Get(LocKeys.Ui.ActionFiles.PinnedChecksum) : context.Item.AutoRefresh ? UiText.Get(LocKeys.Ui.ActionFiles.FollowsActionSchedule) : UiText.Get(LocKeys.Ui.ActionFiles.AutomaticChecksDisabled))</MudText>
+                    }
+                </CellTemplate></TemplateColumn><TemplateColumn Title="@Loc[LocKeys.Common.Actions]" Sortable="false" Filterable="false"><CellTemplate>
+                    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1">
+                        @if (context.Item.Size.HasValue)
+                        {
+                            <MudTooltip Text="@(UiText.Get(LocKeys.Ui.ActionFiles.Download0, (context.Item.Name)))" Placement="Placement.Left" Arrow="true" Delay="200">
+                                <MudIconButton Icon="@Icons.Material.Filled.Download" Size="Size.Medium" Color="Color.Primary"
+                                               Href="@($"api/ui/action-files/{ActionGuid}/{context.Item.Id}")" download="@context.Item.Name" aria-label="@(UiText.Get(LocKeys.Ui.ActionFiles.Download0_465e0e80, (context.Item.Name)))" />
+                            </MudTooltip>
+                        }
+                        @if (context.Item.External)
+                        {
+                            @if (context.Item.Busy)
+                            {
+                                <MudTooltip Text="@(UiText.Get(LocKeys.Ui.ActionFiles.CancelDownload0, (context.Item.Name)))" Placement="Placement.Left" Arrow="true" Delay="200">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Cancel" Size="Size.Medium" Color="Color.Primary" Disabled="@(!_canEdit || (_busy))"
+                                                   OnClick="@(() => OnDownloadClicked(context.Item, true))" aria-label="@(UiText.Get(LocKeys.Ui.ActionFiles.CancelDownload0_9c6b3fee, (context.Item.Name)))" />
+                                </MudTooltip>
+                            }
+                            else
+                            {
+                                <MudTooltip Text="@(UiText.Get(LocKeys.Ui.ActionFiles.Edit0, (context.Item.Name)))" Placement="Placement.Left" Arrow="true" Delay="200">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Medium" Color="Color.Primary" Disabled="@(!_canEdit || (_busy))"
+                                                   OnClick="@(() => OnEditExternalClicked(context.Item))" aria-label="@(UiText.Get(LocKeys.Ui.ActionFiles.Edit0_fdd9d505, (context.Item.Name)))" />
+                                </MudTooltip>
+                                <MudTooltip Text="@(UiText.Get(LocKeys.Ui.ActionFiles.ReDownload0, (context.Item.Name)))" Placement="Placement.Left" Arrow="true" Delay="200">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Medium" Color="Color.Primary" Disabled="@(!_canEdit || (_busy))"
+                                                   OnClick="@(() => OnDownloadClicked(context.Item, false))" aria-label="@(UiText.Get(LocKeys.Ui.ActionFiles.ReDownload0_bb4960b2, (context.Item.Name)))" />
+                                </MudTooltip>
+                            }
+                        }
+                        <MudTooltip Text="@(UiText.Get(LocKeys.Ui.ActionFiles.Delete0, (context.Item.Name)))" Placement="Placement.Left" Arrow="true" Delay="200">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Medium" Color="Color.Primary" Disabled="@(!_canEdit || (_busy))"
+                                           OnClick="@(() => OnDeleteClicked(context.Item))" aria-label="@(UiText.Get(LocKeys.Ui.ActionFiles.Delete0_7eab122c, (context.Item.Name)))" />
+                        </MudTooltip>
+                    </MudStack>
+                </CellTemplate></TemplateColumn></Columns>
+            <NoRecordsContent><MudText>@Loc[LocKeys.Ui.ActionFiles.NoFilesAttachedUploadFilesOrAddADownload]</MudText></NoRecordsContent>
+            <PagerContent><MudDataGridPager T="ActionFileItemDto"/></PagerContent>
+        </MudDataGrid>
+    </div>
+    <div>
+        <MudDivider Class="mb-4"/><MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.Ui.ActionFiles.URLFileSchedule]</MudText>
+        <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.ActionFiles.FilesAddedViaURLCanBeScheduledToAutomatically]</MudText>
+        <MudStack Spacing="3">
+            <MudSwitch T="bool" @bind-Value="_showScheduler" Color="Color.Primary" Disabled="_busy" Label="@Loc[LocKeys.Ui.ActionFiles.AutoDownloadFiles]" />
+            @if (_showScheduler)
+            {
+                <div class="scheduler-schedule">
+                    <MudSelect T="int?" @bind-Value="_scheduleId" Label="@Loc[LocKeys.Common.Schedule]" Clearable="true" Disabled="@(!_canEdit || (_busy))" Variant="Variant.Outlined"
+                               HelperText="@Loc[LocKeys.Ui.ActionFiles.LeaveEmptyToDisableAutomaticChecksFilesWithAn]">
+                        @foreach (var schedule in _schedules)
+                        {
+                            <MudSelectItem T="int?" Value="@(schedule.Id)">@schedule.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudButton OnClick="@(() => OnNewScheduleClicked())" Disabled="@(!_canEdit || _busy)" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small" Class="scheduler-new">@Loc[LocKeys.Schedule.NewSchedule]</MudButton>
+                </div>
+            }
+        </MudStack>
+    </div>
+</MudStack>
+<MudDialog @bind-Visible="_showUpload" Options="FileDialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ActionFiles.UploadFiles]</MudText>
+    </TitleContent>
+    <DialogContent>
+        <ChunkedFileUpload OnUploaded="OnAttachClicked" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCloseUploadClicked" Disabled="_busy">@Loc[LocKeys.Ui.ActionFiles.Close]</MudButton>
+    </DialogActions>
+</MudDialog>
+<MudDialog @bind-Visible="_showExternal" Options="FileDialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(_editing is null ? UiText.Get(LocKeys.Ui.ActionFiles.AddFromURL) : UiText.Get(LocKeys.Ui.ActionFiles.EditExternalFile))</MudText>
+    </TitleContent>
+    <DialogContent>
+        <ExternalFileEditor @key="_editorKey" ActionGuid="ActionGuid" File="_editing" OnSaved="ExternalSavedAsync" OnCancel="CloseEditor" />
+    </DialogContent>
+</MudDialog>
+}
+
+@code {
+    private string? _search;
+    private void OnUploadClicked() => _showUpload = true;
+    private void OnCloseUploadClicked() => _showUpload = false;
+    private static readonly DialogOptions FileDialogOptions = Constants.UI.StandardDialogBox with
+    {
+        BackdropClick = false,
+        CloseOnEscapeKey = false
+    };
+
+    [Parameter, EditorRequired] public Guid ActionGuid { get; set; }
+    [Parameter] public int? InstallerFileId { get; set; }
+   
+    private List<ActionFileItemDto> _items = [];
+    private List<Schedule> _schedules = [];
+    private int? _scheduleId;
+    private readonly List<UploadResultDto> _pendingUploads = [];
+    private ActionFileItemDto? _editing;
+    private bool _showUpload;
+    private bool _showExternal;
+    private bool _loading;
+    private bool _busy;
+    private string? _error;
+    private Guid _editorKey = Guid.NewGuid();
+    private readonly CancellationTokenSource _lifetime = new();
+    private Task? _polling;
+    private bool _denied, _canEdit;
+    private bool _initialized;
+    private bool _showScheduler;
+
+    private bool CanPoll => !_denied && !_loading && !_busy && !_showUpload && !_showExternal
+        && _error is null && _items.Any(x => x.Busy);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _canEdit = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.PolicyEdit)).Succeeded;
+        await OnRefreshClicked();
+        if (!_denied)
+        {
+            var result = await Files.GetFileRefreshScheduleAsync(ActionGuid);
+            if (!result.Success)
+            {
+                _denied = result.Error.Code == ErrorKeys.Action.Forbidden;
+                _error = Loc[result.Error.Code, result.Error.Args];
+                _initialized = true;
+                return;
+            }
+            _scheduleId = result.Data;
+            var schedules = await ScheduleService.GetAsync();
+            if (!schedules.Success)
+            {
+                _error = Loc[schedules.Error.Code, schedules.Error.Args];
+                _initialized = true;
+                return;
+            }
+            _schedules = schedules.Data ?? [];
+        }
+        _initialized = true;
+        if (!_denied) _polling = PollAsync();
+    }
+
+    private async Task OnRefreshClicked()
+    {
+        if (_loading) return;
+        _loading = true;
+        try
+        {
+            var result = await Files.GetActionFilesAsync(ActionGuid);
+            _denied = !result.Success && result.Error.Code == ErrorKeys.Action.Forbidden;
+            _items = result.Data ?? [];
+            _error = result.Success ? null : Loc[result.Error.Code, result.Error.Args].Value;
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task PollAsync()
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+            while (await timer.WaitForNextTickAsync(_lifetime.Token))
+                await InvokeAsync(PollOnceAsync);
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private async Task PollOnceAsync()
+    {
+        if (!CanPoll || _lifetime.IsCancellationRequested) return;
+        var result = await Files.GetActionFilesAsync(ActionGuid);
+        if (!result.Success)
+        {
+            _denied = result.Error.Code == ErrorKeys.Action.Forbidden;
+            _error = Loc[result.Error.Code, result.Error.Args];
+            _items.Clear();
+            StateHasChanged();
+            return;
+        }
+        var items = result.Data!;
+        // A form or upload may have opened while the request was in flight.
+        if (!CanPoll || _lifetime.IsCancellationRequested || _items.SequenceEqual(items)) return;
+        _items = items;
+        StateHasChanged();
+    }
+
+    private void OnEditExternalClicked(ActionFileItemDto? file) { _editing = file; _editorKey = Guid.NewGuid(); _showExternal = true; }
+    private void CloseEditor() => _showExternal = false;
+    private async Task OnSaveScheduleClicked() => await RunAsync(async () =>
+    {
+        if (!_showScheduler)
+            _scheduleId = null;
+        var result = await Files.SaveFileRefreshScheduleAsync(ActionGuid, _scheduleId);
+        if (result.Success)
+            Snackbar.Add(UiText.Get(LocKeys.Ui.ActionFiles.FileRefreshScheduleSaved), Severity.Success);
+        return result;
+    });
+    private async Task ExternalSavedAsync() { CloseEditor(); Snackbar.Add(UiText.Get(LocKeys.Ui.ActionFiles.DownloadQueued), Severity.Success); await OnRefreshClicked(); }
+    private async Task OnAttachClicked(UploadResultDto result)
+    {
+        if (_pendingUploads.All(x => x.Id != result.Id)) _pendingUploads.Add(result);
+        await RunAsync(async () =>
+        {
+            var attached = await Files.AttachUploadAsync(ActionGuid, result.Id);
+            if (attached.Success)
+                _pendingUploads.RemoveAll(x => x.Id == result.Id);
+            return attached;
+        });
+    }
+
+    private Task OnDownloadClicked(ActionFileItemDto file, bool cancel) => RunAsync(() => cancel
+        ? Files.CancelFileAsync(ActionGuid, file.Id)
+        : Files.QueueFileAsync(ActionGuid, file.Id));
+
+    private async Task RunAsync(Func<Task<ServiceResult>> operation)
+    {
+        _busy = true;
+        try
+        {
+            var result = await operation();
+            if (!result.Success)
+            {
+                _denied = result.Error.Code == ErrorKeys.Action.Forbidden;
+                Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+                return;
+            }
+            await OnRefreshClicked();
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDeleteClicked(ActionFileItemDto file)
+    {
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, UiText.Get(LocKeys.Ui.ActionFiles.Delete0AnyActiveDownloadWillBeCanceled, (file.Name)) },
+            { x => x.ButtonText, UiText.Get(LocKeys.Common.Delete) }, { x => x.Color, Color.Error }
+        };
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        if (await dialog.Result is { Canceled: false, Data: true })
+            await RunAsync(() => Files.DeleteFileAsync(ActionGuid, file.Id));
+    }
+
+    private static string SizeText(long? size) => size switch
+    {
+        null => "—", >= 1073741824 => UiText.Get(LocKeys.Ui.ActionFiles.Text00GB, (size.Value / 1073741824d)),
+        >= 1048576 => UiText.Get(LocKeys.Ui.ActionFiles.Text00MB, (size.Value / 1048576d)), >= 1024 => UiText.Get(LocKeys.Ui.ActionFiles.Text00KB, (size.Value / 1024d)), _ => UiText.Get(LocKeys.Ui.ActionFiles.Text0B, (size))
+    };
+
+    public async ValueTask DisposeAsync()
+    {
+        await _lifetime.CancelAsync();
+        if (_polling is not null) await _polling;
+        _lifetime.Dispose();
+    }
+    
+    private async Task OnNewScheduleClicked()
+    {
+        if (_busy)
+            return;
+
+        var dialog = await Dialog.ShowAsync<ScheduleDialog>(Constants.UI.StandardDialogBox);
+
+        var result = await dialog.Result;
+
+        if (result is not { Canceled: false, Data: Schedule schedule })
+        {
+            return;
+        }
+
+        if (!await LoadSchedulesAsync())
+            return;
+
+        _scheduleId = schedule.Id;
+    }
+    private async Task<bool> LoadSchedulesAsync()
+    {
+        var schedules = await ScheduleService.GetAllAsync();
+        if (!schedules.Success)
+        {
+            Snackbar.Add(Loc[schedules.Error.Code, schedules.Error.Args], Severity.Error);
+            return false;
+        }
+        _schedules = schedules.Data ?? [];
+        return true;
+    }
+
+}

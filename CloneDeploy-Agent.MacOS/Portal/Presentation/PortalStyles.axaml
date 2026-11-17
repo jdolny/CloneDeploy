@@ -1,0 +1,165 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Styles.Resources>
+    <ResourceDictionary>
+      <SolidColorBrush x:Key="PortalAction">#2468D8</SolidColorBrush>
+      <SolidColorBrush x:Key="PortalActionText">#FFFFFF</SolidColorBrush>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="PortalCanvas">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalSurface">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalText">#182337</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalMuted">#657188</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalBorder">#E2E7EF</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalTint">#E9EEFC</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalAccent">#2468D8</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalSuccess">#21795A</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalError">#B33443</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalReply">#E9EEFC</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalIncoming">#F4F6FA</SolidColorBrush>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="PortalCanvas">#171B23</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalSurface">#212733</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalText">#E8EDF7</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalMuted">#A3AFC2</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalBorder">#343E4E</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalTint">#283E60</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalAccent">#8DBAFF</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalSuccess">#83D8B3</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalError">#FFA3AD</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalReply">#283A55</SolidColorBrush>
+          <SolidColorBrush x:Key="PortalIncoming">#171B23</SolidColorBrush>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Styles.Resources>
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{DynamicResource PortalCanvas}" />
+    <Setter Property="Foreground" Value="{DynamicResource PortalText}" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+  <Style Selector="Button">
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="Padding" Value="12,6" />
+    <Setter Property="MinHeight" Value="34" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Background" Value="{DynamicResource PortalSurface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PortalBorder}" />
+    <Setter Property="Foreground" Value="{DynamicResource PortalText}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource PortalTint}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PortalAccent}" />
+  </Style>
+  <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource PortalTint}" />
+    <Setter Property="Opacity" Value="0.8" />
+  </Style>
+  <Style Selector="Button.icon">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource PortalMuted}" />
+  </Style>
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="{DynamicResource PortalAction}" />
+    <Setter Property="Foreground" Value="{DynamicResource PortalActionText}" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource PortalAction}" />
+    <Setter Property="Foreground" Value="{DynamicResource PortalActionText}" />
+    <Setter Property="Opacity" Value="0.9" />
+  </Style>
+  <Style Selector="Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource PortalAction}" />
+    <Setter Property="Foreground" Value="{DynamicResource PortalActionText}" />
+    <Setter Property="Opacity" Value="0.8" />
+  </Style>
+  <Style Selector="Button.navigation">
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="Padding" Value="14,12" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource PortalMuted}" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="Button.navigation.selected">
+    <Setter Property="Background" Value="{DynamicResource PortalTint}" />
+    <Setter Property="Foreground" Value="{DynamicResource PortalAccent}" />
+    <Setter Property="FontWeight" Value="Medium" />
+  </Style>
+  <Style Selector="Border.surface">
+    <Setter Property="Background" Value="{DynamicResource PortalSurface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PortalBorder}" />
+  </Style>
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="{DynamicResource PortalSurface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PortalBorder}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="20" />
+  </Style>
+  <Style Selector="TextBlock.muted"><Setter Property="Foreground" Value="{DynamicResource PortalMuted}" /></Style>
+  <Style Selector="TextBlock.success"><Setter Property="Foreground" Value="{DynamicResource PortalSuccess}" /></Style>
+  <Style Selector="TextBlock.error"><Setter Property="Foreground" Value="{DynamicResource PortalError}" /></Style>
+  <Style Selector="TextBlock.section">
+    <Setter Property="Foreground" Value="{DynamicResource PortalMuted}" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="LetterSpacing" Value="1" />
+  </Style>
+  <Style Selector="TextBox">
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="10" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PortalBorder}" />
+  </Style>
+  <Style Selector="ComboBox"><Setter Property="CornerRadius" Value="6" /></Style>
+  <Style Selector="ListBox.tickets">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+  <Style Selector="ListBox.tickets ListBoxItem">
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="Padding" Value="12,14" />
+    <Setter Property="BorderThickness" Value="3,0,0,1" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PortalBorder}" />
+  </Style>
+  <Style Selector="ListBox.tickets ListBoxItem:selected">
+    <Setter Property="Background" Value="{DynamicResource PortalTint}" />
+  </Style>
+  <Style Selector="ListBox.tickets ListBoxItem:selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource PortalTint}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PortalAccent}" />
+  </Style>
+  <Style Selector="ListBox.tickets ListBoxItem /template/ Border#SelectionIndicator">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+  <Style Selector="Border.statusBadge">
+    <Setter Property="Background" Value="{DynamicResource PortalTint}" />
+  </Style>
+  <Style Selector="TextBox.composer">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="CornerRadius" Value="0" />
+  </Style>
+  <Style Selector="TextBox.composer:focus /template/ Border#PART_BorderElement">
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="CornerRadius" Value="0" />
+  </Style>
+  <Style Selector="ComboBox">
+    <Setter Property="BorderBrush" Value="{DynamicResource PortalBorder}" />
+    <Setter Property="MinHeight" Value="32" />
+  </Style>
+  <Style Selector="Border.message">
+    <Setter Property="Background" Value="{DynamicResource PortalIncoming}" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="14,10" />
+  </Style>
+  <Style Selector="Border.message.mine"><Setter Property="Background" Value="{DynamicResource PortalReply}" /></Style>
+</Styles>

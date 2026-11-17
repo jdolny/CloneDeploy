@@ -1,0 +1,45 @@
+@inject ServerSettingsUiService Settings
+
+<div class="section-action-bar">
+    <MudButton OnClick="@Snackbar.GuardAction(() => _busy || !_loaded, UiText.Get(LocKeys.Ui.UserGroupDirectoryTab.SettingsCouldNotBeLoadedRefreshAndTryAgain), SaveAsync)" Disabled="@(_busy)" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+</div>
+<MudPaper Class="pa-4" Elevation="0" Outlined="true">
+    <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.MulticastSettingsTab.MainAppMulticastSender]</MudText>
+    @if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+    @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+    <MudTextField T="string" @bind-Value="_address" Label="@Loc[LocKeys.Ui.MulticastSettingsTab.MulticastSenderIPv4Address]" Variant="Variant.Outlined"
+                  HelperText="@Loc[LocKeys.Ui.MulticastSettingsTab.UseAnIPv4AddressAssignedToThisServerAnd]"
+                  Disabled="@(_busy || !_loaded)" />
+
+
+</MudPaper>
+
+@code {
+    private string _address = "", _original = "";
+    private string? _error;
+    private bool _loading, _loaded, _busy;
+    protected override Task OnInitializedAsync() => LoadAsync();
+    private async Task LoadAsync()
+    {
+        _loading = true; _loaded = false; _error = null;
+        try
+        {
+            var result = await Settings.ReadMulticastSenderAddressAsync();
+            if (result.Success) { _address = _original = result.Data!; _loaded = true; }
+            else _error = Loc[result.Error.Code, result.Error.Args];
+        }
+        finally { _loading = false; }
+    }
+    private async Task SaveAsync()
+    {
+        if (_busy || !_loaded) return;
+        _busy = true; _error = null;
+        try
+        {
+            var result = await Settings.SaveMulticastSenderAddressAsync(_address, _original);
+            if (result.Success) { _address = _original = result.Data!; Snackbar.Add(UiText.Get(LocKeys.Ui.MulticastSettingsTab.MulticastSenderAddressSaved), Severity.Success); }
+            else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _busy = false; }
+    }
+}

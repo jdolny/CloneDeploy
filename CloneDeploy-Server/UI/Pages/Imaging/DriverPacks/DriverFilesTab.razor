@@ -1,0 +1,131 @@
+@using CloneDeploy_Server.Backend.Services.Files
+@inject DriverService Service
+<ImagingEditScope Policy="@Constants.Permissions.DriverPackEdit" Context="canEditImage">
+<MudStack Spacing="3">
+
+    @foreach (var pending in _pending.ToArray())
+    {
+        <MudAlert Severity="Severity.Warning">@pending.FileName @Loc[LocKeys.Ui.ActionFiles.WasUploadedButCouldNotBeAttached] <MudButton OnClick="@(() => OnAttachClicked(pending))" Disabled="@(!canEditImage || (_busy))">@Loc[LocKeys.Ui.DriverFilesTab.RetryAttachment]</MudButton></MudAlert>
+    }
+    @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+    <MudDataGrid T="DriverFileItemDto" Items="_items" Loading="_busy" Dense="true" Filterable="true" RowsPerPage="10" Elevation="0" Outlined="true" Class="device-list-grid" QuickFilter="@(x => string.IsNullOrWhiteSpace(_gridSearch0) || (x.File.Name).Contains(_gridSearch0.Trim(), StringComparison.OrdinalIgnoreCase))"><ToolBarContent><MudIcon Icon="@Icons.Material.Outlined.AttachFile" Color="Color.Primary"/><MudText Typo="Typo.h6">@Loc[LocKeys.Action.Files]</MudText>
+        <MudButton OnClick="OnUploadClicked" Disabled="@(!canEditImage || (_busy))" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.UploadFile">@Loc[LocKeys.Ui.ActionFiles.UploadFiles]</MudButton>
+        <MudButton OnClick="@(() => OnEditClicked(null))" Disabled="@(!canEditImage || (_busy))" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Link">@Loc[LocKeys.Ui.ActionFiles.AddFromURL]</MudButton>
+        <MudButton OnClick="OnLoadClicked" Disabled="_busy" StartIcon="@Icons.Material.Filled.Refresh">@Loc[LocKeys.Ui.DriverFilesTab.RefreshStatus]</MudButton>
+    <MudSpacer/><MudTextField T="string" @bind-Value="_gridSearch0" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" aria-label="@Loc[LocKeys.Ui.ActionFiles.SearchFiles]" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/></ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.File.Name" Title="@Loc[LocKeys.Ui.DriverFilesTab.File]"><CellTemplate>
+                <MudText>@context.Item.File.Name</MudText>
+                @if (context.Item.Vendor is not null) { <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.DriverFilesTab.Text012RequestedRelease3, (context.Item.Vendor), (context.Item.Model), (context.Item.Os), (context.Item.Release))</MudText> }
+            </CellTemplate></PropertyColumn>
+            <PropertyColumn Property="x => x.File.Status" Title="@Loc[LocKeys.Image.VersionStatus]"><CellTemplate>
+                <MudText>@UiText.Label(context.Item.File.Status) @context.Item.File.Progress</MudText>
+                @if (context.Item.File.Error is not null) { <MudText Color="Color.Error">@context.Item.File.Error</MudText> }
+                @if (context.Item.File.Busy && context.Item.File.Size.HasValue) { <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.DriverFilesTab.PreviousDownloadedVersionRetainedUntilReplacementSucceeds]</MudText> }
+            </CellTemplate></PropertyColumn>
+            <TemplateColumn Title="@Loc[LocKeys.Ui.DriverFilesTab.Preparation]"><CellTemplate>
+                <MudText>@(context.Item.File.Status == "Complete" ? UiText.Label(context.Item.PreparationStatus) : UiText.Get(LocKeys.Ui.DriverFilesTab.WaitingForDownload))</MudText>
+                @if (context.Item.PreparationError is not null) { <MudText Color="Color.Error">@context.Item.PreparationError</MudText> }
+                @if (context.Item.HasPreparedArchive)
+                {
+                    <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.DriverFilesTab.Text0DriverINFs1UTC, (context.Item.InfCount), (context.Item.PreparedAtUtc))</MudText>
+                    @if (!context.Item.PreparedIsCurrent) { <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.DriverFilesTab.PreviousPreparedVersionRemainsAvailable]</MudText> }
+                    <MudButton Href="@($"/api/ui/driver-files/{ProfileId}/{context.Item.File.Id}/prepared")">@Loc[LocKeys.Ui.DriverFilesTab.DownloadPreparedZIP]</MudButton>
+                }
+                @if (context.Item.File.Status == "Complete" && context.Item.PreparationStatus == DriverPreparationStatus.Error)
+                { <MudButton OnClick="@(() => OnPrepareClicked(context.Item))" Disabled="@(!canEditImage || (_busy))">@Loc[LocKeys.Ui.DriverFilesTab.RetryPreparation]</MudButton> }
+            </CellTemplate></TemplateColumn>
+            <PropertyColumn Property="x => x.File.UpdatedAtUtc" Title="@Loc[LocKeys.Ui.DriverFilesTab.AvailableUTC]" />
+            <TemplateColumn Title="@Loc[LocKeys.Ui.DriverFilesTab.Updates]"><CellTemplate>
+                @if (context.Item.Vendor is not null)
+                {
+                    <MudCheckBox T="bool" Value="context.Item.FollowLatest" ValueChanged="@((bool value) => FollowAsync(context.Item, value))" Label="@Loc[LocKeys.Ui.DriverFilesTab.FollowVendorReleases]" Disabled="@(!canEditImage || (_busy))" />
+                }
+                else { <MudText>@(context.Item.File.External && context.Item.File.AutoRefresh && context.Item.File.ExpectedSha256 is null ? UiText.Get(LocKeys.Ui.DriverFilesTab.CheckURLOnSchedule) : UiText.Get(LocKeys.Ui.DriverFilesTab.ManualPinned))</MudText> }
+            </CellTemplate></TemplateColumn>
+            <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" Filterable="false"><CellTemplate>
+                @if (context.Item.File.Size.HasValue) { <MudIconButton Icon="@Icons.Material.Filled.Download" Href="@($"/api/ui/driver-files/{ProfileId}/{context.Item.File.Id}")" aria-label="@Loc[LocKeys.Ui.DriverFilesTab.DownloadDriverFile]" /> }
+                @if (context.Item.File.External)
+                {
+                    @if (context.Item.File.Busy) { <MudButton OnClick="@(() => OnCancelClicked(context.Item))" Disabled="_busy">@Loc[LocKeys.Ui.DriverFilesTab.CancelDownload]</MudButton> }
+                    else
+                    {
+                        <MudButton OnClick="@(() => OnQueueClicked(context.Item))" Disabled="@(!canEditImage || (_busy))">@Loc[LocKeys.Ui.DriverFilesTab.DownloadAgain]</MudButton>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OnEditClicked(context.Item.File))" Disabled="@(!canEditImage || (_busy))" aria-label="@Loc[LocKeys.Ui.DriverFilesTab.EditExternalDriverFile]" />
+                    }
+                }
+                <MudIconButton Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" OnClick="@(() => OnDeleteClicked(context.Item))" Disabled="@(!canEditImage || (_busy || context.Item.File.Busy))" aria-label="@Loc[LocKeys.Ui.DriverFilesTab.DeleteDriverFile]" />
+            </CellTemplate></TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="DriverFileItemDto" /></PagerContent>
+        <NoRecordsContent><MudText>@Loc[LocKeys.Ui.DriverFilesTab.NoDriverFilesAttached]</MudText></NoRecordsContent>
+    </MudDataGrid>
+</MudStack>
+<MudDialog @bind-Visible="_upload" Options="FileDialogOptions">
+    <TitleContent><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ActionFiles.UploadFiles]</MudText></TitleContent>
+    <DialogContent>
+        <ChunkedFileUpload OnUploaded="OnAttachClicked" />
+        @foreach (var pending in _pending.ToArray())
+        {
+            <MudAlert Severity="Severity.Warning">@pending.FileName @Loc[LocKeys.Ui.ActionFiles.WasUploadedButCouldNotBeAttached] <MudButton OnClick="@(() => OnAttachClicked(pending))" Disabled="@(!canEditImage || (_busy))">@Loc[LocKeys.Ui.DriverFilesTab.RetryAttachment]</MudButton></MudAlert>
+        }
+        @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+    </DialogContent>
+    <DialogActions><MudButton OnClick="@(() => _upload = false)" Disabled="_busy">@Loc[LocKeys.Ui.ActionFiles.Close]</MudButton></DialogActions>
+</MudDialog>
+<MudDialog @bind-Visible="_external" Options="FileDialogOptions">
+    <TitleContent><MudText Typo="Typo.h6">@(_editing is null ? UiText.Get(LocKeys.Ui.ActionFiles.AddFromURL) : UiText.Get(LocKeys.Ui.ActionFiles.EditExternalFile))</MudText></TitleContent>
+    <DialogContent>
+        <DriverExternalEditor ProfileId="ProfileId" File="_editing" OnSaved="ExternalSavedAsync"
+                              OnCancel="@(() => _external = false)" @key="_editorVersion" />
+    </DialogContent>
+</MudDialog>
+
+</ImagingEditScope>
+@code {
+    private void OnUploadClicked() => _upload = true;
+    private static readonly DialogOptions FileDialogOptions = Constants.UI.StandardDialogBox with
+    {
+        BackdropClick = false,
+        CloseOnEscapeKey = false
+    };
+    private string? _gridSearch0;
+
+    [Parameter] public int ProfileId { get; set; }
+    private List<DriverFileItemDto> _items = [];
+    private List<UploadResultDto> _pending = [];
+    private ActionFileItemDto? _editing;
+    private bool _upload, _external, _busy;
+    private string? _error;
+    private int _version, _editorVersion;
+    protected override Task OnParametersSetAsync() => OnLoadClicked();
+    private async Task OnLoadClicked()
+    {
+        var version = ++_version;
+        var result = await Service.GetFilesAsync(ProfileId);
+        if (version != _version) return;
+        _items = result.Data ?? []; _error = result.Success ? null : Loc[result.Error!.Code, result.Error.Args].Value;
+    }
+    private void OnEditClicked(ActionFileItemDto? file) { _editing = file; _external = true; _editorVersion++; }
+    private async Task ExternalSavedAsync() { _external = false; await OnLoadClicked(); }
+    private async Task OnAttachClicked(UploadResultDto upload)
+    {
+        if (_pending.All(x => x.Id != upload.Id)) _pending.Add(upload);
+        _busy = true; var result = await Service.AttachUploadAsync(ProfileId, upload.Id);
+        if (result.Success) _pending.RemoveAll(x => x.Id == upload.Id);
+        await FinishAsync(result);
+    }
+    private async Task FollowAsync(DriverFileItemDto item, bool value) { _busy = true; await FinishAsync(await Service.SetFollowLatestAsync(ProfileId, item.File.Id, value)); }
+    private async Task OnPrepareClicked(DriverFileItemDto item) { _busy = true; await FinishAsync(await Service.RetryPreparationAsync(ProfileId, item.File.Id)); }
+    private async Task OnQueueClicked(DriverFileItemDto item) { _busy = true; await FinishAsync(await Service.QueueAsync(ProfileId, item.File.Id)); }
+    private async Task OnCancelClicked(DriverFileItemDto item) { _busy = true; await FinishAsync(await Service.CancelAsync(ProfileId, item.File.Id)); }
+    private async Task OnDeleteClicked(DriverFileItemDto item)
+    {
+        if (await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.DriverFilesTab.DeleteDriverFile), UiText.Get(LocKeys.Ui.DriverFilesTab.Remove0FromThisDriverPack, (item.File.Name)), yesText: UiText.Get(LocKeys.Common.Delete), cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+        _busy = true; await FinishAsync(await Service.DeleteFileAsync(ProfileId, item.File.Id));
+    }
+    private async Task FinishAsync(ServiceResult result)
+    {
+        await OnLoadClicked(); if (!result.Success) Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); _busy = false;
+    }
+}

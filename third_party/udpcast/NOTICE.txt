@@ -1,0 +1,14 @@
+UDPcast 20250223 Windows binaries
+
+20250223/x64 and 20250223/a64 contain udp-sender.exe and udp-receiver.exe.
+These were built from the a1ive/udpcast Windows port using LLVM-MinGW, with
+the compatibility patch recorded alongside the exact source archive.
+See 20250223/BUILD.txt for provenance, rebuild instructions and test limits.
+
+Udpcast.targets includes both architectures in the main application and site
+service output. The Imager includes only its NativeToolArchitecture (x64/a64).
+Runtime paths: Tools/udpcast/{x64|a64}/udp-{sender|receiver}.exe.
+Source, licenses, checksums and build instructions accompany the binaries.
+
+This packaging does not enable multicast imaging or provide Linux binaries.
+ARM64 execution and WinPE integration still require hardware validation.

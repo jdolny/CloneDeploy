@@ -1,0 +1,11 @@
+<div class="device-inventory-heading">
+    <span class="device-inventory-heading-icon" aria-hidden="true">
+        <MudIcon Icon="@Icon" />
+    </span>
+    <h3>@Title</h3>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter, EditorRequired] public string Icon { get; set; } = "";
+}

@@ -1,0 +1,86 @@
+@inject StorageProviderService Settings
+
+@if (!SiteId.HasValue)
+{
+    @if (ActionSectionId is not null)
+    {
+        <SectionContent SectionId="ActionSectionId">@SaveButton</SectionContent>
+    }
+    else
+    {
+        <div class="section-action-bar">@SaveButton</div>
+    }
+}
+<MudPaper Class="pa-4" Elevation="0" Outlined="true">
+    <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.Ui.ReplicationLimitsTab.ReplicationLimits]</MudText>
+    <MudGrid>
+        <MudItem xs="12" md="6">
+        <MudStack Spacing="3">
+            @if (_loaded)
+            {
+                @if (!SiteId.HasValue)
+                {
+                    <MudNumericField T="int" @bind-Value="_sites" Label="@Loc[LocKeys.Ui.ReplicationLimitsTab.ConcurrentSites]" Min="1" Max="32" Disabled="_busy" Variant="Variant.Outlined"
+                                     HelperText="@Loc[LocKeys.Ui.ReplicationLimitsTab.MaximumNumberOfSitesReceivingReplicatedFilesAtThe]" />
+                    <MudNumericField T="int" @bind-Value="_files" Label="@Loc[LocKeys.Ui.ReplicationLimitsTab.ConcurrentSharedManagementFiles]" Min="1" Max="16" Disabled="_busy" Variant="Variant.Outlined"
+                                     HelperText="@Loc[LocKeys.Ui.ReplicationLimitsTab.MaximumConcurrentSharedManagementFilesPerSiteAndFor]" />
+                }
+                <MudNumericField T="int" @bind-Value="_bandwidth" Label="@(SiteId.HasValue ? UiText.Get(LocKeys.Ui.SiteServiceConfigurationTab.SiteReplicationBandwidthMiBS) : UiText.Get(LocKeys.Ui.ReplicationLimitsTab.OverallReplicationBandwidthMiBS))" Min="0" Max="102400" Disabled="_busy" Variant="Variant.Outlined"
+                                 HelperText="@(SiteId.HasValue ? UiText.Get(LocKeys.Ui.SiteServiceConfigurationTab.Text0MeansNoAdditionalSiteCapTheOverallCap) : UiText.Get(LocKeys.Ui.ReplicationLimitsTab.Text0Unlimited))" />
+                @if (SiteId.HasValue) { <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_busy" OnClick="SaveAsync">@Loc[LocKeys.Ui.ReplicationLimitsTab.SaveReplicationLimits]</MudButton> }
+            }
+            @if (_busy) { <MudProgressLinear Indeterminate="true" /> }
+        </MudStack>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@code {
+    [Parameter] public object? ActionSectionId { get; set; }
+    private RenderFragment SaveButton => @<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save"
+        Disabled="@(_busy)" OnClick="@Snackbar.GuardAction(() => _busy || !_loaded, UiText.Get(LocKeys.Ui.UserGroupDirectoryTab.SettingsCouldNotBeLoadedRefreshAndTryAgain), SaveAsync)">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>;
+    [Parameter] public Guid? SiteId { get; set; }
+    private ReplicationOptions _expected = new();
+    private SiteReplicationOptions? _expectedSite;
+    private int _sites = 2, _files = 2, _bandwidth;
+    private bool _busy, _loaded;
+    protected override Task OnInitializedAsync() => LoadAsync();
+    private async Task LoadAsync()
+    {
+        _busy = true;
+        try
+        {
+            var result = await Settings.ReadReplicationLimitsAsync();
+            if (!result.HasData) { Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); return; }
+            _expected = result.Data.Global;
+            _sites = _expected.ConcurrentSites;
+            if (SiteId is { } site)
+            {
+                _expectedSite = result.Data.Sites.GetValueOrDefault(site);
+                var effective = result.Data.ForSite(site);
+                _bandwidth = effective.BandwidthMiB;
+            }
+            else { _files = _expected.SharedFiles; _bandwidth = _expected.BandwidthMiB; }
+            _loaded = true;
+        }
+        finally { _busy = false; }
+    }
+    private async Task SaveAsync()
+    {
+        if (_busy || !_loaded) return;
+        _busy = true;
+        try
+        {
+            var global = new ReplicationOptions(_sites, _files, _bandwidth);
+            var local = new SiteReplicationOptions(_bandwidth);
+            var result = SiteId is { } site ? await Settings.SaveReplicationLimitsSiteAsync(site, local, _expectedSite) : await Settings.SaveReplicationLimitsAsync(global, _expected);
+            if (result.Success)
+            {
+                if (SiteId.HasValue) _expectedSite = local; else _expected = global;
+                Snackbar.Add(UiText.Get(LocKeys.Ui.ReplicationLimitsTab.ReplicationLimitsSaved), Severity.Success);
+            }
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _busy = false; }
+    }
+}

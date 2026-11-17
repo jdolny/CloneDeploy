@@ -1,0 +1,59 @@
+@inject PolicyService PolicyService
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true"/>
+}
+else if (_details is not null)
+{
+    <div>
+        <div class="section-action-bar">
+            <MudButton OnClick="@Snackbar.GuardAction(() => ReadOnly || _saving, UiText.Get(LocKeys.Ui.PolicyExecutionTab.ThisPolicyIsArchivedOrYouDoNotHave), OnSaveClicked)" Disabled="@(_saving)" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+        </div>
+        <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.Policy.Execution]</MudText>
+        <MudForm @ref="_form" Disabled="@(ReadOnly || _saving)">
+            <PolicyExecution Details="_details"/>
+        </MudForm>
+    </div>
+}
+
+@code {
+    [Parameter] public int PolicyId { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+
+    private int? _loadedPolicyId;
+    private PolicyDetailsDto? _details;
+    private MudForm _form = null!;
+    private bool _loading = true, _saving;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedPolicyId == PolicyId) return;
+        _loadedPolicyId = PolicyId;
+        _loading = true;
+        var result = await PolicyService.GetSectionAsync(PolicyId, "execution");
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        else if (result.HasData)
+            _details = result.Data;
+        _loading = false;
+    }
+
+    private async Task OnSaveClicked()
+    {
+        if (_saving || ReadOnly) return;
+        _saving = true;
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            _saving = false;
+            return;
+        }
+        var result = await PolicyService.SaveAsync(_details!, "execution");
+        if (result.Success)
+            Snackbar.Add(Loc[LocKeys.Policy.SettingsSaved], Severity.Success);
+        else
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _saving = false;
+    }
+}

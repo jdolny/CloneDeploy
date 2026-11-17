@@ -1,0 +1,169 @@
+@page "/images/deploymentrules/{Id:int}"
+@attribute [Authorize(Policy = Constants.Permissions.DeploymentRuleView)]
+@inject ImagingService Deployments
+@inject AuthenticationStateProvider RuleAuthentication
+@inject IAuthorizationService RuleAuthorization
+@inject ImagingService Imaging
+
+<PageTitle>@(UiText.Get(LocKeys.Ui.ManageDeploymentRulePage.DeploymentRule0, (_heading)))</PageTitle>
+<SectionContent SectionName="page-title">
+    <div class="device-page-heading"><div class="device-heading-row">
+        <MudIconButton Href="/images/deploymentrules" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" aria-label="@Loc[LocKeys.Ui.ManageDeploymentRulePage.BackToDeploymentRules]" Disabled="_busy" />
+        <div class="device-heading-icon"><MudIcon Icon="@Icons.Material.Outlined.Rule" Size="Size.Large" /></div>
+        <div class="device-heading-copy"><div class="device-heading-name"><h1>@_heading</h1></div></div>
+    </div></div>
+</SectionContent>
+@if (_edit is { Id: > 0 })
+{
+    <ActionButtons><MainButton><MudButton OnClick="Delete" Color="Color.Error" Disabled="@(_busy || !_canEdit)" StartIcon="@Icons.Material.Filled.Delete">@Loc[LocKeys.Common.Delete]</MudButton></MainButton></ActionButtons>
+}
+@if (_loading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+}
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+@if (!_loading && _edit is not null)
+{
+    @if (_incomplete) { <MudAlert Severity="Severity.Info" Class="mb-4">@Loc[LocKeys.Ui.ManageDeploymentRulePage.ThisRuleIsIncompleteAndWillNotRunUntil]</MudAlert> }
+    <div class="device-detail device-workspace">
+        <ResponsiveTabs PanelOrder="@(new int[] { 0, 2, 1 })" KeepPanelsAlive="true" @bind-ActivePanelIndex="_tab" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.User.General]" Icon="@Icons.Material.Outlined.Info">
+                <TabHelp Href="ui/imaging/deployment-rules-general.html" Title="@Loc[LocKeys.User.General]" />
+                <MudStack Class="py-4" Spacing="3">
+                    @SaveControls
+
+                    <MudText Typo="Typo.h6">@Loc[LocKeys.User.General]</MudText>
+                    <MudTextField @bind-Value="_edit.Name" Label="@Loc[LocKeys.Common.Name]" Required="true" MaxLength="100" Variant="Variant.Outlined" Disabled="@(_busy || !_canEdit)" />
+                    <MudTextField @bind-Value="_edit.Description" Label="@Loc[LocKeys.Common.Description]" Lines="3" Variant="Variant.Outlined" Disabled="@(_busy || !_canEdit)" />
+                    <MudCheckBox @bind-Value="_edit.Enabled" Label="@Loc[LocKeys.StorageProvider.Enabled]" Disabled="@(_busy || !_canEdit)" />
+                    <MudNumericField T="int" @bind-Value="_edit.Priority" Label="@Loc[LocKeys.Device.Priority]" HelperText="@Loc[LocKeys.Ui.ManageDeploymentRulePage.HigherNumbersTakePrecedenceEqualPriorityMatchesRequireSelection]" Variant="Variant.Outlined" Disabled="@(_busy || !_canEdit)" />
+                </MudStack>
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ManageDeploymentRulePage.Deployment]" Icon="@Icons.Material.Outlined.SettingsSuggest">
+                <TabHelp Href="ui/imaging/deployment-rules-deployment.html" Title="@Loc[LocKeys.Ui.ManageDeploymentRulePage.Deployment]" />
+                <MudStack Class="py-4" Spacing="3">
+                    @SaveControls
+                    <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ManageDeploymentRulePage.Deployment]</MudText>
+                    <MudSelect T="int?" @bind-Value="_edit.ImageId" Label="@Loc[LocKeys.Device.Image]" Variant="Variant.Outlined" Disabled="@(_busy || !_canEdit)">
+                        @foreach (var image in _images) { <MudSelectItem T="int?" Value="image.Id">@image.Name @(!image.Enabled ? "(disabled)" : "")</MudSelectItem> }
+                    </MudSelect>
+                    <MudSelect T="int?" @bind-Value="_edit.DeploymentProfileId" Label="@Loc[LocKeys.Device.DeploymentProfile]" Variant="Variant.Outlined" Disabled="@(_busy || !_canEdit)">
+                        @foreach (var profile in _profiles) { <MudSelectItem T="int?" Value="profile.Id">@profile.Name @(!profile.Enabled || !profile.VisibleInWinPe ? UiText.Get(LocKeys.Ui.ManageDeploymentRulePage.UnavailableInImager) : "")</MudSelectItem> }
+                    </MudSelect>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@Loc[LocKeys.Ui.ManageDeploymentRulePage.TheImageMustBeEnabledAndHaveADeployable]</MudText>
+                </MudStack>
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ManageDeploymentRulePage.Matching]" Icon="@Icons.Material.Outlined.Rule">
+                <TabHelp Href="ui/imaging/deployment-rules-matching.html" Title="@Loc[LocKeys.Ui.ManageDeploymentRulePage.Matching]" />
+                <MudStack Class="py-4" Spacing="3">
+                    @SaveControls
+                    <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ManageDeploymentRulePage.Matching]</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@Loc[LocKeys.Ui.ManageDeploymentRulePage.UseEitherAnExactManufacturerModelPairOrRegular]</MudText>
+                    <MudSelect T="InventoriedModelDto" Label="@Loc[LocKeys.Ui.ManageDeploymentRulePage.UseAModelFromInventory]" ValueChanged="UseModel" Variant="Variant.Outlined" Disabled="@(_busy || !_canEdit)">
+                        @foreach (var model in _models) { <MudSelectItem Value="model">@model.Manufacturer / @model.Model</MudSelectItem> }
+                    </MudSelect>
+                    <MudGrid>
+                        <MudItem xs="12" md="6"><MudTextField @bind-Value="_edit.Manufacturer" Label="@Loc[LocKeys.Ui.ManageDeploymentRulePage.ExactManufacturer]" MaxLength="500" Variant="Variant.Outlined" Disabled="@(_busy || !_canEdit)" /></MudItem>
+                        <MudItem xs="12" md="6"><MudTextField @bind-Value="_edit.Model" Label="@Loc[LocKeys.Ui.ManageDeploymentRulePage.ExactModel]" MaxLength="500" Variant="Variant.Outlined" Disabled="@(_busy || !_canEdit)" /></MudItem>
+                        <MudItem xs="12" md="6"><MudTextField @bind-Value="_edit.ManufacturerRegex" Label="@Loc[LocKeys.Ui.ManageDeploymentRulePage.ManufacturerRegex]" MaxLength="500" Variant="Variant.Outlined" Disabled="@(_busy || !_canEdit)" /></MudItem>
+                        <MudItem xs="12" md="6"><MudTextField @bind-Value="_edit.ModelRegex" Label="@Loc[LocKeys.Ui.ManageDeploymentRulePage.ModelRegex]" MaxLength="500" Variant="Variant.Outlined" Disabled="@(_busy || !_canEdit)" /></MudItem>
+                    </MudGrid>
+                </MudStack>
+            </MudTabPanel>
+        </ResponsiveTabs>
+    </div>
+}
+
+@code {
+    private bool _canEdit;
+    [Parameter] public int Id { get; set; }
+    private bool _loading = true, _busy, _incomplete = true;
+    private int? _loadedId;
+    private int _tab;
+    private string _heading = UiText.Get(LocKeys.Ui.ManageDeploymentRulePage.DeploymentRule);
+    private string? _error;
+    private AutomaticDeploymentRule? _edit;
+    private List<Image> _images = [];
+    private List<DeploymentProfile> _profiles = [];
+    private List<InventoriedModelDto> _models = [];
+
+    private RenderFragment SaveControls => @<div class="section-action-bar">
+        <MudButton OnClick="Save" Disabled="@(_busy || !_canEdit)" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+    </div>;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _canEdit = (await RuleAuthorization.AuthorizeAsync((await RuleAuthentication.GetAuthenticationStateAsync()).User, Constants.Permissions.DeploymentRuleEdit)).Succeeded;
+        if (_loadedId == Id) return;
+        _loading = true;
+        _error = null;
+        _edit = null;
+        _tab = 0;
+        _heading = UiText.Get(LocKeys.Ui.ManageDeploymentRulePage.DeploymentRule);
+        try
+        {
+            _edit = (await Deployments.GetAutomaticRulesAsync()).SingleOrDefault(x => x.Id == Id);
+            var user = (await RuleAuthentication.GetAuthenticationStateAsync()).User;
+            _images = _edit?.Image is { } assignedImage ? [assignedImage] : [];
+            _profiles = _edit?.DeploymentProfile is { } assignedProfile ? [assignedProfile] : [];
+            if ((await RuleAuthorization.AuthorizeAsync(user, Constants.Permissions.ImageView)).Succeeded)
+                _images = (await Imaging.GetImagesAsync(includeDisabled: true)).Data ?? _images;
+            if ((await RuleAuthorization.AuthorizeAsync(user, Constants.Permissions.DeploymentProfileView)).Succeeded)
+                _profiles = (await Imaging.GetAllProfilesAsync(includeDisabled: true)).Data ?? _profiles;
+            _models = await Deployments.GetAutomaticRuleModelsAsync();
+            if (_edit is null) throw new InvalidOperationException(UiText.Get(LocKeys.Ui.ManageDeploymentRulePage.DeploymentRuleNotFound));
+            _heading = string.IsNullOrWhiteSpace(_edit.Name) ? UiText.Get(LocKeys.Ui.DeploymentRulesPage.NewDeploymentRule_9d3c30c3) : _edit.Name;
+            _incomplete = !_edit.IsComplete;
+            _loadedId = Id;
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _loading = false; }
+    }
+
+    private void UseModel(InventoriedModelDto? model)
+    {
+        if (_edit is null || model is null) return;
+        _edit.Manufacturer = model.Manufacturer;
+        _edit.Model = model.Model;
+        _edit.ManufacturerRegex = null;
+        _edit.ModelRegex = null;
+    }
+
+    private async Task Save()
+    {
+        if (_edit is null || _busy) return;
+        _error = null;
+        _busy = true;
+        var section = _tab;
+        try
+        {
+            switch (section)
+            {
+                case 0: await Deployments.SaveAutomaticRuleGeneralAsync(_edit); break;
+                case 1: await Deployments.SaveAutomaticRuleMatchingAsync(_edit); break;
+                case 2: await Deployments.SaveAutomaticRuleDeploymentAsync(_edit); break;
+            }
+            var saved = (await Deployments.GetAutomaticRulesAsync()).Single(x => x.Id == _edit.Id);
+            _heading = string.IsNullOrWhiteSpace(saved.Name) ? UiText.Get(LocKeys.Ui.DeploymentRulesPage.NewDeploymentRule_9d3c30c3) : saved.Name;
+            _incomplete = !saved.IsComplete;
+            Snackbar.Add(UiText.Get(LocKeys.Ui.ManageDeploymentRulePage.Text0SettingsSaved, (new[] { UiText.Get(LocKeys.User.General), UiText.Get(LocKeys.Ui.ManageDeploymentRulePage.Matching), UiText.Get(LocKeys.Ui.ManageDeploymentRulePage.Deployment) }[section])), Severity.Success);
+        }
+        catch (Exception ex) { _tab = section; Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _busy = false; }
+    }
+    private async Task Delete()
+    {
+        if (_edit is null || _busy || await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.DeploymentRulesPage.DeleteDeploymentRule), UiText.Get(LocKeys.Ui.ManageImageProfilePage.Delete0, (_heading)), yesText: UiText.Get(LocKeys.Common.Delete), cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            await Deployments.DeleteAutomaticRuleAsync(_edit.Id);
+            Snackbar.Add(UiText.Get(LocKeys.Ui.DeploymentRulesPage.DeploymentRuleDeleted), Severity.Success);
+            Navigation.NavigateTo("/images/deploymentrules");
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _busy = false; }
+    }
+}
+

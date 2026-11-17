@@ -1,0 +1,37 @@
+@page "/reports/windowsupdates"
+@page "/reports/windows-updates"
+@page "/reports/windowsupdates/{Tab}"
+@page "/reports/windows-updates/{Tab}"
+@attribute [Authorize(Policy = Constants.Permissions.ReportWindowsUpdates)]
+
+<AppPageTitle Text="@Loc[LocKeys.Device.WindowsUpdates]"/>
+<div class="device-detail device-workspace">
+    <ResponsiveTabs PanelOrder="@(new int[] { 1, 0 })" ActivePanelIndex="_tab" ActivePanelIndexChanged="OnTabChanged" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.AutoApproveRules]" Icon="@Icons.Material.Outlined.Rule">
+                <TabHelp Href="ui/shared-resources/windows-updates-auto-approve-rules.html" Title="@Loc[LocKeys.Ui.WindowsUpdateAutoApprovalRulesTab.AutoApproveRules]" />
+            @if (_tab == 1)
+            {
+                <MudStack Class="pb-4"><WindowsUpdateAutoApprovalRulesTab/></MudStack>
+            }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.DriverFilesTab.Updates]" Icon="@Icons.Material.Outlined.SystemUpdate">
+                <TabHelp Href="ui/shared-resources/windows-updates-updates.html" Title="@Loc[LocKeys.Ui.DriverFilesTab.Updates]" />
+            @if (_tab == 0)
+            {
+                <MudStack Class="pb-4"><WindowsUpdateReportTab ApprovalFilter="@ApprovalFilter"/></MudStack>
+            }
+        </MudTabPanel>
+        </ResponsiveTabs>
+</div>
+
+@code {
+    [Parameter] public string? Tab { get; set; }
+    [SupplyParameterFromQuery(Name = "approval")] public string? ApprovalFilter { get; set; }
+    private int _tab;
+    protected override void OnParametersSet() => _tab = string.Equals(Tab, "autoapproval", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+    private void OnTabChanged(int tab)
+    {
+        if (tab == _tab) return;
+        Navigation.NavigateTo(tab == 1 ? "/reports/windowsupdates/autoapproval" : "/reports/windowsupdates");
+    }
+}

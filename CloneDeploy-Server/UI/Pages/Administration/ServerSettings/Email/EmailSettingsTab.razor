@@ -1,0 +1,60 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@inject EmailNotificationUiService Email
+
+<div class="section-action-bar"><MudButton OnClick="@Snackbar.GuardAction(() => _busy || _loading || _form is null, UiText.Get(LocKeys.Ui.EmailSettingsTab.EmailSettingsCouldNotBeLoadedRefreshThePage), SaveAsync)" Disabled="@(_busy || _loading)" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton></div>
+
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+@if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+else if (_form is not null)
+{
+    <MudStack>
+
+        <MudPaper Outlined="true" Elevation="0" Class="pa-4">
+            <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.EmailSettingsTab.SMTPServer]</MudText>
+            <MudSwitch T="bool" @bind-Value="_form.Settings.Enabled" Color="Color.Primary" Disabled="_busy">@Loc[LocKeys.Ui.EmailSettingsTab.EnableEmailDelivery]</MudSwitch>
+            <MudGrid>
+                <MudItem xs="12" md="6"><MudTextField @bind-Value="_form.Settings.Host" Label="@Loc[LocKeys.Ui.EmailSettingsTab.SMTPHost]" Variant="Variant.Outlined" Disabled="_busy" /></MudItem>
+                <MudItem xs="12" md="6"><MudNumericField T="int" @bind-Value="_form.Settings.Port" Label="@Loc[LocKeys.Ui.EmailSettingsTab.Port]" Min="1" Max="65535" Variant="Variant.Outlined" Disabled="_busy" /></MudItem>
+                <MudItem xs="12" md="6"><MudSelect T="bool" @bind-Value="_form.Settings.StartTls" Label="@Loc[LocKeys.Ui.EmailSettingsTab.Encryption]" Variant="Variant.Outlined" Disabled="_busy"><MudSelectItem Value="true">@Loc[LocKeys.Ui.EmailSettingsTab.STARTTLSRequired]</MudSelectItem><MudSelectItem Value="false">@Loc[LocKeys.Ui.SiteServiceBootTab.None]</MudSelectItem></MudSelect></MudItem>
+                <MudItem xs="12" md="6"><MudTextField @bind-Value="_form.Settings.UserName" Label="@Loc[LocKeys.Ui.EmailSettingsTab.UsernameBlankForAnonymousRelay]" Variant="Variant.Outlined" Disabled="_busy" /></MudItem>
+                <MudItem xs="12" md="6"><MudTextField @bind-Value="_form.Password" InputType="InputType.Password" Label="@Loc[LocKeys.ManagedCredential.Password]" HelperText="@(_form.HasPassword ? UiText.Get(LocKeys.Ui.EmailSettingsTab.APasswordIsStoredLeaveBlankToKeepIt) : UiText.Get(LocKeys.Ui.EmailSettingsTab.NoPasswordStored))" Variant="Variant.Outlined" Disabled="_busy" /><MudCheckBox T="bool" @bind-Value="_form.ClearPassword" Label="@Loc[LocKeys.Ui.EmailSettingsTab.ClearStoredPassword]" Disabled="_busy" /></MudItem>
+                <MudItem xs="12" md="6"><MudTextField @bind-Value="_form.Settings.FromAddress" Label="@Loc[LocKeys.Ui.EmailSettingsTab.SenderEmail]" Variant="Variant.Outlined" Disabled="_busy" /></MudItem>
+                <MudItem xs="12" md="6"><MudTextField @bind-Value="_form.Settings.FromName" Label="@Loc[LocKeys.Ui.EmailSettingsTab.SenderName]" Variant="Variant.Outlined" Disabled="_busy" /></MudItem>
+            </MudGrid>
+        </MudPaper>
+        <MudPaper Outlined="true" Elevation="0" Class="pa-4">
+            <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.EmailSettingsTab.TestSavedSettings]</MudText>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-3">
+                <MudTextField @bind-Value="_recipient" Label="@Loc[LocKeys.Ui.EmailSettingsTab.TestRecipient]" Variant="Variant.Outlined" Disabled="_busy" />
+                <MudButton OnClick="TestAsync" Disabled="_busy" Variant="Variant.Outlined">@Loc[LocKeys.Ui.EmailSettingsTab.SendTestEmail]</MudButton>
+            </MudStack>
+        </MudPaper>
+    </MudStack>
+}
+@code {
+    private SmtpSettingsForm? _form;
+    private string _recipient = "";
+    private string? _error;
+    private bool _loading = true, _busy;
+    protected override async Task OnInitializedAsync() { await LoadAsync(); _loading = false; }
+    private async Task LoadAsync()
+    {
+        var result = await Email.ReadServerAsync();
+        if (result.HasData) _form = result.Data;
+        else _error = Loc[result.Error!.Code, result.Error.Args];
+    }
+    private async Task SaveAsync()
+    {
+        if (_busy || _form is null) return;
+        _busy = true; _error = null;
+        try { var result = await Email.SaveServerAsync(_form); if (result.Success) { await LoadAsync(); Snackbar.Add(UiText.Get(LocKeys.Ui.EmailSettingsTab.EmailSettingsSaved), Severity.Success); } else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); }
+        finally { _busy = false; }
+    }
+    private async Task TestAsync()
+    {
+        if (_busy) return;
+        _busy = true; _error = null;
+        try { var result = await Email.TestServerAsync(_recipient); if (result.Success) Snackbar.Add(UiText.Get(LocKeys.Ui.EmailSettingsTab.TestEmailAcceptedBySMTPServer), Severity.Success); else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); }
+        finally { _busy = false; }
+    }
+}

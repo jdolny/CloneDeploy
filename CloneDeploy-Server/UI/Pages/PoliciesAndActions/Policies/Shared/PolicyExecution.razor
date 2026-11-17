@@ -1,0 +1,32 @@
+@using CloneDeploy_Agent.Contracts
+<MudStack Spacing="3">
+<MudText Typo="Typo.h6">@Loc[LocKeys.Ui.PolicyExecution.RunBehavior]</MudText>
+<MudSelect T="PolicyCompletedAction" @bind-Value="Model.CompletedAction" Label="@Loc[LocKeys.Ui.PolicyExecution.RebootBehavior]" Variant="Variant.Outlined">
+    <MudSelectItem Value="PolicyCompletedAction.DoNothing">@Loc[LocKeys.Ui.PolicyExecution.DonTReboot]</MudSelectItem>
+    <MudSelectItem Value="PolicyCompletedAction.Reboot">@Loc[LocKeys.Device.Reboot]</MudSelectItem>
+    <MudSelectItem Value="PolicyCompletedAction.RebootIfNoLogins">@Loc[LocKeys.Ui.PolicyExecution.RebootIfNoLogins]</MudSelectItem>
+</MudSelect>
+<PolicyEnumSelect T="PolicyExecutionType" @bind-Value="Model.ExecutionType" Label="@Loc[LocKeys.Ui.PolicyExecution.ExecutionType]"  />
+<PolicyEnumSelect T="PolicyErrorAction" @bind-Value="Model.ErrorAction" Label="@Loc[LocKeys.Ui.PolicyExecution.OnError]"  />
+<MudNumericField T="int" @bind-Value="Model.ExecutionPriority" Label="@Loc[LocKeys.Group.Priority]" Min="0" Variant="Variant.Outlined"
+    HelperText="@Loc[LocKeys.Ui.PolicyExecution.Default100LowerNumbersAreProcessedFirstAmongEligible]" />
+<MudText Typo="Typo.h6">@Loc[LocKeys.Ui.PolicyExecution.RunOnlyWhen]</MudText>
+<MudText Typo="Typo.body2">@Loc[LocKeys.Ui.PolicyExecution.AnOptionalConditionAppliesToTheWholePolicyAction]</MudText>
+<MudSelect T="int?" @bind-Value="Model.ConditionId" Label="@Loc[LocKeys.Ui.PolicyActions.ConditionScript]" Clearable="true" Variant="Variant.Outlined">
+    @foreach (var condition in Details.Conditions) { <MudSelectItem T="int?" Value="@((int?)condition.Id)">@condition.Name</MudSelectItem> }
+</MudSelect>
+<PolicyEnumSelect T="PolicyConditionFailedAction" @bind-Value="Model.ConditionFailedAction" Label="@Loc[LocKeys.Ui.PolicyActions.IfConditionFails]" Options="System.Enum.GetValues<PolicyConditionFailedAction>().Where(x => x != PolicyConditionFailedAction.GotoModule)" />
+<MudExpansionPanels><MudExpansionPanel Text="@Loc[LocKeys.Ui.PolicyExecution.AdvancedOptions]"><MudStack Spacing="3">
+<PolicyEnumSelect T="PolicyLogLevel" @bind-Value="Model.LogLevel" Label="@Loc[LocKeys.Ui.PolicyExecution.LogLevel]"  />
+<PolicyEnumSelect T="PolicyAutoArchiveType" @bind-Value="Model.AutoArchiveType" Label="@Loc[LocKeys.Ui.PolicyExecution.AutoArchive]"  />
+@if (Model.AutoArchiveType == PolicyAutoArchiveType.AfterXdays)
+{ <MudTextField @bind-Value="Model.AutoArchiveSub" Label="@Loc[LocKeys.Ui.PolicyExecution.ArchiveAfterDays]" Required="true" Variant="Variant.Outlined" /> }
+<MudCheckBox T="bool" @bind-Value="Model.RemoveInstallCache" Label="@Loc[LocKeys.Ui.PolicyExecution.RemoveInstallCache]" />
+<MudText Typo="Typo.caption">@Loc[LocKeys.Ui.PolicyExecution.RemoveCachedInstallationFilesAfterASuccessfulInstallMode]</MudText>
+<MudCheckBox T="bool" @bind-Value="Model.SkipServerResult" Label="@Loc[LocKeys.Ui.PolicyExecution.SkipSendingResultsToServer]" />
+</MudStack></MudExpansionPanel></MudExpansionPanels>
+</MudStack>
+@code {
+[Parameter, EditorRequired] public PolicyDetailsDto Details { get; set; } = null!;
+private Policy Model => Details.Policy;
+}

@@ -1,0 +1,6 @@
+@using CloneDeploy_Agent.Contracts
+<MudChip T="string" Size="Size.Small" Color="@StatusColor" Variant="Variant.Outlined">@HelpDeskUiService.StatusLabel(Status)</MudChip>
+@code {
+    [Parameter] public HelpTicketStatus Status { get; set; }
+    private Color StatusColor => Status switch { HelpTicketStatus.New => Color.Info, HelpTicketStatus.InProgress => Color.Primary, HelpTicketStatus.WaitingOnUser => Color.Warning, _ => Color.Success };
+}

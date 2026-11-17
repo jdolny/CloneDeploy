@@ -1,0 +1,19 @@
+@using CloneDeploy_Server.Backend.Services.Files
+@inject DriverService Service
+
+<ExternalFileForm File="File" SaveFileAsync="SaveFileAsync" OnSaved="OnSaved" OnCancel="OnCancel"
+                  ShowAutoRefresh="true" AutoRefreshLabel="Check this URL on the profile's schedule">
+    <AdditionalContent>
+        <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.DriverExternalEditor.APinnedChecksumDisablesAutomaticURLRefreshEditingA]</MudText>
+    </AdditionalContent>
+</ExternalFileForm>
+
+@code {
+    [Parameter] public int ProfileId { get; set; }
+    [Parameter] public ActionFileItemDto? File { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private Task<ServiceResult> SaveFileAsync(string name, string url, string? hash, bool refresh) =>
+        Service.SaveExternalAsync(ProfileId, File?.Id, name, url, hash, refresh);
+}

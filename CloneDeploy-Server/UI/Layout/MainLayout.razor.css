@@ -1,0 +1,76 @@
+.cd-shell { min-height:100vh; }
+.cd-shell.cd-dark {
+    --cd-shell-start:#1B2028;
+    --cd-shell-end:#2A323C;
+    --cd-shell-border:#404B59;
+    --cd-shell-text:#E5E7EB;
+    --cd-shell-icon:#9AA4B2;
+    --cd-accent:#82B1F4;
+    --cd-subtitle-line:#82B1F480;
+    --cd-active-start:#404B59;
+    --cd-active-end:#404B5980;
+    --cd-shell-shadow:#0E111612;
+    --cd-content-shadow:#0E111604;
+}
+.cd-shell ::deep .cd-topbar { background:linear-gradient(110deg,var(--cd-shell-start, #111827),var(--cd-shell-end, #172533)); border-bottom:1px solid var(--cd-shell-border, #293649); box-shadow:0 2px 8px var(--cd-shell-shadow, #11182712); }
+.cd-brand { display:flex; flex-direction:column; align-items:center; gap:2px; color:var(--cd-shell-text, #F4F8FF); font-size:21px; font-weight:700; letter-spacing:-.7px; text-decoration:none; flex-shrink:0; margin-right:26px; }
+.cd-brand-heading { display:flex; align-items:center; gap:10px; line-height:28px; }
+.cd-brand-subtitle { display:flex; align-items:center; gap:9px; width:100%; color:var(--cd-accent, #7DD3FC); font-size:10px; font-weight:600; line-height:12px; letter-spacing:.4em; text-transform:uppercase; }
+.cd-brand-subtitle > span { padding-left:.4em; }
+.cd-brand-subtitle::before, .cd-brand-subtitle::after { content:""; flex:1; height:1px; background:linear-gradient(90deg,transparent,var(--cd-subtitle-line, #7DD3FC80)); }
+.cd-brand-subtitle::after { background:linear-gradient(90deg,var(--cd-subtitle-line, #7DD3FC80),transparent); }
+.cd-brand img { width:34px; height:28px; object-fit:contain; }
+.cd-brand-accent { color:var(--cd-accent, #3BA7FF); }
+.cd-shell ::deep .cd-user { background:transparent; color:var(--cd-shell-text, #E7EDF6); }
+.cd-shell ::deep .cd-topbar .mud-icon-button { color:var(--cd-shell-text, #CDD7E5); }
+.cd-shell ::deep .cd-user .mud-button { text-transform:none; }
+.cd-shell ::deep .cd-user .mud-button-label { max-width:240px; overflow:hidden; white-space:nowrap; }
+/* Keep button icons inside the clipped account label; MudBlazor offsets them with negative margins. */
+.cd-shell ::deep .cd-user .mud-button-icon-start { margin-inline-start:0; flex-shrink:0; }
+.cd-shell ::deep .cd-user .mud-button-icon-end { margin-inline-end:0; flex-shrink:0; }
+.cd-account-logout-form { margin:0; }
+.cd-account-logout-form ::deep .mud-button { justify-content:flex-start; padding:8px 16px; text-transform:none; }
+.cd-shell ::deep .cd-drawer { background:linear-gradient(160deg,var(--cd-shell-start, #111827),var(--cd-shell-end, #172533)); border-right:1px solid var(--cd-shell-border, #293649); }
+.cd-shell ::deep .cd-drawer .mud-drawer-content { display:flex; flex-direction:column; }
+/* Keep menu width stable when expanding groups introduces a scrollbar. */
+.cd-navigation { flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; padding:8px 0 20px; scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:var(--cd-shell-border, #40516A) transparent; }
+.cd-sidebar-footer { padding:18px 20px; border-top:1px solid var(--cd-shell-border, #293649); margin:0; flex-shrink:0; }
+.cd-navigation ::deep .mud-nav-link { padding:12px 20px; font-size:.875rem; border-radius:0; color:var(--cd-shell-text, #CDD7E5); }
+.cd-navigation ::deep .mud-nav-link-text { min-width:0; overflow-wrap:anywhere; }
+.cd-navigation ::deep .mud-nav-link .mud-icon-root { color:var(--cd-shell-icon, #AAB9CC); }
+.cd-navigation ::deep .mud-nav-link.active:not(.mud-nav-link-disabled) { color:#fff; background:linear-gradient(90deg,var(--cd-active-start, #0F7BFF38),var(--cd-active-end, #3BA7FF12)); border-inline-start:0; position:relative; }
+.cd-navigation ::deep .mud-nav-link.active:not(.mud-nav-link-disabled)::before { content:""; position:absolute; inset-block:0; inset-inline-start:0; width:3px; background:var(--cd-accent, #3BA7FF); pointer-events:none; }
+.cd-navigation ::deep .mud-nav-link.active .mud-icon-root { color:var(--cd-accent, #3BA7FF); }
+.cd-navigation ::deep .mud-nav-group:has(.mud-nav-link.active) > .mud-nav-link { color:var(--cd-accent, #3BA7FF); font-weight:600; }
+.cd-navigation ::deep .mud-nav-group:has(.mud-nav-link.active) > .mud-nav-link .mud-nav-link-icon { color:var(--cd-accent, #3BA7FF); }
+.cd-navigation ::deep .mud-nav-link:hover { background-color:#ffffff09; }
+.cd-navigation ::deep .mud-divider { border-color:var(--cd-shell-border, #344257); margin:12px 18px; }
+.cd-navigation ::deep .mud-navgroup .mud-navgroup .mud-nav-link { font-size:.8125rem; }
+.cd-navigation ::deep .nav-search { margin:0 8px; }
+.cd-navigation ::deep .nav-search .mud-input { color:var(--cd-shell-text, #E7EDF6); background:#ffffff04; font-size:.8125rem; }
+.cd-navigation ::deep .nav-search .mud-input-outlined-border { border-color:var(--cd-shell-border, #40516A); border-radius:5px; }
+.cd-navigation ::deep .nav-search .mud-icon-root { color:var(--cd-shell-icon, #AAB9CC); }
+.cd-shell ::deep .cd-content { padding:24px 28px 32px; }
+/* Actions resolve authorization asynchronously; reserve their height before they appear. */
+.cd-page-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:22px; min-height:40px; }
+.cd-page-title { min-width:0; }
+.cd-page-title ::deep .responsive-title { font-size:1.5rem; font-weight:650; letter-spacing:-.5px; overflow-wrap:anywhere; }
+.cd-page-actions { max-width:100%; }
+.cd-shell ::deep .cd-content .mud-paper:not(.mud-table):not(.mud-tabs-panels) { border:1px solid var(--mud-palette-lines-default); }
+.cd-shell ::deep .cd-content .mud-elevation-2,
+.cd-shell ::deep .cd-content .mud-elevation-5 { box-shadow:0 2px 10px var(--cd-content-shadow, #11182704); }
+.cd-shell ::deep .mud-table-head .mud-table-cell { background:var(--cd-grid-header-background, var(--mud-palette-background-gray)); color:var(--mud-palette-text-secondary); font-weight:600; }
+.cd-shell ::deep .mud-typography-caption { color:var(--mud-palette-text-secondary); }
+.cd-shell ::deep .cd-content .mud-typography-h6 { font-size:1rem; font-weight:600; }
+.cd-shell ::deep .mud-button { letter-spacing:.02em; }
+.cd-shell ::deep .mud-button:focus-visible,
+.cd-brand:focus-visible { outline:2px solid var(--cd-accent, #3BA7FF); outline-offset:3px; }
+@media(max-width:600px) {
+    .cd-brand { margin-right:4px; }
+    .cd-brand img { width:28px; }
+    .cd-brand-name { display:none; }
+    .cd-shell ::deep .cd-content { padding:18px 14px 24px; }
+    .cd-shell ::deep .cd-user .mud-button-label { max-width:150px; }
+    .cd-page-heading { align-items:flex-start; }
+    .cd-page-actions { overflow-x:auto; }
+}

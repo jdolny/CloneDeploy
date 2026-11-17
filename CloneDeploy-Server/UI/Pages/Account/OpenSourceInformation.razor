@@ -1,0 +1,15 @@
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h5">@Loc[LocKeys.Ui.OpenSourceInformation.OpenSourceSoftwareInformation]</MudText>
+    <MudText>@Loc[LocKeys.Ui.OpenSourceInformation.CloneDeployIsFreeAndOpenSourceSoftwareLicensedUnder]</MudText>
+    <MudText>@Loc[LocKeys.Ui.OpenSourceInformation.YouAreFreeToUseModifyAndShareCloneDeploy]</MudText>
+    <MudLink Href="@OpenSourceNotices.SourceUrl" Target="_blank" rel="noopener noreferrer">@Loc[LocKeys.Ui.OpenSourceInformation.ExploreTheSourceCode]</MudLink>
+    <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.OpenSourceInformation.CloneDeployIsProvidedWithoutWarrantyAsDescribedInIts]</MudText>
+    <MudExpansionPanels>
+        @foreach (var document in OpenSourceNotices.Documents)
+        {
+            <MudExpansionPanel Text="@document.Name">
+                <pre style="white-space: pre-wrap; overflow-wrap: anywhere; max-height: 24rem; overflow-y: auto; font-size: 0.85rem;">@document.Text</pre>
+            </MudExpansionPanel>
+        }
+    </MudExpansionPanels>
+</MudStack>

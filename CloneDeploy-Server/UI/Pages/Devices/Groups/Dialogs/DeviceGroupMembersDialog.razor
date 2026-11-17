@@ -1,0 +1,132 @@
+@inject DeviceGroupService DeviceGroupService
+
+<MudDialog>
+    <DialogContent>
+        <MudText Class="mb-3">@Loc[LocKeys.Ui.DeviceGroupMembersDialog.DragDevicesBetweenPanelsOrUseAddAndRemove]</MudText>
+        @if (_loading) { <MudProgressLinear Indeterminate="true"/> }
+        @if (_loadFailed) { <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.DeviceGroupMembersDialog.UnableToLoadDevicesCloseAndReopenTheEditor]</MudAlert> }
+        <MudDropContainer T="QueryDeviceDto" @ref="_container" Items="_items" ItemsSelector="InZone" ItemDropped="OnDeviceDropped" ItemDisabled="@(_ => _saving)">
+            <ChildContent>
+                <div class="member-panels">
+                    <MudPaper Outlined="true" Elevation="0" Class="pa-3">
+                        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DeviceGroupMembersDialog.AvailableDevices]</MudText>
+                        <MudTextField T="string" Value="_search" ValueChanged="OnSearchChanged" Label="@Loc[LocKeys.Ui.ManageDevicesPage.SearchDevices_3aebaefc]" DebounceInterval="300"
+                                      Clearable="true" Disabled="_saving" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"/>
+                        <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.DeviceGroupMembersDialog.ShowingUpTo100SearchResultsSearchByName]</MudText>
+                        <MudDropZone T="QueryDeviceDto" Identifier="available" Class="member-drop-zone">
+                            <ChildContent>
+                                @if (!_items.Any(x => InZone(x, "available"))) { <MudText Class="pa-3">@Loc[LocKeys.Ui.DeviceGroupMembersDialog.NoMatchingAvailableDevices]</MudText> }
+                            </ChildContent>
+                        </MudDropZone>
+                    </MudPaper>
+                    <MudPaper Outlined="true" Elevation="0" Class="pa-3">
+                        <MudText Typo="Typo.h6">@UiText.Get(LocKeys.Ui.DeviceGroupMembersDialog.CurrentMembers0, (_selected.Count))</MudText>
+                        <MudDropZone T="QueryDeviceDto" Identifier="members" Class="member-drop-zone">
+                            <ChildContent>
+                                @if (_selected.Count == 0) { <MudText Class="pa-3">@Loc[LocKeys.Ui.DeviceGroupMembersDialog.DropDevicesHereToAddMembers]</MudText> }
+                            </ChildContent>
+                        </MudDropZone>
+                    </MudPaper>
+                </div>
+            </ChildContent>
+            <ItemRenderer Context="device">
+                <MudPaper Outlined="true" Elevation="0" Class="pa-2 my-2 d-flex align-center gap-2">
+                    <MudDragHandle T="QueryDeviceDto"><MudIcon Icon="@Icons.Material.Filled.DragIndicator"/></MudDragHandle>
+                    <MudText Style="overflow-wrap:anywhere; min-width:0;">@device.Name</MudText>
+                    <MudSpacer/>
+                    @if (_selected.Contains(device.Id))
+                    {
+                        <MudButton Size="Size.Small" Disabled="_saving" OnClick="@(() => OnRemoveClicked(device))" aria-label="@(UiText.Get(LocKeys.Group.RemoveDevice, (device.Name)))">@Loc[LocKeys.Ui.DeviceGroupPowerSchedulesTab.Remove]</MudButton>
+                    }
+                    else
+                    {
+                        <MudButton Size="Size.Small" Disabled="_saving" OnClick="@(() => OnAddClicked(device))" aria-label="@(UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.Add0, (device.Name)))">@Loc[LocKeys.Ui.HelpConfigurationNamesTab.Add]</MudButton>
+                    }
+                </MudPaper>
+            </ItemRenderer>
+        </MudDropContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked" Disabled="_saving">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _loading || _loadFailed || _saving, UiText.Get(LocKeys.Ui.DeviceGroupMembersDialog.GroupMembersCouldNotBeLoadedReopenTheEditor), OnSaveClicked)" Disabled="@(_saving || _loading)" Variant="Variant.Filled" Color="Color.Primary">@Loc[LocKeys.Group.SaveMembers]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int GroupId { get; set; }
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private MudDropContainer<QueryDeviceDto>? _container;
+    private List<QueryDeviceDto> _items = [];
+    private HashSet<int> _selected = [];
+    private HashSet<int> _available = [];
+    private string? _search;
+    private int _searchVersion;
+    private bool _loading = true, _loadFailed, _saving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var members = await DeviceGroupService.GetMembersAsync(GroupId);
+        if (!members.Success)
+        {
+            _loadFailed = true; _loading = false;
+            Snackbar.Add(Loc[members.Error.Code, members.Error.Args], Severity.Error);
+            return;
+        }
+        _items = members.Data!;
+        _selected = _items.Select(x => x.Id).ToHashSet();
+        await OnSearchChanged(null);
+    }
+
+    private bool InZone(QueryDeviceDto device, string zone) => zone == "members"
+        ? _selected.Contains(device.Id) : !_selected.Contains(device.Id) && _available.Contains(device.Id);
+
+    private async Task OnSearchChanged(string? search)
+    {
+        _search = search;
+        var version = ++_searchVersion;
+        _loading = true;
+        var result = await DeviceGroupService.SearchDevicesAsync(search, CancellationToken.None);
+        if (version != _searchVersion) return;
+        if (result.Success)
+        {
+            _available = result.Data!.Select(x => x.Id).ToHashSet();
+            _items = _items.Where(x => _selected.Contains(x.Id)).Concat(result.Data!).DistinctBy(x => x.Id).OrderBy(x => x.Name).ToList();
+        }
+        else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loading = false;
+        _container?.Refresh();
+    }
+
+    private void OnAddClicked(QueryDeviceDto device) { if (_saving) return; _selected.Add(device.Id); _container?.Refresh(); }
+    private void OnRemoveClicked(QueryDeviceDto device)
+    {
+        if (_saving) return;
+        _selected.Remove(device.Id);
+        if (string.IsNullOrWhiteSpace(_search) || device.Name.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase)) _available.Add(device.Id);
+        _container?.Refresh();
+    }
+    private void OnDeviceDropped(MudItemDropInfo<QueryDeviceDto> drop)
+    {
+        if (drop.Item is null || _saving) return;
+        if (drop.DropzoneIdentifier == "members") OnAddClicked(drop.Item);
+        else OnRemoveClicked(drop.Item);
+    }
+    private void OnCancelClicked() => MudDialog.Cancel();
+    private async Task OnSaveClicked()
+    {
+        if (_saving || _loading || _loadFailed) return;
+        _saving = true;
+        try
+        {
+            var result = await DeviceGroupService.UpdateMembersAsync(GroupId, DeviceGroupType.Manual, new(), _selected, false);
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[LocKeys.Group.MembersUpdated], Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _saving = false; }
+    }
+}

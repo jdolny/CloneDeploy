@@ -1,0 +1,136 @@
+@inject PolicyService PolicyService
+
+<MudTabs ActivePanelIndex="Array.IndexOf(Sections, Section)" ActivePanelIndexChanged="OnHistoryTabChanged" KeepPanelsAlive="false"
+         TabPanelsClass="pt-4 detail-tab-content" Class="device-subtabs">
+    <MudTabPanel Text="@Loc[LocKeys.Policy.ClientResults]">
+        <TabHelp Href="ui/policies-actions/policies-client-results.html" Title="@Loc[LocKeys.Policy.ClientResults]" />
+        @if (Section == "client-history")
+        {
+            @if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+            else if (_details is not null)
+            {
+                <MudStack Class="stack-full">
+                    <MudDataGrid T="PolicyHistory" Items="_details.ClientHistory" QuickFilter="@(x => string.IsNullOrWhiteSpace(_tableSearch0) || (x.Device?.Name + " " + x.UserName + " " + x.Result).Contains(_tableSearch0.Trim(), StringComparison.OrdinalIgnoreCase))"
+                                 Dense="true" Hover="true" Elevation="0" Outlined="true" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize" HorizontalScrollbar="true">
+                        <ToolBarContent>
+                            <MudIcon Icon="@Icons.Material.Outlined.Computer" Color="Color.Primary"/>
+                            <MudStack Spacing="0"><MudText Typo="Typo.h6">@Loc[LocKeys.Policy.ClientResults]</MudText><MudText Typo="Typo.caption">@Loc[LocKeys.Ui.PolicyActivityTab.Latest200Results]</MudText></MudStack>
+                            <MudSpacer/>
+                            <MudTextField T="string" @bind-Value="_tableSearch0" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" aria-label="@Loc[LocKeys.Ui.PolicyActivityTab.SearchClientResults]"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/>
+                        </ToolBarContent>
+                        <Columns>
+                            <TemplateColumn Title="@Loc[LocKeys.Device.Date]" Sortable="false" Filterable="false"><CellTemplate>@context.Item.LastRanAtUtc.ToLocalTime().ToString("g")</CellTemplate></TemplateColumn>
+                            <TemplateColumn Title="@Loc[LocKeys.Dashboard.Device]" Sortable="false" Filterable="false"><CellTemplate>@context.Item.Device?.Name</CellTemplate></TemplateColumn>
+                            <TemplateColumn Title="@Loc[LocKeys.User.UserMembership]" Sortable="false" Filterable="false"><CellTemplate>@context.Item.UserName</CellTemplate></TemplateColumn>
+                            <TemplateColumn Title="@Loc[LocKeys.Dashboard.Result]" Sortable="false" Filterable="false"><CellTemplate>@UiText.Label(context.Item.Result)</CellTemplate></TemplateColumn>
+                        </Columns>
+                        <NoRecordsContent><MudText>@Loc[LocKeys.Ui.PolicyActivityTab.NoClientHistoryRecorded]</MudText></NoRecordsContent>
+                        <PagerContent><MudDataGridPager T="PolicyHistory"/></PagerContent>
+                    </MudDataGrid>
+                </MudStack>
+            }
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Loc[LocKeys.Policy.PublishedVersions]">
+        <TabHelp Href="ui/policies-actions/policies-published-versions.html" Title="@Loc[LocKeys.Policy.PublishedVersions]" />
+        @if (Section == "policy-history")
+        {
+            @if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+            else if (_details is not null)
+            {
+                <MudStack Class="stack-full">
+                    <MudDataGrid T="PolicyHashHistory" Items="_details.PolicyHistory" QuickFilter="@(x => string.IsNullOrWhiteSpace(_tableSearch1) || x.Hash.Contains(_tableSearch1.Trim(), StringComparison.OrdinalIgnoreCase))"
+                                 Dense="true" Hover="true" Elevation="0" Outlined="true" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize" HorizontalScrollbar="true">
+                        <ToolBarContent>
+                            <MudIcon Icon="@Icons.Material.Outlined.History" Color="Color.Primary"/>
+                            <MudStack Spacing="0"><MudText Typo="Typo.h6">@Loc[LocKeys.Policy.PublishedVersions]</MudText><MudText Typo="Typo.caption">@Loc[LocKeys.Ui.PolicyActivityTab.Latest200PolicyVersions]</MudText></MudStack>
+                            <MudSpacer/>
+                            <MudTextField T="string" @bind-Value="_tableSearch1" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" aria-label="@Loc[LocKeys.Ui.PolicyActivityTab.SearchPublishedVersions]"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/>
+                        </ToolBarContent>
+                        <Columns>
+                            <TemplateColumn Title="@Loc[LocKeys.Device.Date]" Sortable="false" Filterable="false"><CellTemplate>@context.Item.ModifiedAtUtc.ToLocalTime().ToString("g")</CellTemplate></TemplateColumn>
+                            <TemplateColumn Title="@Loc[LocKeys.Ui.PolicyActivityTab.Hash]" Sortable="false" Filterable="false"><CellTemplate>@context.Item.Hash</CellTemplate></TemplateColumn>
+                            <TemplateColumn Title="@Loc[LocKeys.User.ObjectJson]" Sortable="false" Filterable="false"><CellTemplate><MudExpansionPanels><MudExpansionPanel Text="@Loc[LocKeys.Ui.PolicyActivityTab.ViewPolicy]"><pre style="white-space:pre-wrap;overflow-wrap:anywhere">@context.Item.Json</pre></MudExpansionPanel></MudExpansionPanels></CellTemplate></TemplateColumn>
+                        </Columns>
+                        <NoRecordsContent><MudText>@Loc[LocKeys.Ui.PolicyActivityTab.NoPolicyVersionsRecorded]</MudText></NoRecordsContent>
+                        <PagerContent><MudDataGridPager T="PolicyHashHistory"/></PagerContent>
+                    </MudDataGrid>
+                </MudStack>
+            }
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Loc[LocKeys.Policy.AuditHistory]">
+        <TabHelp Href="ui/policies-actions/policies-audit-history.html" Title="@Loc[LocKeys.Policy.AuditHistory]" />
+        @if (Section == "audit")
+        {
+            @if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+            else if (_details is not null)
+            {
+                <MudStack Class="stack-full">
+                    <MudDataGrid T="AuditLog" Items="_details.Audits" QuickFilter="@(x => string.IsNullOrWhiteSpace(_tableSearch2) || (x.UserName + " " + x.AuditType).Contains(_tableSearch2.Trim(), StringComparison.OrdinalIgnoreCase))"
+                                 Dense="true" Hover="true" Elevation="0" Outlined="true" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize" HorizontalScrollbar="true">
+                        <ToolBarContent>
+                            <MudIcon Icon="@Icons.Material.Outlined.History" Color="Color.Primary"/>
+                            <MudStack Spacing="0"><MudText Typo="Typo.h6">@Loc[LocKeys.Policy.AuditHistory]</MudText><MudText Typo="Typo.caption">@Loc[LocKeys.Action.LatestEvents]</MudText></MudStack>
+                            <MudSpacer/>
+                            <MudTextField T="string" @bind-Value="_tableSearch2" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" aria-label="@Loc[LocKeys.Ui.DriverAudit.SearchAuditHistory]"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/>
+                        </ToolBarContent>
+                        <Columns>
+                            <TemplateColumn Title="@Loc[LocKeys.Device.Date]" Sortable="false" Filterable="false"><CellTemplate>@context.Item.LoggedAtUtc.ToLocalTime().ToString("g")</CellTemplate></TemplateColumn>
+                            <TemplateColumn Title="@Loc[LocKeys.User.UserMembership]" Sortable="false" Filterable="false"><CellTemplate>@context.Item.UserName</CellTemplate></TemplateColumn>
+                            <TemplateColumn Title="@Loc[LocKeys.Image.AuditType]" Sortable="false" Filterable="false"><CellTemplate>@UiText.Label(context.Item.AuditType)</CellTemplate></TemplateColumn>
+                        </Columns>
+                        <NoRecordsContent><MudText>@Loc[LocKeys.Action.NoAuditEvents]</MudText></NoRecordsContent>
+                        <PagerContent><MudDataGridPager T="AuditLog"/></PagerContent>
+                    </MudDataGrid>
+                </MudStack>
+            }
+        }
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+    private static readonly string[] Sections = ["client-history", "policy-history", "audit"];
+    private Task OnHistoryTabChanged(int index) => index >= 0 && index < Sections.Length && Sections[index] != Section
+        ? OnSectionClicked(Sections[index]) : Task.CompletedTask;
+    private string? _tableSearch0;
+    private string? _tableSearch1;
+    private string? _tableSearch2;
+
+    [Parameter] public int PolicyId { get; set; }
+    [Parameter] public string InitialSection { get; set; } = "client-history";
+
+    private string Section = "client-history";
+    private PolicyDetailsDto? _details;
+    private bool _loading = true;
+
+    private (int, string)? _loadedSection;
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedSection == (PolicyId, InitialSection)) return;
+        _loadedSection = (PolicyId, InitialSection);
+        Section = Sections.Contains(InitialSection) ? InitialSection : "client-history";
+        await OnRefreshClicked();
+    }
+
+    private async Task OnSectionClicked(string section)
+    {
+        Section = section;
+        await OnRefreshClicked();
+    }
+
+    private async Task OnRefreshClicked()
+    {
+        _loading = true;
+        _details = null;
+        var result = await PolicyService.GetSectionAsync(PolicyId, Section);
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        else if (result.HasData)
+            _details = result.Data;
+        _loading = false;
+    }
+}

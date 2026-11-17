@@ -1,0 +1,46 @@
+@inject IAuthorizationService Authorization
+
+@if (_visible)
+{
+    <MudNavGroup Title="@Title" Icon="@Icon">
+        @ChildContent
+    </MudNavGroup>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<string> Policies { get; set; } = [];
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Icon { get; set; }
+    [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = null!;
+    [CascadingParameter] private Task<AuthenticationState> AuthenticationState { get; set; } = null!;
+
+    private Task<AuthenticationState>? _checkedAuthentication;
+    private string[] _checkedPolicies = [];
+    private long _checkVersion;
+    private bool _visible;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Child content changes during search/layout renders; permissions do not.
+        if (ReferenceEquals(_checkedAuthentication, AuthenticationState) && _checkedPolicies.SequenceEqual(Policies)) return;
+
+        var authentication = AuthenticationState;
+        var policies = Policies.ToArray();
+        var version = ++_checkVersion;
+        _checkedAuthentication = authentication;
+        _checkedPolicies = policies;
+        _visible = false;
+
+        var state = await authentication;
+        if (version != _checkVersion || state.User.Identity?.IsAuthenticated != true) return;
+        foreach (var policy in policies)
+        {
+            var result = await Authorization.AuthorizeAsync(state.User, policy);
+            if (version != _checkVersion) return;
+            if (!result.Succeeded) continue;
+            // A section is useful when at least one destination is accessible.
+            _visible = true;
+            break;
+        }
+    }
+}

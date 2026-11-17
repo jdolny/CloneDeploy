@@ -1,0 +1,35 @@
+@using CloneDeploy_Server.Backend.Services
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" @bind-Value="_search" Label="@Loc[LocKeys.Ui.GroupTargetPickerDialog.SearchGroups]" Immediate="true" Clearable="true" Variant="Variant.Outlined" Class="mb-3" />
+        <MudDataGrid SelectOnRowClick="false" T="PolicyTargetOptionDto" Items="Options.Where(x => x.Available && x.Key.GroupId.HasValue && !Assigned.Contains(x.Key))"
+                     MultiSelection="true" @bind-SelectedItems="_selected" Filterable="true" SortMode="SortMode.Multiple"
+                     QuickFilter="Matches" Dense="true" Hover="true" RowsPerPage="10">
+            <Columns>
+                <SelectColumn T="PolicyTargetOptionDto" />
+                <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]" />
+                <PropertyColumn Property="x => x.GroupType" Title="@Loc[LocKeys.StorageProvider.Type]" />
+                <PropertyColumn Property="x => x.GroupDescription" Title="@Loc[LocKeys.Common.Description]" />
+                <PropertyColumn Property="x => x.DeviceCount" Title="@Loc[LocKeys.Group.Devices]" />
+            </Columns>
+            <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.GroupTargetPickerDialog.NoAvailableGroupsMatchYourFilters]</MudText></NoRecordsContent>
+            <PagerContent><MudDataGridPager T="PolicyTargetOptionDto" /></PagerContent>
+        </MudDataGrid>
+        <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.GroupTargetPickerDialog.DeviceCountsExcludeArchivedDevicesDynamicGroupsUseTheir]</MudText>
+        <MudText Class="mt-3">@UiText.Get(LocKeys.Ui.GroupTargetPickerDialog.Text0GroupsSelected, (_selected.Count))</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="MudDialog.Cancel">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _selected.Count == 0, UiText.Get(LocKeys.Ui.GroupTargetPickerDialog.SelectAtLeastOneGroup), Add)" Color="Color.Primary" Variant="Variant.Filled">@Loc[LocKeys.Ui.GroupTargetPickerDialog.AddSelectedGroups]</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public List<PolicyTargetOptionDto> Options { get; set; } = [];
+    [Parameter] public HashSet<PolicyTargetKeyDto> Assigned { get; set; } = [];
+    private HashSet<PolicyTargetOptionDto> _selected = [];
+    private string _search = "";
+    private bool Matches(PolicyTargetOptionDto option) => string.IsNullOrWhiteSpace(_search) ||
+        (option.Name + " " + option.GroupDescription + " " + option.GroupType).Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+    private void Add() => MudDialog.Close(DialogResult.Ok(_selected.Select(x => new PolicyTargetSelectionDto { Key = x.Key }).ToList()));
+}

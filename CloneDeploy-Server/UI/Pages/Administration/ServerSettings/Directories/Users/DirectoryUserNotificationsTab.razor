@@ -1,0 +1,44 @@
+@inject DirectoryService Activity
+@inject AuthenticationStateProvider Authentication
+
+<MudText Typo="Typo.body2" Class="mb-4">@Loc[LocKeys.Ui.DirectoryUserNotificationsTab.ReportedNotificationDeliveriesAndAcknowledgmentsForThisDirectoryIdentity]</MudText>
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+<MudDataGrid @ref="_grid" T="DirectoryNotificationRow" ServerData="Load" Dense="true" Hover="true" Outlined="true" Elevation="0" RowsPerPage="25"
+             Class="device-list-grid" HorizontalScrollbar="true" SortMode="SortMode.None" Filterable="false">
+    <ToolBarContent><MudSpacer /><MudButton OnClick="@(() => _grid!.ReloadServerData())" StartIcon="@Icons.Material.Filled.Refresh">@Loc[LocKeys.Dashboard.Refresh]</MudButton></ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Receipt.Title" Title="@Loc[LocKeys.Ui.NavMenu.Notification]" />
+        <TemplateColumn Title="@Loc[LocKeys.Dashboard.Device]"><CellTemplate><MudLink Href="@($"/devices/manage/{context.Item.Receipt.DeviceId}")">@context.Item.DeviceName</MudLink></CellTemplate></TemplateColumn>
+        <PropertyColumn Property="x => x.Receipt.UserName" Title="@Loc[LocKeys.Ui.DirectoryUserNotificationsTab.RecordedUser]" />
+        <TemplateColumn Title="@Loc[LocKeys.Image.VersionStatus]"><CellTemplate>@Status(context.Item.Receipt)</CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.DeviceNotificationHistoryTab.Delivered]"><CellTemplate>@context.Item.Receipt.DeliveredAtUtc.ToLocalTime().ToString("g")</CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Device.Expires]"><CellTemplate>@(context.Item.Receipt.ExpiresAtUtc?.ToLocalTime().ToString("g") ?? "—")</CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.DeviceNotificationHistoryTab.Acknowledged]"><CellTemplate>@(context.Item.Receipt.AcknowledgedAtUtc?.ToLocalTime().ToString("g") ?? "—")</CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]"><CellTemplate><MudButton OnClick="@(() => View(context.Item.Receipt))">@Loc[LocKeys.Ui.PolicyReportsPage.View]</MudButton></CellTemplate></TemplateColumn>
+    </Columns>
+    <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.DirectoryUserNotificationsTab.NoNotificationReceiptsFoundForThisUser]</MudText></NoRecordsContent>
+    <PagerContent><MudDataGridPager T="DirectoryNotificationRow" PageSizeOptions="@(new[] { 10, 25, 50, 100 })" /></PagerContent>
+</MudDataGrid>
+@code {
+    [Parameter] public int SourceId { get; set; }
+    [Parameter] public Guid ObjectGuid { get; set; }
+    private MudDataGrid<DirectoryNotificationRow>? _grid;
+    private string? _error;
+    private async Task<GridData<DirectoryNotificationRow>> Load(GridState<DirectoryNotificationRow> state, CancellationToken ct)
+    {
+        _error = null;
+        try
+        {
+            var page = await Activity.UserActivityNotificationsAsync((await Authentication.GetAuthenticationStateAsync()).User, SourceId, ObjectGuid, state.Page, state.PageSize, ct);
+            return new() { Items = page.Rows, TotalItems = page.Total };
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { return new() { Items = [], TotalItems = 0 }; }
+        catch (UnauthorizedAccessException) { _error = UiText.Get(LocKeys.Ui.DirectoryUserNotificationsTab.YouDoNotHavePermissionToViewThisHistory); }
+        catch { _error = UiText.Get(LocKeys.Ui.DirectoryUserNotificationsTab.NotificationHistoryCouldNotBeLoadedTryRefreshing); }
+        return new() { Items = [], TotalItems = 0 };
+    }
+    private static string Status(DeviceNotificationReceipt receipt) => receipt.AcknowledgedAtUtc.HasValue
+        ? receipt.AcknowledgedElsewhere ? UiText.Get(LocKeys.Ui.DeviceNotificationHistoryTab.AcknowledgedOnAnotherDevice) : UiText.Get(LocKeys.Ui.DeviceNotificationHistoryTab.Acknowledged)
+        : receipt.ExpiresAtUtc <= DateTime.UtcNow ? UiText.Get(LocKeys.Ui.DeviceNotificationHistoryTab.Expired) : UiText.Get(LocKeys.Ui.DeviceNotificationHistoryTab.PendingAcknowledgment);
+    private async Task View(DeviceNotificationReceipt receipt) => await Dialog.ShowMessageBoxAsync(receipt.Title, receipt.Body, yesText: UiText.Get(LocKeys.Ui.ActionFiles.Close));
+}

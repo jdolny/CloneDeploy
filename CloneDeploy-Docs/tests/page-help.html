@@ -1,0 +1,62 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Contextual help browser checks</title>
+<style>
+/* MudBlazor 9.12 panels use display:contents for active panels. */
+.mud-tabs-panels .mud-tab-panel { display:none }
+.mud-tabs-panels .mud-tab-panel.mud-tab-panel-active { display:contents }
+</style>
+<div id="fixture"></div><pre id="result">RUNNING</pre>
+<script type="module">
+import { observe } from '../../CloneDeploy-Server/UI/Common/PageHelp.razor.js';
+const fixture = document.querySelector('#fixture');
+let latest, calls = 0;
+const observer = observe({ invokeMethodAsync(method, href, title) {
+    latest = { href, title }; calls++; return Promise.resolve();
+}});
+const tick = () => new Promise(resolve => setTimeout(resolve, 100));
+const check = async (href, description) => {
+    await tick();
+    if (latest?.href !== href) throw new Error(`${description}: expected ${href}, got ${latest?.href}`);
+};
+try {
+    await check('', 'route fallback without tabs');
+    fixture.innerHTML = `<div class="mud-tabs"><div class="mud-tabs-panels">
+      <div id="inventory" class="mud-tab-panel mud-tab-panel-active">
+        <span hidden data-help-href="inventory.html" data-help-title="Inventory"></span>
+        <div class="mud-tabs"><button role="tab" id="software-tab">Software</button><div class="mud-tabs-panels">
+          <div id="system" class="mud-tab-panel mud-tab-panel-active"><span hidden data-help-href="system.html" data-help-title="System Info"></span><p>System info</p></div>
+          <div id="software" class="mud-tab-panel"><span hidden data-help-href="software.html" data-help-title="Software"></span><p>Software</p></div>
+        </div></div>
+      </div>
+      <div id="imaging" class="mud-tab-panel"><span hidden data-help-href="imaging.html" data-help-title="Imaging"></span><p>Imaging</p></div>
+    </div></div>`;
+    await check('system.html', 'deepest active tab; inactive kept-alive sibling ignored');
+    document.querySelector('#software-tab').click();
+    document.querySelector('#system').classList.remove('mud-tab-panel-active');
+    document.querySelector('#software').classList.add('mud-tab-panel-active');
+    await check('software.html', 'tab change without URL change');
+    document.querySelector('#inventory').classList.remove('mud-tab-panel-active');
+    document.querySelector('#imaging').classList.add('mud-tab-panel-active');
+    await check('imaging.html', 'hidden parent excludes active nested panels');
+    fixture.insertAdjacentHTML('beforeend', `<div id="parallel" class="mud-tabs"><button role="tab" id="terminal-tab">Terminal</button><div class="mud-tabs-panels"><div class="mud-tab-panel mud-tab-panel-active"><span hidden data-help-href="terminal.html" data-help-title="Terminal"></span><p>Terminal</p></div></div></div>`);
+    document.querySelector('#terminal-tab').focus();
+    await check('terminal.html', 'keyboard focus selects parallel tab group');
+    document.querySelector('#parallel').hidden = true;
+    await check('imaging.html', 'hidden parallel group ignored');
+    fixture.innerHTML = '';
+    history.pushState({}, '', '?different-page');
+    await check('', 'navigation removes stale tab context');
+    const previousCalls = calls;
+    await tick();
+    if (calls !== previousCalls) throw new Error('observer repeatedly publishes unchanged state');
+    observer.dispose();
+    fixture.innerHTML='<span data-help-href="disposed.html"></span>';
+    await tick();
+    if (calls !== previousCalls) throw new Error('observer did not dispose');
+    document.querySelector('#result').textContent = 'PASS: 9 contextual help browser checks';
+} catch (error) {
+    observer.dispose();
+    document.querySelector('#result').textContent = 'FAIL: '+error.stack;
+}
+</script>

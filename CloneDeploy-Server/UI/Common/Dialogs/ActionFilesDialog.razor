@@ -1,0 +1,14 @@
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ActionFilesDialog.InstallerAndSupportingFiles]</MudText></TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-3">@Loc[LocKeys.Ui.ActionFilesDialog.AttachAnInstallerAndAnySupportingFilesItNeeds]</MudText>
+        <ActionFiles ActionGuid="ActionGuid" InstallerFileId="InstallerFileId" />
+    </DialogContent>
+    <DialogActions><MudButton OnClick="@(() => MudDialog.Close())">@Loc[LocKeys.Ui.ActionFilesDialog.Done]</MudButton></DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter, EditorRequired] public Guid ActionGuid { get; set; }
+    [Parameter] public int? InstallerFileId { get; set; }
+}

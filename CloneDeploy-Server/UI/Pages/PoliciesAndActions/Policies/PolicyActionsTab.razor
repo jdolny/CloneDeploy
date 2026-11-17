@@ -1,0 +1,88 @@
+@inject PolicyService PolicyService
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true"/>
+}
+else if (_details is not null)
+{
+    <div class="section-action-bar">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick="OnOpenActionsClicked" Disabled="_saving">@(!ReadOnly ? UiText.Get(LocKeys.Ui.PolicyActionsTab.EditActions) : UiText.Get(LocKeys.Ui.PolicyActionsTab.ViewActions))</MudButton>
+    </div>
+    <MudDataGrid T="PolicyAction" Items="_details.Policy.PolicyActions.OrderBy(x => x.Order)" QuickFilter="@(x => string.IsNullOrWhiteSpace(_tableSearch0) || (_details.Actions.FirstOrDefault(a => a.Guid == x.ActionGuid)?.Name ?? x.ActionGuid.ToString()).Contains(_tableSearch0.Trim(), StringComparison.OrdinalIgnoreCase))"
+                     Dense="true" Hover="true" Elevation="0" Outlined="true" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize" HorizontalScrollbar="true">
+            <ToolBarContent>
+                <MudIcon Icon="@Icons.Material.Outlined.PlaylistPlay" Color="Color.Primary"/>
+                <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.PolicyActionsTab.ExecutionOrder]</MudText>
+                <MudSpacer/>
+                <MudTextField T="string" @bind-Value="_tableSearch0" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" aria-label="@Loc[LocKeys.Ui.PolicyActionsTab.SearchExecutionOrder]"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/>
+            </ToolBarContent>
+            <Columns>
+                <TemplateColumn Title="@Loc[LocKeys.Ui.DeploymentPoliciesTab.Order]" Sortable="false" Filterable="false"><CellTemplate>@context.Item.Order</CellTemplate></TemplateColumn>
+                <TemplateColumn Title="@Loc[LocKeys.Dashboard.Action]" Sortable="false" Filterable="false"><CellTemplate>@(_details.Actions.FirstOrDefault(x => x.Guid == context.Item.ActionGuid)?.Name ?? context.Item.ActionGuid.ToString())</CellTemplate></TemplateColumn>
+                <TemplateColumn Title="@Loc[LocKeys.StorageProvider.Type]" Sortable="false" Filterable="false"><CellTemplate>@context.Item.ActionType</CellTemplate></TemplateColumn>
+                <TemplateColumn Title="@Loc[LocKeys.Ui.PolicyActionsTab.Condition]" Sortable="false" Filterable="false"><CellTemplate>@(context.Item.ConditionId.HasValue ? _details.Conditions.FirstOrDefault(x => x.Id == context.Item.ConditionId)?.Name ?? UiText.Get(LocKeys.Ui.PolicyActionsTab.UnavailableCondition) : UiText.Get(LocKeys.Ui.SiteServiceBootTab.None))</CellTemplate></TemplateColumn>
+            </Columns>
+            <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.PolicyActionsTab.NoActionsAssignedUseEditActionsToBuildThe]</MudText></NoRecordsContent>
+            <PagerContent><MudDataGridPager T="PolicyAction"/></PagerContent>
+        </MudDataGrid>
+}
+
+@code {
+    private string? _tableSearch0;
+
+    [Parameter] public int PolicyId { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+
+    private PolicyDetailsDto? _details;
+    private bool _loading = true, _saving;
+
+    private int? _loadedPolicyId;
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedPolicyId == PolicyId) return;
+        _loadedPolicyId = PolicyId;
+        _loading = true;
+        var result = await PolicyService.GetSectionAsync(PolicyId, "actions");
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        else if (result.HasData)
+            _details = result.Data;
+        _loading = false;
+    }
+
+    private async Task OnOpenActionsClicked()
+    {
+        if (_saving || _details is null) return;
+        var details = _details;
+        _saving = true;
+        var result = await PolicyService.GetSectionAsync(details.Policy.Id, "action-catalog");
+        _saving = false;
+        if (!result.Success)
+        {
+            Snackbar.Add(Loc[result.Error!.Code, result.Error.Args].Value, Severity.Error);
+            return;
+        }
+        var editorDetails = result.Data!;
+        var parameters = new DialogParameters<PolicyActionsDialog>
+        {
+            { x => x.Details, editorDetails },
+            { x => x.ReadOnly, ReadOnly },
+            { x => x.SaveChanges, SaveActionsAsync }
+        };
+        var options = new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, CloseButton = false, BackdropClick = false, CloseOnEscapeKey = false };
+        var dialog = await Dialog.ShowAsync<PolicyActionsDialog>(parameters, options);
+        if (await dialog.Result is { Canceled: false, Data: ICollection<PolicyAction> actions })
+        {
+            details.Policy.PolicyActions = actions;
+            details.Actions = editorDetails.Actions;
+            details.Conditions = editorDetails.Conditions;
+            Snackbar.Add(UiText.Get(LocKeys.Ui.PolicyActionsTab.PolicyActionsSaved), Severity.Success);
+        }
+    }
+    private Task<ServiceResult> SaveActionsAsync(PolicyDetailsDto draft)
+    {
+        return PolicyService.SaveAsync(draft, "actions");
+    }
+}

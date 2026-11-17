@@ -1,0 +1,22 @@
+.stats-cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+.stats-card { display:flex; flex-direction:column; gap:8px; text-align:left; padding:20px; border:1px solid var(--mud-palette-lines-default); border-radius:8px; background:var(--mud-palette-surface); color:var(--mud-palette-text-primary); font:inherit; cursor:pointer; border-top:3px solid var(--mud-palette-primary); }
+.stats-card strong { font-size:2rem; line-height:1.2; }
+.stats-card span:last-child { color:var(--mud-palette-text-secondary); font-size:.8rem; }
+.stats-card.positive { border-top-color:var(--mud-palette-success); }
+.stats-card.warning { border-top-color:var(--mud-palette-warning); }
+.stats-card.danger { border-top-color:var(--mud-palette-error); }
+.stats-charts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+.stats-chart { min-width:0; border:1px solid var(--mud-palette-lines-default); border-radius:8px; padding:20px; background:var(--mud-palette-surface); }
+.chart-row { width:100%; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 12px; background:transparent; border:0; color:var(--mud-palette-text-primary); font:inherit; padding:8px 0; cursor:pointer; text-align:left; }
+.chart-label { overflow-wrap:anywhere; font-size:.875rem; }
+.chart-count { font-weight:600; font-size:.875rem; }
+.chart-count small { color:var(--mud-palette-text-secondary); font-weight:400; }
+.chart-track, .storage-track { display:block; overflow:hidden; background:var(--mud-palette-background-grey); border-radius:4px; }
+.chart-track { grid-column:1 / -1; height:10px; }
+.chart-fill { display:block; background:var(--mud-palette-primary); height:100%; border-radius:4px; }
+.storage-track { height:18px; margin:12px 0; background:var(--mud-palette-success); }
+.storage-used { height:100%; background:var(--mud-palette-primary); }
+.chart-row:hover, .stats-card:hover { background:var(--mud-palette-action-default-hover); }
+.chart-row:focus-visible, .stats-card:focus-visible { outline:2px solid var(--mud-palette-primary); outline-offset:3px; }
+@media(max-width:959px) { .stats-charts { grid-template-columns:1fr; } .stats-cards { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:599px) { .stats-cards { grid-template-columns:1fr; } }

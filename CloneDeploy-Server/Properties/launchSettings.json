@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "https": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "https://localhost:7258",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Server__Listeners__ManagementPort": "7258",
+        "Server__Listeners__ServicePort": "8443",
+        "Server__Listeners__PortalPort": "8444",
+        "Server__Listeners__HttpPort": "5077"
+      }
+    }
+  }
+}

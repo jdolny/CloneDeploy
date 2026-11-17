@@ -1,0 +1,42 @@
+@inject ImagingService ImagingService
+
+<ImagingEditScope Policy="@Constants.Permissions.ImageEdit" Context="canEditImage">
+<div class="section-action-bar"><MudButton StartIcon="@Icons.Material.Filled.Save" Disabled="@(!canEditImage || (_saving))" OnClick="@OnSaveClicked" Color="Color.Primary" Variant="Variant.Filled">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton></div>
+
+<div>
+    <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.Image.Configuration]</MudText>
+    <MudCheckBox Disabled="@(!canEditImage)" @bind-Value="Image.Enabled" Label="@Loc[LocKeys.Image.Enabled]" Color="Color.Primary"/>
+    <MudCheckBox Disabled="@(!canEditImage)" @bind-Value="Image.Protected" Label="@Loc[LocKeys.Image.Protected]" Color="Color.Primary"/>
+    <MudText Typo="Typo.body2">@Loc[LocKeys.Image.ProtectionHint]</MudText>
+</div>
+
+<div>
+    <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.Image.Content]</MudText>
+    <MudText>@Loc[Image.LastUploadGuid == Guid.Empty ? LocKeys.Image.NotUploaded : LocKeys.Image.Uploaded]</MudText>
+    @if (Image.LastUploadGuid != Guid.Empty)
+    {
+        <MudText Typo="Typo.caption">@Loc[LocKeys.Image.LastUpload, Image.LastUploadGuid]</MudText>
+    }
+</div>
+
+
+</ImagingEditScope>
+@code {
+    [Parameter, EditorRequired] public Image Image { get; set; } = null!;
+
+    private bool _saving;
+
+    private async Task OnSaveClicked()
+    {
+        if (_saving) return;
+        _saving = true;
+
+        var result = await ImagingService.SaveImageConfigurationAsync(Image);
+        if (result.Success)
+            Snackbar.Add(Loc[LocKeys.Image.ConfigurationUpdated], Severity.Success);
+        else
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+
+        _saving = false;
+    }
+}

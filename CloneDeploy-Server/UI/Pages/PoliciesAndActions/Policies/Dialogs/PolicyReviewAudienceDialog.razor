@@ -1,0 +1,28 @@
+<MudDialog>
+    <DialogContent>
+        <MudText>@UiText.Get(LocKeys.Ui.PolicyReviewAudienceDialog.Text0Inclusions1Exclusions, (Audience.Members.Count(x => !x.Exclude)), (Audience.Members.Count(x => x.Exclude)))</MudText>
+        <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.PolicyReviewAudienceDialog.TheseAreSavedDirectorySelectionsNotACountOf]</MudText>
+        <MudDataGrid T="UserAudienceMember" Items="Audience.Members.OrderBy(x => x.Exclude).ThenBy(x => x.DisplayName)" Dense="true" Elevation="0" RowsPerPage="10">
+            <Columns>
+                <TemplateColumn Title="@Loc[LocKeys.Ui.PolicyReviewAudienceDialog.Selection]"><CellTemplate>@(context.Item.Exclude ? UiText.Get(LocKeys.Ui.PolicyReviewAudienceDialog.Exclude) : UiText.Get(LocKeys.Ui.EmailNotificationOptions.Include))</CellTemplate></TemplateColumn>
+                <TemplateColumn Title="@Loc[LocKeys.Ui.UserAudienceMembersTab.DirectoryObject]"><CellTemplate>
+                    @(Option(context.Item) is { } option ? $"{option.Name} · {option.Kind} · {option.DirectoryName}" : context.Item.DisplayName)
+                    @if (Option(context.Item)?.Available != true) { <MudText Color="Color.Warning" Typo="Typo.caption">@Loc[LocKeys.Ui.OuTargetPickerNode.Unavailable]</MudText> }
+                </CellTemplate></TemplateColumn>
+                <TemplateColumn Title="@Loc[LocKeys.Ui.TargetPolicies.Scope]"><CellTemplate>
+                    @(context.Item.IncludeDescendants ? UiText.Get(LocKeys.Ui.UserAudienceMembersTab.IncludesDescendantOUs) : Option(context.Item)?.Kind == DirectoryObjectKind.Group ? UiText.Get(LocKeys.Ui.PolicyReviewAudienceDialog.IncludesNestedMembers) : UiText.Get(LocKeys.Ui.UserAudienceMembersTab.SelectedObject))
+                </CellTemplate></TemplateColumn>
+            </Columns>
+            <NoRecordsContent><MudText Class="pa-3">@Loc[LocKeys.Ui.PolicyReviewAudienceDialog.NoSelectionsThisAudienceGrantsNoAccess]</MudText></NoRecordsContent>
+            <PagerContent><MudDataGridPager T="UserAudienceMember" /></PagerContent>
+        </MudDataGrid>
+    </DialogContent>
+    <DialogActions><MudButton OnClick="@(() => MudDialog.Close())">@Loc[LocKeys.Ui.ActionFiles.Close]</MudButton></DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter, EditorRequired] public UserAudience Audience { get; set; } = null!;
+    [Parameter] public List<PolicyAudienceOption> Options { get; set; } = [];
+    private PolicyAudienceOption? Option(UserAudienceMember member) =>
+        Options.FirstOrDefault(x => x.SourceId == member.DirectorySourceId && x.ObjectGuid == member.ObjectGuid);
+}

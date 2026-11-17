@@ -1,0 +1,43 @@
+@inject DriverService Service
+@inject ImagingService ImagingService
+<ImagingEditScope Policy="@Constants.Permissions.DriverPackEdit" Context="canEditImage">
+@if (_loading) { <MudProgressLinear Indeterminate="true"/> }
+else if (_entity is not null)
+{
+<div class="section-action-bar"><MudButton OnClick="OnSaveMatchingClicked" Disabled="@(!canEditImage || (_busy))" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton></div>
+                <DriverModelMatching Profile="_entity" Inventory="_inventory" Disabled="_busy" />
+
+
+}
+@if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+
+</ImagingEditScope>
+@code {
+    [Parameter] public int Id { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+    private DriverPack? _entity;
+    private bool _loading = true, _busy;
+    private string? _error;
+    private List<InventoriedModelDto> _inventory = [];
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Service.GetByIdAsync(Id);
+        _entity = result.Data;
+        if (!result.Success) _error = Loc[result.Error!.Code, result.Error.Args];
+        if (_entity is not null)
+        {
+            var inventory = await Service.GetInventoryAsync(); _inventory = inventory.Data ?? [];
+            if (!inventory.Success) _error = Loc[inventory.Error!.Code, inventory.Error.Args];
+        }
+        _loading = false;
+    }
+    private async Task OnSaveMatchingClicked()
+    {
+        if (_busy || _entity is null) return;
+        _busy = true; _error = null;
+        var result = await Service.SaveMatchingAsync(_entity);
+        if (result.Success) { Snackbar.Add(UiText.Get(LocKeys.Ui.DriverModelsTab.SupportedModelsSaved), Severity.Success); }
+        else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        _busy = false;
+    }
+}

@@ -1,0 +1,279 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@inject CertificateService Certificates
+@inject AuthenticationStateProvider Authentication
+@inject CertificateService WebCertificates
+@inject CertificateService HttpsListener
+@inject ServerSettingsUiService ServerSettings
+@inject ServerMessageSigner MessageSigner
+
+@if (!Embedded) { <AppPageTitle Text="@Loc[LocKeys.Ui.CertificateAuthorityTab.CertificateAuthority]" /> }
+<MudTabs @bind-ActivePanelIndex="_tab" Class="device-subtabs" KeepPanelsAlive="false" TabPanelsClass="pt-4 detail-tab-content">
+    <Header>
+        <div class="device-overview-save">
+            @if (!_loading && _error is null)
+            {
+                @if (_tab == 0)
+                {
+                    @if (_certificate is not null)
+                    {
+                        <MudButton Href="/api/ui/administration/server/certificates/certificate" download="CloneDeploy-Root-CA.cer"
+                                   Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download">@Loc[LocKeys.Ui.CertificateAuthorityTab.DownloadPublicCertificate]</MudButton>
+                    }
+                    else
+                    {
+                        <MudButton OnClick="OnGenerateClicked" Variant="Variant.Filled" Color="Color.Primary" Disabled="_busy">
+                            @(_busy ? UiText.Get(LocKeys.Ui.CertificateAuthorityTab.Generating) : UiText.Get(LocKeys.Ui.CertificateAuthorityTab.GenerateCA))
+                        </MudButton>
+                    }
+                }
+                else if (_certificate is { } root)
+                {
+                    <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+                        @if (_listenerAvailable)
+                        {
+                            <MudButton OnClick="@Snackbar.GuardAction(() => _web?.Enabled != true, UiText.Get(LocKeys.Ui.WebHttpsListenerService.IssueAndEnableAManagedHTTPSCertificateFirst), OnSaveListenerClicked)" Disabled="_busy"
+                                       StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.CertificateAuthorityTab.SaveListenerSettings]</MudButton>
+                        }
+                        <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Style="align-self: auto;" aria-label="@Loc[LocKeys.Ui.ActionButtons.MoreActions]" Disabled="_busy">
+                            <MudMenuItem OnClick="@Snackbar.GuardAction(() => _busy || root.IsRevoked || root.NotAfterUtc <= DateTime.UtcNow, UiText.Get(LocKeys.Ui.CertificateAuthorityTab.TheRootCertificateIsRevokedOrExpiredAValid), OnIssueWebClicked)" Disabled="_busy">
+                                @Loc[LocKeys.Ui.CertificateAuthorityTab.IssueRenewHTTPSCertificate]
+                            </MudMenuItem>
+                        </MudMenu>
+                    </MudButtonGroup>
+                }
+            }
+        </div>
+    </Header>
+    <ChildContent>
+    <MudTabPanel Text="@Loc[LocKeys.Ui.CertificateAuthorityTab.Root]">
+        <TabHelp Href="ui/administration/certificates-authority.html" Title="@Loc[LocKeys.Ui.CertificateAuthorityTab.Root]" />
+        <MudPaper Class="pa-4" Elevation="0" Outlined="true">
+            @if (_loading)
+            {
+                <MudProgressLinear Indeterminate="true" />
+            }
+            else if (_error is not null)
+            {
+                <MudAlert Severity="Severity.Error">@_error</MudAlert>
+                <MudButton OnClick="OnLoadClicked">@Loc[LocKeys.Common.Retry]</MudButton>
+            }
+            else if (_certificate is { } certificate)
+            {
+                <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.Ui.CertificateAuthorityTab.RootCertificateAuthority]</MudText>
+                <MudText>@UiText.Get(LocKeys.Ui.CertificateAuthorityTab.Subject0, (certificate.Subject))</MudText>
+                <MudText>@UiText.Get(LocKeys.Ui.CertificateAuthorityTab.SerialNumber0, (certificate.Serial))</MudText>
+                <MudText>@UiText.Get(LocKeys.Ui.CertificateAuthorityTab.ValidFromUTC0, (certificate.NotBeforeUtc.ToString("u")))</MudText>
+                <MudText>@UiText.Get(LocKeys.Ui.CertificateAuthorityTab.ExpiresUTC0, (certificate.NotAfterUtc.ToString("u")))</MudText>
+                <MudText Style="overflow-wrap:anywhere">@UiText.Get(LocKeys.Ui.CertificateAuthorityTab.SHA256Fingerprint0, (certificate.Sha256Fingerprint))</MudText>
+                @if (certificate.IsRevoked || certificate.NotAfterUtc <= DateTime.UtcNow)
+                {
+                    <MudAlert Severity="Severity.Error" Class="mt-3">@Loc[LocKeys.Ui.CertificateAuthorityTab.ThisCAIsRevokedOrExpiredItCannotBe]</MudAlert>
+                }
+            }
+            else
+            {
+                <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.CertificateAuthorityTab.CreateACertificateAuthority]</MudText>
+                <MudTextField @bind-Value="_organization" Label="@Loc[LocKeys.Ui.CertificateAuthorityTab.Organization]" Immediate="true" Variant="Variant.Outlined" MaxLength="128" Disabled="_busy" />
+            }
+        </MudPaper>
+        @if (!_loading && _error is null)
+        {
+            <MudPaper Class="pa-4 mt-4" Elevation="0" Outlined="true">
+                <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.Ui.CertificateAuthorityTab.ServerMessageSigningCertificate]</MudText>
+                @if (_signing is { } signing)
+                {
+                    <MudText>@UiText.Get(LocKeys.Ui.CertificateAuthorityTab.Status0, ((signing.NotAfterUtc <= _signingCheckedAt ? UiText.Get(LocKeys.Ui.CertificateAuthorityTab.ExpiredReplacementPendingNextSigningRequest) : signing.NotBeforeUtc > _signingCheckedAt ? UiText.Get(LocKeys.Ui.CertificateAuthorityTab.NotYetValid) : signing.NotAfterUtc < _signingCheckedAt.AddHours(1) ? UiText.Get(LocKeys.Ui.CertificateAuthorityTab.ActiveRenewalDueOnNextSigningRequest) : UiText.Get(LocKeys.Policy.Active))))</MudText>
+                    <MudText>@UiText.Get(LocKeys.Ui.CertificateAuthorityTab.Subject0, (signing.Subject))</MudText>
+                    <MudText>@UiText.Get(LocKeys.Ui.CertificateAuthorityTab.Issuer0, (signing.Issuer))</MudText>
+                    <MudText>@UiText.Get(LocKeys.Ui.CertificateAuthorityTab.ValidFromUTC0, (signing.NotBeforeUtc.ToString("u")))</MudText>
+                    <MudText>@UiText.Get(LocKeys.Ui.CertificateAuthorityTab.ExpiresUTC0, (signing.NotAfterUtc.ToString("u")))</MudText>
+                    <MudText Style="overflow-wrap:anywhere">@UiText.Get(LocKeys.Ui.CertificateAuthorityTab.SHA256Fingerprint0, (signing.Sha256Fingerprint))</MudText>
+                }
+                else
+                {
+                    <MudText>@Loc[LocKeys.Ui.CertificateAuthorityTab.StatusNotYetCreatedCreatedWhenThisServerFirst]</MudText>
+                }
+            </MudPaper>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Loc[LocKeys.Ui.CertificateAuthorityTab.Web]">
+        <TabHelp Href="ui/administration/certificates-https.html" Title="@Loc[LocKeys.Ui.CertificateAuthorityTab.Web]" />
+        <MudPaper Class="pa-4" Elevation="0" Outlined="true">
+            @if (_loading)
+            {
+                <MudProgressLinear Indeterminate="true" />
+            }
+            else if (_error is not null)
+            {
+                <MudAlert Severity="Severity.Error">@_error</MudAlert>
+                <MudButton OnClick="OnLoadClicked">@Loc[LocKeys.Common.Retry]</MudButton>
+            }
+            else if (_certificate is { } certificate)
+            {
+                <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.CertificateAuthorityTab.CloneDeployHTTPSCertificate]</MudText>
+                @if (_web is { } web)
+                {
+                    @if (!web.Enabled) { <MudText>@Loc[LocKeys.Ui.CertificateAuthorityTab.Disabled]</MudText> }
+                    <MudText>@UiText.Get(LocKeys.Ui.CertificateAuthorityTab.ExpiresUTC0, (web.ExpiresAtUtc.ToString("u")))</MudText>
+                    <MudText Style="overflow-wrap:anywhere">@UiText.Get(LocKeys.Ui.ActionFiles.SHA2560, (web.Sha256))</MudText>
+                    @if (web.Enabled && web.ExpiresAtUtc <= DateTime.UtcNow)
+                    {
+                        <MudAlert Severity="Severity.Error" Class="mt-3">@Loc[LocKeys.Ui.CertificateAuthorityTab.TheHTTPSCertificateHasExpiredClientsWillRejectIt]</MudAlert>
+                    }
+                    else if (web.Enabled && web.ExpiresAtUtc <= DateTime.UtcNow.AddDays(30))
+                    {
+                        <MudAlert Severity="Severity.Warning" Class="mt-3">@Loc[LocKeys.Ui.CertificateAuthorityTab.TheHTTPSCertificateExpiresWithin30DaysRenewIt]</MudAlert>
+                    }
+                }
+
+                @if (_web is { Enabled: true } && _publicHost is not null && !_web.Hosts.Contains(_publicHost, StringComparer.OrdinalIgnoreCase))
+                {
+                    <MudAlert Severity="Severity.Warning" Class="mt-3">@Loc[LocKeys.Ui.CertificateAuthorityTab.TheManagedHTTPSCertificateDoesNotIncludeThePublic]</MudAlert>
+                }
+                <MudTextField @bind-Value="_addresses" Label="@Loc[LocKeys.Ui.CertificateAuthorityTab.CertificateDNSNamesOrIPAddresses]" Lines="4" Variant="Variant.Outlined" Class="mt-3" Disabled="_busy"
+                               />
+                @if (_listenerAvailable)
+                {
+                    <MudCheckBox @bind-Value="_useManagedHttps" Label="@Loc["Certificates.AlsoUseForBrowsers"]" Disabled="_busy" />
+                    <MudNumericField @bind-Value="_httpsPort" Label="@Loc[LocKeys.Ui.CertificateAuthorityTab.ManagementHTTPSPort]" Min="1" Max="65535" Variant="Variant.Outlined" Disabled="_busy" />
+                    <MudNumericField @bind-Value="_servicePort" Label="@Loc[LocKeys.Ui.CertificateAuthorityTab.AgentImagingHTTPSPort]" Min="1" Max="65535" Variant="Variant.Outlined" Disabled="_busy" />
+                    <MudNumericField @bind-Value="_portalPort" Label="@Loc[LocKeys.Ui.CertificateAuthorityTab.PortalHTTPSPort]" Min="1" Max="65535" Variant="Variant.Outlined" Disabled="_busy" />
+                }
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info">@Loc[LocKeys.Ui.CertificateAuthorityTab.CreateACertificateAuthorityOnTheRootTabBefore]</MudAlert>
+            }
+        </MudPaper>
+    </MudTabPanel>
+    </ChildContent>
+</MudTabs>
+
+@code {
+    [Parameter] public bool Embedded { get; set; }
+    private int _tab;
+    private bool _loading = true;
+    private bool _busy;
+    private string _organization = "";
+    private string? _error;
+    private CertificateAuthorityDetailsDto? _certificate;
+    private WebCertificateDetails? _web;
+    private ServerSigningCertificateDetails? _signing;
+    private DateTime _signingCheckedAt;
+    private string _addresses = "";
+    private string? _publicHost;
+    private bool _listenerAvailable;
+    private bool _useManagedHttps = true;
+    private int _httpsPort = 443, _servicePort = 8443, _portalPort = 8444;
+
+    protected override Task OnInitializedAsync() => OnLoadClicked();
+
+    private async Task OnLoadClicked()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            var result = await Certificates.GetAuthorityAsync((await Authentication.GetAuthenticationStateAsync()).User);
+            _certificate = result.Data;
+            if (!result.Success)
+                _error = Loc[result.Error.Code, result.Error.Args];
+            var web = await WebCertificates.GetWebCertificateAsync((await Authentication.GetAuthenticationStateAsync()).User);
+            if (!web.Success) _error = Loc[web.Error.Code, web.Error.Args];
+            _web = web.Data;
+            var listener = await HttpsListener.GetListenerAsync((await Authentication.GetAuthenticationStateAsync()).User);
+            if (!listener.Success) _error = Loc[listener.Error.Code, listener.Error.Args];
+            _listenerAvailable = listener.Data?.Available == true;
+            _useManagedHttps = listener.Data?.UseManagedHttps ?? true;
+            _httpsPort = listener.Data?.Port ?? 443;
+            _servicePort = listener.Data?.ServicePort ?? 8443;
+            _portalPort = listener.Data?.PortalPort ?? 8444;
+            var server = await ServerSettings.ReadAsync();
+            if (!server.Success) _error = Loc[server.Error.Code, server.Error.Args];
+            _publicHost = CertificateService.PublicHost(server.Data);
+            _addresses = string.Join(Environment.NewLine, CertificateService.SuggestedHosts(server.Data, _web?.Hosts ?? []));
+            if (_error is null) await RefreshSigningAsync();
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task RefreshSigningAsync()
+    {
+        var authority = await Certificates.GetAuthorityAsync((await Authentication.GetAuthenticationStateAsync()).User);
+        if (!authority.Success)
+        {
+            _error = Loc[authority.Error.Code, authority.Error.Args];
+            _signing = null;
+            return;
+        }
+        _signing = await MessageSigner.GetDetailsAsync();
+        _signingCheckedAt = DateTime.UtcNow;
+    }
+
+    private async Task OnGenerateClicked()
+    {
+        if (_busy) return;
+        if (string.IsNullOrWhiteSpace(_organization))
+        {
+            Snackbar.Add(UiText.Get(LocKeys.Ui.CertificateAuthorityTab.EnterAnOrganizationName), Severity.Error);
+            return;
+        }
+        _busy = true;
+        try
+        {
+            var result = await Certificates.AuthorityGenerateAsync((await Authentication.GetAuthenticationStateAsync()).User, _organization);
+            if (!result.Success)
+            {
+                Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+                await OnLoadClicked();
+                return;
+            }
+
+            _certificate = result.Data;
+            Snackbar.Add(UiText.Get(LocKeys.Ui.CertificateAuthorityTab.CertificateAuthorityCreated), Severity.Success);
+        }
+        finally { _busy = false; }
+    }
+
+    private Task OnIssueWebClicked() => SaveWebAsync(true);
+    private async Task OnSaveListenerClicked()
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var result = await HttpsListener.SaveServerHttpsAsync((await Authentication.GetAuthenticationStateAsync()).User, _httpsPort, _servicePort, _portalPort, _useManagedHttps);
+            if (result.Success)
+            {
+                Snackbar.Add(UiText.Get(LocKeys.Ui.CertificateAuthorityTab.HTTPSListenerSettingsSavedRestartTheServerToApply), Severity.Success);
+                await OnLoadClicked();
+            }
+            else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _busy = false; }
+    }
+    private async Task SaveWebAsync(bool enabled)
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            var result = await WebCertificates.SaveWebCertificateAsync(user, _addresses, enabled);
+            if (result.Success && enabled && _listenerAvailable)
+            {
+                var listener = await HttpsListener.SaveServerHttpsAsync(user, _httpsPort, _servicePort, _portalPort, _useManagedHttps);
+                if (!listener.Success)
+                {
+                    Snackbar.Add(UiText.Get(LocKeys.Ui.CertificateAuthorityTab.CertificateSavedButListenerSettingsCouldNotBeSaved), Severity.Warning);
+                    Snackbar.Add(Loc[listener.Error.Code, listener.Error.Args], Severity.Error);
+                    _web = (await WebCertificates.GetWebCertificateAsync(user)).Data;
+                    return;
+                }
+            }
+            if (result.Success) { Snackbar.Add(UiText.Get(LocKeys.Ui.CertificateAuthorityTab.HTTPSCertificateSettingsSavedRestartTheServerToApply), Severity.Success); await OnLoadClicked(); }
+            else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _busy = false; }
+    }
+}

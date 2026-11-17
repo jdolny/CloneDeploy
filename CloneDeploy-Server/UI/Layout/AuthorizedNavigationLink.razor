@@ -1,0 +1,11 @@
+@* Scalar parameters keep navigation/search refreshes from restarting authorization. *@
+<AuthorizeView Policy="@Policy">
+    <MudNavLink Href="@Href" Match="NavLinkMatch.Prefix" Icon="@Icon">@Text</MudNavLink>
+</AuthorizeView>
+
+@code {
+    [Parameter, EditorRequired] public string Policy { get; set; } = "";
+    [Parameter, EditorRequired] public string Href { get; set; } = "";
+    [Parameter, EditorRequired] public string Text { get; set; } = "";
+    [Parameter] public string? Icon { get; set; }
+}

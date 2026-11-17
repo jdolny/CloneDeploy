@@ -1,0 +1,68 @@
+@inject ServerUpdateChecker ServerUpdates
+@inject RuntimeUpdateChecker RuntimeUpdates
+
+@if (Items.Count > 0 || ShowServerUpdate || ShowRuntimeUpdate)
+{
+    <MudPaper Elevation="2" Class="pa-4 mb-4 dashboard-attention">
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Dashboard.Attention.Title]</MudText>
+        <MudText Typo="Typo.caption" Class="d-block mb-3">@Loc[LocKeys.Dashboard.Attention.Hint]</MudText>
+        <div class="attention-list">
+            @if (ShowServerUpdate)
+            {
+                <a class="attention-item" href="@ServerUpdateChecker.ReleasePage" target="_blank" rel="noopener noreferrer">
+                    <MudIcon Icon="@Icons.Material.Outlined.Info" Color="Color.Info" />
+                    <span class="attention-content">
+                        <strong>@UiText.Get(LocKeys.Ui.DashboardAttention.CloneDeploy0IsAvailable, (_server!.LatestVersion))</strong>
+                        <span>@UiText.Get(LocKeys.Ui.DashboardAttention.Installed0ViewReleaseAndDownloads, (_server.InstalledVersion))</span>
+                    </span>
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" />
+                </a>
+            }
+            @if (ShowRuntimeUpdate)
+            {
+                <a class="attention-item" href="@RuntimeUpdates.DownloadPage" target="_blank" rel="noopener noreferrer">
+                    <MudIcon Icon="@Icons.Material.Outlined.Info" Color="Color.Info" />
+                    <span class="attention-content">
+                        <strong>@Loc[LocKeys.Ui.DashboardAttention.MainServerNETRuntimeUpdatesAreAvailable]</strong>
+                        <span>@UiText.Get(LocKeys.Ui.DashboardAttention.NET01ASPNETCore23, (RuntimeUpdates.Running.Runtime), (_runtime!.LatestRuntime), (RuntimeUpdates.Running.AspNetCore), (_runtime.LatestAspNetCore))</span>
+                    </span>
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" />
+                </a>
+            }
+            @foreach (var item in Items)
+            {
+                <a class="attention-item" href="@item.Href" @key="item.Key">
+                    <MudIcon Icon="@(item.Severity == DashboardAttentionSeverity.Error ? Icons.Material.Outlined.ErrorOutline : item.Severity == DashboardAttentionSeverity.Warning ? Icons.Material.Outlined.WarningAmber : Icons.Material.Outlined.Info)"
+                             Color="@(item.Severity == DashboardAttentionSeverity.Error ? Color.Error : item.Severity == DashboardAttentionSeverity.Warning ? Color.Warning : Color.Info)" />
+                    <span class="attention-content">
+                        <strong>@Loc[item.TitleKey]</strong>
+                        <span>@Loc[item.DescriptionKey, item.Args]</span>
+                    </span>
+                    @if (item.Count is int count) { <span class="attention-count">@count</span> }
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" />
+                </a>
+            }
+        </div>
+    </MudPaper>
+}
+@code {
+    [Parameter] public IReadOnlyList<DashboardAttentionDto> Items { get; set; } = [];
+    [Parameter] public bool IsAdmin { get; set; }
+    private ServerUpdateStatus? _server;
+    private RuntimeUpdateStatus? _runtime;
+    private bool _checked;
+    private bool ShowServerUpdate => IsAdmin && _server is { UpdateAvailable: true, Error: null };
+    private bool ShowRuntimeUpdate => IsAdmin && _runtime is { UpdateAvailable: true, Error: null };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!IsAdmin || _checked) return;
+        _checked = true;
+        var server = ServerUpdates.CheckAsync();
+        var runtime = RuntimeUpdates.CheckAsync();
+        await Task.WhenAll(server, runtime);
+        _server = await server;
+        _runtime = await runtime;
+        StateHasChanged();
+    }
+}

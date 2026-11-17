@@ -1,0 +1,47 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@inject ProfessionalSupport Support
+
+<MudStack Spacing="4" Class="py-4" Style="max-width: 800px">
+    <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ProfessionalSupportTab.ProfessionalSupport]</MudText>
+    @if (_status.Error is { } error)
+    {
+        <MudAlert Severity="Severity.Warning">@error</MudAlert>
+    }
+    <MudPaper Outlined="true" Class="pa-5">
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h6">@_status.Label</MudText>
+            @if (_status.ValidUntil is { } date)
+            {
+                <MudText>@UiText.Get(LocKeys.Ui.ProfessionalSupportTab.CoverageThrough0EndOfDayUTC, (date.ToString("MM-dd-yyyy", System.Globalization.CultureInfo.InvariantCulture)))</MudText>
+            }
+            <MudText Typo="Typo.body2">@UiText.Get(LocKeys.Ui.ProfessionalSupportTab.LastVerified0, ((_status.VerifiedAt?.ToString("MM-dd-yyyy HH:mm 'UTC'") ?? UiText.Get(LocKeys.Dashboard.Never))))</MudText>
+            <MudTextField T="string" Label="@Loc[LocKeys.Device.InstallationID]" Value="@_status.InstallationId.ToString("D")" ReadOnly="true" Variant="Variant.Outlined" />
+            <MudText Typo="Typo.body2">@UiText.Get(LocKeys.Ui.ProfessionalSupportTab.ServerVersion0, (Version))</MudText>
+            <MudButton Variant="Variant.Outlined" OnClick="RefreshAsync" Disabled="_busy" StartIcon="@Icons.Material.Outlined.Refresh">@(_busy ? UiText.Get(LocKeys.Ui.ProfessionalSupportTab.Checking) : UiText.Get(LocKeys.Ui.DriverFilesTab.RefreshStatus))</MudButton>
+        </MudStack>
+    </MudPaper>
+    @if (_status.Active)
+    {
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="@MailLink" StartIcon="@Icons.Material.Outlined.Email">@Loc[LocKeys.Ui.ProfessionalSupportTab.ContactSupport]</MudButton>
+    }
+    else
+    {
+        <MudText>@Loc[LocKeys.Ui.ProfessionalSupportTab.Visit] <MudLink Href="https://clonedeploy.com/support" Target="_blank">https://clonedeploy.com/support</MudLink> @Loc[LocKeys.Ui.ProfessionalSupportTab.ForSupportContactInformation]</MudText>
+    }
+</MudStack>
+
+@code {
+    private ProfessionalSupportStatus _status = new(Guid.Empty);
+    private bool _busy;
+    private static string Version => typeof(ProfessionalSupport).Assembly.GetName().Version?.ToString() ?? UiText.Get(LocKeys.Scheduler.StatusUnknown);
+    private string MailLink => $"mailto:support@clonedeploy.com?subject={Uri.EscapeDataString($"New Support Request - {_status.InstallationId:D}")}";
+    protected override void OnInitialized() => _status = Support.Status;
+
+    private async Task RefreshAsync()
+    {
+        _busy = true;
+        try { await Support.RefreshAsync(); _status = Support.Status; }
+        finally { _busy = false; }
+    }
+
+}

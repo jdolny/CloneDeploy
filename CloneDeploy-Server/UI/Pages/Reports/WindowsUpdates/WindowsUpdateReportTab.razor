@@ -1,0 +1,112 @@
+@using CloneDeploy_Server.UI.Pages.Tasks.ActionDeployments
+@attribute [Authorize(Policy = Constants.Permissions.ReportWindowsUpdates)]
+@inject WindowsUpdateService Service
+
+<MudPaper Class="device-list-filters device-search-panel" Elevation="0">
+    <MudStack Spacing="3">
+        <MudToggleGroup T="string" Value="_filter" ValueChanged="FilterChanged" SelectionMode="SelectionMode.SingleSelection" Color="Color.Primary" Style="width: 50%;">
+            <MudToggleItem Value="@("All")" Text="@Loc[LocKeys.Ui.ManageDevicesPage.All]" />
+            <MudToggleItem Value="@("Approved")" Text="@Loc[LocKeys.Ui.ImageVersionsTab.Approved]" />
+            <MudToggleItem Value="@("Unapproved")" Text="@Loc[LocKeys.Ui.WindowsUpdateReportTab.Unapproved]" />
+        </MudToggleGroup>
+        <MudTextField T="string" Value="_search" ValueChanged="SearchChanged" Placeholder="@Loc[LocKeys.Ui.WindowsUpdateReportTab.SearchTitleKBOrUpdateID]" aria-label="@Loc[LocKeys.Ui.WindowsUpdateReportTab.SearchWindowsUpdates]" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" DebounceInterval="300" Variant="Variant.Outlined" Clearable="true" />
+    </MudStack>
+</MudPaper>
+
+@if (_selected.Any(x => !x.CanSelect))
+{ <MudAlert Severity="Severity.Info" Class="mb-3">@Loc[LocKeys.Ui.WindowsUpdateReportTab.UpdatesWithoutAValidUpdateIDAndRevisionCannot]</MudAlert> }
+@if (_selected.Count > 1000)
+{ <MudAlert Severity="Severity.Info" Class="mb-3">@Loc[LocKeys.Ui.WindowsUpdateReportTab.SelectAtMost1000UpdatesAtATime]</MudAlert> }
+<MudDataGrid T="WindowsUpdateReportRow" Items="_items" Loading="_loading" MultiSelection="true" @bind-SelectedItems="_selected" Dense="true" Hover="true" RowsPerPage="@Constants.UI.DefaultPageSize" SelectOnRowClick="false" Elevation="0" Outlined="true" Class="resource-list-grid" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" ColumnResizeMode="ResizeMode.Column" HorizontalScrollbar="true">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.SystemUpdate" Color="Color.Primary"/>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Device.WindowsUpdates]</MudText>
+        <MudSpacer/>
+        <div class="grid-toolbar-actions">
+            <GridSelectionCount Count="_selected.Count"/>
+            @if (_selected.Count > 0)
+        {
+            <MudButton OnClick="@Snackbar.GuardAction(() => !CanAct, UiText.Get(LocKeys.Ui.WindowsUpdateReportTab.SelectBetween1And1000SupportedUpdateRevisions), () => OnSetApprovalClicked(true))" Disabled="@(_busy || _loading)" Color="Color.Primary" Variant="Variant.Filled">@Loc[LocKeys.Ui.WindowsUpdateReportTab.ApproveSelected]</MudButton>
+            <MudButton OnClick="@Snackbar.GuardAction(() => !CanAct, UiText.Get(LocKeys.Ui.WindowsUpdateReportTab.SelectBetween1And1000SupportedUpdateRevisions), () => OnSetApprovalClicked(false))" Disabled="@(_busy || _loading)" Variant="Variant.Outlined">@Loc[LocKeys.Ui.WindowsUpdateReportTab.RemoveApproval]</MudButton>
+            <MudButton OnClick="@Snackbar.GuardAction(() => !CanAct || !_selected.Any(x => x.AutoApprovalBlocked), !CanAct ? UiText.Get(LocKeys.Ui.WindowsUpdateReportTab.SelectBetween1And1000SupportedUpdateRevisions) : UiText.Get(LocKeys.Ui.WindowsUpdateReportTab.NoneOfTheSelectedRevisionsHaveAutoApprovalBlocked), OnAllowAutoApprovalClicked)" Disabled="@(_busy || _loading)" Variant="Variant.Outlined">@Loc[LocKeys.Ui.WindowsUpdateReportTab.AllowAutoApproval]</MudButton>
+            <MudButton OnClick="@Snackbar.GuardAction(() => !CanAct, UiText.Get(LocKeys.Ui.WindowsUpdateReportTab.SelectBetween1And1000SupportedUpdateRevisions), OnTestClicked)" Disabled="@(_busy || _loading)" Variant="Variant.Outlined">@Loc[LocKeys.Ui.WindowsUpdateReportTab.TestSelectedUpdates]</MudButton>
+        }
+
+        </div>
+    </ToolBarContent>
+    <Columns>
+        <SelectColumn T="WindowsUpdateReportRow" />
+        <PropertyColumn Property="x => x.Title" Title="@Loc[LocKeys.Ui.WindowsUpdateReportTab.Update]" />
+        <TemplateColumn Title="@Loc[LocKeys.Ui.WindowsUpdateReportTab.KB]" Sortable="false" Filterable="false"><CellTemplate>@string.Join(", ", context.Item.KBArticleIds ?? [])</CellTemplate></TemplateColumn>
+        <PropertyColumn Property="x => x.Category" Title="@Loc[LocKeys.Device.Category]" />
+        <PropertyColumn Property="x => x.Severity" Title="@Loc[LocKeys.Device.Severity]" />
+        <PropertyColumn Property="x => x.RevisionNumber" Title="@Loc[LocKeys.Device.Revision]" />
+        <TemplateColumn Title="@Loc[LocKeys.Ui.WindowsUpdateReportTab.Approval]" Sortable="false" Filterable="false"><CellTemplate>@(context.Item.Approved ? UiText.Get(LocKeys.Ui.ImageVersionsTab.Approved) : context.Item.AutoApprovalBlocked ? UiText.Get(LocKeys.Ui.WindowsUpdateReportTab.UnapprovedManualHold) : UiText.Get(LocKeys.Ui.WindowsUpdateReportTab.Unapproved))</CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.WindowsUpdateReportTab.RevisionFirstSeen]" Sortable="false" Filterable="false"><CellTemplate>@context.Item.RevisionFirstSeenAtUtc?.ToLocalTime().ToString("g")</CellTemplate></TemplateColumn>
+        <PropertyColumn Property="x => x.Installed" Title="@Loc[LocKeys.Ui.WindowsUpdateReportTab.InstalledDevices]" />
+        <PropertyColumn Property="x => x.Missing" Title="@Loc[LocKeys.Ui.WindowsUpdateReportTab.NotInstalled]" />
+        <TemplateColumn Title="@Loc[LocKeys.Ui.WindowsUpdateReportTab.ApprovedBy]" Sortable="false" Filterable="false"><CellTemplate>@(context.Item.Approved ? context.Item.ApprovedBy : "—")</CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.WindowsUpdateReportTab.ApprovedAt]" Sortable="false" Filterable="false"><CellTemplate>@(context.Item.Approved ? context.Item.ApprovedAtUtc?.ToLocalTime().ToString("g") : "—")</CellTemplate></TemplateColumn>
+    </Columns>
+    <PagerContent><MudDataGridPager T="WindowsUpdateReportRow" /></PagerContent>
+    <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.WindowsUpdateReportTab.NoInventoriedUpdatesMatchThisFilter]</MudText></NoRecordsContent>
+</MudDataGrid>
+@code {
+    [Parameter] public string? ApprovalFilter { get; set; }
+    private List<WindowsUpdateReportRow> _items = [];
+    private HashSet<WindowsUpdateReportRow> _selected = [];
+    private string _filter = "All";
+    private string? _search;
+    private bool _busy, _loading;
+    private int _version;
+    private bool CanAct => !_busy && !_loading && _selected.Count is > 0 and <= 1000 && _selected.All(x => x.CanSelect);
+    protected override Task OnParametersSetAsync()
+    {
+        _filter = ApprovalFilter is "Approved" or "Unapproved" ? ApprovalFilter : "All";
+        return OnRefreshClicked();
+    }
+    private async Task FilterChanged(string value) { _filter = value; await OnRefreshClicked(); }
+    private async Task SearchChanged(string? value) { _search = value; await OnRefreshClicked(); }
+    private async Task OnRefreshClicked()
+    {
+        var version = ++_version;
+        _loading = true;
+        var result = await Service.GetApprovalAsync(_filter, _search);
+        if (version != _version) return;
+        _items = result.Data ?? []; _selected.Clear(); _loading = false;
+        if (!result.Success) Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+    }
+    private async Task OnSetApprovalClicked(bool approved)
+    {
+        if (!CanAct) return;
+        var selection = _selected.Select(x => x.Identity).ToList();
+        _busy = true;
+        try {
+            var result = await Service.SetApprovalApprovalAsync(selection, approved);
+            Snackbar.Add(result.Success ? (approved ? UiText.Get(LocKeys.Ui.WindowsUpdateReportTab.SelectedRevisionsApproved) : UiText.Get(LocKeys.Ui.WindowsUpdateReportTab.ApprovalRemovedAutoApprovalIsBlockedForTheseRevisions)) : Loc[result.Error!.Code, result.Error.Args], result.Success ? Severity.Success : Severity.Error);
+            await OnRefreshClicked();
+        } finally { _busy = false; }
+    }
+    private async Task OnTestClicked()
+    {
+        if (!CanAct) return;
+        var parameters = new DialogParameters<DeployActionDialog> { { x => x.TestUpdates, _selected.Select(x => x.Identity).ToList() } };
+        await Dialog.ShowAsync<DeployActionDialog>(UiText.Get(LocKeys.Ui.WindowsUpdateReportTab.TestSelectedWindowsUpdates), parameters,
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, BackdropClick = false });
+    }
+    private async Task OnAllowAutoApprovalClicked()
+    {
+        if (!CanAct) return;
+        var selection = _selected.Where(x => x.AutoApprovalBlocked).Select(x => x.Identity).ToList();
+        if (selection.Count == 0) return;
+        _busy = true;
+        try
+        {
+            var result = await Service.AllowApprovalAutoApprovalAsync(selection);
+            Snackbar.Add(result.Success ? UiText.Get(LocKeys.Ui.WindowsUpdateReportTab.ManualHoldRemovedMatchingRulesMayApproveTheseRevisions) :
+                Loc[result.Error!.Code, result.Error.Args], result.Success ? Severity.Success : Severity.Error);
+            await OnRefreshClicked();
+        }
+        finally { _busy = false; }
+    }
+}

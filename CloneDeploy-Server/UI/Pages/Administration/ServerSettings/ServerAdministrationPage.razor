@@ -1,0 +1,111 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@page "/administration/server"
+@page "/administration/server/{Tab}"
+@page "/administration/server/directories/{DirectoryId:int}"
+@page "/administration/server/directories/{DirectoryId:int}/{DirectoryTab}"
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.PublicServerUrl.ServerSettings]"/>
+
+<div class="device-detail device-workspace">
+    <ResponsiveTabs PanelOrder="@(new int[] { 0, 8, 2, 6, 4, 3, 7, 1, 5, 9 })" ActivePanelIndex="_tab" ActivePanelIndexChanged="OnTabChanged" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.User.General]" Icon="@Icons.Material.Outlined.Settings">
+                <TabHelp Href="ui/administration/server-settings-general.html" Title="@Loc[LocKeys.User.General]" />
+            @if (_tab == 0)
+            {
+                <CloneDeploy_Server.UI.Pages.Administration.ServerSettings.General.ServerSettingsTab Embedded="true"/>
+            }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ServerAdministrationPage.Backup]" Icon="@Icons.Material.Outlined.Backup">
+                <TabHelp Href="ui/administration/server-backup.html" Title="@Loc[LocKeys.Ui.ServerAdministrationPage.Backup]" />
+            @if (_tab == 8) { <CloneDeploy_Server.UI.Pages.Administration.ServerSettings.Backup.DatabaseBackupTab /> }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Device.Certificates]" Icon="@Icons.Material.Outlined.VerifiedUser">
+                <TabHelp Href="ui/administration/certificates.html" Title="@Loc[LocKeys.Device.Certificates]" />
+            @if (_tab == 2)
+            {
+                <CloneDeploy_Server.UI.Pages.Administration.ServerSettings.Certificates.CertificateAuthorityTab Embedded="true"/>
+            }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ServerAdministrationPage.DirectoryConnections]" Icon="@Icons.Material.Outlined.AccountTree">
+                <TabHelp Href="ui/shared-resources/directories.html" Title="@Loc[LocKeys.Ui.ServerAdministrationPage.DirectoryConnections]" />
+            @if (_tab == 6) { <CloneDeploy_Server.UI.Pages.Administration.ServerSettings.Directories.DirectorySettingsTab DirectoryId="DirectoryId" DirectoryTab="@DirectoryTab" /> }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.User.Email]" Icon="@Icons.Material.Outlined.Email">
+                <TabHelp Href="ui/administration/email-notifications.html" Title="@Loc[LocKeys.User.Email]" />
+            @if (_tab == 4) { <CloneDeploy_Server.UI.Pages.Administration.ServerSettings.Email.EmailSettingsTab /> }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Common.ManagedCredentials]" Icon="@Icons.Material.Outlined.Key">
+                <TabHelp Href="ui/shared-resources/credentials.html" Title="@Loc[LocKeys.Common.ManagedCredentials]" />
+            @if (_tab == 3)
+            {
+                <CloneDeploy_Server.UI.Pages.Administration.ServerSettings.ManagedCredentials.ManagedCredentialsTab Embedded="true"/>
+            }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ServerAdministrationPage.MicrosoftEntra]" Icon="@Icons.Material.Outlined.Cloud">
+                <TabHelp Href="ui/administration/entra.html" Title="@Loc[LocKeys.Ui.ServerAdministrationPage.MicrosoftEntra]" />
+            @if (_tab == 7) { <CloneDeploy_Server.UI.Pages.Administration.ServerSettings.Entra.EntraSettingsTab /> }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Common.StorageProviders]" Icon="@Icons.Material.Outlined.Storage">
+                <TabHelp Href="ui/administration/storage.html" Title="@Loc[LocKeys.Common.StorageProviders]" />
+            @if (_tab == 1)
+            {
+                <MudTabs @bind-ActivePanelIndex="_storageTab" Class="device-subtabs" KeepPanelsAlive="false" TabPanelsClass="pt-4 detail-tab-content">
+                    <Header>
+                        <div class="device-overview-save"><SectionOutlet SectionId="@(_storageTab == 0 ? _providersActionSection : _replicationActionSection)" /></div>
+                    </Header>
+                    <ChildContent>
+                    <MudTabPanel Text="@Loc[LocKeys.Common.StorageProviders]">
+                        <TabHelp Href="ui/administration/storage-providers.html" Title="@Loc[LocKeys.Common.StorageProviders]" />
+                        @if (_storageTab == 0)
+                        {
+                            <CloneDeploy_Server.UI.Pages.Administration.ServerSettings.StorageProviders.StorageProviderTab Embedded="true" ActionSectionId="_providersActionSection"/>
+                        }
+                    </MudTabPanel>
+                    <MudTabPanel Text="@Loc[LocKeys.Ui.ServerAdministrationPage.ReplicationSettings]">
+                        <TabHelp Href="ui/administration/storage-replication-settings.html" Title="@Loc[LocKeys.Ui.ServerAdministrationPage.ReplicationSettings]" />
+                        @if (_storageTab == 1)
+                        {
+                            <CloneDeploy_Server.UI.Pages.Administration.ServerSettings.StorageProviders.ReplicationLimitsTab ActionSectionId="_replicationActionSection"/>
+                        }
+                    </MudTabPanel>
+                    <MudTabPanel Text="@Loc[LocKeys.Ui.ServerAdministrationPage.ReplicationStatus]">
+                        <TabHelp Href="ui/administration/storage-replication-status.html" Title="@Loc[LocKeys.Ui.ServerAdministrationPage.ReplicationStatus]" />
+                        @if (_storageTab == 2)
+                        {
+                            <CloneDeploy_Server.UI.Pages.Administration.ServerSettings.StorageProviders.ReplicationStatusTab/>
+                        }
+                    </MudTabPanel>
+                    </ChildContent>
+                </MudTabs>
+            }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ServerAdministrationPage.TaskScheduler]" Icon="@Icons.Material.Outlined.Schedule">
+                <TabHelp Href="ui/tasks/scheduler.html" Title="@Loc[LocKeys.Ui.ServerAdministrationPage.TaskScheduler]" />
+            @if (_tab == 5) { <MudStack Class="py-4"><CloneDeploy_Server.UI.Pages.Administration.ServerSettings.Scheduler.SchedulerTab /></MudStack> }
+        </MudTabPanel>
+            <MudTabPanel Class="support-tab-divider" Text="@Loc[LocKeys.Ui.ProfessionalSupportTab.ProfessionalSupport]" Icon="@Icons.Material.Outlined.ContactSupport">
+                <TabHelp Href="resources/professional-support.html" Title="@Loc[LocKeys.Ui.ProfessionalSupportTab.ProfessionalSupport]" />
+            @if (_tab == 9) { <ProfessionalSupportTab /> }
+        </MudTabPanel>
+        </ResponsiveTabs>
+</div>
+@code {
+    [Parameter] public string? Tab { get; set; }
+    [Parameter] public int? DirectoryId { get; set; }
+    [Parameter] public string? DirectoryTab { get; set; }
+    private int _tab;
+    private int _storageTab;
+    private readonly object _providersActionSection = new();
+    private readonly object _replicationActionSection = new();
+    private static readonly string[] Tabs = ["general", "storage", "certificates", "credentials", "email", "scheduler", "directories", "entra", "backup", "support"];
+    protected override void OnParametersSet()
+    {
+        var selected = DirectoryId.HasValue ? "directories" : Tab;
+        _tab = Math.Max(0, Array.FindIndex(Tabs, x => string.Equals(x, selected, StringComparison.OrdinalIgnoreCase)));
+    }
+    private void OnTabChanged(int tab)
+    {
+        if (tab == _tab || tab < 0 || tab >= Tabs.Length) return;
+        _tab = tab;
+    }
+}

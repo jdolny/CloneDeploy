@@ -1,0 +1,68 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <?if $(var.AgentArchitecture) = arm64 ?>
+    <?define ProductName = "CloneDeploy Agent (ARM64)" ?>
+    <?define UpgradeCode = "620CDB5F-90AA-4381-9FAA-6546CBC2E350" ?>
+    <?define OtherUpgradeCode = "D75325AF-F72B-4039-9B5D-DBAA9E8AB0F5" ?>
+  <?else?>
+    <?define ProductName = "CloneDeploy Agent" ?>
+    <?define UpgradeCode = "D75325AF-F72B-4039-9B5D-DBAA9E8AB0F5" ?>
+    <?define OtherUpgradeCode = "620CDB5F-90AA-4381-9FAA-6546CBC2E350" ?>
+  <?endif?>
+  <Package Name="$(var.ProductName)" Manufacturer="CloneDeploy" Version="$(var.AgentVersion)"
+           ProductCode="$(var.AgentProductCode)" UpgradeCode="$(var.UpgradeCode)" Language="1033" Scope="perMachine" InstallerVersion="500">
+    <MajorUpgrade DowngradeErrorMessage="A newer CloneDeploy Agent is already installed." Schedule="afterInstallInitialize" />
+    <!-- Keep removal inside the transaction, before installing new components. -->
+    <Property Id="MSIRMSHUTDOWN" Value="0" />
+    <Property Id="MSIDISABLERMRESTART" Value="0" />
+    <Icon Id="AgentIcon" SourceFile="../../../Branding/CloneDeploy.ico" />
+    <Icon Id="AgentPortal.exe" SourceFile="../../../Branding/CloneDeploy.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AgentIcon" />
+    <Property Id="APPDIR" Secure="yes">
+      <RegistrySearch Id="ExistingAgentDirectory" Root="HKLM" Key="Software\CloneDeploy\CloneDeploy Agent" Name="Path" Type="raw" Bitness="always64" />
+    </Property>
+    <SetProperty Id="ARPINSTALLLOCATION" Value="[APPDIR]" After="CostFinalize" Sequence="both" />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+    <Property Id="ENROLLMENT_FILE" Secure="yes" />
+    <!-- Resolve the MSI source, never the process working directory. Explicit paths win.
+         Maintenance and major upgrades must not pick up an adjacent configuration. -->
+    <SetProperty Id="ENROLLMENT_FILE" Value="[SourceDir]enrollment.json" After="ResolveSource" Sequence="both"
+                 Condition="NOT Installed AND NOT WIX_UPGRADE_DETECTED AND NOT REMOVE AND NOT ENROLLMENT_FILE AND SourceDir" />
+    <Property Id="ENROLLMENT_FORMAT" Value="2" />
+    <CustomAction Id="RequireEnrollmentPath" Error="Extract the MSI and enrollment.json into the same local folder, or supply ENROLLMENT_FILE with a local enrollment JSON path." />
+    <CustomAction Id="ImportEnrollment" FileRef="AgentExe" ExeCommand="--import-enrollment &quot;[ENROLLMENT_FILE]&quot;"
+                  Execute="deferred" Impersonate="no" Return="check" />
+    <Property Id="REMOVE_AGENT_DATA" Secure="yes" />
+    <CustomAction Id="RemoveAgentData" FileRef="AgentExe" ExeCommand="--remove-agent-data"
+                  Execute="deferred" Impersonate="no" Return="check" />
+    <InstallExecuteSequence>
+      <ResolveSource After="CostInitialize" Condition="NOT Installed AND NOT WIX_UPGRADE_DETECTED AND NOT REMOVE AND NOT ENROLLMENT_FILE" />
+      <Custom Action="RequireEnrollmentPath" Before="InstallInitialize" Condition="NOT Installed AND NOT WIX_UPGRADE_DETECTED AND NOT REMOVE AND NOT ENROLLMENT_FILE" />
+      <Custom Action="ImportEnrollment" Before="StartServices" Condition="ENROLLMENT_FILE AND NOT REMOVE~=&quot;ALL&quot;" />
+      <Custom Action="RemoveAgentData" After="StopServices"
+              Condition="Installed AND REMOVE=&quot;ALL&quot; AND REMOVE_AGENT_DATA=&quot;1&quot; AND NOT UPGRADINGPRODUCTCODE" />
+    </InstallExecuteSequence>
+    <InstallUISequence>
+      <ResolveSource After="CostInitialize" Condition="NOT Installed AND NOT WIX_UPGRADE_DETECTED AND NOT REMOVE AND NOT ENROLLMENT_FILE" />
+    </InstallUISequence>
+    <Upgrade Id="$(var.OtherUpgradeCode)">
+      <UpgradeVersion Minimum="0.0.0" IncludeMinimum="yes" OnlyDetect="yes" Property="OTHERARCHAGENTINSTALLED" />
+    </Upgrade>
+    <Launch Condition="NOT OTHERARCHAGENTINSTALLED" Message="Uninstall the existing CloneDeploy Agent architecture before installing this package." />
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="CloneDeployFolder" Name="CloneDeploy">
+        <Directory Id="APPDIR" Name="Agent">
+          <Component Id="AgentLocation" Guid="*" Bitness="always64">
+            <RegistryValue Root="HKLM" Key="Software\CloneDeploy\CloneDeploy Agent" Name="Path" Type="string" Value="[APPDIR]" KeyPath="yes" />
+          </Component>
+        </Directory>
+      </Directory>
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AgentProgramMenuFolder" Name="CloneDeploy" />
+    </StandardDirectory>
+    <Feature Id="MainFeature" Title="CloneDeploy Agent" Level="1">
+      <ComponentGroupRef Id="AgentPayload" />
+      <ComponentRef Id="AgentLocation" />
+    </Feature>
+  </Package>
+</Wix>

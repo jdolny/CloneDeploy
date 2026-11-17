@@ -1,0 +1,63 @@
+@inject AgentService Tools
+@inject AuthenticationStateProvider Authentication
+@inject ILogger<AgentPowerButtons> Logger
+@implements IDisposable
+
+@if (MenuSectionId is not null)
+{
+    <SectionContent SectionId="MenuSectionId">
+        <PermissionView Policy="@Constants.Permissions.DeviceReboot"><MudMenuItem Icon="@Icons.Material.Filled.RestartAlt" Disabled="_busy" OnClick="@(() => ExecuteAsync(AgentDeviceOperation.Reboot))">@Loc[LocKeys.Device.Reboot]</MudMenuItem></PermissionView>
+        <PermissionView Policy="@Constants.Permissions.DeviceShutdown"><MudMenuItem Icon="@Icons.Material.Filled.PowerSettingsNew" Disabled="_busy" OnClick="@(() => ExecuteAsync(AgentDeviceOperation.Shutdown))">@Loc[LocKeys.Device.Shutdown]</MudMenuItem></PermissionView>
+    </SectionContent>
+}
+else
+{
+    <PermissionView Policy="@Constants.Permissions.DeviceReboot"><MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.RestartAlt"
+               Disabled="@_busy" OnClick="@(() => ExecuteAsync(AgentDeviceOperation.Reboot))">@Loc[LocKeys.Device.Reboot]</MudButton></PermissionView>
+    <PermissionView Policy="@Constants.Permissions.DeviceShutdown"><MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.PowerSettingsNew"
+               Disabled="@_busy" OnClick="@(() => ExecuteAsync(AgentDeviceOperation.Shutdown))">@Loc[LocKeys.Device.Shutdown]</MudButton></PermissionView>
+}
+@if (_success && _message is not null)
+{
+    <MudAlert Severity="@(_success ? Severity.Success : Severity.Warning)" Dense="true" Class="@(MenuSectionId is null ? null : "mx-4 mb-4")">@_message</MudAlert>
+}
+
+@code {
+    [Parameter] public object? MenuSectionId { get; set; }
+    [Parameter] public int DelaySeconds { get; set; } = 30;
+    [Parameter] public int DeviceId { get; set; }
+    [Parameter] public string DeviceName { get; set; } = "";
+    private readonly CancellationTokenSource _stop = new();
+    private bool _busy;
+    private bool _success;
+    private string? _message;
+
+    private async Task ExecuteAsync(AgentDeviceOperation operation)
+    {
+        if (_busy || _stop.IsCancellationRequested) return;
+        _busy = true;
+        try
+        {
+            var action = operation == AgentDeviceOperation.Reboot ? UiText.Get(LocKeys.Device.Restart) : UiText.Get(LocKeys.Ui.DeviceGroupPowerScheduleDialog.ShutDown);
+            if (await Dialog.ShowMessageBoxAsync($"{action} {DeviceName}",
+                UiText.Get(LocKeys.Ui.AgentPowerButtons.Text0ThisDeviceIn1SecondsOpenApplicationsWill, (action), (DelaySeconds)),
+                yesText: action, cancelText: UiText.Get(LocKeys.Common.Cancel)) != true || _stop.IsCancellationRequested) return;
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            var reply = await Tools.ExecuteDeviceToolAsync(user, DeviceId, operation, ct: _stop.Token);
+            if (_stop.IsCancellationRequested) return;
+            _success = reply.Success;
+            if (reply.Success) _message = reply.Detail;
+            else { _message = null; Snackbar.Add(reply.Detail, Severity.Error); }
+        }
+        catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Power operation failed for device {DeviceId}", DeviceId);
+            _success = false;
+            _message = null;
+            Snackbar.Add(UiText.Get(LocKeys.Ui.AgentPowerButtons.TheOperationWasNotConfirmedCheckTheDeviceBefore), Severity.Error);
+        }
+        finally { _busy = false; }
+    }
+    public void Dispose() => _stop.Cancel();
+}

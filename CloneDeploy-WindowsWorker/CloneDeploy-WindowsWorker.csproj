@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+  <Import Project="../Build/ServerRuntime.props" />
+  <PropertyGroup><TargetFramework>net10.0-windows</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.15" />
+    <ProjectReference Include="../CloneDeploy-Service.Client/CloneDeploy-Service.Client.csproj" />
+    <ProjectReference Include="../CloneDeploy-Agent.Contracts/CloneDeploy-Agent.Contracts.csproj" />
+    <ProjectReference Include="../CloneDeploy-WinPe/CloneDeploy-WinPe.csproj" />
+    <Using Include="Microsoft.AspNetCore.Hosting" />
+    <Compile Include="../CloneDeploy-Server/Backend/Services/Drivers/Preparation/DriverPackageExtractor.cs" Link="Shared/DriverPackageExtractor.cs" />
+    <Compile Include="../CloneDeploy-Server/Backend/Services/Drivers/Preparation/DriverPreparationOptions.cs" Link="Shared/DriverPreparationOptions.cs" />
+    <Compile Include="../CloneDeploy-Server/Backend/Services/Drivers/Catalogs/DriverCatalogClient.cs" Link="Shared/DriverCatalogClient.cs" />
+    <Compile Include="../CloneDeploy-Server/Backend/Services/ServerSettings/ServerDataPaths.cs" Link="Shared/ServerDataPaths.cs" />
+    <Compile Include="../CloneDeploy-Server/Backend/Services/Drivers/Dtos/DriverCatalogPackageDto.cs" Link="Shared/DriverCatalogPackageDto.cs" />
+    <Compile Include="../CloneDeploy-Server/Backend/Services/Drivers/Dtos/DriverCatalogModelDto.cs" Link="Shared/DriverCatalogModelDto.cs" />
+    <Compile Include="../CloneDeploy-Server/Backend/Services/Agents/Installation/AgentMsiEditor.cs" Link="Shared/AgentMsiEditor.cs" />
+    <Compile Include="../CloneDeploy-Server/Backend/Data/Models/Imaging/DriverVendor.cs" Link="Shared/DriverVendor.cs" />
+  </ItemGroup>
+  <Import Project="../third_party/7zip/SevenZip.targets" />
+</Project>

@@ -1,0 +1,70 @@
+@inject SiteService Services
+@inject AuthenticationStateProvider Authentication
+@inject IJSRuntime JavaScript
+@using CloneDeploy.SiteServices
+@if (Service.State == SiteRegistrationState.Created)
+{
+<div class="section-action-bar">
+        @if (_package is not null) { <MudButton Disabled="_saving" OnClick="DownloadAgainAsync">@Loc[LocKeys.Ui.SiteServiceEnrollmentTab.DownloadSetupFileAgain]</MudButton> }
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Download" Disabled="_saving" OnClick="ExportAsync">@Loc[LocKeys.Ui.SiteServiceEnrollmentTab.DownloadNewSetupFile]</MudButton>
+    </div>
+}
+<MudText>@UiText.Get(LocKeys.Ui.SiteServiceEnrollmentTab.EnrollmentStatus0, (SiteServicePresentation.Enrollment(Service)))</MudText>
+<MudText Style="overflow-wrap:anywhere">@UiText.Get(LocKeys.Ui.SiteServiceConfigurationTab.IdentityKeyFingerprint0, ((Service.KeyFingerprint ?? UiText.Get(LocKeys.Ui.SiteServiceEnrollmentTab.AwaitingEnrollment))))</MudText>
+@if (Service.State == SiteRegistrationState.Created)
+{
+    <MudText>@UiText.Get(LocKeys.Ui.SiteServiceEnrollmentTab.SetupExpiryUTC0, (Service.TokenExpiresAtUtc.ToString("u")))</MudText>
+    <MudAlert Severity="Severity.Info">@UiText.Get(LocKeys.Ui.SiteServiceEnrollmentTab.SelectTheSetupJSONInThe0InstallerDownloading, ((Service.IsWindowsWorker ? UiText.Get(LocKeys.Ui.NewSiteServiceDialog.WindowsWorker) : UiText.Get(LocKeys.Ui.NewSiteServiceDialog.SiteService))))</MudAlert>
+
+}
+else if (Service.State == SiteRegistrationState.Pending)
+{ <MudAlert Severity="Severity.Info">@Loc[LocKeys.Ui.SiteServiceEnrollmentTab.EnrollmentReceivedCompareTheFingerprintWithTheLocalInstaller]</MudAlert> }
+else if (Service.State == SiteRegistrationState.Revoked)
+{
+    <MudAlert Severity="Severity.Info">@Loc[LocKeys.Ui.SiteServiceEnrollmentTab.AccessHasBeenRevokedCreateAReplacementRegistrationAnd]</MudAlert>
+    <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="_saving" OnClick="CreateReplacementAsync">@Loc[LocKeys.Ui.SiteServiceEnrollmentTab.CreateReplacementEnrollment]</MudButton>
+}
+else { <MudText>@Loc[LocKeys.Ui.SiteServiceEnrollmentTab.EnrollmentIsCompleteTheServiceRenewsItsCertificatesAutomatically]</MudText> }
+@code {
+    [Parameter, EditorRequired] public SiteServiceDetails Service { get; set; } = null!;
+    [Parameter] public EventCallback OnChanged { get; set; }
+    private SiteEnrollmentPackage? _package;
+    private bool _saving;
+    private async Task CreateReplacementAsync()
+    {
+        if (_saving) return;
+        _saving = true;
+        try
+        {
+            var parameters = new DialogParameters<NewSiteServiceDialog>
+            {
+                { x => x.InitialName, Service.Name }, { x => x.InitialWorker, Service.IsWindowsWorker }
+            };
+            var dialog = await Dialog.ShowAsync<NewSiteServiceDialog>(parameters, Constants.UI.StandardDialogBox);
+            if (await dialog.Result is { Canceled: false, Data: Guid id })
+                Navigation.NavigateTo($"/settings/site-services/{id}/enrollment");
+        }
+        finally { _saving = false; }
+    }
+    protected override void OnParametersSet() { if (Service.State != SiteRegistrationState.Created) _package = null; }
+    private async Task ExportAsync()
+    {
+        if (_saving) return; _saving = true;
+        try
+        {
+            _package = await Services.ExportAsync((await Authentication.GetAuthenticationStateAsync()).User, Service.Id, Service.Revision);
+            await OnChanged.InvokeAsync();
+            await SiteServicePresentation.DownloadAsync(JavaScript, _package);
+        }
+        catch (InvalidDataException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        catch { Snackbar.Add(UiText.Get(LocKeys.Ui.SiteServiceEnrollmentTab.TheOperationFailedRefreshOrUseDownloadSetupFile), Severity.Error); }
+        finally { _saving = false; }
+    }
+    private async Task DownloadAgainAsync()
+    {
+        if (_saving || _package is null) return; _saving = true;
+        try { await SiteServicePresentation.DownloadAsync(JavaScript, _package); }
+        catch { Snackbar.Add(UiText.Get(LocKeys.Ui.SiteServiceEnrollmentTab.TheDownloadFailedTryAgain), Severity.Error); }
+        finally { _saving = false; }
+    }
+}

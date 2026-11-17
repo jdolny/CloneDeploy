@@ -1,0 +1,229 @@
+@page "/helpdesk/{Id:int}"
+@attribute [Authorize(Policy = Constants.Permissions.HelpDeskAccess)]
+@using CloneDeploy_Agent.Contracts
+@using Microsoft.AspNetCore.Components.Sections
+@inject HelpDeskUiService Service
+@inject AuthenticationStateProvider Authentication
+
+<PageTitle>@Loc[LocKeys.Ui.HelpTicketPage.HelpRequest]</PageTitle>
+<SectionContent SectionName="page-title">
+<MudStack Row="true" AlignItems="AlignItems.Center">
+    <MudIconButton Href="/helpdesk" Icon="@Icons.Material.Filled.ArrowBack" aria-label="@Loc[LocKeys.Ui.AdministrationNavigationGroup.HelpDesk]" />
+    @if (_ticket is not null)
+    {
+        <div>
+            <MudText Typo="Typo.h5">#@_ticket.Id — @_ticket.Subject</MudText>
+            <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.HelpTicketPage.Updated0, (_ticket.UpdatedAtUtc.ToLocalTime().ToString("g")))</MudText>
+        </div>
+    }
+    <MudSpacer />
+</MudStack>
+</SectionContent>
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+@if (_ticket is not null)
+{
+    <div class="ticket-layout">
+        <MudPaper Outlined="true" Elevation="0" Class="ticket-conversation">
+            <div class="ticket-section-title d-flex align-center">
+                <MudText Typo="Typo.subtitle1">@Loc[LocKeys.Ui.HelpTicketPage.Conversation]</MudText>
+                <MudSpacer />
+                <MudIconButton OnClick="Refresh" Disabled="_busy" Icon="@Icons.Material.Filled.Refresh" aria-label="@Loc[LocKeys.Ui.HelpTicketPage.RefreshTicket]" />
+            </div>
+            <div class="ticket-messages" role="log" aria-label="@Loc[LocKeys.Ui.HelpTicketPage.TicketConversation]">
+                @if (_more) { <MudButton FullWidth="true" OnClick="Older" Disabled="_busy">@Loc[LocKeys.Ui.HelpTicketPage.LoadEarlierMessages]</MudButton> }
+                @foreach (var message in _messages)
+                {
+                    <div @key="message.Id" class="ticket-message @(message.FromStaff ? "from-staff" : "from-user")">
+                        <div class="ticket-avatar">@Initials(message.Author)</div>
+                        <div class="ticket-bubble">
+                            <div class="ticket-message-meta"><strong>@message.Author</strong><span>@message.CreatedAtUtc.ToLocalTime().ToString("g")</span></div>
+                            <div class="ticket-body">@message.Body</div>
+                            @if (message.HasScreenshot)
+                            {
+                                <MudButton Size="Size.Small" Disabled="_busy" OnClick="@(() => Screenshot(message.Id))" StartIcon="@Icons.Material.Filled.Image">@Loc[LocKeys.Ui.HelpTicketPage.ViewScreenshot]</MudButton>
+                                @if (_images.TryGetValue(message.Id, out var data)) { <img src="@data" alt="@Loc[LocKeys.Ui.HelpTicketPage.ScreenshotAttachedByRequester]" class="ticket-image" /> }
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            @if (_access?.Manage == true)
+            {
+                <div class="ticket-reply">
+                    <MudTextField T="string" @bind-Value="_reply" Immediate="true" Placeholder="@Loc[LocKeys.Ui.HelpTicketPage.WriteAReplyToTheRequester]" Lines="4" MaxLength="3800" Variant="Variant.Outlined" Disabled="_busy" Class="my-3" />
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                        <MudSpacer />
+                        <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+                            <MudButton OnClick="@(() => Save(true))" Disabled="_busy" StartIcon="@Icons.Material.Filled.Send">@Loc[LocKeys.Ui.HelpTicketPage.SendReply]</MudButton>
+                            <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Style="align-self: auto;" Disabled="_busy" aria-label="@Loc["HelpDesk.ReplyStatusActions"]">
+                                @if (_ticket.Status != HelpTicketStatus.InProgress)
+                                {
+                                    <MudMenuItem OnClick="@(() => Save(true, HelpTicketStatus.InProgress))" Disabled="_busy">@Loc["HelpDesk.SendInProgress"]</MudMenuItem>
+                                }
+                                @if (_ticket.Status != HelpTicketStatus.WaitingOnUser)
+                                {
+                                    <MudMenuItem OnClick="@(() => Save(true, HelpTicketStatus.WaitingOnUser))" Disabled="_busy">@Loc["HelpDesk.SendWaiting"]</MudMenuItem>
+                                }
+                                @if (_ticket.Status != HelpTicketStatus.Closed)
+                                {
+                                    <MudMenuItem OnClick="@(() => Save(true, HelpTicketStatus.Closed))" Disabled="_busy">@Loc["HelpDesk.SendClose"]</MudMenuItem>
+                                }
+                            </MudMenu>
+                        </MudButtonGroup>
+                    </MudStack>
+                </div>
+            }
+        </MudPaper>
+        <MudPaper Outlined="true" Elevation="0" Class="ticket-details">
+            <div class="ticket-section-title"><MudText Typo="Typo.subtitle1">@Loc[LocKeys.Ui.HelpTicketPage.TicketDetails]</MudText></div>
+            <div class="ticket-details-section">
+                <MudSelect T="HelpTicketStatus" @bind-Value="_status" Label="@Loc[LocKeys.Image.VersionStatus]" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(_busy || _access?.Manage != true)">
+                    @foreach (var status in Enum.GetValues<HelpTicketStatus>()) { <MudSelectItem Value="status">@HelpDeskUiService.StatusLabel(status)</MudSelectItem> }
+                </MudSelect>
+                <MudSelect T="int?" @bind-Value="_category" Label="@Loc[LocKeys.Device.Category]" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Placeholder="@Loc[LocKeys.Ui.HelpDeskPage.Uncategorized]" Disabled="@(_busy || _access?.Manage != true)">
+                    @foreach (var category in _routing.Categories) { <MudSelectItem T="int?" Value="category.Id">@category.Name</MudSelectItem> }
+                </MudSelect>
+                <MudSelect T="int?" Value="_queueId" ValueChanged="QueueChanged" Label="@Loc[LocKeys.Ui.HelpDeskPage.Queue]" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="false" Disabled="@(_busy || _access?.Manage != true)">
+                    @foreach (var queue in _routing.Queues) { <MudSelectItem T="int?" Value="queue.Id">@queue.Name</MudSelectItem> }
+                </MudSelect>
+                <MudSelect T="int?" @bind-Value="_assigned" ToStringFunc="StaffName" Label="@Loc[LocKeys.Ui.HelpDeskPage.AssignedTo]" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Placeholder="@Loc[LocKeys.Ui.HelpTicketPage.Unassigned]" Disabled="@(_busy || !CanAssign)">
+                    @if (_ticket.AssignedToId.HasValue && !EligibleStaff.Any(x => x.Id == _ticket.AssignedToId))
+                    { <MudSelectItem T="int?" Value="_ticket.AssignedToId" Disabled="true">@(_ticket.AssignedTo ?? UiText.Get(LocKeys.Ui.HelpTicketPage.UnavailableStaffMember))</MudSelectItem> }
+                    @foreach (var staff in EligibleStaff) { <MudSelectItem T="int?" Value="staff.Id">@staff.Name</MudSelectItem> }
+                </MudSelect>
+                @if (CanAssign)
+                {
+                    @if (EligibleStaff.Any(x => x.Id == _access?.UserId)) { <MudButton Size="Size.Small" OnClick="AssignToMe" Disabled="_busy">@Loc[LocKeys.Ui.HelpTicketPage.AssignToMe]</MudButton> }
+                    <MudButton FullWidth="true" Class="mt-3" OnClick="@(() => Save(false))" Disabled="@(_busy || _status == _ticket.Status && _assigned == _ticket.AssignedToId && _category == _ticket.CategoryId && _queueId == _ticket.QueueId)" Variant="Variant.Filled" Color="Color.Primary">@Loc[LocKeys.Common.SaveChanges]</MudButton>
+                }
+            </div>
+            @if (_ticket.RoutingSummary is not null)
+            {
+                <div class="ticket-details-section"><MudText Typo="Typo.subtitle2">@Loc[LocKeys.Ui.HelpTicketPage.RoutingAtCreation]</MudText><MudText Typo="Typo.caption">@_ticket.RoutingSummary</MudText></div>
+            }
+            <div class="ticket-details-section">
+                <MudText Typo="Typo.subtitle2">@Loc[LocKeys.Ui.HelpDeskPage.Requester]</MudText>
+                <div class="ticket-identity"><div class="ticket-avatar">@Initials(_ticket.Requester)</div><MudText>@_ticket.Requester</MudText></div>
+                <MudText Typo="Typo.subtitle2" Class="mt-4">@Loc[LocKeys.Dashboard.Device]</MudText>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="my-3"><MudIcon Icon="@Icons.Material.Outlined.Computer" Color="Color.Primary" /><MudText>@_ticket.DeviceName</MudText></MudStack>
+                <PermissionView Policy="@Constants.Permissions.DeviceView"><MudButton FullWidth="true" Variant="Variant.Outlined" Href="@($"/devices/manage/{_ticket.DeviceId}")">@Loc[LocKeys.Device.ViewDevice]</MudButton></PermissionView>
+            </div>
+        </MudPaper>
+    </div>
+}
+@code {
+    [Parameter] public int Id { get; set; }
+    private HelpTicketSummary? _ticket;
+    private HelpDeskService.Access? _access;
+    private List<HelpMessage> _messages = [];
+    private HelpStaff[] _staff = [];
+    private readonly Dictionary<long, string> _images = [];
+    private string? _error, _reply;
+    private HelpTicketStatus _status;
+    private int? _assigned, _category, _queueId;
+    private HelpRoutingSettings _routing = new([], [], []);
+    private string StaffName(int? id) => id is null ? string.Empty
+        : _staff.FirstOrDefault(x => x.Id == id)?.Name
+          ?? (id == _ticket?.AssignedToId ? _ticket.AssignedTo : null)
+          ?? UiText.Get(LocKeys.Ui.HelpTicketPage.UnavailableStaffMember);
+    private IEnumerable<HelpStaff> EligibleStaff => _queueId is {} queue && queue != HelpQueue.UnassignedId
+        ? _staff.Where(x => (x.ManageAssigned || x.ManageAll) && _routing.Queues.Any(q => q.Id == queue && q.Members.Any(m => m.UserId == x.Id)))
+        : _staff.Where(x => x.ManageAll || x.ManageAssigned || x.ManageUnassigned);
+    private void QueueChanged(int? queue) { _queueId = queue ?? HelpQueue.UnassignedId; if (!EligibleStaff.Any(x => x.Id == _assigned)) _assigned = null; }
+    private bool _busy, _more;
+    private Guid _command = Guid.NewGuid();
+    private (string?, HelpTicketStatus, int?, int?, int?)? _lastAttempt;
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_ticket?.Id == Id) return;
+        _ticket = null; _messages.Clear(); _images.Clear(); _reply = null; _staff = []; _access = null;
+        try
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            _access = await Service.AccessAsync(user);
+        }
+        catch { _error = UiText.Get(LocKeys.Ui.HelpTicketPage.HelpDeskStaffCouldNotBeLoaded); }
+        await Refresh();
+        if (_ticket is null) return;
+        // Render the conversation before evaluating every potential assignee.
+        // Keep actions disabled until the assignment options are ready.
+        _busy = true;
+        StateHasChanged();
+        try
+        {
+            _staff = await Service.StaffAsync((await Authentication.GetAuthenticationStateAsync()).User);
+        }
+        catch { _error = UiText.Get(LocKeys.Ui.HelpTicketPage.HelpDeskStaffCouldNotBeLoaded); }
+        finally { _busy = false; }
+    }
+    private async Task Refresh()
+    {
+        _busy = true;
+        try
+        {
+            var result = await Service.ReadAsync((await Authentication.GetAuthenticationStateAsync()).User, Id);
+            _ticket = result.Ticket; _messages = result.Messages.ToList(); _more = result.HasMore;
+            _routing = await Service.RoutingOptionsAsync((await Authentication.GetAuthenticationStateAsync()).User);
+            _status = _ticket!.Status; _assigned = _ticket.AssignedToId; _category = _ticket.CategoryId; _queueId = _ticket.QueueId; _error = null; _images.Clear();
+        }
+        catch { _ticket = null; _messages.Clear(); _images.Clear(); _error = UiText.Get(LocKeys.Ui.HelpTicketPage.ThisHelpRequestIsUnavailableOrYouNoLonger); }
+        finally { _busy = false; }
+    }
+    private async Task Older()
+    {
+        if (_messages.Count == 0) return;
+        _busy = true;
+        try
+        {
+            var result = await Service.ReadAsync((await Authentication.GetAuthenticationStateAsync()).User, Id, _messages[0].Id);
+            _messages.InsertRange(0, result.Messages); _more = result.HasMore;
+        }
+        catch { _error = UiText.Get(LocKeys.Ui.HelpTicketPage.EarlierMessagesCouldNotBeLoaded); }
+        finally { _busy = false; }
+    }
+    private async Task Screenshot(long id)
+    {
+        _busy = true;
+        try
+        {
+            var data = await Service.ScreenshotAsync((await Authentication.GetAuthenticationStateAsync()).User, Id, id);
+            if (data is not null) _images[id] = "data:image/png;base64," + Convert.ToBase64String(data);
+        }
+        catch { _error = UiText.Get(LocKeys.Ui.HelpTicketPage.TheScreenshotCouldNotBeLoaded); }
+        finally { _busy = false; }
+    }
+    private static string Initials(string name) => string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(x => char.ToUpperInvariant(x[0])));
+    private bool CanAssign => _access?.Manage == true;
+    private void AssignToMe() { if (_access is not null) _assigned = _access.UserId; }
+    private Task Save(bool sendReply) => Save(sendReply, sendReply ? _ticket?.Status : null);
+    private async Task Save(bool sendReply, HelpTicketStatus? replyStatus)
+    {
+        if (_busy || _ticket is null) return;
+        if (sendReply && string.IsNullOrWhiteSpace(_reply))
+        {
+            _error = Loc["HelpDesk.ReplyRequired"];
+            return;
+        }
+        var status = replyStatus ?? _status;
+        _busy = true;
+        try
+        {
+            var reply = sendReply ? _reply : null;
+            var attempt = (reply, status, _assigned, _category, _queueId);
+            if (_lastAttempt != attempt) { _command = Guid.NewGuid(); _lastAttempt = attempt; }
+            await Service.UpdateTicketAsync((await Authentication.GetAuthenticationStateAsync()).User, Id, status, _assigned, reply, _command, _ticket.UpdatedAtUtc, new(_category, _queueId));
+            _command = Guid.NewGuid(); if (sendReply) _reply = null;
+            Snackbar.Add(UiText.Get(LocKeys.Ui.HelpTicketPage.HelpRequestUpdated), Severity.Success);
+            if (_access is { ViewAll: false } access &&
+                !((_assigned == access.UserId || _queueId != HelpQueue.UnassignedId && _routing.Queues.Any(q => q.Id == _queueId && q.Members.Any(m => m.UserId == access.UserId))) && access.ViewAssigned || _queueId == HelpQueue.UnassignedId && access.ViewUnassigned))
+            {
+                Navigation.NavigateTo("/helpdesk");
+                return;
+            }
+            await Refresh();
+        }
+        catch (InvalidOperationException ex) { _error = ex.Message; }
+        catch { _error = UiText.Get(LocKeys.Ui.HelpTicketPage.TheUpdateCouldNotBeSaved); }
+        finally { _busy = false; }
+    }
+}

@@ -1,0 +1,32 @@
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.subtitle2">@Loc[LocKeys.Ui.PolicyReviewTargetsDialog.AssignedTargets]</MudText>
+        @foreach (var target in Targets.Selected)
+        {
+            <MudText Typo="Typo.body2">
+                @(Targets.Options.FirstOrDefault(x => x.Key == target.Key)?.Name ?? UiText.Get(LocKeys.Ui.DeployActionPage.UnavailableTarget))
+                · @(target.Key.IsDevice ? UiText.Get(LocKeys.Dashboard.Device) : target.Key.IsOu ? (target.IncludeDescendants ? UiText.Get(LocKeys.Ui.PolicyReviewTargetsDialog.OUAndDescendants) : UiText.Get(LocKeys.Ui.PolicyReviewTargetsDialog.DirectOU)) : UiText.Get(LocKeys.Ui.PolicyTargetingTab.Group))
+            </MudText>
+        }
+        @if (Targets.Selected.Count == 0) { <MudText>@Loc[LocKeys.Ui.PolicyReviewTargetsDialog.NoDeviceTargetsAssigned]</MudText> }
+        @if (Preview is not null)
+        {
+            <MudText Typo="Typo.subtitle2" Class="mt-4">@UiText.Get(LocKeys.Ui.PolicyReview.Text0MatchingDevices, (Preview.Total))</MudText>
+            @if (Preview.Total > Preview.Devices.Count)
+            {
+                <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.PolicyReviewTargetsDialog.ShowingTheFirst0DevicesByName, (Preview.Devices.Count))</MudText>
+            }
+            <MudDataGrid T="PolicyTargetDeviceDto" Items="Preview.Devices" Dense="true" Elevation="0" RowsPerPage="10">
+                <Columns><PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Dashboard.Device]" /></Columns>
+                <NoRecordsContent><MudText Class="pa-3">@Loc[LocKeys.Ui.PolicyReviewTargetsDialog.NoMatchingDevices]</MudText></NoRecordsContent>
+                <PagerContent><MudDataGridPager T="PolicyTargetDeviceDto" /></PagerContent>
+            </MudDataGrid>
+        }
+    </DialogContent>
+    <DialogActions><MudButton OnClick="@(() => MudDialog.Close())">@Loc[LocKeys.Ui.ActionFiles.Close]</MudButton></DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter, EditorRequired] public PolicyTargetStateDto Targets { get; set; } = null!;
+    [Parameter] public PolicyTargetPreviewDto? Preview { get; set; }
+}

@@ -1,0 +1,11 @@
+@page "/images/winpe"
+@page "/images/winpe/{Id:int}"
+@page "/images/winpe/new/{Kind}"
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+
+<CloneDeploy_Server.UI.Pages.Administration.ImagingSettings.ImagingInfrastructurePage Tab="winpe-variants" WinPeId="Id" WinPeKind="@Kind" />
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [Parameter] public string? Kind { get; set; }
+}

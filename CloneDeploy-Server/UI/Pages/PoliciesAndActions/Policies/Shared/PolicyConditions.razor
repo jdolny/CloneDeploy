@@ -1,0 +1,11 @@
+@using CloneDeploy_Agent.Contracts
+<MudStack Spacing="3">
+<MudSelect T="int?" @bind-Value="Model.ConditionId" Label="@Loc[LocKeys.Ui.PolicyActions.ConditionScript]" Clearable="true" Variant="Variant.Outlined">
+@foreach (var script in Details.Conditions) { <MudSelectItem T="int?" Value="@((int?)script.Id)">@script.Name</MudSelectItem> }
+</MudSelect>
+<PolicyEnumSelect T="PolicyConditionFailedAction" @bind-Value="Model.ConditionFailedAction" Label="@Loc[LocKeys.Ui.PolicyActions.IfConditionFails]" Options="System.Enum.GetValues<PolicyConditionFailedAction>().Where(x => x != PolicyConditionFailedAction.GotoModule)" />
+</MudStack>
+@code {
+[Parameter, EditorRequired] public PolicyDetailsDto Details { get; set; } = null!;
+private Policy Model => Details.Policy;
+}

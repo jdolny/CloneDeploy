@@ -1,0 +1,48 @@
+@inject DeviceGroupService Audits
+
+@if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+<MudDataGrid T="DeviceGroupAuditEntry" Items="_items" Loading="_loading" QuickFilter="Matches" Dense="true" Hover="true"
+             Outlined="true" Elevation="0" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize" HorizontalScrollbar="true">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.History" Color="Color.Primary" />
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DeviceGroupHistoryTab.GroupAuditHistory]</MudText>
+        <MudSpacer />
+        <MudTextField T="string" @bind-Value="_search" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" aria-label="@Loc[LocKeys.Ui.DeviceGroupHistoryTab.SearchGroupAudits]"
+                      Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search" />
+    </ToolBarContent>
+    <Columns>
+        <TemplateColumn Title="@Loc[LocKeys.Device.Date]"><CellTemplate>@context.Item.LoggedAtUtc.ToLocalTime().ToString("g")</CellTemplate></TemplateColumn>
+        <PropertyColumn Property="x => x.UserName" Title="@Loc[LocKeys.User.UserMembership]" />
+        <PropertyColumn Property="x => x.Operation" Title="@Loc[LocKeys.Image.AuditType]" />
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Ui.DeviceAuditHistoryTab.Object]" />
+        <PropertyColumn Property="x => x.Details" Title="@Loc[LocKeys.User.ObjectJson]" />
+    </Columns>
+    <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.DeviceAuditHistoryTab.NoAuditEventsFound]</MudText></NoRecordsContent>
+    <PagerContent><MudDataGridPager T="DeviceGroupAuditEntry" /></PagerContent>
+</MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired] public int GroupId { get; set; }
+    private List<DeviceGroupAuditEntry> _items = [];
+    private string? _search, _error;
+    private bool _loading;
+    private int? _loadedId;
+    private bool Matches(DeviceGroupAuditEntry row) => string.IsNullOrWhiteSpace(_search) ||
+        $"{row.UserName} {row.Operation} {row.Name} {row.Details}".Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedId == GroupId) return;
+        _loadedId = GroupId;
+        await LoadAsync();
+    }
+    private async Task LoadAsync()
+    {
+        var id = GroupId;
+        _items = []; _error = null; _loading = true;
+        var result = await Audits.GetAuditAsync(id);
+        if (GroupId != id) return;
+        _loading = false;
+        if (result.Success) _items = result.Data!;
+        else _error = Loc[result.Error!.Code, result.Error.Args].Value;
+    }
+}

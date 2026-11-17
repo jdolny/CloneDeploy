@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <BundledSevenZipDirectory>$(MSBuildThisFileDirectory)26.04</BundledSevenZipDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="$(BundledSevenZipDirectory)/7z.exe;$(BundledSevenZipDirectory)/7z.dll;$(BundledSevenZipDirectory)/License.txt;$(MSBuildThisFileDirectory)NOTICE.txt"
+             Link="Tools/7zip/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="RequireBundledSevenZip" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('$(BundledSevenZipDirectory)/7z.exe') Or !Exists('$(BundledSevenZipDirectory)/7z.dll') Or !Exists('$(BundledSevenZipDirectory)/License.txt')"
+           Text="Restore third_party/7zip/26.04 from source control; the bundled extractor and license are required." />
+  </Target>
+</Project>

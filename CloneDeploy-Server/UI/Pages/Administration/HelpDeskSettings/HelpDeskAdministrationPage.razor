@@ -1,0 +1,69 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@page "/administration/helpdesk"
+@page "/administration/helpdesk/{Tab}"
+@page "/administration/helpdesk/{Tab}/{SubTab}"
+@using CloneDeploy_Server.UI.Pages.Administration.HelpDeskSettings.QueuesAndCategories
+@using CloneDeploy_Server.UI.Pages.Administration.HelpDeskSettings.RoutingRules
+@using CloneDeploy_Server.UI.Pages.HelpDesk
+<AppPageTitle Text="@Loc[LocKeys.Ui.HelpDeskAdministrationPage.HelpDeskSettings]" />
+<div class="device-detail device-workspace">
+    <ResponsiveTabs PanelOrder="@(new int[] { 1, 0, 2, 3 })" ActivePanelIndex="_tab" ActivePanelIndexChanged="ChangeTab" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.Device.Categories]" Icon="@Icons.Material.Outlined.Category">
+                <TabHelp Href="ui/administration/helpdesk-categories.html" Title="@Loc[LocKeys.Device.Categories]" />
+            @if (_tab == 1) { <HelpConfigurationNamesTab IsQueue="false" /> }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.HelpDeskAdministrationPage.Queues]" Icon="@Icons.Material.Outlined.Groups">
+                <TabHelp Href="ui/administration/helpdesk-queues.html" Title="@Loc[LocKeys.Ui.HelpDeskAdministrationPage.Queues]" />
+            @if (_tab == 0) { <HelpConfigurationNamesTab IsQueue="true" /> }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.HelpDeskAdministrationPage.RoutingRules]" Icon="@Icons.Material.Outlined.AccountTree">
+                <TabHelp Href="ui/administration/helpdesk-routing.html" Title="@Loc[LocKeys.Ui.HelpDeskAdministrationPage.RoutingRules]" />
+            @if (_tab == 2)
+            {
+                <MudTabs ActivePanelIndex="_subTab" ActivePanelIndexChanged="ChangeSubTab" Class="device-subtabs" KeepPanelsAlive="false" TabPanelsClass="pt-4 detail-tab-content">
+                    <Header>
+                        <div class="device-overview-save"><SectionOutlet SectionId="_routingActions[_subTab]" /></div>
+                    </Header>
+                    <ChildContent>
+                    <MudTabPanel Text="@Loc[LocKeys.Ui.HelpDeskAdministrationPage.Categorization]">
+                        <TabHelp Href="ui/administration/helpdesk-categorization.html" Title="@Loc[LocKeys.Ui.HelpDeskAdministrationPage.Categorization]" />
+                        @if (_subTab == 0) { <HelpRoutingRulesTab Stage="HelpRuleStage.Categorization" ActionSectionId="_routingActions[0]" /> }
+                    </MudTabPanel>
+                    <MudTabPanel Text="@Loc[LocKeys.Ui.HelpDeskAdministrationPage.QueueAssignment]">
+                        <TabHelp Href="ui/administration/helpdesk-assignment.html" Title="@Loc[LocKeys.Ui.HelpDeskAdministrationPage.QueueAssignment]" />
+                        @if (_subTab == 1) { <HelpRoutingRulesTab Stage="HelpRuleStage.Assignment" ActionSectionId="_routingActions[1]" /> }
+                    </MudTabPanel>
+                    </ChildContent>
+                </MudTabs>
+            }
+        </MudTabPanel>
+        <MudTabPanel Text="@Loc["HelpDesk.Scope"]" Icon="@Icons.Material.Outlined.FilterAlt">
+            <TabHelp Href="ui/administration/helpdesk-settings-scope.html" Title="@Loc["HelpDesk.Scope"]" />
+            @if (_tab == 3) { <HelpDeskScopeTab @bind-ActiveTab="_scopeTab" /> }
+        </MudTabPanel>
+        </ResponsiveTabs>
+</div>
+@code {
+    [Parameter] public string? Tab { get; set; }
+    [Parameter] public string? SubTab { get; set; }
+    private int _tab, _subTab, _scopeTab;
+    private readonly object[] _routingActions = [new(), new()];
+    private static readonly string[] Tabs = ["queues", "categories", "routing", "scope"];
+    private static readonly string[] SubTabs = ["categorization", "assignment"];
+    protected override void OnParametersSet()
+    {
+        _scopeTab = string.Equals(SubTab, "users", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+        _tab = Math.Max(0, Array.FindIndex(Tabs, x => x.Equals(Tab, StringComparison.OrdinalIgnoreCase)));
+        _subTab = Math.Max(0, Array.FindIndex(SubTabs, x => x.Equals(SubTab, StringComparison.OrdinalIgnoreCase)));
+    }
+    private void ChangeTab(int tab)
+    {
+        if (tab == _tab || tab < 0 || tab >= Tabs.Length) return;
+        _tab = tab;
+    }
+    private void ChangeSubTab(int tab)
+    {
+        if (tab == _subTab || tab < 0 || tab >= SubTabs.Length) return;
+        _subTab = tab;
+    }
+}

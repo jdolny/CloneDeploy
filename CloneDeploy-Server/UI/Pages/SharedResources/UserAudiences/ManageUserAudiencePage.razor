@@ -1,0 +1,129 @@
+@page "/shared/user-audiences/new"
+@page "/shared/user-audiences/{Id:int}"
+@attribute [Authorize(Policy = Constants.Permissions.UserAudienceView)]
+@inject PolicyService Audiences
+@inject IAuthorizationService Authorization
+@inject AuthenticationStateProvider Authentication
+
+<PageTitle>@(UiText.Get(LocKeys.Ui.ManageUserAudiencePage.UserAudience0, ((_model?.Name is { Length: > 0 } name ? name : UiText.Get(LocKeys.Ui.ManageUserAudiencePage.NewUserAudience)))))</PageTitle>
+<SectionContent SectionName="page-title">
+    <div class="device-page-heading"><div class="device-heading-row">
+        <MudIconButton Href="/shared/user-audiences" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" aria-label="@Loc[LocKeys.Ui.ManageUserAudiencePage.BackToUserAudiences]" />
+        <div class="device-heading-icon"><MudIcon Icon="@Icons.Material.Outlined.People" Size="Size.Large" /></div>
+        <div class="device-heading-copy"><div class="device-heading-name"><h1>@(_model?.Name is { Length: > 0 } title ? title : UiText.Get(LocKeys.Ui.ManageUserAudiencePage.NewUserAudience))</h1></div></div>
+    </div></div>
+</SectionContent>
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="my-3">@_error</MudAlert> }
+@if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+else if (_model is not null)
+{
+    <div class="device-detail device-workspace">
+        <ResponsiveTabs PanelOrder="@(new int[] { 0, 2, 1, 3 })" @bind-ActivePanelIndex="_tab" KeepPanelsAlive="true" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.User.General]" Icon="@Icons.Material.Outlined.Info">
+                <TabHelp Href="ui/administration/user-audiences-general.html" Title="@Loc[LocKeys.User.General]" />
+                <MudStack Class="py-4" Spacing="3">
+                    @SaveActions
+                    <MudTextField @bind-Value="_model.Name" Label="@Loc[LocKeys.Common.Name]" Required="true" MaxLength="200" Variant="Variant.Outlined" Disabled="Disabled" />
+                    <MudTextField @bind-Value="_model.Description" Label="@Loc[LocKeys.Common.Description]" Lines="3" MaxLength="2000" Variant="Variant.Outlined" Disabled="Disabled" />
+                </MudStack>
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ManageUserAudiencePage.ExcludedMembers]" Icon="@Icons.Material.Outlined.PersonRemove">
+                <TabHelp Href="ui/administration/user-audiences-excluded-members.html" Title="@Loc[LocKeys.Ui.ManageUserAudiencePage.ExcludedMembers]" />
+                <MudStack Class="py-4" Spacing="3">
+                    @SaveActions
+                    <UserAudienceMembersTab Model="_model" Options="_options" Exclude="true" Disabled="Disabled" />
+                </MudStack>
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ManageUserAudiencePage.IncludedMembers]" Icon="@Icons.Material.Outlined.GroupAdd">
+                <TabHelp Href="ui/administration/user-audiences-included-members.html" Title="@Loc[LocKeys.Ui.ManageUserAudiencePage.IncludedMembers]" />
+                <MudStack Class="py-4" Spacing="3">
+                    @SaveActions
+                    <UserAudienceMembersTab Model="_model" Options="_options" Exclude="false" Disabled="Disabled" />
+                </MudStack>
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc["Audience.ResolvedUsers"]" Icon="@Icons.Material.Outlined.People">
+                <TabHelp Href="ui/administration/user-audiences-resolved-users.html" Title="@Loc["Audience.ResolvedUsers"]" />
+                @if (_tab == 3)
+                {
+                    @if (Id == 0) { <MudAlert Severity="Severity.Info">@Loc["Audience.SaveBeforeResolving"]</MudAlert> }
+                    else { <UserAudienceResolvedUsersTab AudienceId="Id" @key="(Id, _model.Revision)" /> }
+                }
+            </MudTabPanel>
+        </ResponsiveTabs>
+    </div>
+}
+
+@code {
+    private RenderFragment SaveActions => @<text>
+        @if (_canEdit)
+        {
+            <div class="section-action-bar">
+                <MudButton OnClick="@Snackbar.GuardAction(() => _busy || string.IsNullOrWhiteSpace(_model?.Name), UiText.Get(LocKeys.Ui.ManageUserAudiencePage.EnterAnAudienceNameBeforeSaving), Save)" Disabled="@(_busy)" Color="Color.Primary"
+                           Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+            </div>
+        }
+    </text>;
+
+    [Parameter] public int Id { get; set; }
+    private UserAudience? _model;
+    private List<PolicyAudienceOption> _options = [];
+    private string? _error;
+    private bool _loading, _busy, _canEdit;
+    private int _tab;
+    private bool Disabled => !_canEdit || _busy;
+    protected override async Task OnParametersSetAsync()
+    {
+        _canEdit = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.UserAudienceEdit)).Succeeded;
+        await Load();
+    }
+    private async Task Load()
+    {
+        _loading = true;
+        try
+        {
+            _error = null;
+            if (Id == 0) _model = new();
+            else
+            {
+                var result = await Audiences.GetUserAudienceAsync(Id);
+                _model = result.Data;
+                if (!result.Success) _error = Loc[result.Error!.Code, result.Error.Args];
+            }
+            var options = await Audiences.UserAudienceOptionsAsync();
+            if (options.Success) _options = options.Data!;
+            else _error = Loc[options.Error!.Code, options.Error.Args];
+        }
+        catch { _error = UiText.Get(LocKeys.Ui.ManageUserAudiencePage.CouldNotLoadThisAudience); }
+        finally { _loading = false; }
+    }
+    private async Task Save()
+    {
+        if (Disabled || _model is null) return;
+        _busy = true;
+        try
+        {
+            var result = await Audiences.SaveUserAudienceAsync(_model);
+            if (result.Success)
+            {
+                _error = null; Snackbar.Add(UiText.Get(LocKeys.Ui.ManageUserAudiencePage.UserAudienceSaved), Severity.Success);
+                if (Id == 0) Navigation.NavigateTo($"/shared/user-audiences/{_model.Id}");
+            }
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        catch { Snackbar.Add(UiText.Get(LocKeys.Ui.ManageUserAudiencePage.CouldNotSaveTheAudienceReloadBeforeTryingAgain), Severity.Error); }
+        finally { _busy = false; }
+    }
+    private async Task Delete()
+    {
+        if (Disabled || _model is null || await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.ManageUserAudiencePage.DeleteAudience_475365b8), UiText.Get(LocKeys.Ui.ManageUserAudiencePage.AudiencesAssignedToPoliciesCannotBeDeletedDeleteThis), yesText: UiText.Get(LocKeys.Common.Delete), cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+        _busy = true;
+        try
+        {
+            var result = await Audiences.SaveUserAudienceAsync(_model, delete: true);
+            if (result.Success) Navigation.NavigateTo("/shared/user-audiences");
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        catch { Snackbar.Add(UiText.Get(LocKeys.Ui.ManageUserAudiencePage.CouldNotDeleteTheAudience), Severity.Error); }
+        finally { _busy = false; }
+    }
+}

@@ -1,0 +1,66 @@
+@using CloneDeploy_Server.Backend.Services
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" @bind-Value="_search" Label="@Loc[LocKeys.Ui.OuTargetPickerDialog.SearchOUs]" Immediate="true" Clearable="true" Variant="Variant.Outlined" Class="my-3" />
+        <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.OuTargetPickerDialog.SearchByNameOrDirectoryPathMatchingOUsRetain_4dcb2f51, ((SingleSelection ? UiText.Get(LocKeys.Ui.OuTargetPickerDialog.ChooseOneOU) : UiText.Get(LocKeys.Ui.OuTargetPickerDialog.AlreadyAssignedOUsAreMarkedInTheTree))))</MudText>
+        <MudPaper Outlined="true" Class="pa-2 my-3" Style="max-height:45vh;overflow:auto">
+            @foreach (var root in Roots)
+            {
+                <OuTargetPickerNode @key="@($"{_sourceId}:{root.Guid}")" Node="root" Nodes="SourceNodes" Visible="Visible" Assigned="Assigned" Selected="_selected" Changed="SelectionChanged" Searching="@(!string.IsNullOrWhiteSpace(_search))" SingleSelection="SingleSelection" />
+            }
+            @if (!Roots.Any()) { <MudText Class="pa-3">@Loc[LocKeys.Ui.OuTargetPickerDialog.NoImportedOUsMatchThisSelection]</MudText> }
+        </MudPaper>
+        <MudText Typo="Typo.subtitle1">@_selected.Count @(_selected.Count == 1 ? UiText.Get(LocKeys.Ui.OuTargetPickerDialog.OUSelected) : UiText.Get(LocKeys.Ui.OuTargetPickerDialog.OUsSelected))</MudText>
+        @foreach (var selection in _selected.Values.ToList())
+        {
+            var node = Nodes.First(x => x.SourceId == selection.Key.DirectorySourceId && x.Guid == selection.Key.OuGuid);
+            <MudPaper Outlined="true" Class="pa-3 mt-2">
+                <MudText>@node.Name</MudText>
+                <MudText Typo="Typo.caption" Style="overflow-wrap:anywhere">@node.SourceName · @node.Path</MudText>
+                @if (!SingleSelection) { <MudCheckBox T="bool" @bind-Value="selection.IncludeDescendants" Label="@(UiText.Get(LocKeys.Ui.OuTargetPickerDialog.IncludeDescendantsOf0, (node.Name)))" /> }
+                <MudButton Size="Size.Small" OnClick="@(() => _selected.Remove(selection.Key))">@Loc[LocKeys.Ui.OuTargetPickerDialog.RemoveSelection]</MudButton>
+            </MudPaper>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="MudDialog.Cancel">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _selected.Count == 0, UiText.Get(LocKeys.Ui.OuTargetPickerDialog.SelectAnOrganizationalUnit), Add)" Color="Color.Primary" Variant="Variant.Filled">@(SingleSelection ? UiText.Get(LocKeys.Ui.OuTargetPickerDialog.UseSelectedOU) : UiText.Get(LocKeys.Ui.OuTargetPickerDialog.AddSelectedOUs))</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public bool SingleSelection { get; set; }
+    [Parameter] public List<PolicyTargetDirectoryNodeDto> Nodes { get; set; } = [];
+    [Parameter] public HashSet<PolicyTargetKeyDto> Assigned { get; set; } = [];
+    private readonly Dictionary<PolicyTargetKeyDto, PolicyTargetSelectionDto> _selected = [];
+    private int _sourceId;
+    private string _search = "";
+    protected override void OnInitialized() => _sourceId = Nodes.FirstOrDefault(x => x.Available)?.SourceId ?? 0;
+    private List<PolicyTargetDirectoryNodeDto> SourceNodes => Nodes.Where(x => x.SourceId == _sourceId && x.Available).ToList();
+    private HashSet<Guid> Visible
+    {
+        get
+        {
+            var nodes = SourceNodes.ToDictionary(x => x.Guid);
+            var visible = new HashSet<Guid>();
+            foreach (var match in nodes.Values.Where(x => x.IsOu && (string.IsNullOrWhiteSpace(_search) ||
+                (x.Name + " " + x.Path).Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase))))
+            {
+                var current = match;
+                while (visible.Add(current.Guid) && current.ParentGuid is Guid parent && nodes.TryGetValue(parent, out var ancestor)) current = ancestor;
+            }
+            return visible;
+        }
+    }
+    private IEnumerable<PolicyTargetDirectoryNodeDto> Roots
+    {
+        get
+        {
+            var nodes = SourceNodes;
+            var visible = Visible;
+            return nodes.Where(x => visible.Contains(x.Guid) && (x.ParentGuid is null || !nodes.Any(p => p.Guid == x.ParentGuid)));
+        }
+    }
+    private void SelectionChanged() => StateHasChanged();
+    private void Add() => MudDialog.Close(DialogResult.Ok(_selected.Values.ToList()));
+}

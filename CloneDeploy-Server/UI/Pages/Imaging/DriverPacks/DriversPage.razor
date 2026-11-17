@@ -1,0 +1,123 @@
+@inject AuthenticationStateProvider SharedCatalogAuthentication
+@inject IAuthorizationService SharedCatalogAuthorization
+@attribute [Authorize(Policy = Constants.Permissions.DriverPackView)]
+@inject ImagingService ImagingService
+@page "/images/driverpacks"
+@inject DriverService Service
+<ImagingEditScope Policy="@Constants.Permissions.DriverPackEdit" Context="canEditImage">
+<AppPageTitle Text="@Loc[LocKeys.Ui.NavMenu.DriverPacks]" />
+<ActionButtons><MainButton><MudButton Disabled="@(!canEditImage)" OnClick="OnCreateClicked" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">@Loc[LocKeys.Ui.DriversPage.NewDriverPack]</MudButton></MainButton></ActionButtons>
+<TagSearchPanel SelectedCount="_selectedTags.Count" ClearTags="OnClearTags">
+    <SearchControls>
+        <div class="device-list-search">
+            <MudTextField T="string" Value="_search" ValueChanged="SearchAsync" DebounceInterval="300" Placeholder="@Loc[LocKeys.Ui.DriversPage.SearchDriverPacks]" aria-label="@Loc[LocKeys.Ui.DriversPage.SearchDriverPacks_5d449535]"
+                          Clearable="true" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Disabled="_loading"/>
+        </div>
+        <div class="device-list-limit"><MudCheckBox T="bool" Value="_includeDisabled" ValueChanged="IncludeDisabledAsync" Label="@Loc[LocKeys.Image.IncludeDisabled]" Disabled="_loading"/></div>
+    </SearchControls>
+    <TagControls>
+        <div class="device-manage-tags">
+            <MudAutocomplete T="Tag" @ref="_tagPicker" Label="@Loc[LocKeys.Common.Tags]" Placeholder="@Loc[LocKeys.Ui.ManageDevicesPage.FilterByTag]" ShrinkLabel="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                             SearchFunc="SearchTags" ValueChanged="OnAddTag" ToStringFunc="@(tag => tag?.Name ?? string.Empty)" Clearable="true" ResetValueOnEmptyText="true"/>
+            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-2">
+                @foreach (var tag in _selectedTags)
+                {
+                    <MudChip T="int" Value="tag.Id" Color="Color.Primary" Variant="Variant.Filled" OnClose="@(() => OnRemoveTag(tag))">@tag.Name</MudChip>
+                }
+            </MudStack>
+        </div>
+        <div class="device-manage-tag-match">
+            <MudSelect T="bool" Value="_matchAll" ValueChanged="OnMatchChanged" Label="@Loc[LocKeys.Ui.ManageDevicesPage.Match]" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem Value="false">@Loc[LocKeys.Ui.ManageDevicesPage.AnyTagOR]</MudSelectItem><MudSelectItem Value="true">@Loc[LocKeys.Ui.ManageDevicesPage.AllTagsAND]</MudSelectItem>
+            </MudSelect>
+        </div>
+    </TagControls>
+</TagSearchPanel>
+@if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+<MudDataGrid MultiSelection="true" SelectOnRowClick="false" @bind-SelectedItems="_selectedItems" T="DriverPack" Items="FilteredItems" Loading="_loading" Dense="true" Hover="true" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" ColumnResizeMode="ResizeMode.Column" RowsPerPage="25" Elevation="0" Outlined="true" Class="device-list-grid"><ToolBarContent><MudIcon Icon="@Icons.Material.Outlined.Memory" Color="Color.Primary"/><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.NavMenu.DriverPacks]</MudText>
+        <MudSpacer/>
+        <div class="grid-toolbar-actions">
+            <GridSelectionCount Count="_selectedItems.Count"/>
+            @if (_selectedItems.Count > 0) { <MudButton OnClick="@(() => OnDeleteClicked(_selectedItems.ToArray()))" Disabled="@(!canEditImage || (_deleting))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Delete">@Loc[LocKeys.Common.DeleteSelected]</MudButton> }
+        </div>
+    </ToolBarContent>
+    <Columns><SelectColumn T="DriverPack" DisabledFunc="@(_ => _deleting)"/>
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]"><CellTemplate><MudLink Class="device-name-link" Href="@($"/images/driverpacks/{context.Item.Id}")">@context.Item.Name</MudLink></CellTemplate></PropertyColumn>
+        <PropertyColumn Property="x => x.Description" Title="@Loc[LocKeys.Common.Description]" />
+        <PropertyColumn Property="x => x.Enabled" Title="@Loc[LocKeys.StorageProvider.Enabled]" />
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false"><CellTemplate><MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Common.Delete]"><MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Primary" OnClick="@(() => OnDeleteClicked([context.Item]))" Disabled="@(!canEditImage || (_deleting))" aria-label="@Loc[LocKeys.Ui.ImageProfileSearchPage.DeleteItem]"/></MudTooltip></CellTemplate></TemplateColumn>
+
+    </Columns>
+    <PagerContent><MudDataGridPager T="DriverPack" /></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Ui.DriversPage.NoMatchingDriverPacks]</MudText></NoRecordsContent>
+</MudDataGrid>
+
+</ImagingEditScope>
+@code {
+    private List<Tag> _tags = [], _selectedTags = [];
+    private MudAutocomplete<Tag> _tagPicker = null!;
+    private bool _matchAll;
+    private IEnumerable<DriverPack> FilteredItems => _items.Where(item => _selectedTags.Count == 0 || (_matchAll
+        ? _selectedTags.All(tag => item.Tags.Any(x => x.TagId == tag.Id))
+        : _selectedTags.Any(tag => item.Tags.Any(x => x.TagId == tag.Id))));
+    private Task<IEnumerable<Tag>> SearchTags(string? text, CancellationToken ct) => Task.FromResult(_tags.Where(tag =>
+        _selectedTags.All(x => x.Id != tag.Id) && (string.IsNullOrWhiteSpace(text) || tag.Name.Contains(text.Trim(), StringComparison.OrdinalIgnoreCase))));
+    private async Task OnAddTag(Tag? tag)
+    {
+        if (tag is null || _selectedTags.Any(x => x.Id == tag.Id)) return;
+        _selectedTags.Add(tag); _selectedItems.Clear(); await _tagPicker.ClearAsync();
+    }
+    private void OnClearTags()
+    {
+        foreach (var tag in _selectedTags.ToArray()) OnRemoveTag(tag);
+    }
+
+    private void OnRemoveTag(Tag tag) { _selectedTags.Remove(tag); _selectedItems.Clear(); }
+    private void OnMatchChanged(bool value) { _matchAll = value; _selectedItems.Clear(); }
+
+
+    private HashSet<DriverPack> _selectedItems = [];
+    private bool _deleting;
+    private async Task OnDeleteClicked(DriverPack[] items)
+    {
+        if (_deleting || items.Length == 0) return;
+        if (await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Common.Delete), UiText.Get(LocKeys.Ui.ImageProfileSearchPage.Delete0SelectedItemS, (items.Length)), yesText: UiText.Get(LocKeys.Common.Delete), cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+        _deleting = true;
+        foreach (var item in items)
+        {
+            var result = await Service.DeleteAsync(item.Id);
+            if (!result.Success) Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        _selectedItems.Clear();
+        await OnLoadClicked();
+        _deleting = false;
+    }
+
+    private List<DriverPack> _items = [];
+    private string? _search, _error;
+    private bool _loading, _includeDisabled;
+    private int _version;
+    protected override async Task OnInitializedAsync()
+    {
+        var tags = ((await SharedCatalogAuthorization.AuthorizeAsync((await SharedCatalogAuthentication.GetAuthenticationStateAsync()).User, Constants.Permissions.TagView)).Succeeded ? await ImagingService.GetTagsAsync() : ServiceResult<List<Tag>>.Ok([])); _tags = tags.Data ?? [];
+        if (!tags.Success) Snackbar.Add(Loc[tags.Error!.Code, tags.Error.Args], Severity.Error);
+        await OnLoadClicked();
+    }
+    private async Task SearchAsync(string? search) { _search = search; await OnLoadClicked(); }
+    private async Task IncludeDisabledAsync(bool value) { _includeDisabled = value; await OnLoadClicked(); }
+    private async Task OnLoadClicked()
+    {
+        var version = ++_version;
+        _loading = true;
+        var result = await Service.GetAsync(_search, _includeDisabled);
+        if (version != _version) return;
+        _items = result.Data ?? [];
+        _error = result.Success ? null : Loc[result.Error!.Code, result.Error.Args].Value;
+        _selectedItems.Clear(); _loading = false;
+    }
+    private async Task OnCreateClicked()
+    {
+        var dialog = await Dialog.ShowAsync<DriverCreateDialog>(UiText.Get(LocKeys.Ui.DriversPage.NewDriverPack), new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Small, BackdropClick = false });
+        if (await dialog.Result is { Canceled: false, Data: int id }) Navigation.NavigateTo($"/images/driverpacks/{id}");
+    }
+}

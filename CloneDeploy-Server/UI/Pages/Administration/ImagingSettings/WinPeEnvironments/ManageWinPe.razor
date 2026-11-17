@@ -1,0 +1,245 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@using System.Text.Json
+@inject WinPeService Service
+@implements IAsyncDisposable
+
+<MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudIconButton OnClick="OnBackClicked" Icon="@Icons.Material.Filled.ArrowBack" Disabled="_busy" aria-label="@Loc[LocKeys.Ui.ManageWinPe.BackToBootEnvironments]" />
+    <MudText Typo="Typo.h6">@(_definition is { Id: > 0 } ? _definition.Name : UiText.Get(LocKeys.Ui.ManageWinPe.CreateBootEnvironment))</MudText>
+</MudStack>
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert>
+}
+@if (_definition is not null && _catalog is not null)
+{
+    <MudPaper Class="pa-2" Elevation="0">
+        <MudForm @ref="_form">
+            <MudTabs ActivePanelIndex="_tab" ActivePanelIndexChanged="OnTabChanged" MinimumTabWidth="120px" KeepPanelsAlive="false" Class="device-subtabs device-overview-tabs" Color="Color.Primary" Outlined="true"
+                     Border="true" TabPanelsClass="pa-4 detail-tab-content">
+                <Header>
+                    <div class="device-overview-save">
+                        <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+                            <MudButton OnClick="OnSaveClicked" Disabled="_busy" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Common.SaveChanges]</MudButton>
+                            <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Style="align-self: auto;" Disabled="_busy" aria-label="@Loc[LocKeys.Common.Actions]">
+                                <MudMenuItem OnClick="@Snackbar.GuardAction(() => _busy || _definition.Id == 0 || HasPending, _definition.Id == 0 ? UiText.Get(LocKeys.Ui.ManageWinPe.SaveThisBootEnvironmentBeforeBuildingIt) : UiText.Get(LocKeys.Ui.ManageWinPe.ABuildIsAlreadyPendingWaitForItTo), OnBuildClicked)" Disabled="_busy" Icon="@Icons.Material.Filled.Build">
+                                    @(_catalog.Builds.Any(x => x.Build.DefinitionId == _definition.Id) ? UiText.Get(LocKeys.Ui.ManageWinPe.Rebuild) : UiText.Get(LocKeys.Device.Build))
+                                </MudMenuItem>
+                            </MudMenu>
+                        </MudButtonGroup>
+                    </div>
+                </Header>
+                <ChildContent>
+                <MudTabPanel Text="@Loc[LocKeys.User.General]" Disabled="_busy">
+                    <TabHelp Href="ui/administration/winpe-general.html" Title="@Loc[LocKeys.User.General]" />
+                    <MudStack Spacing="3">
+                        <MudTextField @bind-Value="_definition.Name" Label="@Loc[LocKeys.Common.Name]" Required MaxLength="200" Variant="Variant.Outlined" Disabled="_busy"/>
+                        <MudTextField @bind-Value="_definition.Description" Label="@Loc[LocKeys.Common.Description]" Lines="3" MaxLength="2000" Variant="Variant.Outlined"
+                                      Disabled="_busy"/>
+
+                        @if (_definition.Id > 0)
+                        {
+                            <WinPeBuildHistoryTab Catalog="_catalog" DefinitionId="_definition.Id" Changed="Refresh"/>
+                        }
+                    </MudStack>
+                </MudTabPanel>
+                <MudTabPanel Text="@Loc[LocKeys.Image.Configuration]" Disabled="_busy">
+                    <TabHelp Href="ui/administration/winpe-configuration.html" Title="@Loc[LocKeys.Image.Configuration]" />
+                    <MudStack Spacing="3">
+                            <MudSelect T="string" @bind-Value="_definition.KeyboardLayout" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.KeyboardLayout]" Variant="Variant.Outlined" Disabled="_busy">
+                                @foreach (var layout in CloneDeploy_Server.WinPe.WinPeKeyboardLayouts.All)
+                                {
+                                    <MudSelectItem T="string" Value="@(layout.Id)">@(layout.Name)</MudSelectItem>
+                                }
+                            </MudSelect>
+                            <MudSelect T="bool" @bind-Value="_definition.NativePxe" Label="@Loc[LocKeys.Ui.ManageWinPe.NetworkBootMethod]" Variant="Variant.Outlined" Disabled="_busy">
+                                <MudSelectItem Value="false">@Loc[LocKeys.Ui.ManageWinPe.IPXE]</MudSelectItem>
+                                <MudSelectItem Value="true">@Loc[LocKeys.Ui.ManageWinPe.NativePXE]</MudSelectItem>
+                            </MudSelect>
+                            <MudCheckBox @bind-Value="_definition.UseBootEx" Label="@Loc[LocKeys.Ui.ManageWinPe.UseWindowsUEFI2023CABootMedia]" Disabled="_busy"/>
+                    </MudStack>
+                </MudTabPanel>
+
+                    <MudTabPanel Text="@Loc[LocKeys.Ui.ManageWinPe.ModelMatching]" Disabled="_busy">
+                        <TabHelp Href="ui/administration/winpe-model-matching.html" Title="@Loc[LocKeys.Ui.ManageWinPe.ModelMatching]" />
+                        <MudCheckBox @bind-Value="_definition.IsDefault" Disabled="_busy" Label="@Loc[LocKeys.Ui.ManageWinPe.DefaultX64BootEnvironmentWhenNoModelRuleMatches]"/>
+                        <MudCheckBox @bind-Value="_definition.IsArm64Default" Disabled="_busy" Label="@Loc[LocKeys.Ui.ManageWinPe.DefaultARM64BootEnvironmentWhenNoModelRuleMatches]"/>
+                        <WinPeModelRulesTab Rules="_rules" Busy="_busy"/>
+                    </MudTabPanel>
+                    <MudTabPanel Text="@Loc[LocKeys.Ui.DeploymentDriversTab.Drivers]" Disabled="_busy">
+                        <TabHelp Href="ui/administration/winpe-drivers.html" Title="@Loc[LocKeys.Ui.DeploymentDriversTab.Drivers]" />
+                        <MudStack Spacing="3">
+                            <MudSelect T="int" MultiSelection SelectedValues="_selected" SelectedValuesChanged="DriversChanged" Label="@Loc[LocKeys.Ui.ManageWinPe.DriverPacks]"
+                                       Variant="Variant.Outlined" Disabled="_busy" ToStringFunc="DriverName">
+                                @foreach (var pack in _catalog.Drivers)
+                                {
+                                    <MudSelectItem T="int" Value="pack.Id">@pack.Name</MudSelectItem>
+                                }
+                            </MudSelect>
+                            @foreach (var pack in _catalog.Drivers.Where(x => _selected.Contains(x.Id)))
+                            {
+                                <MudText>@UiText.Get(LocKeys.Ui.ManageWinPe.Text01PackageS2Ready, (pack.Name), (pack.Files.Count), (pack.Files.Count(x => x.PreparationStatus == DriverPreparationStatus.Ready)))</MudText>
+                            }
+                        </MudStack>
+                    </MudTabPanel>
+
+                </ChildContent>
+            </MudTabs>
+        </MudForm>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [Parameter] public string? Kind { get; set; }
+    [Parameter] public EventCallback Closed { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+    private (int, string?)? _loaded;
+    private WinPeDefinition? _definition;
+    private WinPeCatalogDto? _catalog;
+    private HashSet<int> _selected = [];
+    private List<WinPeModelRuleDto> _rules = [];
+    private string? _error;
+    private bool _busy;
+    private MudForm _form = null!;
+    private int _tab;
+    private readonly CancellationTokenSource _stop = new();
+    private Task? _poll;
+    private bool HasPending => _catalog!.Builds.Any(x => x.Build.DefinitionId == _definition!.Id && !x.Status.IsComplete);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loaded == (Id, Kind)) return;
+        await Refresh();
+        if (_catalog is null) return;
+        _loaded = (Id, Kind);
+        var definition = Id == 0 ? new WinPeDefinition { IncludePowerShell = true } : _catalog.Definitions.FirstOrDefault(x => x.Id == Id && !x.IsBase);
+        _definition = definition is null ? null : JsonSerializer.Deserialize<WinPeDefinition>(JsonSerializer.Serialize(definition));
+        if (_definition is null) _error = UiText.Get(LocKeys.Ui.ManageWinPe.WinPEDefinitionNotFound);
+        _selected = JsonSerializer.Deserialize<int[]>(_definition?.DriverPackIdsJson ?? "[]")?.ToHashSet() ?? [];
+        var rules = WinPeService.ReadModelRules(_definition?.ModelRulesJson ?? "[]");
+        _rules = rules.HasData ? rules.Data : [];
+        if (!rules.Success)
+        {
+            _error = Loc[rules.Error.Code, rules.Error.Args];
+            _definition = null;
+        }
+
+        _poll ??= Poll();
+    }
+
+    private Task OnTabChanged(int tab)
+    {
+        if (_busy || tab == _tab) return Task.CompletedTask;
+        if (_definition is { Id: > 0 })
+        {
+            // Switch the draft and section together so a late reload cannot save a different tab.
+            var saved = _catalog!.Definitions.FirstOrDefault(x => x.Id == _definition.Id);
+            if (saved is null) { _error = UiText.Get(LocKeys.Ui.ManageWinPe.WinPEDefinitionNotFound); return Task.CompletedTask; }
+            _definition = JsonSerializer.Deserialize<WinPeDefinition>(JsonSerializer.Serialize(saved));
+            _selected = JsonSerializer.Deserialize<int[]>(_definition!.DriverPackIdsJson)?.ToHashSet() ?? [];
+            var rules = WinPeService.ReadModelRules(_definition.ModelRulesJson);
+            if (!rules.Success) { _error = Loc[rules.Error!.Code, rules.Error.Args]; return Task.CompletedTask; }
+            _rules = rules.Data!;
+            _error = null;
+        }
+        _tab = tab;
+        return Task.CompletedTask;
+    }
+    private Task OnBackClicked() => Closed.InvokeAsync();
+    private string DriverName(int id) => _catalog!.Drivers.FirstOrDefault(x => x.Id == id)?.Name ?? id.ToString();
+    private void DriversChanged(IEnumerable<int> ids) => _selected = ids.ToHashSet();
+
+    private async Task Refresh()
+    {
+        var result = await Service.GetAsync();
+        if (result.Success) _catalog = result.Data;
+        else _error = Loc[result.Error!.Code, result.Error.Args];
+    }
+
+    private async Task OnSaveClicked()
+    {
+        if (_busy || _definition is null) return;
+        var section = (WinPeSettingsSection)_tab;
+        _busy = true;
+        try
+        {
+            await _form.ValidateAsync();
+            if (!_form.IsValid) return;
+            if (_definition.Id == 0 || section == WinPeSettingsSection.ModelMatching)
+                _definition.ModelRulesJson = JsonSerializer.Serialize(_rules);
+            var result = _definition.Id == 0
+                ? await Service.SaveAsync(_definition, _selected)
+                : await Service.SaveSectionAsync(_definition, _selected, section);
+            if (!result.Success)
+            {
+                Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+                return;
+            }
+
+            _error = null;
+            Snackbar.Add(UiText.Get(LocKeys.Ui.ManageWinPe.WinPESettingsSaved), Severity.Success);
+            _definition.Id = result.Data;
+            await Refresh();
+            await Changed.InvokeAsync();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task OnBuildClicked()
+    {
+        if (_busy || _definition is null || _definition.Id == 0 || HasPending) return;
+        _busy = true;
+        try
+        {
+            var result = await Service.QueueAsync(_definition.Id);
+            if (!result.Success) Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+            else
+            {
+                _error = null;
+                Snackbar.Add(UiText.Get(LocKeys.Ui.ManageWinPe.BuildQueued), Severity.Success);
+                _tab = 0;
+            }
+
+            await Refresh();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task OnDeleted()
+    {
+        await Changed.InvokeAsync();
+        await Closed.InvokeAsync();
+    }
+
+    private async Task Poll()
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+            while (await timer.WaitForNextTickAsync(_stop.Token))
+                await InvokeAsync(async () =>
+                {
+                    await Refresh();
+                    StateHasChanged();
+                });
+        }
+        catch (OperationCanceledException) when (_stop.IsCancellationRequested)
+        {
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _stop.Cancel();
+        if (_poll is not null) await _poll;
+        _stop.Dispose();
+    }
+
+}

@@ -1,0 +1,206 @@
+@using CloneDeploy_Agent.Contracts
+
+<div class="policy-actions-workspace">
+    <MudText Typo="Typo.body2" Class="mb-4">@Loc[LocKeys.Ui.PolicyActions.DragActionsFromTheCatalogIntoTheExecutionOrder]</MudText>
+    <MudDropContainer T="PolicyActionEditorItem" @ref="_dropContainer" @key="_dropVersion" Items="_editor.Items"
+                      ItemsSelector="InZone" ItemDisabled="@(_ => ReadOnly)" ItemDropped="Dropped"
+                      CanDropClass="policy-drop-allowed" NoDropClass="policy-drop-blocked">
+        <ChildContent>
+            <div class="action-columns">
+                <section class="action-catalog" aria-label="@Loc[LocKeys.Ui.PolicyActions.ActionCatalog]">
+                    <MudPaper Outlined="true" Class="pa-3">
+                        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.PolicyActions.ActionCatalog]</MudText>
+                        <MudTextField T="string" Value="_search" ValueChanged="SearchChanged" DebounceInterval="200"
+                                      Label="@Loc[LocKeys.Ui.DeviceDeployActionsDialog.SearchActions]" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
+                        <MudSelect T="ActionType?" Value="_type" ValueChanged="TypeChanged" Label="@Loc[LocKeys.Ui.DeviceDeployActionsDialog.ActionType]" Clearable="true"
+                                   Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="@Loc[LocKeys.Ui.PolicyActions.AllTypes]">
+                            @foreach (var type in Details.Actions.Select(x => x.Type).Distinct().OrderBy(x => x.ToString()))
+                            {
+                                <MudSelectItem T="ActionType?" Value="@((ActionType?)type)">@TypeName(type)</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudText Typo="Typo.caption" Class="my-2" aria-live="polite">@UiText.Get(LocKeys.Ui.PolicyActions.Text0Available, (_editor.Catalog(_search, _type).Count()))</MudText>
+                        <MudDropZone T="PolicyActionEditorItem" Identifier="catalog" CanDrop="CanReturnToCatalog" Class="catalog-drop-zone">
+                            <ChildContent>
+                                @if (!_editor.Catalog(_search, _type).Any())
+                                {
+                                    <div class="action-empty">
+                                        <MudIcon Icon="@Icons.Material.Filled.SearchOff" Color="Color.Default" />
+                                        <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.PolicyActions.NoMatchingActionsAvailable]</MudText>
+                                        <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.PolicyActions.TryAnotherSearchOrFilterAssignedActionsAppearIn]</MudText>
+                                    </div>
+                                }
+                            </ChildContent>
+                            <ItemRenderer Context="item">
+                                <MudPaper Outlined="true" Class="action-catalog-card pa-3 mb-2">
+                                    <div class="action-card-heading">
+                                        <MudDragHandle T="PolicyActionEditorItem">
+                                            <span class="action-drag-handle" title="@Loc[LocKeys.Ui.PolicyActions.DragToAssign]"><MudIcon Icon="@Icons.Material.Filled.DragIndicator" /></span>
+                                        </MudDragHandle>
+                                        <div class="action-card-name">
+                                            <MudText Typo="Typo.subtitle2">@item.Option.Name</MudText>
+                                            <MudText Typo="Typo.caption">@TypeName(item.Option.Type)</MudText>
+                                        </div>
+                                        <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined" OnClick="@Snackbar.GuardAction(() => ReadOnly, UiText.Get(LocKeys.Ui.PolicyExecutionTab.ThisPolicyIsArchivedOrYouDoNotHave), () => OnAddClicked(item))" aria-label="@(UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.Add0, (item.Option.Name)))">@Loc[LocKeys.Ui.HelpConfigurationNamesTab.Add]</MudButton>
+                                    </div>
+                                </MudPaper>
+                            </ItemRenderer>
+                        </MudDropZone>
+                    </MudPaper>
+                </section>
+                <section class="action-sequence" aria-label="@Loc[LocKeys.Ui.PolicyActionsTab.ExecutionOrder]">
+                    <div class="d-flex align-center mb-2 gap-2">
+                        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.PolicyActionsTab.ExecutionOrder]</MudText>
+                        <MudChip T="int" Size="Size.Small" Color="Color.Primary">@_editor.Assigned.Count()</MudChip>
+                    </div>
+                    <MudText Typo="Typo.caption" Class="mb-3">@Loc[LocKeys.Ui.PolicyActions.RunsFromTopToBottomDragAHandleOr]</MudText>
+                    <MudDropZone T="PolicyActionEditorItem" Identifier="assigned" AllowReorder="true" CanDrop="@(_ => !ReadOnly)"
+                                 Class="sequence-drop-zone" ApplyDropClassesOnDragStarted="true">
+                        <ChildContent>
+                            @if (!_editor.Assigned.Any())
+                            {
+                                <div class="action-empty action-empty-sequence">
+                                    <MudIcon Icon="@Icons.Material.Filled.PlaylistAdd" Color="Color.Primary" Size="Size.Large" />
+                                    <MudText Typo="Typo.subtitle1">@Loc[LocKeys.Ui.PolicyActions.DropYourFirstActionHere]</MudText>
+                                    <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.PolicyActions.OrChooseAddFromTheCatalog]</MudText>
+                                </div>
+                            }
+                        </ChildContent>
+                        <ItemRenderer Context="item">
+                            @if (item.Assignment is { } assignment)
+                            {
+                                var assigned = _editor.Assigned.ToList();
+                                var position = assigned.IndexOf(item);
+                                var blockedBy = _editor.RemovalBlockedBy(item);
+                                <MudPaper Outlined="true" Class="action-assigned-card pa-3 mb-3">
+                                    <div class="action-card-heading mb-3">
+                                        <MudDragHandle T="PolicyActionEditorItem">
+                                            <span class="action-drag-handle" title="@Loc[LocKeys.Ui.PolicyActions.DragToReorder]"><MudIcon Icon="@Icons.Material.Filled.DragIndicator" /></span>
+                                        </MudDragHandle>
+                                        <span class="action-order">@(position + 1)</span>
+                                        <div class="action-card-name">
+                                            <MudText Typo="Typo.subtitle1">@item.Option.Name</MudText>
+                                            <MudText Typo="Typo.caption">@TypeName(item.Option.Type)</MudText>
+                                        </div>
+                                        <div class="action-card-buttons">
+                                            <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Size="Size.Small" OnClick="@Snackbar.GuardAction(() => ReadOnly || position == 0, ReadOnly ? UiText.Get(LocKeys.Ui.PolicyExecutionTab.ThisPolicyIsArchivedOrYouDoNotHave) : UiText.Get(LocKeys.Ui.PolicyActions.ThisActionIsAlreadyFirstInItsPhase), () => OnMoveClicked(item, -1))" aria-label="@(UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.Move0Up, (item.Option.Name)))" title="@Loc[LocKeys.Ui.ManageOuNamingRulePage.MoveUp]" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward" Size="Size.Small" OnClick="@Snackbar.GuardAction(() => ReadOnly || position == assigned.Count - 1, ReadOnly ? UiText.Get(LocKeys.Ui.PolicyExecutionTab.ThisPolicyIsArchivedOrYouDoNotHave) : UiText.Get(LocKeys.Ui.PolicyActions.ThisActionIsAlreadyLastInItsPhase), () => OnMoveClicked(item, 1))" aria-label="@(UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.Move0Down, (item.Option.Name)))" title="@Loc[LocKeys.Ui.ManageOuNamingRulePage.MoveDown]" />
+                                            <MudTooltip Text="@(blockedBy is null ? UiText.Get(LocKeys.Ui.PolicyActions.RemoveAction) : UiText.Get(LocKeys.Ui.PolicyActions.ChangeTheNextActionConditionOn0BeforeRemoving, (blockedBy)))">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Color="Color.Error" OnClick="@Snackbar.GuardAction(() => ReadOnly || blockedBy is not null, ReadOnly ? UiText.Get(LocKeys.Ui.PolicyExecutionTab.ThisPolicyIsArchivedOrYouDoNotHave) : UiText.Get(LocKeys.Ui.PolicyActions.ChangeTheNextActionConditionOn0BeforeRemoving, (blockedBy)), () => OnRemoveClicked(item))" aria-label="@(UiText.Get(LocKeys.Group.RemoveDevice, (item.Option.Name)))" />
+                                            </MudTooltip>
+                                        </div>
+                                    </div>
+                                    <MudGrid Spacing="2">
+                                        <MudItem xs="12" sm="6">
+                                            <MudSelect T="int?" @bind-Value="assignment.ConditionId" @bind-Value:after="ConditionsChanged" Clearable="true" Disabled="ReadOnly" Label="@Loc[LocKeys.Ui.PolicyActions.ConditionScript]" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="@Loc[LocKeys.Ui.PolicyActions.NoCondition]">
+                                                @foreach (var script in Details.Conditions)
+                                                {
+                                                    <MudSelectItem T="int?" Value="@((int?)script.Id)">@script.Name</MudSelectItem>
+                                                }
+                                            </MudSelect>
+                                        </MudItem>
+                                        <MudItem xs="12" sm="6">
+                                            <MudSelect T="PolicyConditionFailedAction" @bind-Value="assignment.ConditionFailedAction" @bind-Value:after="ConditionsChanged" Disabled="ReadOnly" Label="@Loc[LocKeys.Ui.PolicyActions.IfConditionFails]" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                                @foreach (var value in System.Enum.GetValues<PolicyConditionFailedAction>())
+                                                {
+                                                    <MudSelectItem Value="value">@FailureName(value)</MudSelectItem>
+                                                }
+                                            </MudSelect>
+                                        </MudItem>
+                                        @if (assignment.ConditionFailedAction == PolicyConditionFailedAction.GotoModule)
+                                        {
+                                            <MudItem xs="12">
+                                                <MudSelect T="Guid?" @bind-Value="assignment.ConditionNextAction" @bind-Value:after="ConditionsChanged" Disabled="ReadOnly" Label="@Loc[LocKeys.Ui.PolicyActions.NextAction]" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                                    @foreach (var target in assigned.Where(x => x != item))
+                                                    {
+                                                        <MudSelectItem T="Guid?" Value="@((Guid?)target.Option.Guid)">@target.Option.Name</MudSelectItem>
+                                                    }
+                                                </MudSelect>
+                                                @if (!assignment.ConditionId.HasValue)
+                                                {
+                                                    <MudText Color="Color.Error" Typo="Typo.caption">@Loc[LocKeys.Ui.PolicyActions.ChooseAConditionScriptToUseGoToAction]</MudText>
+                                                }
+                                            </MudItem>
+                                        }
+                                    </MudGrid>
+                                </MudPaper>
+                            }
+                        </ItemRenderer>
+                    </MudDropZone>
+                </section>
+            </div>
+        </ChildContent>
+    </MudDropContainer>
+    <MudText Typo="Typo.caption" Class="mt-3" aria-live="polite">@_announcement</MudText>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public PolicyDetailsDto Details { get; set; } = null!;
+    [Parameter] public bool ReadOnly { get; set; }
+    private PolicyDetailsDto? _loadedDetails;
+    private PolicyActionEditor _editor = null!;
+    private string? _search;
+    private ActionType? _type;
+    private string? _announcement;
+    private int _dropVersion;
+    private MudDropContainer<PolicyActionEditorItem>? _dropContainer;
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(_loadedDetails, Details))
+        {
+            _editor = new PolicyActionEditor(Details);
+            _loadedDetails = Details;
+            _dropVersion++;
+        }
+        _editor.ReadOnly = ReadOnly;
+    }
+
+    private bool InZone(PolicyActionEditorItem item, string zone)
+    {
+        return zone == "assigned" ? item.Assignment is not null : zone == "catalog" && _editor.Catalog(_search, _type).Contains(item);
+    }
+
+    private bool CanReturnToCatalog(PolicyActionEditorItem item) => !ReadOnly && _editor.RemovalBlockedBy(item) is null;
+    private void SearchChanged(string? value) { _search = value; _dropContainer?.Refresh(); }
+    private void TypeChanged(ActionType? value) { _type = value; _dropContainer?.Refresh(); }
+    private void OnAddClicked(PolicyActionEditorItem item)
+    {
+        if (_editor.AssignOrMove(item, _editor.Assigned.Count())) Changed(UiText.Get(LocKeys.Ui.PolicyActions.Added0, (item.Option.Name)));
+    }
+    private void OnMoveClicked(PolicyActionEditorItem item, int offset)
+    {
+        if (_editor.Move(item, offset)) Changed(UiText.Get(LocKeys.Ui.PolicyActions.Moved0ToPosition1, (item.Option.Name), (item.Assignment!.Order)));
+    }
+    private void OnRemoveClicked(PolicyActionEditorItem item)
+    {
+        if (_editor.Remove(item)) Changed(UiText.Get(LocKeys.Ui.PolicyActions.Removed0, (item.Option.Name)));
+    }
+    private void Dropped(MudItemDropInfo<PolicyActionEditorItem> drop)
+    {
+        if (ReadOnly || drop.Item is null) return;
+        if (drop.DropzoneIdentifier == "assigned")
+        {
+            if (_editor.AssignOrMove(drop.Item, drop.IndexInZone)) Changed(UiText.Get(LocKeys.Ui.PolicyActions.Placed0AtPosition1, (drop.Item.Option.Name), (drop.Item.Assignment!.Order)));
+        }
+        else if (drop.DropzoneIdentifier == "catalog")
+        {
+            if (_editor.Remove(drop.Item)) Changed(UiText.Get(LocKeys.Ui.PolicyActions.Removed0, (drop.Item.Option.Name)));
+            else if (_editor.RemovalBlockedBy(drop.Item) is { } name)
+                Snackbar.Add(UiText.Get(LocKeys.Ui.PolicyActions.ChangeTheNextActionConditionOn0BeforeRemoving, (name)), Severity.Warning);
+        }
+    }
+    private void ConditionsChanged() => _dropContainer?.Refresh();
+    private void Changed(string message) { _announcement = message + UiText.Get(LocKeys.Ui.PolicyActions.SaveActionsToApplyChanges); _dropContainer?.Refresh(); }
+    private static string TypeName(ActionType type) => UiText.Label(type);
+    private static string FailureName(PolicyConditionFailedAction value) => value switch
+    {
+        PolicyConditionFailedAction.GotoModule => UiText.Get(LocKeys.Ui.PolicyActions.GoToAction),
+        PolicyConditionFailedAction.MarkNotApplicable => UiText.Get(LocKeys.Ui.PolicyActions.MarkNotApplicable),
+        PolicyConditionFailedAction.MarkSkipped => UiText.Get(LocKeys.Ui.PolicyActions.MarkSkipped),
+        PolicyConditionFailedAction.MarkSuccess => UiText.Get(LocKeys.Ui.PolicyActions.MarkSuccess),
+        PolicyConditionFailedAction.MarkFailed => UiText.Get(LocKeys.Ui.PolicyActions.MarkFailed),
+        _ => UiText.Label(value)
+    };
+}

@@ -1,0 +1,29 @@
+@using System.Text.Json
+@inject IJSRuntime JavaScript
+<MudDialog>
+    <DialogContent>
+        <pre aria-label="@Loc[LocKeys.Ui.DevicePolicyJsonDialog.PolicyJSON]" tabindex="0" style="white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;max-height:65vh;margin:0;padding:16px;border:1px solid var(--mud-palette-lines-default);border-radius:4px;font-size:.85rem">@_json</pre>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CopyAsync" StartIcon="@Icons.Material.Filled.ContentCopy">@Loc[LocKeys.Device.CopyJSON]</MudButton>
+        <MudButton OnClick="@(() => MudDialog.Close())" Color="Color.Primary">@Loc[LocKeys.Ui.ActionFiles.Close]</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter, EditorRequired] public CompiledPolicySnapshotDto Snapshot { get; set; } = null!;
+    private string _json = "";
+    protected override void OnParametersSet() => _json = JsonSerializer.Serialize(Snapshot, new JsonSerializerOptions { WriteIndented = true });
+    private async Task CopyAsync()
+    {
+        try
+        {
+            await JavaScript.InvokeVoidAsync("navigator.clipboard.writeText", _json);
+            Snackbar.Add(UiText.Get(LocKeys.Ui.DevicePolicyJsonDialog.PolicyJSONCopied), Severity.Success);
+        }
+        catch (JSException)
+        {
+            Snackbar.Add(Loc[LocKeys.Device.ClipboardAccessIsUnavailableSelectAndCopyTheJSON].Value, Severity.Warning);
+        }
+    }
+}

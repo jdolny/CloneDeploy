@@ -1,0 +1,87 @@
+@inject AuthenticationStateProvider SharedAuthentication
+@inject IAuthorizationService SharedAuthorization
+@inject TagService TagService
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Outlined.LocalOffer" Color="Color.Primary"/>
+            <MudText Typo="Typo.h6">
+                @(_isNew ? Loc[LocKeys.Tag.NewTag] : Loc[LocKeys.Tag.EditTag])
+            </MudText>
+        </MudStack>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm Disabled="@(!_canEditShared)" @ref="_form">
+            <MudStack Spacing="3" Class="pt-2">
+                <MudTextField @bind-Value="_tag.Name" Label="@Loc[LocKeys.Common.Name]" Variant="Variant.Outlined"
+                              Required="true"/>
+                <MudTextField @bind-Value="_tag.Description" Label="@Loc[LocKeys.Common.Description]"
+                              Lines="4" Variant="Variant.Outlined"/>
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="@OnCancelClicked">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="@(!_canEditShared)" OnClick="@OnSaveClicked">
+            @(_isNew ? Loc[LocKeys.Common.Create] : Loc[LocKeys.Common.Save])
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private bool _canEditShared;
+    protected override async Task OnParametersSetAsync()
+    {
+        _canEditShared = (await SharedAuthorization.AuthorizeAsync((await SharedAuthentication.GetAuthenticationStateAsync()).User, Constants.Permissions.TagEdit)).Succeeded;
+    }
+
+    [Parameter] public Tag? Tag { get; set; }
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private Tag _tag = null!;
+    private bool _isNew => Tag is null || Tag.Id == 0;
+    private MudForm _form = null!;
+
+    protected override void OnInitialized()
+    {
+        _tag = Tag is null
+            ? new Tag()
+            : new Tag
+            {
+                Id = Tag.Id,
+                Name = Tag.Name,
+                Description = Tag.Description
+            };
+    }
+
+    private void OnCancelClicked()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task OnSaveClicked()
+    {
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+            return;
+
+        ServiceResult<Tag> result;
+
+        if (_isNew)
+            result = await TagService.CreateAsync(_tag);
+        else
+            result = await TagService.UpdateAsync(_tag);
+
+        if (result.Success)
+        {
+            Snackbar.Add(_isNew ? Loc[LocKeys.Common.Created, _tag.Name] : Loc[LocKeys.Common.Updated, _tag.Name], Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+            Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+    }
+}

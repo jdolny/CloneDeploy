@@ -1,0 +1,77 @@
+@attribute [Authorize(Policy = Constants.Permissions.DeploymentProfileView)]
+@page "/images/deploymentprofiles"
+@inject ImagingService ImagingService
+<ImagingEditScope Policy="@Constants.Permissions.DeploymentProfileEdit" Context="canEditImage">
+<AppPageTitle Text="@Loc[LocKeys.Ui.NavMenu.DeploymentProfiles]" />
+<ActionButtons><MainButton><MudButton Disabled="@(!canEditImage)" OnClick="OnCreateClicked" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">@Loc[LocKeys.Ui.ImageProfileSearchPage.NewDeploymentProfile]</MudButton></MainButton></ActionButtons>
+<MudPaper Class="device-list-filters device-search-panel" Elevation="0">
+    <div class="device-list-search-row">
+        <div class="device-list-search">
+            <MudTextField T="string" Value="_search" ValueChanged="SearchAsync" DebounceInterval="300" Placeholder="@Loc[LocKeys.Ui.ImageProfileSearchPage.SearchDeploymentProfiles]" aria-label="@Loc[LocKeys.Ui.ImageProfileSearchPage.SearchDeploymentProfiles_37c0b424]"
+                          Clearable="true" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Disabled="_loading"/>
+        </div>
+        <div class="device-list-limit"><MudCheckBox T="bool" Value="_includeDisabled" ValueChanged="IncludeDisabledAsync" Label="@Loc[LocKeys.Image.IncludeDisabled]" Disabled="_loading"/></div>
+    </div>
+</MudPaper>
+@if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+<MudDataGrid MultiSelection="true" SelectOnRowClick="false" @bind-SelectedItems="_selectedItems" T="DeploymentProfile" Items="_items" Loading="_loading" Dense="true" Hover="true" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" ColumnResizeMode="ResizeMode.Column" RowsPerPage="25" Elevation="0" Outlined="true" Class="device-list-grid"><ToolBarContent><MudIcon Icon="@Icons.Material.Outlined.SettingsSuggest" Color="Color.Primary"/><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.NavMenu.DeploymentProfiles]</MudText>
+        <MudSpacer/>
+        <div class="grid-toolbar-actions">
+            <GridSelectionCount Count="_selectedItems.Count"/>
+            @if (_selectedItems.Count > 0) { <MudButton OnClick="@(() => OnDeleteClicked(_selectedItems.ToArray()))" Disabled="@(!canEditImage || (_deleting))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Delete">@Loc[LocKeys.Common.DeleteSelected]</MudButton> }
+        </div>
+    </ToolBarContent>
+    <Columns><SelectColumn T="DeploymentProfile" DisabledFunc="@(_ => _deleting)"/>
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]"><CellTemplate><MudLink Class="device-name-link" Href="@($"/images/deploymentprofiles/{context.Item.Id}")">@context.Item.Name</MudLink></CellTemplate></PropertyColumn>
+        <PropertyColumn Property="x => x.Description" Title="@Loc[LocKeys.Common.Description]" />
+        <PropertyColumn Property="x => x.Enabled" Title="@Loc[LocKeys.StorageProvider.Enabled]" />
+        <PropertyColumn Property="x => x.VisibleInWinPe" Title="@Loc[LocKeys.Image.ShowInWinPe]" />
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false"><CellTemplate><MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Common.Delete]"><MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Primary" OnClick="@(() => OnDeleteClicked([context.Item]))" Disabled="@(!canEditImage || (_deleting))" aria-label="@Loc[LocKeys.Ui.ImageProfileSearchPage.DeleteItem]"/></MudTooltip></CellTemplate></TemplateColumn>
+
+    </Columns>
+    <PagerContent><MudDataGridPager T="DeploymentProfile" /></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Ui.ImageProfileSearchPage.NoMatchingDeploymentProfiles]</MudText></NoRecordsContent>
+</MudDataGrid>
+
+</ImagingEditScope>
+@code {
+    private HashSet<DeploymentProfile> _selectedItems = [];
+    private bool _deleting;
+    private async Task OnDeleteClicked(DeploymentProfile[] items)
+    {
+        if (_deleting || items.Length == 0) return;
+        if (await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Common.Delete), UiText.Get(LocKeys.Ui.ImageProfileSearchPage.Delete0SelectedItemS, (items.Length)), yesText: UiText.Get(LocKeys.Common.Delete), cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+        _deleting = true;
+        foreach (var item in items)
+        {
+            var result = await ImagingService.DeleteProfileAsync(item.Id);
+            if (!result.Success) Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        _selectedItems.Clear();
+        await OnLoadClicked();
+        _deleting = false;
+    }
+
+    private List<DeploymentProfile> _items = [];
+    private string? _search, _error;
+    private bool _loading, _includeDisabled;
+    private int _version;
+    protected override Task OnInitializedAsync() => OnLoadClicked();
+    private async Task SearchAsync(string? search) { _search = search; await OnLoadClicked(); }
+    private async Task IncludeDisabledAsync(bool value) { _includeDisabled = value; await OnLoadClicked(); }
+    private async Task OnLoadClicked()
+    {
+        var version = ++_version;
+        _loading = true;
+        var result = await ImagingService.GetAllProfilesAsync(_search, _includeDisabled);
+        if (version != _version) return;
+        _items = result.Data ?? [];
+        _error = result.Success ? null : Loc[result.Error!.Code, result.Error.Args].Value;
+        _selectedItems.Clear(); _loading = false;
+    }
+    private async Task OnCreateClicked()
+    {
+        var dialog = await Dialog.ShowAsync<ImageProfileCreateDialog>(UiText.Get(LocKeys.Ui.ImageProfileSearchPage.NewDeploymentProfile), new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Small, BackdropClick = false });
+        if (await dialog.Result is { Canceled: false, Data: int id }) Navigation.NavigateTo($"/images/deploymentprofiles/{id}");
+    }
+}

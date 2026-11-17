@@ -1,0 +1,101 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@inject DirectoryService Directories
+
+@if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
+else if (_source is not null)
+{
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+        <MudIconButton OnClick="@(() => Closed.InvokeAsync())" Icon="@Icons.Material.Filled.ArrowBack" aria-label="@Loc[LocKeys.Ui.ManageDirectoryPage.BackToConnections]" />
+        <div>
+            <MudText Typo="Typo.h6">@_source.Name</MudText>
+            <MudText Typo="Typo.body2">@(_source.Provider == DirectoryProvider.ActiveDirectory ? UiText.Get(LocKeys.Ui.DirectorySettingsTab.ActiveDirectoryLDAP) : UiText.Get(LocKeys.Ui.DirectorySettingsTab.MicrosoftEntraID)) · @(_source.IsEnabled ? UiText.Get(LocKeys.Ui.ManageDirectoryPage.SyncEnabled) : UiText.Get(LocKeys.Ui.ManageDirectoryPage.SyncDisabled))</MudText>
+        </div>
+    </MudStack>
+    <div class="directory-tabs">
+        <MudTabs ActivePanelIndex="_activePanelIndex" ActivePanelIndexChanged="ChangeTab" Class="device-subtabs" Outlined="true" Border="true" KeepPanelsAlive="false" TabPanelsClass="pt-4 detail-tab-content">
+            <Header>
+                @if (_activePanelIndex == 0)
+                {
+                    <div class="device-overview-save"><SectionOutlet SectionId="_saveSection" /></div>
+                }
+            </Header>
+            <ChildContent>
+            <MudTabPanel Text="@Loc[LocKeys.Image.Configuration]">
+                <TabHelp Href="ui/shared-resources/directories-connection-configuration.html" Title="@Loc[LocKeys.Image.Configuration]" />
+                @if (_activePanelIndex == 0)
+                {
+                    <MudStack>
+                        @if (_source.Provider == DirectoryProvider.ActiveDirectory)
+                        { <DirectoryConnectionDialog Source="_source" OnSaved="Load" SaveActionSectionId="_saveSection" @key="Id" /> }
+                        else
+                        { <EntraSettingsTab Source="_source" OnSaved="Load" SaveActionSectionId="_saveSection" @key="Id" /> }
+                    </MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Common.Users]">
+                <TabHelp Href="ui/shared-resources/directory-users.html" Title="@Loc[LocKeys.Common.Users]" />
+                @if (_activePanelIndex == 1) { <DirectoryObjectsTab Source="_source" Kind="DirectoryObjectKind.User" @key="(Id, _activePanelIndex)" /> }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Device.Groups]">
+                <TabHelp Href="ui/shared-resources/directory-groups.html" Title="@Loc[LocKeys.Device.Groups]" />
+                @if (_activePanelIndex == 2) { <DirectoryObjectsTab Source="_source" Kind="DirectoryObjectKind.Group" @key="(Id, _activePanelIndex)" /> }
+            </MudTabPanel>
+            @if (!_source.ApplicationAccessOnly)
+            {
+            <MudTabPanel Text="@Loc[LocKeys.Group.Devices]">
+                <TabHelp Href="ui/shared-resources/directory-devices.html" Title="@Loc[LocKeys.Group.Devices]" />
+                @if (_activePanelIndex == 3) { <DirectoryObjectsTab Source="_source" Kind="DirectoryObjectKind.Computer" @key="(Id, _activePanelIndex)" /> }
+            </MudTabPanel>
+            }
+            @if (!_source.ApplicationAccessOnly && _source.Provider == DirectoryProvider.ActiveDirectory)
+            {
+                <MudTabPanel Text="@Loc[LocKeys.Ui.ManageDirectoryPage.OUs]">
+                    <TabHelp Href="ui/shared-resources/directory-ous.html" Title="@Loc[LocKeys.Ui.ManageDirectoryPage.OUs]" />
+                    @if (_activePanelIndex == 4) { <CloneDeploy_Server.UI.Pages.Devices.Groups.OuBrowserPage EmbeddedSourceId="Id" @key="Id" /> }
+                </MudTabPanel>
+            }
+            </ChildContent>
+        </MudTabs>
+    </div>
+}
+else
+{
+
+    <MudAlert Severity="Severity.Error">@(_error ?? UiText.Get(LocKeys.Ui.ManageDirectoryPage.DirectoryNotFound))</MudAlert>
+    <MudIconButton OnClick="@(() => Closed.InvokeAsync())" Icon="@Icons.Material.Filled.ArrowBack" aria-label="@Loc[LocKeys.Ui.ManageDirectoryPage.BackToConnections]" />
+}
+
+@code {
+    [Parameter] public EventCallback Closed { get; set; }
+    [Parameter] public int Id { get; set; }
+    [Parameter] public string? Tab { get; set; }
+    private static readonly string[] Routes = ["configuration", "users", "groups", "devices", "ous"];
+    private DirectorySource? _source;
+    private bool _loading = true;
+    private string? _error;
+    private int _activePanelIndex;
+    private readonly object _saveSection = new();
+    private (int, string?)? _loadedRoute;
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedRoute == (Id, Tab)) return;
+        _loadedRoute = (Id, Tab);
+        if (_source?.Id != Id) await Load();
+        var index = Array.FindIndex(Routes, x => string.Equals(x, Tab, StringComparison.OrdinalIgnoreCase));
+        _activePanelIndex = index < 0 || (_source?.ApplicationAccessOnly == true && index >= 3) || (index == 4 && _source?.Provider != DirectoryProvider.ActiveDirectory) ? 0 : index;
+    }
+    private void ChangeTab(int index)
+    {
+        _activePanelIndex = index;
+    }
+    private async Task Load()
+    {
+        var requestedId = Id;
+        if (_source?.Id != Id) { _source = null; _loading = true; }
+        var result = await Directories.GetSourcesAsync();
+        if (requestedId != Id) return;
+        if (result.Success) { _source = result.Data!.SingleOrDefault(x => x.Id == Id); _error = null; }
+        else { _error = Loc[result.Error!.Code, result.Error.Args]; Snackbar.Add(_error, Severity.Error); }
+        _loading = false;
+    }
+}

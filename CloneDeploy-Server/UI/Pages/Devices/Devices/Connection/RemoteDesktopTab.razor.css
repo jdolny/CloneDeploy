@@ -1,0 +1,14 @@
+.remote-desktop-viewer { background: var(--mud-palette-surface); padding: 8px; }
+.remote-desktop-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.remote-desktop-toolbar button, .remote-desktop-toolbar select { padding: 6px 10px; border: 1px solid var(--mud-palette-lines-default); border-radius: 4px; background: var(--mud-palette-surface); color: var(--mud-palette-text-primary); }
+.remote-desktop-toolbar button:disabled { opacity: .45; cursor: default; }
+.remote-desktop-toolbar button:not(:disabled) { cursor: pointer; }
+textarea { width: 100%; min-height: 100px; padding: 8px; border: 1px solid var(--mud-palette-lines-default); background: var(--mud-palette-background); color: var(--mud-palette-text-primary); }
+.remote-desktop-viewer canvas:fullscreen {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none;
+    max-height: none !important;
+    object-fit: contain;
+    background: #111;
+}

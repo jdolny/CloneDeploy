@@ -1,0 +1,1247 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <data xml:space="preserve" name="Admin.BackToMenuHint">
+    <value>Återgå till verktygsmenyn. Pågående uppgifter fortsätter.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.BackToTools">
+    <value>← Administrationsverktyg</value>
+  </data>
+  <data xml:space="preserve" name="Admin.ConnectBeforeSignIn">
+    <value>Logga in som administratör när agenttjänsten är ansluten.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.EndSessionAgentUnavailable">
+    <value>Det gick inte att nå agenten för att avsluta sessionen. Administrationsverktygen är fortfarande otillgängliga här.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.InvalidSessionResponse">
+    <value>Ogiltigt svar från administratörssessionen.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.SessionExpiresAt">
+    <value>Sessionen upphör {0:t}.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.SignInDescription">
+    <value>Administrationsverktyg för den här datorn. Logga in med ditt CloneDeploy-konto.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.SignInWithCloneDeploy">
+    <value>Logga in med ditt administratörskonto i CloneDeploy.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.SignedInAs">
+    <value>Administrationsverktyg — inloggad som {0}</value>
+  </data>
+  <data xml:space="preserve" name="Admin.StartBrowserSignInFailed">
+    <value>Det gick inte att starta webbläsarinloggningen. Kontrollera agenttjänsten och serveranslutningen och försök igen.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.VerifyAccessFailed">
+    <value>Det gick inte att verifiera administratörsåtkomst. Kontrollera agenttjänsten och serveranslutningen.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.VerifyEndSessionFailed">
+    <value>Det gick inte att verifiera och avsluta administratörssessionen. Logga in igen för att stänga gränssnittet.</value>
+  </data>
+  <data xml:space="preserve" name="Common.Acknowledge">
+    <value>Erkännande</value>
+  </data>
+  <data xml:space="preserve" name="Common.AdminTools">
+    <value>Administrationsverktyg</value>
+  </data>
+  <data xml:space="preserve" name="Common.AdministratorTools">
+    <value>Administratörsverktyg</value>
+  </data>
+  <data xml:space="preserve" name="Common.AgentVersionConnecting">
+    <value>Agentversion: ansluter…</value>
+  </data>
+  <data xml:space="preserve" name="Common.AgentVersionNotReported">
+    <value>Agentversion: inte rapporterad</value>
+  </data>
+  <data xml:space="preserve" name="Common.AgentVersionUnavailable">
+    <value>Agentversion: inte tillgänglig</value>
+  </data>
+  <data xml:space="preserve" name="Common.AllCategories">
+    <value>Alla kategorier</value>
+  </data>
+  <data xml:space="preserve" name="Common.Allow">
+    <value>Tillåt</value>
+  </data>
+  <data xml:space="preserve" name="Common.AssignedPolicies">
+    <value>Tilldelade policyer (</value>
+  </data>
+  <data xml:space="preserve" name="Common.AvailableSelfServicePolicies">
+    <value>Tillgängliga självservicepolicyer</value>
+  </data>
+  <data xml:space="preserve" name="Common.Cancel">
+    <value>Avbryt</value>
+  </data>
+  <data xml:space="preserve" name="Common.CancelSignIn">
+    <value>Avbryt inloggning</value>
+  </data>
+  <data xml:space="preserve" name="Common.CancelUSBCreation">
+    <value>Avbryt skapande av USB</value>
+  </data>
+  <data xml:space="preserve" name="Common.Category">
+    <value>Kategori</value>
+  </data>
+  <data xml:space="preserve" name="Common.CloneDeployLogo">
+    <value>CloneDeploy-logotyp</value>
+  </data>
+  <data xml:space="preserve" name="Common.CloseAgentUI">
+    <value>Stäng agentens gränssnitt</value>
+  </data>
+  <data xml:space="preserve" name="Common.Completed">
+    <value>Fullbordad</value>
+  </data>
+  <data xml:space="preserve" name="Common.CreateBootableUSB">
+    <value>Skapa startbart USB-minne</value>
+  </data>
+  <data xml:space="preserve" name="Common.CreateDriverPack">
+    <value>Skapa drivrutinspaket</value>
+  </data>
+  <data xml:space="preserve" name="Common.Deny">
+    <value>Förneka</value>
+  </data>
+  <data xml:space="preserve" name="Common.Device">
+    <value>Enhet</value>
+  </data>
+  <data xml:space="preserve" name="Common.DeviceServiceUnavailable">
+    <value>Enhetstjänsten är inte tillgänglig</value>
+  </data>
+  <data xml:space="preserve" name="Common.Dismiss">
+    <value>Avvisa</value>
+  </data>
+  <data xml:space="preserve" name="Common.DownloadISO">
+    <value>Hämta ISO</value>
+  </data>
+  <data xml:space="preserve" name="Common.DriverPackName">
+    <value>Drivrutinspaketets namn</value>
+  </data>
+  <data xml:space="preserve" name="Common.Enrolled">
+    <value>Inskriven</value>
+  </data>
+  <data xml:space="preserve" name="Common.EraseAndCreateUSB">
+    <value>Radera och skapa USB</value>
+  </data>
+  <data xml:space="preserve" name="Common.ExternalUSBDisk">
+    <value>Extern USB-disk</value>
+  </data>
+  <data xml:space="preserve" name="Common.Failed">
+    <value>Misslyckades</value>
+  </data>
+  <data xml:space="preserve" name="Common.Finished">
+    <value>Slutförd</value>
+  </data>
+  <data xml:space="preserve" name="Common.ImagePrepProfile">
+    <value>Bild Prep Profile</value>
+  </data>
+  <data xml:space="preserve" name="Common.LabelAndTimestamp">
+    <value>{0} {1:g}</value>
+  </data>
+  <data xml:space="preserve" name="Common.Later">
+    <value>Senare</value>
+  </data>
+  <data xml:space="preserve" name="Common.MessageHistory">
+    <value>Meddelandehistorik</value>
+  </data>
+  <data xml:space="preserve" name="Common.NotApplicable">
+    <value>Inte tillämpligt</value>
+  </data>
+  <data xml:space="preserve" name="Common.Notifications">
+    <value>Meddelanden</value>
+  </data>
+  <data xml:space="preserve" name="Common.Open">
+    <value>Öppna</value>
+  </data>
+  <data xml:space="preserve" name="Common.OrganizationLogo">
+    <value>Organisationslogo</value>
+  </data>
+  <data xml:space="preserve" name="Common.Other">
+    <value>Andra</value>
+  </data>
+  <data xml:space="preserve" name="Common.Policy">
+    <value>Policy</value>
+  </data>
+  <data xml:space="preserve" name="Common.PoweredBy">
+    <value>Drivs av</value>
+  </data>
+  <data xml:space="preserve" name="Common.PrepareAndShutDown">
+    <value>Förbered och stäng av</value>
+  </data>
+  <data xml:space="preserve" name="Common.Priority">
+    <value>Prioritet</value>
+  </data>
+  <data xml:space="preserve" name="Common.ReadyToRun">
+    <value>Redo att köra?</value>
+  </data>
+  <data xml:space="preserve" name="Common.Refresh">
+    <value>Uppdatera</value>
+  </data>
+  <data xml:space="preserve" name="Common.RefreshBootEnvironments">
+    <value>Uppdatera startmiljöer</value>
+  </data>
+  <data xml:space="preserve" name="Common.RefreshDrives">
+    <value>Uppdatera enheter</value>
+  </data>
+  <data xml:space="preserve" name="Common.RefreshPortal">
+    <value>Uppdatera portal</value>
+  </data>
+  <data xml:space="preserve" name="Common.RefreshProfiles">
+    <value>Uppdatera profiler</value>
+  </data>
+  <data xml:space="preserve" name="Common.Result">
+    <value>Resultat</value>
+  </data>
+  <data xml:space="preserve" name="Common.ResultPending">
+    <value>Väntar på resultat</value>
+  </data>
+  <data xml:space="preserve" name="Common.RunImagePrep">
+    <value>Kör avbildningsförberedelse</value>
+  </data>
+  <data xml:space="preserve" name="Common.RunNow">
+    <value>Kör nu</value>
+  </data>
+  <data xml:space="preserve" name="Common.Running">
+    <value>Körs</value>
+  </data>
+  <data xml:space="preserve" name="Common.SelfService">
+    <value>Självservice</value>
+  </data>
+  <data xml:space="preserve" name="Common.SelfServiceCategory">
+    <value>Självservicekategori</value>
+  </data>
+  <data xml:space="preserve" name="Common.SelfServiceMessage">
+    <value>Självservice:</value>
+  </data>
+  <data xml:space="preserve" name="Common.Skipped">
+    <value>Överhoppad</value>
+  </data>
+  <data xml:space="preserve" name="Common.StopSharing">
+    <value>Sluta dela</value>
+  </data>
+  <data xml:space="preserve" name="Common.TargetArchitecture">
+    <value>Målarkitektur</value>
+  </data>
+  <data xml:space="preserve" name="Common.USBTargetArchitecture">
+    <value>USB-målarkitektur</value>
+  </data>
+  <data xml:space="preserve" name="Common.UnableToRefresh">
+    <value>Det gick inte att uppdatera</value>
+  </data>
+  <data xml:space="preserve" name="Common.UnknownResult">
+    <value>Okänt resultat</value>
+  </data>
+  <data xml:space="preserve" name="Common.WinPEBootEnvironment">
+    <value>WinPE boot miljö:</value>
+  </data>
+  <data xml:space="preserve" name="Common.WorkAccount">
+    <value>Arbetskonto</value>
+  </data>
+  <data xml:space="preserve" name="Common.WorkAccountSignIn">
+    <value>Inloggning med arbetskonto</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentClosedWithoutResponse">
+    <value>Agenten stängde portalanslutningen utan svar. Sök efter 'Portal connection ended' i agentloggen.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentNotAcceptingConnections">
+    <value>Den lokala agentens portal accepterade inte anslutningen. Kontrollera att den installerade CloneDeploy Agent-tjänsten körs.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentResponseTimeout">
+    <value>Den lokala agenten svarade inte i tid. Kontrollera serveranslutningen och uppdatera.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentServiceQueryFailed">
+    <value>Det går inte att fråga den installerade agenttjänsten</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentServiceUnavailable">
+    <value>Det gick inte att ansluta till Windows-tjänsten CloneDeployAgent. Kontrollera att den körs och uppdatera.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentStatusReadFailed">
+    <value>Det går inte att läsa agenttjänstens status</value>
+  </data>
+  <data xml:space="preserve" name="Connection.ConnectingToDeviceService">
+    <value>Ansluter till enhetstjänsten…</value>
+  </data>
+  <data xml:space="preserve" name="Connection.ConnectingToLocalAgent">
+    <value>Ansluter till den lokala agenten…</value>
+  </data>
+  <data xml:space="preserve" name="Connection.ContactAgentFailed">
+    <value>Det gick inte att nå agenten. Försök igen.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.DeviceServiceStarting">
+    <value>Enhetstjänsten startar</value>
+  </data>
+  <data xml:space="preserve" name="Connection.InvalidPortalResponse">
+    <value>Ogiltigt portalsvar.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.InvalidResponseSize">
+    <value>Ogiltig storlek på portalsvaret.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.OrganizationConnected">
+    <value>Ansluten till din organisation</value>
+  </data>
+  <data xml:space="preserve" name="Connection.PipeOwnerUnknown">
+    <value>Det går inte att identifiera ägaren av portalens pipe</value>
+  </data>
+  <data xml:space="preserve" name="Connection.RetryingSoon">
+    <value>Tjänsten försöker igen om en stund</value>
+  </data>
+  <data xml:space="preserve" name="Connection.ServiceRestartingHint">
+    <value>Den kanske startar om. Försök igen om en stund.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.UnsupportedServiceVersion">
+    <value>Enhetstjänstens version stöds inte.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.UntrustedPipeOwner">
+    <value>Portalanslutningen tillhör inte den körande CloneDeploy Agent-tjänsten.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WaitForAgentStartup">
+    <value>Agenttjänsten körs inte ännu. Vänta tills den startar och uppdatera.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WaitingForApproval">
+    <value>Väntar på administratörens godkännande</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WaitingForFirstCheckIn">
+    <value>Väntar på första kontakt</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WaitingForIdentityReset">
+    <value>Väntar på godkännande av identitetsåterställning</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WaitingForOrganization">
+    <value>Väntar på anslutning till din organisation</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WindowsError">
+    <value>{0}: {1} (Windows-fel {2}).</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WindowsServiceQueryFailed">
+    <value>Det går inte att fråga Windows-tjänsterna</value>
+  </data>
+  <data xml:space="preserve" name="Device.AccountDescription">
+    <value>Den här datorn och ditt arbetskonto.</value>
+  </data>
+  <data xml:space="preserve" name="Device.AgentServiceVersion">
+    <value>Version av ansluten agenttjänst</value>
+  </data>
+  <data xml:space="preserve" name="Device.AgentVersion">
+    <value>Agentversion {0}</value>
+  </data>
+  <data xml:space="preserve" name="Device.AgentVersionDescription">
+    <value>Version av den anslutna Windows-tjänsten CloneDeployAgent.</value>
+  </data>
+  <data xml:space="preserve" name="Device.AgentVersionNotReportedHint">
+    <value>Tjänsten rapporterar inte sin version. Installera om den aktuella utvecklingsagenten och uppdatera.</value>
+  </data>
+  <data xml:space="preserve" name="Device.AgentVersionPrefix">
+    <value>Agentversion</value>
+  </data>
+  <data xml:space="preserve" name="Device.LastCheckIn">
+    <value>Senaste kontakt: {0:g}</value>
+  </data>
+  <data xml:space="preserve" name="Device.LocalWindowsUser">
+    <value>Lokal Windows-användare</value>
+  </data>
+  <data xml:space="preserve" name="Device.Overview">
+    <value>ENHETSÖVERSIKT</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.CancelFailed">
+    <value>Det gick inte att begära avbrott. Kontrollera agenttjänsten.</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.DefaultPackName">
+    <value>{0} drivrutiner {1}</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.ExportDescription">
+    <value>Exportera installerade tredjepartsdrivrutiner och ladda upp dem som ett nytt paket för datorns modell.</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.ExportHeading">
+    <value>Exportera installerade tredjepartsdrivrutiner för den här modellen</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.InvalidCollectionResponse">
+    <value>Ogiltigt svar från drivrutinsinsamlingen.</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.ReadProgressFailed">
+    <value>Det gick inte att läsa insamlingsförloppet. Kontrollera agenttjänsten.</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.StartCollectionFailed">
+    <value>Det gick inte att starta insamlingen av drivrutiner. Kontrollera administratörsinloggningen och agenttjänsten.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AboutSupportRequests">
+    <value>Om supportärenden</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ActualSize">
+    <value>Verklig storlek</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AllMyRequests">
+    <value>Alla mina ärenden</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AttachScreenshot">
+    <value>Bifoga skärmbild</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AutomaticReplies">
+    <value>Nya svar visas automatiskt. Du kan stänga fönstret och återkomma senare för att se uppdateringar.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AutomaticRepliesWhileOpen">
+    <value>Nya svar visas automatiskt medan fliken är öppen. Du kan stänga portalen och återkomma senare för att se uppdateringar.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AwaitingReview">
+    <value>Väntar på granskning</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.BriefDescription">
+    <value>Kort beskrivning</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ChooseRequestDescription">
+    <value>Välj ett ärende för att se konversationen eller skapa ett nytt.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ChooseScreenshot">
+    <value>Välj skärmbild</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Close">
+    <value>Stäng</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Closed">
+    <value>Stängt</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ConfirmDiscardDraft">
+    <value>Kasta den oskickade beskrivningen eller svaret?</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DefaultSupportResponse">
+    <value>Vårt supportteam svarar när det är tillgängligt.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DescriptionOrReply">
+    <value>Beskrivning eller svar</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DescriptionRequired">
+    <value>Ange en kort och en detaljerad beskrivning.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DetailedDescription">
+    <value>Detaljerad beskrivning</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DetailedDescriptionRequired">
+    <value>Ange den obligatoriska beskrivningen.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DisabledByAdministrator">
+    <value>{0} är inaktiverat av administratören.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.FilterRequestsByStatus">
+    <value>Filtrera ärenden efter status</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.FitToWindow">
+    <value>Anpassa till fönstret</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.GetYourScreenshotReady">
+    <value>Förbered din skärmbild</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.HowCanWeHelp">
+    <value>Hur kan vi hjälpa dig?</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.InProgress">
+    <value>Pågående</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.InvalidResponse">
+    <value>Ogiltigt hjälpsvar.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.LoadEarlierMessages">
+    <value>Ladda tidigare meddelanden</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.MessageSent">
+    <value>Ditt meddelande har skickats.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.MyHelpRequests">
+    <value>Mina hjälpärenden</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NamedUpdate">
+    <value>{0} uppdatering</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NewHelpRequest">
+    <value>Nytt hjälpärende</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NewNamedRequest">
+    <value>Nytt {0}-ärende</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Next">
+    <value>Nästa</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NoMatchingRequestsHint">
+    <value>Inga ärenden matchar vyn. Välj Begär hjälp för att börja.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NoRequestsWithStatus">
+    <value>Inga ärenden med denna status</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NoRequestsYet">
+    <value>Inga ärenden ännu</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.OpenNamed">
+    <value>Öppna {0}</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.PreviewAttachedScreenshot">
+    <value>Förhandsvisa bifogad skärmbild</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Previous">
+    <value>Föregående</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RefreshFailedDraftSaved">
+    <value>Det gick inte att uppdatera ärenden. Utkastet finns kvar; uppdatera igen.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RemoveAttachedScreenshot">
+    <value>Ta bort bifogad skärmbild</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RemoveScreenshot">
+    <value>Ta bort skärmbild</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ReopenRequest">
+    <value>Öppna ärendet igen</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ReplyPlaceholder">
+    <value>Skriv ditt svar här…</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ReplyRequired">
+    <value>Skriv ditt svar först.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RequestReopened">
+    <value>Ditt ärende öppnades igen.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RequestUpdated">
+    <value>#{0} · Uppdaterad {1:g}</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RetakeScreenshot">
+    <value>Ta ny skärmbild</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Screenshot">
+    <value>Skärmbild</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ScreenshotAttached">
+    <value>Skärmbild bifogad</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SendOrClearDraftFirst">
+    <value>Skicka utkastet eller rensa texten och ta bort skärmbilden innan du väljer ett annat ärende.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SendReply">
+    <value>Skicka svar</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SendUnconfirmed">
+    <value>Sändningen bekräftades inte. Försök igen för att kontrollera samma ärende utan att duplicera det.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SignInOnDeviceTab">
+    <value>Logga in med ditt arbetskonto på fliken Enhet för att se dina ärenden.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SubmitRequest">
+    <value>Skicka ärende</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SupportUnavailable">
+    <value>Det gick inte att nå supporten. Försök igen om en stund.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SupportUnavailableDraftSaved">
+    <value>Det gick inte att nå supporten. Utkastet finns kvar; uppdatera eller skicka igen.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.TakeScreenshot">
+    <value>Ta skärmbild</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.TheScreenshotCouldNotBeLoaded">
+    <value>Skärmdumpen kunde inte laddas.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.TicketScreenshot">
+    <value>Ärendets skärmbild</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Title">
+    <value>Hjälp hjälpa till</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.UnavailableRetry">
+    <value>Hjälpen är inte tillgänglig. Kontrollera anslutningen och försök igen.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.UnreadCount">
+    <value>{0} olästa {1}-ärende(n)</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.UnreadIndicator">
+    <value>● Oläst</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.UpdatesCount">
+    <value>Det finns uppdateringar för {0} ärende(n). Öppna {1} för att se dem.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ViewScreenshot">
+    <value>Visa skärmdump</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.WaitingOnYou">
+    <value>Väntar på dig</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.WorkAccountChanged">
+    <value>Arbetskontot har ändrats. Uppdatera för att fortsätta.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.You">
+    <value>Du</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.AgentUninstallWarning">
+    <value>CloneDeploy-agenten avinstalleras före avbildningen. </value>
+  </data>
+  <data xml:space="preserve" name="Imaging.CaptureDestination">
+    <value>Mål för avbildning</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.CaptureDestinationDescription">
+    <value>Skapa en ny version av en befintlig avbildning eller skapa en ny avbildning.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.CaptureDestinationPermissionRequired">
+    <value>Behörigheten Visa avbildningar eller Skapa avbildning krävs för att välja mål för avbildningen.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.ConfirmRunPreparation">
+    <value>Kör '{0}' på den här datorn?
+
+Spara allt arbete först. Valda inställningar och skript körs som SYSTEM. {1} Förberedelsen fortsätter om fönstret stängs.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.Continue">
+    <value>Fortsätt</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.CreateNewImage">
+    <value>Skapa ny avbildning</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.FFUWholeGPTDisk">
+    <value>FFU — hela GPT-disken</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.ImageName">
+    <value>Avbildningsnamn</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.ImageType">
+    <value>Bildtyp</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.InvalidImageName">
+    <value>Ange ett giltigt avbildningsnamn.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.InvalidPreparationResponse">
+    <value>Ogiltigt svar från avbildningsförberedelsen.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.LoadProfilesFailed">
+    <value>Det gick inte att läsa förberedelseprofilerna. Kontrollera administratörsinloggningen och serveranslutningen.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.NoEnabledProfiles">
+    <value>Inga aktiverade profiler. Skapa en under Avbildning → Förberedelseprofiler i webbgränssnittet.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.PreparationDescription">
+    <value>Förbered datorn för avbildning. Profilen kan stänga av datorn eller starta WinPE för automatisk avbildning. Spara arbetet innan du börjar.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.PreparationStartUnconfirmed">
+    <value>Det gick inte att bekräfta att förberedelsen startade. Kontrollera förloppet och agentloggen innan du försöker igen.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.PrepareAndCapture">
+    <value>Förbered och avbilda</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.PrepareComputerForImageCapture">
+    <value>Förbered dator för avbildning</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.PrepareThisComputer">
+    <value>Förbered den här datorn för avbildning</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.ReadProgressFailed">
+    <value>Det gick inte att läsa förberedelseförloppet. Kontrollera agenttjänsten och loggen.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.RestartAndCaptureDescription">
+    <value>Efter förberedelsen startar datorn om till WinPE och skapar en ny avbildningsversion. Låt Ethernet vara anslutet.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.SelectAnImage">
+    <value>Välj en bild</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.ShutdownAfterPreparationDescription">
+    <value>Efter förberedelsen stängs datorn av. Starta därefter din avbildningsmiljö.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.UseExistingImage">
+    <value>Använd befintlig avbildning</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.WIMWindowsPartition">
+    <value>WIM (Windows Partition)</value>
+  </data>
+  <data xml:space="preserve" name="LoginPolicies.ExecutionError">
+    <value>Inloggningspolicyer: {0}</value>
+  </data>
+  <data xml:space="preserve" name="LoginPolicies.FileChecksumMismatch">
+    <value>Kontrollsumman för inloggningsfilen stämmer inte.</value>
+  </data>
+  <data xml:space="preserve" name="LoginPolicies.InvalidCommand">
+    <value>Ogiltigt kommando i inloggningspolicyn.</value>
+  </data>
+  <data xml:space="preserve" name="LoginPolicies.InvalidFile">
+    <value>Ogiltig inloggningspolicyfil.</value>
+  </data>
+  <data xml:space="preserve" name="LoginPolicies.ServerCredentialsUnavailable">
+    <value>Inloggningsåtgärder kan inte komma åt agentens serverautentiseringsuppgifter.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgeMessageFailed">
+    <value>Meddelandet kunde inte bekräftas. Uppdatera meddelandehistoriken och försök igen.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgeNotificationFailed">
+    <value>Aviseringen kunde inte bekräftas. Den kan ha upphört; uppdatera och försök igen.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgedAt">
+    <value>Bekräftat {0:g}</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgedLabel">
+    <value>Bekräftat: {0:g}</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgementRequired">
+    <value>Bekräftelse krävs</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgmentNotSaved">
+    <value>Bekräftelsen sparades inte. Försök igen.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.CloneDeployMessage">
+    <value>CloneDeploy-meddelande</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.CloneDeployRemoteAccessRequest">
+    <value>Begäran om fjärråtkomst från CloneDeploy</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.CloneDeployRemoteSharing">
+    <value>Fjärrdelning med CloneDeploy</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.CloseMessage">
+    <value>Stäng meddelande</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Critical">
+    <value>Kritiskt</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Expired">
+    <value>Förfallna</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.ExpiresAt">
+    <value>Upphör: {0:g}</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.HistoryDescription">
+    <value>Senaste meddelandena från din organisation för den här enheten. Sparas i upp till 7 dagar.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Information">
+    <value>Information</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.InvalidSnapshot">
+    <value>Ogiltig meddelandeöversikt.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.NoNotificationsYet">
+    <value>Inga aviseringar ännu.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.NoRecentMessages">
+    <value>Inga nya meddelanden för enheten.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Notification">
+    <value>Avisering</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.OpenDetails">
+    <value>Öppna detaljer</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.OpenDetailsDescription">
+    <value>{0}. {1}. Öppna detaljer.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.OpenHelp">
+    <value>Öppna hjälp</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.OpenNotifications">
+    <value>Öppna aviseringar</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.RefreshFailedAcknowledgmentsRetained">
+    <value>Det gick inte att uppdatera aviseringar. Sparade bekräftelser skickas automatiskt igen.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.RemoteAccessRequest">
+    <value>Fjärråtkomstbegäran</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.RemoteSharingIsActive">
+    <value>Fjärrdelning är aktiv</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.SaveAcknowledgmentFailed">
+    <value>Det gick inte att spara bekräftelsen. Försök när agenttjänsten är tillgänglig.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Success">
+    <value>Lyckades</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.UnavailableRetry">
+    <value>Aviseringar är inte tillgängliga. Försök igen om en stund.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Warning">
+    <value>Varning</value>
+  </data>
+  <data xml:space="preserve" name="Policies.AssignedDescription">
+    <value>Aktiva policyer tilldelade den här enheten. Hanteras av din organisation.</value>
+  </data>
+  <data xml:space="preserve" name="Policies.LastStarted">
+    <value>Senast startad</value>
+  </data>
+  <data xml:space="preserve" name="Policies.LatestRunDescription">
+    <value>Senaste serverrapporterade körning av varje publicerad policy på enheten. Lokala tider.</value>
+  </data>
+  <data xml:space="preserve" name="Policies.NoReportedRun">
+    <value>Ingen rapporterad körning</value>
+  </data>
+  <data xml:space="preserve" name="Policies.NoneAssigned">
+    <value>Inga aktiva policyer har tilldelats enheten.</value>
+  </data>
+  <data xml:space="preserve" name="Policies.NotRunYet">
+    <value>Inte körd ännu</value>
+  </data>
+  <data xml:space="preserve" name="Policies.StartedResultPending">
+    <value>Startad {0:g} · väntar på resultat</value>
+  </data>
+  <data xml:space="preserve" name="Policies.ViewResultsDescription">
+    <value>Visa enhetspolicyer och deras senaste rapporterade körningsresultat</value>
+  </data>
+  <data xml:space="preserve" name="Portal.CloseDescription">
+    <value>Stänger portalen och ikonen i meddelandefältet för denna session. Aviseringar återupptas när gränssnittet öppnas igen.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.ExecutableUnavailable">
+    <value>Portalens programfil är inte tillgänglig. Öppna den igen från Program.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.LoadFailed">
+    <value>Det gick inte att läsa in portalen: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Portal.Navigation">
+    <value>Portalnavigering</value>
+  </data>
+  <data xml:space="preserve" name="Portal.Open">
+    <value>Öppna portalen</value>
+  </data>
+  <data xml:space="preserve" name="Portal.OpenBrowserManually">
+    <value>Det gick inte att öppna webbläsaren. Öppna adressen manuellt.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.OpenLowercase">
+    <value>Öppna portalen</value>
+  </data>
+  <data xml:space="preserve" name="Portal.RefreshDescription">
+    <value>Läs in portalens policyer och kategorier på nytt. Hjälpärenden uppdateras automatiskt.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.RegisterUpdateRestartFailed">
+    <value>Det gick inte att registrera portalens omstart efter uppdatering: HRESULT 0x{0:X8}</value>
+  </data>
+  <data xml:space="preserve" name="Portal.RestartFailed">
+    <value>Omstart av portalen misslyckades: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Portal.RestartManually">
+    <value>Portalen kan inte starta om just nu. Stäng den och öppna den igen från Program.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.RestartUnavailable">
+    <value>Portalen kan inte starta om just nu.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.Title">
+    <value>Självservice Portal</value>
+  </data>
+  <data xml:space="preserve" name="Portal.UpdatedAt">
+    <value>Uppdaterad {0:t}</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.AccessibilityPermission">
+    <value>Behörighet för hjälpmedel</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.AccessibilityRequired">
+    <value>Behörighet för hjälpmedel krävs.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.AttachmentRejected">
+    <value>Fjärranslutningen avvisades.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.CaptureDisplayFailed">
+    <value>macOS kunde inte fånga skärmen. Kontrollera behörigheten för skärminspelning och starta om portalen.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.CaptureSurfaceFailed">
+    <value>Det gick inte att skapa inspelningsytan.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ClipboardTextExceedsTheLimit">
+    <value>Urklippstexten överskrider gränsen.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ClipboardTextSent">
+    <value>Text skickad till fjärrurklipp.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ClipboardUnavailable">
+    <value>Urklipp är inte tillgängligt.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ConnectedToScreen">
+    <value>{0} är ansluten till din skärm.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ConsentDescription">
+    <value>{0} begär att få se och styra din dator. Tillåta åtkomst? Begäran upphör efter 60 sekunder.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ConsentRequest">
+    <value>{0} vill se och styra din skärm.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ConsoleSessionUnavailable">
+    <value>Konsolsessionen är inte tillgänglig.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.CtrlAltDeleteWindowsOnly">
+    <value>Ctrl+Alt+Delete är endast tillgängligt i Windows.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.DesktopUnavailable">
+    <value>Mac-skrivbordet är låst, sessionen har bytts eller behörigheten för skärminspelning har tagits bort.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.DisplaysUnavailable">
+    <value>Skärmar är inte tillgängliga.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.EndedPrefix">
+    <value>Fjärrsupport avslutad: </value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.FrameRateUpdated">
+    <value>Bildfrekvensen uppdaterades.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.FrameTooLarge">
+    <value>Skrivbordsbilden överskrider gränsen.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.InputEventFailed">
+    <value>macOS kunde inte skapa en inmatningshändelse.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.InvalidCommand">
+    <value>Ogiltigt fjärrkommando.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.InvalidResponse">
+    <value>Ogiltigt svar om fjärråtkomst.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.MessageQueued">
+    <value>Meddelandet köades för den här användaren.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.MonitorSelected">
+    <value>Skärm vald.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.MonitorUnavailable">
+    <value>Skärmen är inte tillgänglig.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.NoDisplay">
+    <value>Ingen skärm tillgänglig.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.NoDisplayAvailable">
+    <value>Ingen skärm är tillgänglig.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.QualityUpdated">
+    <value>Visningskvaliteten uppdaterades.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.RemoteSupport">
+    <value>Fjärrsupport</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.RemoteSupportConnected">
+    <value>Fjärrsupport ansluten</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.RemoteSupportRequest">
+    <value>Begäran om fjärrsupport</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.RequestExpired">
+    <value>Fjärrbegäran har upphört.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.RestartPortal">
+    <value>Starta om portalen</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ScreenRecordingPermission">
+    <value>Behörighet för skärminspelning</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.SendDecisionFailed">
+    <value>Det gick inte att skicka ditt beslut om fjärråtkomst. Försök igen.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.SharingActiveDescription">
+    <value>{0} kan se och styra din dator. Du kan sluta dela när som helst.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.StartFailed">
+    <value>Det gick inte att starta fjärrsupport.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.UnsupportedDisplaySize">
+    <value>Skärmens dimensioner stöds inte.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ViewOnlyAccessibilityRequired">
+    <value>Endast visning: behörighet för hjälpmedel har inte beviljats.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.CaptureFailed">
+    <value>Det gick inte att ta skärmbilden.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.CaptureFailedPermissionHint">
+    <value>Skärmbildstagningen misslyckades. Kontrollera behörigheten för skärminspelning och försök igen.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.ImageTooLargeHint">
+    <value>Skärmbilden blev för stor. Försök visa bara appen du behöver hjälp med.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.MacPermissionInstructions">
+    <value>Tillåt CloneDeploy Portal i Systeminställningar → Integritet och säkerhet → Skärminspelning. Starta sedan om portalen och försök igen.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.MultipleMonitorsHint">
+    <value>Använder du flera skärmar? Placera appen på samma skärm som självserviceportalen.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.PrepareMacInstructions">
+    <value>Öppna det du vill visa supporten. Portalen döljs medan du väljer ett område. Tryck på mellanslag för att välja ett fönster eller Escape för att avbryta.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.PrepareWindowsInstructions">
+    <value>Öppna appen eller meddelandet du behöver hjälp med och välj Ta skärmbild. Portalen döljs tillfälligt och allt annat synligt fångas.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.PreviewHint">
+    <value>Klicka för förhandsvisning · Skickas med ditt meddelande</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.PrivacyReminder">
+    <value>Kontrollera lösenord, personuppgifter och annat känsligt innehåll. Inget skickas innan du skickar ärendet.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.RequiresMacOS">
+    <value>Skärmbildstagning kräver macOS.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.ReviewBeforeAttaching">
+    <value>Granska skärmbilden innan du bifogar</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.ReviewBeforeSendingHint">
+    <value>Du får granska skärmbilden innan du bifogar den till ärendet.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.SelectSmallerArea">
+    <value>Skärmbilden är för stor. Välj ett mindre område.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.StartFailed">
+    <value>Det gick inte att starta skärmbildstagningen.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.Unavailable">
+    <value>Skärmbilden är inte tillgänglig.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.AvailableDescription">
+    <value>Tillgängligt på den här enheten. Varje policy körs med sina konfigurerade behörigheter.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.CheckingRequestAccepted">
+    <value>Kontrollerar om begäran accepterades. Vänta innan du försöker igen.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.CompletedAt">
+    <value>Slutfört {0:g}</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.CompletionUnconfirmed">
+    <value>Slutförande ej bekräftat · uppdatera för resultat</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.CompletionVerificationFailed">
+    <value>Det gick inte att bekräfta att åtgärden lyckades: {0} Kontrollera policyhistoriken innan du kör igen.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Confirm">
+    <value>Bekräfta</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.ConfirmRunOnMac">
+    <value>Kör {0} på den här Mac-datorn?</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.LastRun">
+    <value>Senaste körning: {0:g} · {1}</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.LatestRunDescription">
+    <value>Senaste rapporterade körning av den publicerade versionen. Användarpolicyer visar dina körningar på enheten; SYSTEM-policyer visar enhetens körningar.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Loading">
+    <value>Läser in självservice…</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.NoAvailablePolicies">
+    <value>Inga självservicepolicyer är tillgängliga för ditt konto på enheten.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.NoMatchingPolicies">
+    <value>Inga självservicepolicyer matchar kontot, enheten eller filtren.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.NoSearchMatches">
+    <value>Inga policyer matchar sökningen eller kategorin.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.PolicyCompleted">
+    <value>{0} slutfördes utan fel.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.PolicyUnsuccessful">
+    <value>Policyn slutfördes inte korrekt. Se policyhistoriken för detaljer.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.RefreshFailed">
+    <value>Det gick inte att uppdatera. Försök igen när du är ansluten.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.RequestFailed">
+    <value>Begäran kunde inte slutföras. Kontrollera agentens anslutning, version och policyåtkomst. Granska historiken innan du försöker igen.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.RequestingPolicy">
+    <value>Begär {0}…</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Run">
+    <value>Kör</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Running">
+    <value>Körs</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.RunningPolicy">
+    <value>Kör {0}…</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SaveWorkReminder">
+    <value>Spara arbetet innan du fortsätter. Datorn kan starta om.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Search">
+    <value>Sök i självservice</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SearchDescription">
+    <value>Sök policynamn och beskrivningar</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SearchPlaceholder">
+    <value>Sök i självservice…</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SelectRunHint">
+    <value>Välj Kör för att starta en policy.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SelfServiceIsDisabledByYourAdministrator">
+    <value>Självservice är inaktiverad av din administratör.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SignInRequired">
+    <value>Logga in med ditt arbetskonto för att använda självservice.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Unavailable">
+    <value>Självservice är inte tillgänglig.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.AccountCheckFailed">
+    <value>Det gick inte att kontrollera ditt arbetskonto. Uppdatera för att försöka igen.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.AvailableAfterEnrollment">
+    <value>Inloggning blir tillgänglig när enheten är registrerad.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.BrowserPageTitle">
+    <value>Portalinloggning</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.BrowserVerificationHint">
+    <value>Webbläsaren hanterar inloggningen och eventuell verifiering.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.CancelledOrExpired">
+    <value>Inloggningen avbröts eller upphörde.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.CancelledOrExpiredRetry">
+    <value>Inloggningen avbröts eller upphörde. Du kan försöka igen.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.CheckEnrollmentAndVersion">
+    <value>Inloggning är inte tillgänglig. Kontrollera serverversionen och enhetens registrering.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.CompleteInBrowser">
+    <value>Slutför inloggningen i webbläsaren.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.CompleteReturnToPortal">
+    <value>Inloggad. Du kan stänga fliken och återgå till portalen.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.ConnectActiveDirectory">
+    <value>Anslut ditt Active Directory-konto till portalen.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.ConnectWorkAccountDescription">
+    <value>Anslut ditt arbetskonto för support, aviseringar och policyer som tilldelats dig.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.ConnectionFailed">
+    <value>Det gick inte att slutföra inloggningen. Kontrollera anslutningen och försök igen.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.DirectoryAccountAmbiguous">
+    <value>Ditt konto matchar flera katalogkällor. Kontakta administratören.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.DirectoryAccountDisabled">
+    <value>Ditt katalogkonto är inaktiverat.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.DirectoryAccountMissing">
+    <value>Ditt konto ingår inte längre i katalogens synkroniseringsomfång.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.DirectoryUserDetails">
+    <value>Kataloganvändare: {0}
+{1}
+{2}</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.ExpiredOrRejected">
+    <value>Inloggningen upphörde eller avvisades. Försök igen.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.IncompleteRetry">
+    <value>Inloggningen slutfördes inte. Försök igen.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.InvalidSavedSession">
+    <value>Ogiltig sparad portalsession.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.InvalidWorkAccountResponse">
+    <value>Ogiltigt svar om arbetskonto.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.KeychainRequiredToRemember">
+    <value>Tillfälligt inloggad. Åtkomst till macOS-nyckelringen krävs för att spara sessionen.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.KeychainUnavailable">
+    <value>Åtkomst till macOS-nyckelringen var inte tillgänglig. Tillåt åtkomst eller lås upp din inloggningsnyckelring.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.NoWorkAccount">
+    <value>Inget arbetskonto inloggat</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.OpenBrowserFailed">
+    <value>Det gick inte att öppna webbläsaren.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.OrganizationConnected">
+    <value>Inloggad i din organisation.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.RestartFromPortal">
+    <value>Inloggningen slutfördes inte. Börja om från portalen.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.RestoreSessionFailed">
+    <value>Det gick inte att återställa sessionen. Kontrollera anslutningen och tillåt åtkomst till macOS-nyckelringen om du blir tillfrågad.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SessionEndedDeviceTab">
+    <value>Din session avslutades. Logga in igen på fliken Enhet.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SessionEndedReconnect">
+    <value>Din session avslutades. Logga in igen för att återansluta arbetskontot.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SessionRevokedKeychainEntryRetained">
+    <value>Utloggad. Den sparade nyckelringsposten kunde inte tas bort, men sessionen har återkallats.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SignIn">
+    <value>Logga in</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SignOut">
+    <value>Logga ut</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SignOutFailed">
+    <value>Det gick inte att logga ut. Anslut igen och försök på nytt.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SignOutIncomplete">
+    <value>Det gick inte att slutföra utloggningen. Uppdatera för att kontrollera kontot.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SignedInAs">
+    <value>Inloggad som {0}</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.UserSignedIn">
+    <value>{0} • Inloggad</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.VerifySessionFailed">
+    <value>Det gick inte att verifiera sessionen. Uppdatera när du är ansluten.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WindowsAccountLinked">
+    <value>Ditt Windows-konto kopplas automatiskt till din organisation.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WindowsAccountNotLinked">
+    <value>Det här Windows-kontot är inte kopplat till en synkroniserad kataloganvändare.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WindowsAccountNotMatched">
+    <value>Ditt Windows-konto kunde inte matchas. Logga in för att använda ditt arbetskonto på enheten.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WithWorkAccount">
+    <value>Logga in med ett arbetskonto</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WithYourWorkAccount">
+    <value>Logga in med ditt arbetskonto</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WorkAccountBanner">
+    <value>Logga in med ditt arbetskonto för support, personliga aviseringar och tilldelade policyer.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WorkAccountHeading">
+    <value>Logga in på ditt arbetskonto</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WorkAccountUnavailable">
+    <value>Inloggning med arbetskonto är inte tillgänglig. Kontakta administratören.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.AdministratorPermissionRequired">
+    <value>Administratörssessionen tillåter inte USB-skapande. Kontrollera serverversionen och logga in igen.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.ConfirmEraseDisk">
+    <value>Radera permanent ALLA partitioner och filer på:
+
+{0}
+
+Skapa WinPE-startmedia för {1} på den här disken?</value>
+  </data>
+  <data xml:space="preserve" name="Usb.CreateMediaDescription">
+    <value>Skapa WinPE-media för distribution och återställning</value>
+  </data>
+  <data xml:space="preserve" name="Usb.DownloadAndEraseDescription">
+    <value>Hämta en WinPE-startmiljö och välj sedan en extern disk att radera och göra startbar.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.DownloadAndVerifyDescription">
+    <value>Hämta och verifiera den valda WinPE-ISO:n.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.EraseExternalDisk">
+    <value>Radera extern disk</value>
+  </data>
+  <data xml:space="preserve" name="Usb.ExternalDiskEraseWarning">
+    <value>Extern disk (alla partitioner raderas)</value>
+  </data>
+  <data xml:space="preserve" name="Usb.InvalidResponse">
+    <value>Ogiltigt svar från USB-verktyget.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.OperationInProgress">
+    <value>Slutför eller avbryt den pågående USB-åtgärden innan du hämtar en annan ISO.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.ReadProgressFailed">
+    <value>Det gick inte att läsa USB-förloppet. Kontrollera agenttjänsten.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.RequestFailed">
+    <value>Det gick inte att slutföra USB-begäran. Kontrollera agenttjänsten och administratörsinloggningen.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.SelectBootEnvironment">
+    <value>Välj en WinPE-startmiljö att hämta.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.SelectReadyBuildFirst">
+    <value>Uppdatera startmiljöerna och välj ett färdigt WinPE-bygge innan du hämtar.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.WaitingForAgent">
+    <value>Väntar på att agenten ska slutföra begäran.</value>
+  </data>
+</root>

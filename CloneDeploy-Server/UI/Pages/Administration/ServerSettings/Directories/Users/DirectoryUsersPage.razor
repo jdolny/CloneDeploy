@@ -1,0 +1,92 @@
+@page "/directory-users"
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@inject DirectoryService Directories
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.DirectoryUsersPage.DirectoryUsers]" />
+
+<MudPaper Class="device-list-filters device-search-panel pa-4 mb-4" Elevation="0" Outlined="true">
+    <MudGrid>
+        <MudItem xs="12" md="4">
+            <MudSelect T="int" Label="@Loc[LocKeys.Ui.OuBrowserPage.Directory]" Value="_sourceId" ValueChanged="SelectSourceAsync" Strict="true" Placeholder="@Loc[LocKeys.Ui.DirectoryUsersPage.SelectADirectory]" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var source in _sources)
+                {
+                    <MudSelectItem Value="@source.Id">@source.Name@(!source.IsEnabled ? UiText.Get(LocKeys.Ui.DirectoryUsersPage.SyncDisabled) : "")</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="8">
+            <MudTextField T="string" @bind-Value="_search" Immediate="true" Label="@Loc[LocKeys.Ui.DirectoryUsersPage.SearchDirectoryUsers]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" HelperText="@Loc[LocKeys.Ui.DirectoryUsersPage.NameAccountUPNEmailSIDOrDirectoryPath]"/>
+        </MudItem>
+    </MudGrid>
+    <MudLink Href="/administration/server/directories" Class="ml-4">@Loc[LocKeys.Ui.DirectoryUsersPage.ManageDirectorySync]</MudLink>
+</MudPaper>
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+@if (!_loading && _sources.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">@Loc[LocKeys.Ui.DirectoryUsersPage.ConfigureAndSynchronizeAnActiveDirectoryConnectionToList]</MudAlert>
+}
+<MudDataGrid T="DirectoryObject" Items="_users" QuickFilter="Matches" Loading="_loading" Dense="true" Filterable="true"
+             FilterMode="DataGridFilterMode.ColumnFilterMenu" Class="device-list-grid" Elevation="0" Outlined="true">
+    <ToolBarContent><MudIcon Icon="@Icons.Material.Outlined.People" Color="Color.Primary" Class="mr-2"/><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DirectoryUsersPage.DirectoryUsers_124de331]</MudText><MudSpacer/><MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Ui.DirectoryUsersPage.RefreshDirectoryUsers]"><MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="@Snackbar.GuardAction(() => _loading || _sourceId == 0, UiText.Get(LocKeys.Ui.DirectoryUsersPage.SelectADirectoryConnectionFirst), OnReloadClicked)" Disabled="@(_loading)" aria-label="@Loc[LocKeys.Ui.DirectoryUsersPage.RefreshDirectoryUsers]"/></MudTooltip></ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]">
+            <CellTemplate><MudLink Href="@($"/directory-users/{context.Item.DirectorySourceId}/{context.Item.ObjectGuid}")">@context.Item.Name</MudLink></CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.AccountName" Title="@Loc[LocKeys.Ui.OuBrowserPage.Account]"/>
+        <PropertyColumn Property="x => x.UserPrincipalName" Title="@Loc[LocKeys.Ui.DirectoryObjectsTab.UserPrincipalName]"/>
+        <PropertyColumn Property="x => x.Email" Title="@Loc[LocKeys.User.Email]"/>
+        <PropertyColumn Property="x => x.Disabled" Title="@Loc[LocKeys.Ui.CertificateAuthorityTab.Disabled]"/>
+        <PropertyColumn Property="x => x.ObjectSid" Title="@Loc[LocKeys.Ui.DirectoryObjectsTab.SID]"/>
+        <PropertyColumn Property="x => x.DistinguishedName" Title="@Loc[LocKeys.Device.DirectoryPath]"/>
+    </Columns>
+    <NoRecordsContent><MudText Class="pa-6">@Loc[LocKeys.Ui.DirectoryUsersPage.NoDirectoryUsersFoundEnsureYourSyncSearchBases]</MudText></NoRecordsContent>
+    <PagerContent><MudDataGridPager T="DirectoryObject"/></PagerContent>
+</MudDataGrid>
+
+@code {
+    private List<DirectorySource> _sources = [];
+    private List<DirectoryObject> _users = [];
+    private int _sourceId;
+    private string _search = "";
+    private string? _error;
+    private bool _loading = true;
+    private int _request;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Directories.GetSourcesAsync();
+        if (!result.Success)
+        {
+            _error = Loc[result.Error!.Code, result.Error.Args];
+            _loading = false;
+            return;
+        }
+        _sources = result.Data!.ToList();
+        await SelectSourceAsync(_sources.FirstOrDefault()?.Id ?? 0);
+    }
+
+    private async Task SelectSourceAsync(int sourceId)
+    {
+        _sourceId = sourceId;
+        await OnReloadClicked();
+    }
+
+    private async Task OnReloadClicked()
+    {
+        var request = ++_request;
+        _users = [];
+        _error = null;
+        _loading = _sourceId != 0;
+        if (_sourceId == 0) return;
+        var result = await Directories.GetUsersAsync(_sourceId);
+        if (request != _request) return;
+        if (result.Success) _users = result.Data!;
+        else _error = Loc[result.Error!.Code, result.Error.Args];
+        _loading = false;
+    }
+
+    private bool Matches(DirectoryObject user) => string.IsNullOrWhiteSpace(_search) ||
+        new[] { user.Name, user.AccountName, user.UserPrincipalName, user.Email, user.ObjectSid, user.DistinguishedName }
+            .Any(value => value?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true);
+}

@@ -1,0 +1,15 @@
+@using CloneDeploy_Agent.Contracts
+<MudDialog>
+    <DialogContent>
+        <DeployActionPage ActionGuid="ActionGuid" TestUpdates="TestUpdates" Embedded="true" SubmittingChanged="@((bool submitting) => _submitting = submitting)" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="MudDialog.Cancel" Disabled="_submitting">@Loc[LocKeys.Ui.ActionFiles.Close]</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public List<WindowsUpdateIdentity> TestUpdates { get; set; } = [];
+    [Parameter] public Guid ActionGuid { get; set; }
+    private bool _submitting;
+}

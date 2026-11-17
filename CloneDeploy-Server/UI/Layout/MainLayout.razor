@@ -1,0 +1,199 @@
+@using CloneDeploy_Server.UI.Authentication
+@inherits LayoutComponentBase
+
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Sections
+@inject AuthenticationStateProvider Authentication
+@inject AppUserService AppUserService
+@inject ILogger<MainLayout> Logger
+@inject AppUserService AccountPasswords
+
+<MudThemeProvider @ref="_themeProvider" Theme="@_theme" @bind-IsDarkMode="IsDarkMode"
+                  ObserveSystemDarkModeChange="@(_colorMode == ColorMode.System && !_loadingColorMode)" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<BrowserSessionMonitor />
+<div class="@(IsDarkMode ? "cd-shell cd-dark" : "cd-shell")">
+    <MudLayout>
+        <MudAppBar Elevation="0" Dense="true" Class="cd-topbar">
+            <a class="cd-brand" href="/dashboard" aria-label="@Loc[LocKeys.Ui.MainLayout.CloneDeployDashboard]">
+                <span class="cd-brand-heading"><img src="branding/clonedeploy-on-dark.svg" alt="" /><span class="cd-brand-name">Clone<span class="cd-brand-accent">Deploy</span></span></span>
+            </a>
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" aria-label="@Loc[LocKeys.Ui.MainLayout.ToggleNavigation]" OnClick="@((_) => DrawerToggle())" />
+            <MudSpacer />
+            <MudMenu Icon="@ColorModeIcon" Color="Color.Inherit" aria-label="@Loc[LocKeys.Ui.MainLayout.ColorMode]"
+                     Disabled="@(_loadingColorMode || _savingColorMode)">
+                <MudMenuItem Icon="@(_colorMode == ColorMode.Light ? Icons.Material.Filled.Check : Icons.Material.Outlined.LightMode)"
+                             OnClick="@Snackbar.GuardAction(() => _userId is null, UiText.Get(LocKeys.Ui.MainLayout.SignInBeforeSavingYourColorModePreference), () => SetColorModeAsync(ColorMode.Light))" Label="@Loc[LocKeys.User.LightMode]" />
+                <MudMenuItem Icon="@(_colorMode == ColorMode.Dark ? Icons.Material.Filled.Check : Icons.Material.Outlined.DarkMode)"
+                             OnClick="@Snackbar.GuardAction(() => _userId is null, UiText.Get(LocKeys.Ui.MainLayout.SignInBeforeSavingYourColorModePreference), () => SetColorModeAsync(ColorMode.Dark))" Label="@Loc[LocKeys.User.DarkMode]" />
+                <MudMenuItem Icon="@(_colorMode == ColorMode.System ? Icons.Material.Filled.Check : Icons.Material.Rounded.AutoMode)"
+                             OnClick="@Snackbar.GuardAction(() => _userId is null, UiText.Get(LocKeys.Ui.MainLayout.SignInBeforeSavingYourColorModePreference), () => SetColorModeAsync(ColorMode.System))" Label="@Loc[LocKeys.User.SystemMode]" />
+            </MudMenu>
+        
+            <PageHelp />
+            <AccountMenu IsEntra="@(_passwordOptions?.IsEntra)" />
+     
+        </MudAppBar>
+   
+   
+        <MudDrawer @bind-Open="_drawerOpen" Elevation="0" Variant="DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always" Width="240px" Class="cd-drawer">
+            <div class="cd-navigation">
+            <NavMenu/>
+            </div>
+            <div class="cd-sidebar-footer">
+                <span class="cd-brand-subtitle"><span>@($"Telos V{ReleaseNumber}")</span></span>
+            </div>
+        </MudDrawer>
+    
+    
+        <MudMainContent>
+            <MudContainer Class="cd-content" MaxWidth="MaxWidth.False" data-editor-theme="@(IsDarkMode ? "dark" : "light")">
+                <header class="cd-page-heading">
+                    <div class="cd-page-title"><SectionOutlet SectionName="page-title" /></div>
+                    <div class="cd-page-actions"><SectionOutlet SectionName="page-actions" /></div>
+                </header>
+                <CloneDeploy_Server.UI.Pages.Account.InstallationWelcomePanel>
+                    @Body
+                </CloneDeploy_Server.UI.Pages.Account.InstallationWelcomePanel>
+            </MudContainer>
+        </MudMainContent>
+    
+    </MudLayout>
+</div>
+<div id="blazor-error-ui" data-nosnippet>
+    @Loc[LocKeys.Ui.MainLayout.AnUnhandledErrorHasOccurred]
+    <a href="." class="reload">@Loc[LocKeys.Ui.MainLayout.Reload]</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+    private static readonly int ReleaseNumber = typeof(MainLayout).Assembly.GetName().Version?.Build ?? 1;
+    private AccountPasswordOptions? _passwordOptions;
+    private bool _drawerOpen = true;
+    public bool IsDarkMode;
+    private MudTheme? _theme;
+    private MudThemeProvider _themeProvider = null!;
+    private ColorMode _colorMode = ColorMode.System;
+    private int? _userId;
+    private bool _loadingColorMode = true;
+    private bool _savingColorMode;
+  
+    
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        _theme = new MudTheme
+        {
+            PaletteLight = _lightPalette,
+            PaletteDark = _darkPalette,
+            LayoutProperties = new LayoutProperties { DefaultBorderRadius = "8px", DrawerWidthLeft = "240px" }
+        };
+    }
+    
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        var user = (await Authentication.GetAuthenticationStateAsync()).User;
+        if (user.Identity?.IsAuthenticated == true
+            && int.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        {
+            _userId = userId;
+            var passwordOptions = await AccountPasswords.GetPasswordAsync();
+            if (passwordOptions.Success) _passwordOptions = passwordOptions.Data;
+            var result = await AppUserService.GetOptionsAsync(userId);
+            if (result.Success)
+                _colorMode = result.Data!.ColorMode;
+            else
+                Snackbar.Add(Loc[result.Error.Code, result.Error.Args].Value, Severity.Error);
+        }
+
+        await ApplyColorModeAsync(_colorMode);
+        _loadingColorMode = false;
+        StateHasChanged();
+    }
+
+    private async Task ApplyColorModeAsync(ColorMode colorMode)
+    {
+        _colorMode = colorMode;
+        IsDarkMode = colorMode switch
+        {
+            ColorMode.Light => false,
+            ColorMode.Dark => true,
+            _ => await _themeProvider.GetSystemDarkModeAsync()
+        };
+    }
+
+    private async Task SetColorModeAsync(ColorMode colorMode)
+    {
+        if (_loadingColorMode || _savingColorMode || _userId is not int userId || colorMode == _colorMode) return;
+
+        var previousMode = _colorMode;
+        _savingColorMode = true;
+        try
+        {
+            await ApplyColorModeAsync(colorMode);
+            StateHasChanged();
+            var result = await AppUserService.UpdateColorModeAsync(userId, colorMode);
+            if (!result.Success)
+            {
+                await ApplyColorModeAsync(previousMode);
+                Snackbar.Add(Loc[result.Error.Code, result.Error.Args].Value, Severity.Error);
+            }
+        }
+        catch (Microsoft.JSInterop.JSException exception)
+        {
+            await ApplyColorModeAsync(previousMode);
+            Logger.LogError(exception, "Failed to save the user's color mode.");
+            Snackbar.Add(UiText.Get(LocKeys.Ui.MainLayout.CouldNotSaveYourColorModePreference), Severity.Error);
+        }
+        finally
+        {
+            _savingColorMode = false;
+        }
+    }
+
+
+    private readonly PaletteLight _lightPalette = new()
+    {
+        Primary = "#0961C7", PrimaryContrastText = "#ffffff",
+        Secondary = "#ffffff", Tertiary = "#EDF5FF",
+        Surface = "#ffffff", Background = "#F5F8FC", BackgroundGray = "#F0F4F9",
+        AppbarBackground = "#111827", AppbarText = "#E7EDF6",
+        DrawerBackground = "#111827", DrawerText = "#CDD7E5", DrawerIcon = "#AAB9CC",
+        TextPrimary = "#17243B", TextSecondary = "#576C8B",
+        ActionDefault = "#576C8B", Black = "#111827",
+        GrayLight = "#F0F4F9", GrayLighter = "#F7FAFD",
+        Info = "#0F7BFF", Success = "#00A878", Warning = "#F58A07", Error = "#F04452",
+        LinesDefault = "#E5EDF6", TableLines = "#EAF0F7", Divider = "#E5EDF6"
+    };
+
+    private readonly PaletteDark _darkPalette = new()
+    {
+        Primary = "#82B1F4", PrimaryContrastText = "#0E1116",
+        Secondary = "#2A323C", Tertiary = "#404B59",
+        Surface = "#1B2028", Background = "#151A21", BackgroundGray = "#2A323C",
+        AppbarBackground = "#1B2028", AppbarText = "#E5E7EB",
+        DrawerBackground = "#1B2028", DrawerText = "#E5E7EB", DrawerIcon = "#9AA4B2",
+        TextPrimary = "#E5E7EB", TextSecondary = "#9AA4B2",
+        ActionDefault = "#9AA4B2", TextDisabled = "#9AA4B280", Black = "#0E1116",
+        GrayLight = "#2A323C", GrayLighter = "#1B2028",
+        Info = "#82B1F4", Success = "#3DD4A1", Warning = "#FFB454", Error = "#FF7380",
+        LinesDefault = "#404B59", TableLines = "#404B59", Divider = "#404B59"
+    };
+    private string ColorModeIcon => _colorMode switch
+    {
+        ColorMode.Light => Icons.Material.Outlined.LightMode,
+        ColorMode.Dark => Icons.Material.Outlined.DarkMode,
+        _ => Icons.Material.Rounded.AutoMode,
+    };
+}
+

@@ -1,0 +1,44 @@
+@inject DeviceService Reports
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-4">@Loc[LocKeys.Ui.SoftwareReportDevicesDialog.DevicesReportingThisSoftwareVersionInTheirLastInventory]</MudText>
+        @if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+        <MudDataGrid T="SoftwareReportDevice" Items="_items" Loading="_loading" QuickFilter="Matches" Dense="true" Hover="true"
+                     Outlined="true" Elevation="0" Class="device-list-grid" RowsPerPage="25" HorizontalScrollbar="true">
+            <ToolBarContent>
+                <MudText>@UiText.Get(LocKeys.Ui.DeviceStatsDevicesDialog.Text0Devices, (_items.Count))</MudText><MudSpacer />
+                <MudTextField T="string" @bind-Value="_search" Immediate="true" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ManageDevicesPage.SearchDevices]"
+                              aria-label="@Loc[LocKeys.Ui.SoftwareReportDevicesDialog.SearchInstalledDevices]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="shared-resource-search" />
+            </ToolBarContent>
+            <Columns>
+                <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Dashboard.Device]">
+                    <CellTemplate><MudLink Href="@($"/devices/manage/{context.Item.Id}")" OnClick="Close">@context.Item.Name</MudLink></CellTemplate>
+                </PropertyColumn>
+                <TemplateColumn Title="@Loc[LocKeys.Image.VersionStatus]"><CellTemplate>@(context.Item.Archived ? UiText.Get(LocKeys.Device.ArchivedText) : UiText.Get(LocKeys.Policy.Active))</CellTemplate></TemplateColumn>
+                <TemplateColumn Title="@Loc[LocKeys.Device.LastInventory]"><CellTemplate>@(context.Item.LastInventoryAtUtc?.ToLocalTime().ToString("g") ?? "—")</CellTemplate></TemplateColumn>
+            </Columns>
+            <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.DeviceStatsDevicesDialog.NoDevicesFound]</MudText></NoRecordsContent>
+            <PagerContent><MudDataGridPager T="SoftwareReportDevice" /></PagerContent>
+        </MudDataGrid>
+    </DialogContent>
+    <DialogActions><MudButton OnClick="Close" Color="Color.Primary">@Loc[LocKeys.Ui.ActionFiles.Close]</MudButton></DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public int SoftwareId { get; set; }
+    private List<SoftwareReportDevice> _items = [];
+    private string? _error, _search;
+    private bool _loading = true;
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Reports.SoftwareReportDevicesAsync(SoftwareId);
+        if (result.HasData) _items = result.Data;
+        else _error = Loc[result.Error!.Code, result.Error.Args];
+        _loading = false;
+    }
+    private bool Matches(SoftwareReportDevice row) => string.IsNullOrWhiteSpace(_search) || row.Name.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+    private void Close() => MudDialog.Close();
+}

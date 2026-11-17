@@ -1,0 +1,7 @@
+.directory-node { margin: 4px 0 4px 14px; }
+.directory-node > summary { display: flex; align-items: center; cursor: pointer; list-style: none; }
+.directory-node > summary::-webkit-details-marker { display: none; }
+.directory-node > summary::before { content: "\25b6"; font-size: 10px; width: 16px; flex-shrink: 0; }
+.directory-node[open] > summary::before { content: "\25bc"; }
+.directory-node ::deep .mud-button-root { justify-content: flex-start; text-transform: none; text-align: start; min-width: 0; flex: 1; }
+.directory-node ::deep .directory-node-selected { background: var(--mud-palette-primary-hover); font-weight: 600; }

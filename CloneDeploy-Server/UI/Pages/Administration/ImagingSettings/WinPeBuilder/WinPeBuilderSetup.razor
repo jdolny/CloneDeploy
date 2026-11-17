@@ -1,0 +1,160 @@
+@using CloneDeploy_Server.WinPe
+@inject WinPeService Service
+@implements IAsyncDisposable
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+@if (_catalog is null)
+{
+    <MudProgressLinear Indeterminate="true"/>
+}
+else
+{
+    <MudTabs @bind-ActivePanelIndex="_tab" MinimumTabWidth="120px" KeepPanelsAlive="true" Class="device-subtabs" Color="Color.Primary" Outlined="true" Border="true" TabPanelsClass="pt-4 detail-tab-content">
+        <Header>
+            @if (_tab == 0)
+            {
+                <div class="device-overview-save">
+                    <MudButton OnClick="@Snackbar.GuardAction(() => _busy || !Available || _catalog.Jobs.Any(x => !x.Status.IsComplete) || _catalog.Builder?.RestartRequired == true, !Available ? UiText.Get(LocKeys.Ui.WinPeBuilderSetup.UpdateAndRestartTheWindowsBuilderWithAdministratorAccess) : _catalog.Builder?.RestartRequired == true ? UiText.Get(LocKeys.Ui.WinPeBuilderSetup.RestartTheWindowsBuilderBeforeInstallingPrerequisites) : UiText.Get(LocKeys.Ui.WinPeBuilderSetup.APrerequisiteInstallationIsAlreadyRunningWaitForIt), OnInstallClicked)" Disabled="@(_busy)"
+                               Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download">@Loc[LocKeys.Ui.WinPeBuilderSetup.InstallPrerequisites]</MudButton>
+                </div>
+            }
+        </Header>
+        <ChildContent>
+        <MudTabPanel Text="@Loc[LocKeys.Image.VersionStatus]">
+            <TabHelp Href="ui/administration/winpe-builder-status.html" Title="@Loc[LocKeys.Image.VersionStatus]" />
+            <MudStack Spacing="3">
+                <WinPeBuilderStatusTab Builder="Builder"/>
+                <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.WinPeBuilderSetup.BuilderPrerequisites]</MudText>
+                @if (!Available)
+                {
+                    <MudAlert Severity="Severity.Info">@Loc[LocKeys.Ui.WinPeBuilderSetup.UpdateAndRestartTheWindowsBuilderFromThisApplication]
+                    </MudAlert>
+                }
+                <MudText>@UiText.Get(LocKeys.Ui.WinPeBuilderSetup.RequiredADKAndWinPE0ControlledByThisApplication, (ToolchainSpecDto.MicrosoftDefault.Version))</MudText>
+                <MudText>@UiText.Get(LocKeys.Ui.WinPeBuilderSetup.InstalledADK0, ((_catalog.Builder?.AdkVersion ?? UiText.Get(LocKeys.Ui.WinPeBuilderSetup.NotDetected))))</MudText>
+                <MudText>@UiText.Get(LocKeys.Ui.WinPeBuilderSetup.InstalledWinPEAddOn0, ((_catalog.Builder?.WinPeVersion ?? UiText.Get(LocKeys.Ui.WinPeBuilderSetup.NotDetected))))</MudText>
+                @if (_catalog.Builder?.RestartRequired == true)
+                {
+                    <MudAlert Severity="Severity.Warning">@Loc[LocKeys.Ui.WinPeBuilderSetup.WindowsRequiresARestartBeforeSetupOrImageBuilds]</MudAlert>
+                }
+            </MudStack>
+        </MudTabPanel>
+        <MudTabPanel Text="@Loc[LocKeys.Policy.Activity]">
+            <TabHelp Href="ui/administration/winpe-builder-history.html" Title="@Loc[LocKeys.Policy.Activity]" />
+            <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.Ui.WinPeBuilderSetup.InstallationHistory]</MudText>
+            <MudDataGrid T="SetupJobRowDto" Items="_catalog.Jobs" Dense="true" Hover="true" RowsPerPage="10" Class="device-list-grid winpe-grid" Elevation="0" Outlined="true">
+                <Columns>
+                    <TemplateColumn Title="@Loc[LocKeys.Image.VersionNumber]">
+                        <CellTemplate>@context.Item.Version</CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="@Loc[LocKeys.Ui.WinPeBuilderSetup.Requested]">
+                        <CellTemplate>@context.Item.Job.CreatedAtUtc.ToLocalTime().ToString("g")<MudText
+                                Typo="Typo.caption">@context.Item.Job.CreatedBy</MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="@Loc[LocKeys.Image.VersionStatus]">
+                        <CellTemplate>
+                            <MudText>@(context.Item.Status.State == "RestartRequired" ? UiText.Get(LocKeys.Ui.DeviceWindowsUpdateConfiguration.RestartRequired) : context.Item.Status.State)</MudText>
+                            <MudText Typo="Typo.caption">@context.Item.Status.Message</MudText>
+                            @if (!context.Item.Status.IsComplete && context.Item.Status.State != "Queued")
+                            {
+                                <MudProgressLinear Indeterminate="true"/>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="@Loc[LocKeys.Ui.WinPeBuilderSetup.Logs]">
+                        <CellTemplate>@if (context.Item.Status.State != "Queued")
+                            {
+                                <MudLink Href="@($"/api/ui/winpe/setup/{context.Item.Job.Id}/logs")" Target="_blank">@Loc[LocKeys.Ui.WinPeBuilderSetup.DownloadLogs]</MudLink>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <NoRecordsContent>
+                    <MudText>@Loc[LocKeys.Ui.WinPeBuilderSetup.NoPrerequisiteInstallationsRequested]</MudText>
+                </NoRecordsContent>
+                <PagerContent>
+                    <MudDataGridPager T="SetupJobRowDto"/>
+                </PagerContent>
+            </MudDataGrid>
+        </MudTabPanel>
+        </ChildContent>
+    </MudTabs>
+}
+
+@code {
+    [Parameter] public BuilderHealthDto? Builder { get; set; }
+    private SetupCatalogDto? _catalog;
+    private string? _error;
+    private bool _busy;
+    private int _tab;
+    private readonly CancellationTokenSource _stop = new();
+    private Task? _poll;
+    private bool Available => _catalog?.Builder is { Elevated: true } health && WinPeToolchainPolicy.SupportsApplication(health) && DateTime.UtcNow - health.SeenAtUtc < TimeSpan.FromSeconds(30);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Refresh();
+        _poll = Poll();
+    }
+
+    private async Task Refresh()
+    {
+        var result = await Service.GetSetupAsync();
+        if (result.Success) _catalog = result.Data;
+        else _error = Loc[result.Error!.Code, result.Error.Args];
+    }
+
+    private async Task OnInstallClicked()
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var dialog = await Dialog.ShowAsync<WinPeInstallDialog>(UiText.Get(LocKeys.Ui.WinPeBuilderSetup.InstallWinPEPrerequisites), Constants.UI.StandardDialogBox);
+            if (await dialog.Result is not { Canceled: false, Data: true }) return;
+            var result = await Service.QueueSetupAsync(true);
+            if (!result.Success) Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+            else
+            {
+                _error = null;
+                _tab = 1;
+                Snackbar.Add(UiText.Get(LocKeys.Ui.WinPeBuilderSetup.PrerequisiteInstallationQueued), Severity.Success);
+            }
+
+            await Refresh();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task Poll()
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(3));
+            while (await timer.WaitForNextTickAsync(_stop.Token))
+                await InvokeAsync(async () =>
+                {
+                    await Refresh();
+                    StateHasChanged();
+                });
+        }
+        catch (OperationCanceledException) when (_stop.IsCancellationRequested)
+        {
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _stop.Cancel();
+        if (_poll is not null) await _poll;
+        _stop.Dispose();
+    }
+
+}

@@ -1,0 +1,28 @@
+<MudDialog>
+    <DialogContent>
+        <MudDataGrid T="DeviceStatsRow" Items="Devices" QuickFilter="Matches" Dense="true" Hover="true" Outlined="true" Elevation="0" Class="device-list-grid" RowsPerPage="25" HorizontalScrollbar="true">
+            <ToolBarContent>
+                <MudText>@UiText.Get(LocKeys.Ui.DeviceStatsDevicesDialog.Text0Devices, (Devices.Count))</MudText><MudSpacer />
+                <MudTextField T="string" @bind-Value="_search" Immediate="true" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ManageDevicesPage.SearchDevices]" aria-label="@Loc[LocKeys.Ui.DeviceStatsDevicesDialog.SearchMatchingDevices]" Variant="Variant.Outlined" Margin="Margin.Dense" Class="shared-resource-search" />
+            </ToolBarContent>
+            <Columns>
+                <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Dashboard.Device]"><CellTemplate><MudLink Href="@($"/devices/manage/{context.Item.Id}")" OnClick="Close">@context.Item.Name</MudLink></CellTemplate></PropertyColumn>
+                <PropertyColumn Property="x => x.Os" Title="@Loc[LocKeys.Device.OsName]" />
+                <PropertyColumn Property="x => x.Model" Title="@Loc[LocKeys.Device.Model]" />
+                <TemplateColumn Title="@Loc[LocKeys.Device.LastCheckinTime]"><CellTemplate>@(context.Item.Checkin?.ToLocalTime().ToString("g") ?? UiText.Get(LocKeys.Dashboard.Never))</CellTemplate></TemplateColumn>
+                <TemplateColumn Title="@Loc[LocKeys.Device.LastInventory]"><CellTemplate>@(context.Item.Inventory?.ToLocalTime().ToString("g") ?? UiText.Get(LocKeys.Dashboard.Never))</CellTemplate></TemplateColumn>
+                <PropertyColumn Property="x => x.DiskNotes" Title="@Loc[LocKeys.Ui.DeviceStatsDevicesDialog.DiskWarnings]" />
+            </Columns>
+            <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.DeviceStatsDevicesDialog.NoDevicesFound]</MudText></NoRecordsContent>
+            <PagerContent><MudDataGridPager T="DeviceStatsRow" /></PagerContent>
+        </MudDataGrid>
+    </DialogContent>
+    <DialogActions><MudButton OnClick="Close" Color="Color.Primary">@Loc[LocKeys.Ui.ActionFiles.Close]</MudButton></DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public List<DeviceStatsRow> Devices { get; set; } = [];
+    private string? _search;
+    private bool Matches(DeviceStatsRow row) => string.IsNullOrWhiteSpace(_search) || $"{row.Name} {row.Os} {row.Model} {row.DiskNotes}".Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+    private void Close() => MudDialog.Close();
+}

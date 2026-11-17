@@ -1,0 +1,90 @@
+@inject DeviceService Preferences
+
+<MudDialog>
+    <DialogContent>
+        <MudText Class="mb-4">@Loc[LocKeys.Ui.DeviceColumnsDialog.DragItemsToTheRightToShowThemOr]</MudText>
+        <MudDropContainer T="AppUserGridColumn" @key="_dropVersion" Items="_columns"
+                          ItemsSelector="@((item, zone) => Zone(item) == zone)"
+                          ItemDisabled="@(_ => _saving)" ItemDropped="OnItemDropped">
+            <ChildContent>
+                <MudGrid Spacing="3">
+                    @foreach (var visible in new[] { false, true })
+                    {
+                        <MudItem xs="12" sm="6">
+                            <MudPaper Outlined="true" Class="pa-3" Style="height: 100%;">
+                                <MudText Typo="Typo.h6">@(visible ? UiText.Get(LocKeys.Ui.DeviceColumnsDialog.Shown) : UiText.Get(LocKeys.Ui.DeviceColumnsDialog.Available))</MudText>
+                                <MudText Typo="Typo.subtitle2" Class="mt-3 mb-2">@Loc[LocKeys.Ui.DeviceColumnsDialog.Columns]</MudText>
+                                <MudDropZone T="AppUserGridColumn" Identifier="@(visible ? "shown-columns" : "available-columns")"
+                                             CanDrop="@(item => !_saving && !IsAction(item))" AllowReorder="true"
+                                             Class="pa-2 rounded border-dashed" Style="min-height: 100px;" />
+                                <MudText Typo="Typo.subtitle2" Class="mt-3 mb-2">@Loc[LocKeys.Common.Actions]</MudText>
+                                <MudDropZone T="AppUserGridColumn" Identifier="@(visible ? "shown-actions" : "available-actions")"
+                                             CanDrop="@(item => !_saving && IsAction(item))" AllowReorder="true"
+                                             Class="pa-2 rounded border-dashed" Style="min-height: 100px;" />
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </ChildContent>
+            <ItemRenderer>
+                <MudPaper Outlined="true" Class="pa-2 mb-2 d-flex align-center gap-2" Style="cursor: grab;">
+                    <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" />
+                    <MudText>@Catalog.First(x => x.Key == context.ColumnKey).Title</MudText>
+                </MudPaper>
+            </ItemRenderer>
+        </MudDropContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnResetClicked" Disabled="_saving">@Loc[LocKeys.Ui.DeviceColumnsDialog.ResetToDefaults]</MudButton>
+        <MudSpacer />
+        <MudButton OnClick="OnCancelClicked" Disabled="_saving">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="OnSaveClicked" Color="Color.Primary" Disabled="_saving">@Loc[LocKeys.Common.Save]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public List<DeviceColumnDefinition> Catalog { get; set; } = [];
+    [Parameter] public List<AppUserGridColumn> Columns { get; set; } = [];
+    private List<AppUserGridColumn> _columns = [];
+    private bool _saving;
+
+    protected override void OnInitialized() => _columns = DeviceColumnCatalog.Merge(Catalog, Columns);
+    private void OnCancelClicked() => MudDialog.Cancel();
+    private int _dropVersion;
+    private bool IsAction(AppUserGridColumn item) => Catalog.First(x => x.Key == item.ColumnKey).IsAction;
+    private string Zone(AppUserGridColumn item) => $"{(item.Visible ? "shown" : "available")}-{(IsAction(item) ? "actions" : "columns")}";
+
+    private void OnResetClicked()
+    {
+        _columns = DeviceColumnCatalog.Merge(Catalog, []);
+        _dropVersion++;
+    }
+
+    private void OnItemDropped(MudItemDropInfo<AppUserGridColumn> drop)
+    {
+        if (_saving || drop.Item is null) return;
+        var action = IsAction(drop.Item);
+        var shownZone = action ? "shown-actions" : "shown-columns";
+        var availableZone = action ? "available-actions" : "available-columns";
+        if (drop.DropzoneIdentifier != shownZone && drop.DropzoneIdentifier != availableZone) return;
+        DeviceColumnLayout.Drop(_columns, Catalog, drop.Item, drop.DropzoneIdentifier == shownZone, drop.IndexInZone);
+        _dropVersion++;
+    }
+    private async Task OnSaveClicked()
+    {
+        _saving = true;
+        try
+        {
+            for (var i = 0; i < _columns.Count; i++) _columns[i].Order = i;
+            var result = await Preferences.SaveColumnsAsync(_columns);
+            if (!result.Success)
+            {
+                Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+                return;
+            }
+            MudDialog.Close(DialogResult.Ok(_columns));
+        }
+        finally { _saving = false; }
+    }
+}

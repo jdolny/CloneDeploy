@@ -1,0 +1,106 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@page "/administration/imaging"
+@page "/administration/imaging/{Tab}"
+@inject WinPeService WinPe
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.AdministrationNavigationGroup.ImagingSettings]"/>
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+<div class="device-detail device-workspace">
+    <ResponsiveTabs PanelOrder="@(new int[] { 3, 2, 6, 0, 1, 4, 5 })" ActivePanelIndex="_tab" ActivePanelIndexChanged="OnTabChanged" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ImagingInfrastructurePage.DeploymentPerformance]" Icon="@Icons.Material.Outlined.Speed">
+                <TabHelp Href="ui/administration/imaging-infrastructure-performance.html" Title="@Loc[LocKeys.Ui.ImagingInfrastructurePage.DeploymentPerformance]" />
+            @if (_tab == 3)
+            {
+                <MudStack Class="pb-4"><CloneDeploy_Server.UI.Pages.Administration.ImagingSettings.Performance.DeploymentPerformanceSettingsTab /></MudStack>
+            }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ImagingInfrastructurePage.ImagingQueue]" Icon="@Icons.Material.Outlined.PendingActions">
+                <TabHelp Href="ui/administration/imaging-infrastructure-queue.html" Title="@Loc[LocKeys.Ui.ImagingInfrastructurePage.ImagingQueue]" />
+            @if (_tab == 2)
+            {
+                <MudStack Class="pb-4"><CloneDeploy_Server.UI.Pages.Administration.ImagingSettings.Queue.ImagingQueueSettingsTab /></MudStack>
+            }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ImagingInfrastructurePage.Multicast]" Icon="@Icons.Material.Outlined.WifiTethering">
+                <TabHelp Href="ui/administration/imaging-multicast.html" Title="@Loc[LocKeys.Ui.ImagingInfrastructurePage.Multicast]" />
+            @if (_tab == 6)
+            {
+                <MudStack Class="pb-4"><CloneDeploy_Server.UI.Pages.Administration.ImagingSettings.Multicast.MulticastSettingsTab /></MudStack>
+            }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ImagingInfrastructurePage.PXEProxy]" Icon="@Icons.Material.Outlined.Router">
+                <TabHelp Href="ui/administration/pxe-proxy.html" Title="@Loc[LocKeys.Ui.ImagingInfrastructurePage.PXEProxy]" />
+            @if (_tab == 0)
+            {
+                <MudStack Class="pb-4"><CloneDeploy_Server.UI.Pages.Administration.ImagingSettings.PxeProxy.PxeProxyTab /></MudStack>
+            }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ImagingInfrastructurePage.TFTPBootFiles]" Icon="@Icons.Material.Outlined.Folder">
+                <TabHelp Href="ui/administration/tftp-boot-files.html" Title="@Loc[LocKeys.Ui.ImagingInfrastructurePage.TFTPBootFiles]" />
+            @if (_tab == 1)
+            {
+                <MudStack Class="pb-4"><CloneDeploy_Server.UI.Pages.Administration.ImagingSettings.Tftp.PxeTftpTab /></MudStack>
+            }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ImagingInfrastructurePage.WinPEBootEnvironments]" Icon="@Icons.Material.Outlined.DesktopWindows">
+                <TabHelp Href="ui/administration/winpe-boot-variants.html" Title="@Loc[LocKeys.Ui.ImagingInfrastructurePage.WinPEBootEnvironments]" />
+            @if (_tab == 4)
+            {
+                <MudStack Class="pb-4"><CloneDeploy_Server.UI.Pages.Administration.ImagingSettings.WinPeEnvironments.WinPeTab Section="0" EditId="_editId" /></MudStack>
+            }
+        </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ImagingInfrastructurePage.WinPEBuilder]" Icon="@Icons.Material.Outlined.Build">
+                <TabHelp Href="ui/administration/winpe-builder.html" Title="@Loc[LocKeys.Ui.ImagingInfrastructurePage.WinPEBuilder]" />
+            @if (_tab == 5)
+            {
+                <MudStack Class="pb-4"><CloneDeploy_Server.UI.Pages.Administration.ImagingSettings.WinPeEnvironments.WinPeTab Section="3" /></MudStack>
+            }
+        </MudTabPanel>
+        </ResponsiveTabs>
+</div>
+@code {
+    [Parameter] public string? Tab { get; set; }
+    [Parameter] public int WinPeId { get; set; }
+    [Parameter] public string? WinPeKind { get; set; }
+    private int? _editId;
+    private string? _error;
+    private (string?, int, string?)? _loadedRoute;
+    private int _tab;
+    private static readonly string[] Tabs = ["proxy", "tftp", "queue", "performance", "winpe-variants", "winpe-builder", "multicast"];
+    protected override async Task OnParametersSetAsync()
+    {
+        var selected = Tab;
+        if (_loadedRoute == (selected, WinPeId, WinPeKind)) return;
+        _loadedRoute = (selected, WinPeId, WinPeKind);
+        _editId = null;
+        _error = null;
+        _tab = Math.Max(0, Array.FindIndex(Tabs, x => string.Equals(x, selected, StringComparison.OrdinalIgnoreCase)));
+        if (WinPeId > 0)
+        {
+            var result = await WinPe.GetAsync();
+            var definition = result.Data?.Definitions.FirstOrDefault(x => x.Id == WinPeId);
+            if (!result.Success) _error = Loc[result.Error!.Code, result.Error.Args];
+            else if (definition is null) _error = UiText.Get(LocKeys.Ui.ImagingInfrastructurePage.WinPEEnvironmentNotFound);
+            else
+            {
+                _tab = 4;
+                _editId = definition.IsBase ? null : WinPeId;
+            }
+        }
+        else if (WinPeKind is not null)
+        {
+            _tab = 4;
+            _editId = WinPeKind == "base" ? null : 0;
+        }
+    }
+    private void OnTabChanged(int tab)
+    {
+        if (tab == _tab || tab < 0 || tab >= Tabs.Length) return;
+        _editId = null;
+        _error = null;
+        _tab = tab;
+    }
+}

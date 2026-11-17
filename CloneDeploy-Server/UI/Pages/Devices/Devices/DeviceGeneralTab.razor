@@ -1,0 +1,169 @@
+@inject DeviceService Devices
+@inject TagService TagService
+@inject AuthenticationStateProvider Authentication
+@inject IAuthorizationService Authorization
+
+<section class="device-general">
+
+    <MudGrid Spacing="0">
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Common.Name]" Value="@(Device.Name)"/>
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.ProvisionStatus]" Value="@(DeviceEnrollmentLabels.Status(Device.ProvisionStatus))"/>
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.DeviceGUID]" Value="@(Device.Guid)"/>
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.LastCheckinTime]" Value="@(Device.LastCheckinAtUtc)"/>
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.LastInventory]" Value="@(Device.LastInventoryAtUtc)"/>
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.ProvisionedTime]" Value="@(Device.ProvisionedAtUtc)"/>
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.ArchivedText]" Value="@(Device.ArchivedAtUtc)"/>
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.LastIPAddress]" Value="@(Device.LastKnownIp)"/>
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.DeviceGeneralTab.AgentPlatform]" Value="@(Device.ClientVersion is null ? null : Device.AgentPlatform)"/>
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.ClientVersion]" Value="@CloneDeploy_Agent.Contracts.AgentUpdateOffer.DisplayVersion(Device.ClientVersion)"/>
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.InstallationID]" Value="@(Device.InstallationId)"/>
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.HardwareUUID]" Value="@(Device.UUID)"/>
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.ImagingMAC]" Value="@(Device.ImagingMac)"/>
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.DirectorySource]" Value="@(Device.DirectoryObject?.DirectorySource.Name)"/>
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.DirectoryAccount]" Value="@(Device.DirectoryObject?.AccountName)"/>
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.DirectoryPath]" Value="@(Device.DirectoryObject?.DistinguishedName)"/>
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.AdDisabled]" Value="@(Device.DirectoryObject?.Disabled)"/>
+    </MudGrid>
+    @if (_canEdit)
+    {
+        <MudGrid Spacing="0">
+        <MudItem xs="12" md="6">
+            <MudTextField T="string" @bind-Value="_description" Label="@Loc[LocKeys.Common.Description]"
+                          Variant="Variant.Outlined" Lines="3" Immediate="true" Disabled="_saving" Class="mt-4" />
+            <MudText Typo="Typo.subtitle1" Class="mt-4 mb-2">@Loc[LocKeys.Common.Tags]</MudText>
+            @if (_loading)
+            {
+                <MudProgressLinear Indeterminate="true" />
+            }
+            else if (_loadError is not null)
+            {
+                <MudAlert Severity="Severity.Error">@_loadError</MudAlert>
+                <MudButton OnClick="OnRetryClicked">@Loc[LocKeys.Common.Retry]</MudButton>
+            }
+            else
+            {
+                <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mb-2">
+                    @foreach (var id in _tagIds)
+                    {
+                        <MudChip T="int" @key="id" Value="id" Color="Color.Primary" Variant="Variant.Outlined"
+                                 Disabled="_saving" OnClose="@(() => OnRemoveTag(id))">@(_tags.FirstOrDefault(x => x.Id == id)?.Name ?? id.ToString())</MudChip>
+                    }
+                </MudStack>
+                <MudAutocomplete T="Tag" @ref="_tagPicker" Label="@Loc[LocKeys.Group.AddTag]" Variant="Variant.Outlined"
+                                 SearchFunc="SearchTags" ToStringFunc="@(tag => tag?.Name ?? string.Empty)" ValueChanged="OnAddTag"
+                                 Clearable="true" ResetValueOnEmptyText="true" MaxItems="20" Disabled="_saving"
+                                 AdornmentIcon="@Icons.Material.Filled.Search" />
+            }
+        </MudItem>
+        </MudGrid>
+        @if (SaveActionSectionId is not null)
+        {
+            <SectionContent SectionId="SaveActionSectionId">@SaveButton</SectionContent>
+        }
+        else
+        {
+            <div class="device-form-footer mt-4"><MudSpacer/>@SaveButton</div>
+        }
+    }
+    else if (!_loading)
+    {
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Common.Description]" Value="@Device.Description" />
+            <MudText Typo="Typo.subtitle1" Class="mt-4 mb-2">@Loc[LocKeys.Common.Tags]</MudText>
+            @foreach (var tag in Device.Tags.Where(x => x.Tag != null).OrderBy(x => x.Tag!.Name))
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary">@tag.Tag!.Name</MudChip>
+            }
+    }
+    
+</section>
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+    [Parameter] public object? SaveActionSectionId { get; set; }
+    private RenderFragment SaveButton => @<MudButton OnClick="@Snackbar.GuardAction(() => _saving || _loading || _loadError is not null, UiText.Get(LocKeys.Ui.UserGroupMembersTab.ThisRecordCouldNotBeLoadedReopenThePage), OnSaveClicked)" Variant="Variant.Filled" Color="Color.Primary"
+        StartIcon="@Icons.Material.Filled.Save" Disabled="@(_saving || _loading)">@Loc[LocKeys.Common.SaveChanges]</MudButton>;
+    private int? _loadedDeviceId;
+    private bool _canEdit;
+    private string? _description;
+    private List<Tag> _tags = [];
+    private int[] _tagIds = [];
+    private MudAutocomplete<Tag> _tagPicker = null!;
+    private bool _loading;
+    private bool _saving;
+    private string? _loadError;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedDeviceId == Device.Id) return;
+        _loadedDeviceId = Device.Id;
+        _description = Device.Description;
+        _tagIds = Device.Tags.Select(x => x.TagId).Distinct().ToArray();
+        _tags = [];
+        _loadError = null;
+        _canEdit = false;
+        _loading = true;
+
+        try
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            _canEdit = (await Authorization.AuthorizeAsync(user, Constants.Permissions.DeviceEdit)).Succeeded;
+            if (_canEdit) await OnRetryClicked();
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task OnRetryClicked()
+    {
+        _loading = true;
+        _loadError = null;
+        try
+        {
+            if (!(await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.TagView)).Succeeded)
+            {
+                _tags = Device.Tags.Where(x => x.Tag is not null).Select(x => x.Tag!).ToList();
+                return;
+            }
+            var result = await TagService.GetAsync();
+            if (result.Success) _tags = result.Data ?? [];
+            else _loadError = Loc[result.Error!.Code, result.Error.Args];
+        }
+        finally { _loading = false; }
+    }
+
+    private Task<IEnumerable<Tag>> SearchTags(string? text, CancellationToken cancellationToken) =>
+        Task.FromResult(_tags.Where(x => !_tagIds.Contains(x.Id) &&
+            (string.IsNullOrWhiteSpace(text) || x.Name.Contains(text.Trim(), StringComparison.OrdinalIgnoreCase))));
+
+    private async Task OnAddTag(Tag? tag)
+    {
+        if (_saving || tag is null) return;
+        _tagIds = _tagIds.Append(tag.Id).Distinct().ToArray();
+        await _tagPicker.ClearAsync();
+    }
+
+    private void OnRemoveTag(int id)
+    {
+        if (!_saving) _tagIds = _tagIds.Where(x => x != id).ToArray();
+    }
+    
+    private async Task OnSaveClicked()
+    {
+        if (_saving || _loading || _loadError is not null || !_canEdit) return;
+        _saving = true;
+        try
+        {
+            var result = await Devices.UpdateGeneralAsync(Device.Id, _description, _tagIds);
+            if (result.Success)
+            {
+                Device.Description = _description = _description?.Trim();
+                Device.Tags = _tagIds.Select(id => new DeviceTag
+                {
+                    DeviceId = Device.Id, TagId = id, Tag = _tags.FirstOrDefault(x => x.Id == id) ?? Device.Tags.FirstOrDefault(x => x.TagId == id)?.Tag
+                }).ToList();
+                Snackbar.Add(Loc[LocKeys.Common.Updated, Device.Name], Severity.Success);
+            }
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _saving = false; }
+    }
+}

@@ -1,0 +1,89 @@
+@inject EmailNotificationUiService Email
+
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+@if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+else if (_settings is not null)
+{
+    <MudStack>
+        <MudPaper Outlined="true" Elevation="0" Class="pa-4">
+            <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.EmailNotificationOptions.Digests]</MudText>
+            @if (!SmtpEmailTransport.ValidAddress(_settings.Address))
+            {
+                <MudAlert Severity="Severity.Info" Class="mt-3">@Loc["Email.AccountAddressRequired"]</MudAlert>
+            }
+            <MudSwitch T="bool" @bind-Value="_settings.Daily" Disabled="@(_busy || !SmtpEmailTransport.ValidAddress(_settings.Address) && !_settings.Daily)" Color="Color.Primary">@Loc[LocKeys.Ui.EmailNotificationOptions.DailyAttentionReport]</MudSwitch>
+            <MudSwitch T="bool" @bind-Value="_settings.Weekly" Disabled="@(_busy || !SmtpEmailTransport.ValidAddress(_settings.Address) && !_settings.Weekly)" Color="Color.Primary">@Loc[LocKeys.Ui.EmailNotificationOptions.WeeklySummary]</MudSwitch>
+            <MudCheckBox T="bool" @bind-Value="_settings.SkipEmpty" Label="@Loc[LocKeys.Ui.EmailNotificationOptions.SkipEmailsWhenNothingNeedsAttention]" Disabled="_busy" />
+            <MudGrid Class="mt-2">
+                <MudItem xs="12" md="4"><MudTimePicker @bind-Time="_time" Label="@Loc[LocKeys.Ui.EmailNotificationOptions.DeliveryTime]" Variant="Variant.Outlined" Disabled="_busy" /></MudItem>
+                <MudItem xs="12" md="4"><MudSelect T="DayOfWeek" @bind-Value="_settings.WeeklyDay" Label="@Loc[LocKeys.Ui.EmailNotificationOptions.WeeklyDay]" Variant="Variant.Outlined" Disabled="_busy">@foreach (var day in System.Enum.GetValues<DayOfWeek>()) { <MudSelectItem Value="day">@UiText.Label(day)</MudSelectItem> }</MudSelect></MudItem>
+                <MudItem xs="12" md="4"><MudSelect T="string" @bind-Value="_settings.TimeZoneId" Label="@Loc[LocKeys.Ui.EmailNotificationOptions.Timezone]" Variant="Variant.Outlined" Disabled="_busy">@foreach (var zone in TimeZoneInfo.GetSystemTimeZones()) { <MudSelectItem Value="@zone.Id">@zone.DisplayName</MudSelectItem> }</MudSelect></MudItem>
+            </MudGrid>
+            <MudText Typo="Typo.h6" Class="mt-4">@Loc[LocKeys.Ui.EmailNotificationOptions.Include]</MudText>
+            <MudCheckBox T="bool" @bind-Value="_settings.HelpDesk" Label="@Loc[LocKeys.Ui.EmailNotificationOptions.HelpdeskTicketsNeedingAttention]" Disabled="_busy" />
+            <MudCheckBox T="bool" @bind-Value="_settings.Approvals" Label="@Loc[LocKeys.Ui.EmailNotificationOptions.PendingEnrollmentAndResetApprovals]" Disabled="_busy" />
+            <MudCheckBox T="bool" @bind-Value="_settings.Imaging" Label="@Loc[LocKeys.Ui.EmailNotificationOptions.FailedImagingTasks]" Disabled="_busy" />
+            <MudCheckBox T="bool" @bind-Value="_settings.Policies" Label="@Loc[LocKeys.Ui.EmailNotificationOptions.FailedPolicyRuns]" Disabled="_busy" />
+            <MudCheckBox T="bool" @bind-Value="_settings.Actions" Label="@Loc[LocKeys.Ui.EmailNotificationOptions.FailedActionRuns]" Disabled="_busy" />
+            <MudCheckBox T="bool" @bind-Value="_settings.DirectorySync" Label="@Loc[LocKeys.Ui.EmailNotificationOptions.FailedDirectorySyncJobs]" Disabled="_busy" />
+            <MudCheckBox T="bool" @bind-Value="_settings.DeviceWarnings" Label="@Loc[LocKeys.Ui.EmailNotificationOptions.DeviceWarningsAndFleetCountWeeklyOnly]" Disabled="_busy" />
+            @if (_settings.AdminDigestsAvailable)
+            {
+                <MudCheckBox T="bool" @bind-Value="_settings.Security" Label="@Loc[LocKeys.Ui.EmailNotificationOptions.SecurityActivity]" Disabled="_busy" />
+                <MudCheckBox T="bool" @bind-Value="_settings.ServerUpdates" Label="@Loc[LocKeys.Ui.EmailNotificationOptions.CloneDeployServerUpdates]" Disabled="_busy" />
+            }
+        </MudPaper>
+        <MudPaper Outlined="true" Elevation="0" Class="pa-4">
+            <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.EmailNotificationOptions.RecentDigestDeliveries]</MudText>
+            <MudDataGrid T="EmailDigestDelivery" Items="_history" Dense="true" Elevation="0">
+                <Columns>
+                    <PropertyColumn Property="x => x.Kind" Title="@Loc[LocKeys.Ui.EmailNotificationOptions.Digest]" />
+                    <PropertyColumn Property="x => x.Period" Title="@Loc[LocKeys.Ui.EmailNotificationOptions.ScheduledDate]" />
+                    <PropertyColumn Property="x => x.Status" Title="@Loc[LocKeys.Image.VersionStatus]" />
+                    <PropertyColumn Property="x => x.Attempts" Title="@Loc[LocKeys.Ui.EmailNotificationOptions.Attempts]" />
+                    <PropertyColumn Property="x => x.Detail" Title="@Loc[LocKeys.User.ObjectJson]" />
+                </Columns>
+                <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.EmailNotificationOptions.NoDigestDeliveriesYet]</MudText></NoRecordsContent>
+            </MudDataGrid>
+        </MudPaper>
+    </MudStack>
+}
+@code {
+    [Parameter] public int UserId { get; set; }
+    private UserEmailSubscription? _settings;
+    private List<EmailDigestDelivery> _history = [];
+    private string? _error;
+    private TimeSpan? _time;
+    private bool _busy, _loading = true;
+    private int? _loadedUserId;
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedUserId == UserId) return;
+        _loading = true;
+        await LoadAsync();
+        _loadedUserId = UserId;
+        _loading = false;
+    }
+    private async Task LoadAsync()
+    {
+        var result = await Email.ReadSubscriptionAsync(UserId);
+        if (!result.HasData) { _error = Loc[result.Error!.Code, result.Error.Args]; return; }
+        _settings = result.Data; _time = TimeSpan.FromMinutes(_settings.DeliveryMinute);
+        var history = await Email.HistoryAsync(UserId);
+        if (history.HasData) _history = history.Data;
+    }
+    public async Task<bool> SaveOptionsAsync(AppUserOptions options)
+    {
+        if (_settings is null || _busy || _loading) return false;
+        if (_time is null) { Snackbar.Add(UiText.Get(LocKeys.Ui.EmailNotificationOptions.ChooseADeliveryTime), Severity.Error); return false; }
+        _settings.DeliveryMinute = (int)_time.Value.TotalMinutes;
+        _busy = true;
+        try
+        {
+            var result = await Email.SaveUserOptionsAsync(_settings, options);
+            if (!result.Success) Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+            return result.Success;
+        }
+        finally { _busy = false; }
+    }
+}

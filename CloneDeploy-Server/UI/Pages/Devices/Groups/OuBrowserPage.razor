@@ -1,0 +1,245 @@
+@page "/groups/oubrowser"
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@implements IDisposable
+@inject DirectoryService DirectoryService
+
+@if (EmbeddedSourceId is null) { <AppPageTitle Text="@Loc[LocKeys.Ui.OuBrowserPage.DirectoryBrowser]" /> }
+
+<div class="directory-browser">
+    <aside class="directory-navigation">
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.OuBrowserPage.Directory]</MudText>
+        @if (EmbeddedSourceId is null)
+        {
+        <div class="directory-connection">
+        <MudSelect T="int?" Value="_source?.Id" ValueChanged="ChangeSource" Label="@Loc[LocKeys.Ui.OuBrowserPage.DirectoryConnection]" Disabled="_busy"
+                   Variant="Variant.Outlined" Margin="Margin.Dense">
+            @foreach (var source in _sources)
+            {
+                <MudSelectItem T="int?" Value="@((int?)source.Id)">@source.Name</MudSelectItem>
+            }
+        </MudSelect>
+        </div>
+        }
+        <div class="directory-search">
+            <MudTextField T="string" @bind-Value="_treeSearch" DebounceInterval="300" Clearable="true"
+                          Placeholder="@Loc[LocKeys.Ui.OuBrowserPage.SearchDirectory]" aria-label="@Loc[LocKeys.Ui.OuBrowserPage.SearchDirectory_38c67f13]"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Variant="Variant.Outlined" Margin="Margin.Dense"/>
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="@(() => Run(Load))" Disabled="_busy" aria-label="@Loc[LocKeys.Ui.OuBrowserPage.RefreshDirectory]"/>
+        </div>
+        <MudText Typo="Typo.caption">@(_state is null ? UiText.Get(LocKeys.Ui.OuBrowserPage.NoCompletedSyncYet) : UiText.Get(LocKeys.Ui.OuBrowserPage.LastSync0G, (_state.LastSuccessfulSyncAtUtc.ToLocalTime())))</MudText>
+        @if (_busy)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+            <MudButton OnClick="OnCancelClicked">@Loc[LocKeys.Common.Cancel]</MudButton>
+        }
+        @if (_message is not null)
+        {
+            <MudAlert Severity="_severity" Class="my-2">@_message</MudAlert>
+        }
+        <div class="directory-tree">
+            @{ var visibleTree = VisibleTree(); }
+            @foreach (var root in visibleTree[null])
+            {
+                <DirectoryTreeNode @key="root.ObjectGuid" Node="root" Children="visibleTree"
+                                   SelectedGuid="_selected?.ObjectGuid" Selected="SelectNode" ExpandAll="@(!string.IsNullOrWhiteSpace(_treeSearch))"/>
+            }
+            @if (!visibleTree.Any() && !_busy)
+            {
+                <MudText Typo="Typo.body2" Class="pa-2">@(_objects.Count == 0 ? UiText.Get(LocKeys.Ui.OuBrowserPage.SaveADirectoryConnectionAndRunDirectorySyncTo) : UiText.Get(LocKeys.Ui.OuBrowserPage.NoMatchingLocations))</MudText>
+            }
+        </div>
+    </aside>
+    <section class="directory-details">
+        @if (_selected is not null)
+        {
+            <div class="directory-location">
+                <div class="directory-location-heading">
+                    <MudIcon Icon="@Icons.Material.Filled.Folder" Color="Color.Primary" Size="Size.Large"/>
+                    <div class="directory-location-name">
+                        <MudText Typo="Typo.h6">@_selected.Name</MudText>
+                        <MudText Typo="Typo.caption">@_selected.DistinguishedName</MudText>
+                    </div>
+                    <div class="directory-location-action"><SectionOutlet SectionId="_policyAction"/></div>
+                </div>
+                <div class="directory-metadata">
+                    <div><MudText Typo="Typo.caption">@Loc[LocKeys.User.ObjectType]</MudText><MudText Typo="Typo.body2">@UiText.Label(_selected.Kind)</MudText></div>
+                    <div><MudText Typo="Typo.caption">@Loc[LocKeys.Ui.OuBrowserPage.LastSeen]</MudText><MudText Typo="Typo.body2">@_selected.LastSeenAtUtc.ToLocalTime().ToString("g")</MudText></div>
+                    <div><MudText Typo="Typo.caption">@Loc[LocKeys.Ui.OuBrowserPage.ImportStatus]</MudText><MudText Typo="Typo.body2">@(_selected.IsMissing ? UiText.Get(LocKeys.Ui.OuBrowserPage.Missing) : UiText.Get(LocKeys.Ui.OuBrowserPage.Current))</MudText></div>
+                </div>
+            </div>
+            @if (_selected.Kind is DirectoryObjectKind.OrganizationalUnit or DirectoryObjectKind.Domain)
+            {
+                <div class="directory-card">
+                    <TargetPolicies Target="PolicyTargetKeyDto.Ou(_source!.Id, _selected.ObjectGuid)" ActionSectionId="_policyAction"
+                                    @key="@($"{_source!.Id}:{_selected.ObjectGuid}")"/>
+                </div>
+            }
+            <div class="directory-card">
+                <MudDataGrid T="DirectoryObject" Items="@_objects.Where(x => x.ParentGuid == _selected.ObjectGuid &&
+                                 (string.IsNullOrWhiteSpace(_search) || x.Name.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase)))"
+                             Dense="true" Hover="true" Outlined="true" Elevation="0" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize" HorizontalScrollbar="true">
+                    <ToolBarContent>
+                        <MudIcon Icon="@Icons.Material.Outlined.Folder" Color="Color.Primary"/>
+                        <MudText Typo="Typo.h6">@UiText.Get(LocKeys.Ui.OuBrowserPage.DirectContents0, (_objects.Count(x => x.ParentGuid == _selected.ObjectGuid)))</MudText>
+                        <MudSpacer/>
+                        <MudTextField T="string" @bind-Value="_search" DebounceInterval="300" Clearable="true"
+                                      Placeholder="@Loc[LocKeys.Ui.OuBrowserPage.SearchContents]" aria-label="@Loc[LocKeys.Ui.OuBrowserPage.SearchContents_5e116faf]"
+                                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" Class="device-inventory-search"/>
+                    </ToolBarContent>
+                    <Columns>
+                        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]"/>
+                        <PropertyColumn Property="x => x.Kind" Title="@Loc[LocKeys.StorageProvider.Type]"/>
+                        <PropertyColumn Property="x => x.ObjectGuid" Title="@Loc[LocKeys.Ui.UserGroupDirectoryPickerDialog.ObjectID]"/>
+                        <PropertyColumn Property="x => x.AccountName" Title="@Loc[LocKeys.Ui.OuBrowserPage.Account]">
+                            <CellTemplate>@context.Item.AccountName @(context.Item.Disabled ? "(disabled)" : "")</CellTemplate>
+                        </PropertyColumn>
+                    </Columns>
+                    <PagerContent><MudDataGridPager T="DirectoryObject"/></PagerContent>
+                    <NoRecordsContent><MudText>@Loc[LocKeys.Ui.OuBrowserPage.NoDirectoryObjectsFound]</MudText></NoRecordsContent>
+                </MudDataGrid>
+            </div>
+        }
+        else
+        {
+            <MudText Class="pa-4" Color="Color.Secondary">@Loc[LocKeys.Ui.OuBrowserPage.SelectADirectoryLocationToViewItsDetailsPolicies]</MudText>
+        }
+    </section>
+</div>
+
+@code {
+    [Parameter] public int? EmbeddedSourceId { get; set; }
+    [SupplyParameterFromQuery(Name = "sourceId")] public int? SourceId { get; set; }
+    private string? _search, _treeSearch;
+    private readonly object _policyAction = new();
+    private ILookup<Guid?, DirectoryObject> VisibleTree()
+    {
+        if (string.IsNullOrWhiteSpace(_treeSearch)) return _tree;
+        var nodes = _tree.SelectMany(x => x).ToDictionary(x => x.ObjectGuid);
+        var visible = new HashSet<Guid>();
+        foreach (var match in nodes.Values.Where(x => x.Name.Contains(_treeSearch.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            DirectoryObject? current = match;
+            while (current is not null && visible.Add(current.ObjectGuid))
+                current = current.ParentGuid is Guid parent ? nodes.GetValueOrDefault(parent) : null;
+        }
+        return nodes.Values.Where(x => visible.Contains(x.ObjectGuid)).ToLookup(x => x.ParentGuid);
+    }
+    private List<DirectorySource> _sources = [];
+    private DirectorySource? _source;
+    private List<DirectoryObject> _objects = [];
+    private ILookup<Guid?, DirectoryObject> _tree = Array.Empty<DirectoryObject>().ToLookup(x => x.ParentGuid);
+    private DirectoryObject? _selected;
+    private DirectorySyncState? _state;
+    private bool _busy;
+    private string? _message;
+    private Severity _severity = Severity.Info;
+    private readonly CancellationTokenSource _lifetime = new();
+    private CancellationTokenSource? _operation;
+    private bool _reloadRequested;
+
+    protected override Task OnParametersSetAsync()
+    {
+        // Browser back/forward may change sources while a sync or load is still running.
+        if (_busy)
+        {
+            _reloadRequested = true;
+            _operation?.Cancel();
+            return Task.CompletedTask;
+        }
+        return Run(Load);
+    }
+
+    private void ChangeSource(int? id)
+    {
+        if (id.HasValue) Navigation.NavigateTo($"/groups/oubrowser?sourceId={id.Value}");
+    }
+
+    private async Task Load(CancellationToken ct)
+    {
+        var oldKey = _source?.Id;
+        var sources = await DirectoryService.GetSourcesAsync(ct);
+        if (!sources.Success)
+        {
+            ShowError(sources);
+            return;
+        }
+        _sources = sources.Data!.ToList();
+        var selectedSourceId = EmbeddedSourceId ?? SourceId;
+        _source = selectedSourceId.HasValue ? _sources.FirstOrDefault(x => x.Id == selectedSourceId) : _sources.FirstOrDefault();
+        if (oldKey != _source?.Id) { _selected = null; _treeSearch = null; _search = null; }
+        if (_source is null)
+        {
+            _objects = []; _state = null; _selected = null;
+            _tree = Array.Empty<DirectoryObject>().ToLookup(x => x.ParentGuid);
+            return;
+        }
+        var objects = await DirectoryService.GetObjectsAsync(_source.Id, ct);
+        if (!objects.Success)
+        {
+            ShowError(objects);
+            return;
+        }
+        var state = await DirectoryService.GetSyncStateAsync(_source.Id, ct);
+        if (!state.Success)
+        {
+            ShowError(state);
+            return;
+        }
+        _objects = objects.Data!;
+        _state = state.Data;
+        _tree = _objects.Where(x => x.Kind is DirectoryObjectKind.Domain or DirectoryObjectKind.Container or DirectoryObjectKind.OrganizationalUnit)
+            .ToLookup(x => x.ParentGuid);
+        _selected = _objects.FirstOrDefault(x => x.ObjectGuid == _selected?.ObjectGuid) ?? _tree[null].FirstOrDefault();
+    }
+
+    private async Task SelectNode(DirectoryObject item)
+    {
+        if (_busy) return;
+        await Run(ct =>
+        {
+            _selected = item;
+            _search = null;
+            return Task.CompletedTask;
+        });
+    }
+
+    private async Task Run(Func<CancellationToken, Task> action)
+    {
+        if (_busy) return;
+        _busy = true;
+        _message = null;
+        using var operation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        _operation = operation;
+        try { await action(operation.Token); }
+        catch (OperationCanceledException)
+        {
+            _message = UiText.Get(LocKeys.Ui.OuBrowserPage.OperationCanceledOrTimedOutRefreshThePageTo);
+            _severity = Severity.Info;
+        }
+        finally
+        {
+            _operation = null;
+            _busy = false;
+            if (_reloadRequested && !_lifetime.IsCancellationRequested)
+            {
+                _reloadRequested = false;
+                await Run(Load);
+            }
+        }
+    }
+
+    private void ShowError(ServiceResult result)
+    {
+        _message = Loc[result.Error!.Code, result.Error.Args];
+        _severity = Severity.Error;
+        _objects = [];
+        _state = null;
+        _selected = null;
+        _tree = Array.Empty<DirectoryObject>().ToLookup(x => x.ParentGuid);
+    }
+
+    private void OnCancelClicked() => _operation?.Cancel();
+    public void Dispose() { _lifetime.Cancel(); _lifetime.Dispose(); }
+}

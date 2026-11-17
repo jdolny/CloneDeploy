@@ -1,0 +1,818 @@
+[
+  {
+    "source": "CloneDeploy-Server/UI/Common/ActionFiles.razor",
+    "href": "ui/policies-actions/command-actions-files.html",
+    "kind": "configuration",
+    "dialogs": 2,
+    "requiredText": [
+      "Upload",
+      "Cancel remaining uploads",
+      "Download URL",
+      "Save and download"
+    ],
+    "additionalHrefs": [
+      "ui/policies-actions/script-actions-files.html",
+      "ui/policies-actions/software-actions-files.html",
+      "ui/policies-actions/file-actions-files.html"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Common/Dialogs/ActionFilesDialog.razor",
+    "href": "ui/policies-actions/command-actions-files.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Done",
+      "Upload"
+    ],
+    "additionalHrefs": [
+      "ui/policies-actions/script-actions-files.html",
+      "ui/policies-actions/software-actions-files.html",
+      "ui/policies-actions/file-actions-files.html"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Common/Dialogs/ConfirmationDialog.razor",
+    "href": "ui/web-ui.html",
+    "kind": "confirmation",
+    "dialogs": 1,
+    "requiredText": [
+      "Confirmation dialogs",
+      "Cancel"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Common/Dialogs/ConfirmDialog.razor",
+    "href": "ui/web-ui.html",
+    "kind": "confirmation",
+    "dialogs": 1,
+    "requiredText": [
+      "Confirmation dialogs",
+      "Cancel"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Common/Dialogs/GroupTargetPickerDialog.razor",
+    "href": "ui/policies-actions/deploy-action.html",
+    "kind": "selection",
+    "dialogs": 1,
+    "requiredText": [
+      "Search groups",
+      "Add selected groups"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Common/Dialogs/OuTargetPickerDialog.razor",
+    "href": "ui/policies-actions/deploy-action.html",
+    "kind": "selection",
+    "dialogs": 1,
+    "requiredText": [
+      "Search OUs",
+      "Include descendants",
+      "Use selected OU"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/AgentSettings/RemoteAccess/RemoteAccessRuleDialog.razor",
+    "href": "ui/administration/remote-access-rules.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ApplicationUserGroups/NewUserGroupDialog.razor",
+    "href": "ui/administration/user-groups.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ApplicationUserGroups/UserGroupDirectoryPickerDialog.razor",
+    "href": "ui/administration/entra-directory-groups.html",
+    "kind": "selection",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ApplicationUsers/NewUserDialog.razor",
+    "href": "ui/administration/users.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/HelpDeskSettings/QueuesAndCategories/HelpCategoryCreateDialog.razor",
+    "href": "ui/administration/helpdesk-categories.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/HelpDeskSettings/QueuesAndCategories/HelpQueueDialog.razor",
+    "href": "ui/administration/helpdesk-queues.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/HelpDeskSettings/RoutingRules/HelpRoutingRuleDialog.razor",
+    "href": "ui/administration/helpdesk-routing-rule.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/WinPeBuilder/WinPeInstallDialog.razor",
+    "href": "ui/administration/winpe-builder.html",
+    "kind": "confirmation",
+    "dialogs": 1,
+    "requiredText": [
+      "Accept and install",
+      "Cancel"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ImagingSettings/WinPeEnvironments/WinPeCreateDialog.razor",
+    "href": "ui/administration/winpe-boot-variants.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/Directories/NewDirectoryDialog.razor",
+    "href": "ui/shared-resources/directories.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/ManagedCredentials/ManagedCredentialDialog.razor",
+    "href": "ui/shared-resources/credentials.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/Scheduler/SchedulerTaskDialog.razor",
+    "href": "ui/tasks/scheduler.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/ServerSettings/StorageProviders/StorageProviderDialog.razor",
+    "href": "ui/administration/storage-provider-configuration.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Administration/SiteServices/NewSiteServiceDialog.razor",
+    "href": "ui/administration/site-services.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/Dialogs/AddDevicesDialog.razor",
+    "href": "ui/devices/devices.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/Dialogs/AgentImagingBootDialog.razor",
+    "href": "ui/devices/device-deploy-image.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "WinPE boot environment",
+      "Deploy and restart",
+      "Cancel"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/Dialogs/DeviceAttachmentUploadDialog.razor",
+    "href": "ui/devices/device-overview-attachments.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Upload",
+      "Cancel remaining uploads",
+      "Retry attaching",
+      "Close"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/Dialogs/DeviceColumnsDialog.razor",
+    "href": "ui/devices/devices.html",
+    "kind": "selection",
+    "dialogs": 1,
+    "requiredText": [
+      "Available",
+      "Shown",
+      "Reset to defaults",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/Dialogs/DeviceCommentDialog.razor",
+    "href": "ui/devices/device-overview-comments.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Comment",
+      "Add comment",
+      "Cancel"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/Dialogs/DeviceDeployActionsDialog.razor",
+    "href": "ui/devices/device-deploy-actions.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Selected actions",
+      "Review actions",
+      "Deploy Actions Now"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/Dialogs/DeviceDeployImageDialog.razor",
+    "href": "ui/devices/device-deploy-image.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/Dialogs/DeviceHistoryResultDialog.razor",
+    "href": "ui/devices/device-history-policies.html",
+    "kind": "viewer",
+    "dialogs": 1,
+    "requiredText": [
+      "View result",
+      "Closing"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/Dialogs/DevicePolicyJsonDialog.razor",
+    "href": "ui/devices/device-policies-effective-policy.html",
+    "kind": "viewer",
+    "dialogs": 1,
+    "requiredText": [
+      "Copy JSON",
+      "Close"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/Dialogs/DeviceRenameDialog.razor",
+    "href": "ui/devices/device-rename.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Devices/Dialogs/DeviceSoftwareUninstallDialog.razor",
+    "href": "ui/devices/device-inventory-software.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Groups/DeviceGroupPowerScheduleDialog.razor",
+    "href": "ui/devices/device-groups-power.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Groups/Dialogs/DeviceGroupCriteriaDialog.razor",
+    "href": "ui/devices/device-group-criteria.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Category",
+      "Field",
+      "Operator",
+      "Value",
+      "NOT",
+      "Preview matches",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Groups/Dialogs/DeviceGroupDeployImageDialog.razor",
+    "href": "ui/devices/device-groups.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Groups/Dialogs/DeviceGroupMembersDialog.razor",
+    "href": "ui/devices/device-groups-members.html",
+    "kind": "selection",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Groups/Dialogs/DeviceGroupPoliciesDialog.razor",
+    "href": "ui/devices/device-groups-policies.html",
+    "kind": "selection",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Devices/Groups/Dialogs/NewDeviceGroupDialog.razor",
+    "href": "ui/devices/device-groups.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DeploymentProfiles/ImageProfileCreateDialog.razor",
+    "href": "ui/imaging/deployment-profiles.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DeploymentRules/DeploymentRuleCreateDialog.razor",
+    "href": "ui/imaging/deployment-rules.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DriverPacks/Dialogs/DriverCreateDialog.razor",
+    "href": "ui/imaging/drivers.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/DriverPacks/DriverFilesTab.razor",
+    "href": "ui/imaging/drivers-files.html",
+    "kind": "configuration",
+    "dialogs": 2,
+    "requiredText": [
+      "Download URL",
+      "Check this URL",
+      "Save and download",
+      "Cancel remaining uploads"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/ImagePrepProfiles/ImagePrepAnswerGeneratorDialog.razor",
+    "href": "ui/imaging/image-prep-answer-file.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Generate answer file",
+      "Architecture",
+      "Custom value",
+      "Save",
+      "Cancel"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/ImagePrepProfiles/ImagePrepProfileCreateDialog.razor",
+    "href": "ui/imaging/image-prep.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/Images/ImageCreateDialog.razor",
+    "href": "ui/imaging/images.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/Images/ImageVersionEditDialog.razor",
+    "href": "ui/imaging/images-versions.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Imaging/OuNamingRules/OuNamingRuleCreateDialog.razor",
+    "href": "ui/imaging/ou-naming-rules.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Command/CommandActionDialog.razor",
+    "href": "ui/policies-actions/command-actions.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/DomainJoin/DomainJoinActionDialog.razor",
+    "href": "ui/policies-actions/domainjoin-actions.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/File/FileActionDialog.razor",
+    "href": "ui/policies-actions/file-actions.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Notification/NotificationActionDialog.razor",
+    "href": "ui/policies-actions/notification-actions.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Printer/PrinterActionDialog.razor",
+    "href": "ui/policies-actions/printer-actions.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Script/ScriptActionDialog.razor",
+    "href": "ui/policies-actions/script-actions.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Software/SoftwareActionDialog.razor",
+    "href": "ui/policies-actions/software-actions.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/Software/WinGetPackageDialog.razor",
+    "href": "ui/policies-actions/software-actions-configuration.html",
+    "kind": "selection",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Actions/WindowsUpdate/WindowsUpdateActionDialog.razor",
+    "href": "ui/policies-actions/windowsupdate-actions.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Policies/Dialogs/PolicyActionsDialog.razor",
+    "href": "ui/policies-actions/policies-actions.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Execution order",
+      "Condition script",
+      "If condition fails",
+      "Next action",
+      "Save Actions",
+      "Cancel"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Policies/Dialogs/PolicyActivationDialog.razor",
+    "href": "ui/policies-actions/policies.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Activate saved policy",
+      "Deactivate",
+      "Cancel",
+      "View targets",
+      "View audience"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Policies/Dialogs/PolicyDialog.razor",
+    "href": "ui/policies-actions/policies.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Policies/Dialogs/PolicyReviewAudienceDialog.razor",
+    "href": "ui/policies-actions/policies-self-service.html",
+    "kind": "viewer",
+    "dialogs": 1,
+    "requiredText": [
+      "Audience review dialog",
+      "Close"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/PoliciesAndActions/Policies/Dialogs/PolicyReviewTargetsDialog.razor",
+    "href": "ui/policies-actions/policies-targeting.html",
+    "kind": "viewer",
+    "dialogs": 1,
+    "requiredText": [
+      "Target review dialog",
+      "Close"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Reports/Devices/DeviceReportColumnsDialog.razor",
+    "href": "ui/reports/device-reports-report.html",
+    "kind": "selection",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Reports/Devices/DeviceStatsDevicesDialog.razor",
+    "href": "ui/reports/device-stats.html",
+    "kind": "viewer",
+    "dialogs": 1,
+    "requiredText": [
+      "Search matching devices",
+      "Close"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Reports/Devices/SaveDeviceReportDialog.razor",
+    "href": "ui/reports/device-reports-report.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Reports/Policies/PolicyReportDevicesDialog.razor",
+    "href": "ui/reports/policy-reports.html",
+    "kind": "viewer",
+    "dialogs": 1,
+    "requiredText": [
+      "Search devices",
+      "Close"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Reports/Software/SoftwareReportDevicesDialog.razor",
+    "href": "ui/reports/software-reports.html",
+    "kind": "viewer",
+    "dialogs": 1,
+    "requiredText": [
+      "Search devices",
+      "Close"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Reports/Software/SoftwareReportUninstallDialog.razor",
+    "href": "ui/reports/software-reports.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Review uninstall",
+      "Queue uninstall",
+      "Cancel"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Reports/Users/SaveUserDeviceReportDialog.razor",
+    "href": "ui/reports/user-reports-self-service.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ],
+    "additionalHrefs": [
+      "ui/reports/user-reports-login-history.html"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Reports/WindowsUpdates/WindowsUpdateAutoApprovalRuleDialog.razor",
+    "href": "ui/shared-resources/windows-updates-auto-approve-rules.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/SharedResources/CustomAttributes/CustomAttributeDialog.razor",
+    "href": "ui/shared-resources/custom-attributes.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/SharedResources/Schedules/ScheduleDialog.razor",
+    "href": "ui/shared-resources/schedules.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/SharedResources/SelfServiceCategories/SelfServiceCategoryDialog.razor",
+    "href": "ui/shared-resources/self-service-categories.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/SharedResources/Tags/TagDialog.razor",
+    "href": "ui/shared-resources/tags.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/SharedResources/UserAudiences/UserAudienceCreateDialog.razor",
+    "href": "ui/administration/user-audiences.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Create"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/SharedResources/UserAudiences/UserAudienceMemberPickerDialog.razor",
+    "href": "ui/administration/user-audiences-included-members.html",
+    "kind": "selection",
+    "dialogs": 1,
+    "requiredText": [
+      "Search",
+      "Add selected",
+      "Include descendant OUs",
+      "Cancel"
+    ],
+    "additionalHrefs": [
+      "ui/administration/user-audiences-excluded-members.html"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Tasks/ActionDeployments/DeployActionDialog.razor",
+    "href": "ui/policies-actions/deploy-action.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Queue deployment",
+      "Close"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Tasks/ActionDeployments/DeviceDeploymentPickerDialog.razor",
+    "href": "ui/policies-actions/deploy-action.html",
+    "kind": "selection",
+    "dialogs": 1,
+    "requiredText": [
+      "Cancel",
+      "Save"
+    ]
+  },
+  {
+    "source": "CloneDeploy-Server/UI/Pages/Tasks/Imaging/CreateMulticastDialog.razor",
+    "href": "ui/tasks/imaging-multicast-sessions.html",
+    "kind": "configuration",
+    "dialogs": 1,
+    "requiredText": [
+      "Create session",
+      "Cancel"
+    ]
+  }
+]

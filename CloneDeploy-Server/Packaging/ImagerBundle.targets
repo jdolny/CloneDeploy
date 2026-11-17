@@ -1,0 +1,56 @@
+<Project>
+  <!-- Publish only. Fresh staging prevents removed DLLs from leaking into a new release. -->
+  <Target Name="UsePreparedImagerBundle" BeforeTargets="ComputeFilesToPublish" Condition="'$(PreparedImagerBundleDirectory)' != ''">
+    <Error Condition="!Exists('$(PreparedImagerBundleDirectory)/win-x64.zip') Or !Exists('$(PreparedImagerBundleDirectory)/win-arm64.zip')"
+           Text="Both prepared Imager release archives are required." />
+    <ItemGroup>
+      <ResolvedFileToPublish Include="$(PreparedImagerBundleDirectory)/win-x64.zip">
+        <RelativePath>Packaging/Imager/win-x64.zip</RelativePath>
+        <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+      <ResolvedFileToPublish Include="$(PreparedImagerBundleDirectory)/win-arm64.zip">
+        <RelativePath>Packaging/Imager/win-arm64.zip</RelativePath>
+        <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+  <Target Name="PrepareImagerBundle" BeforeTargets="ComputeFilesToPublish" Condition="'$(PreparedImagerBundleDirectory)' == ''">
+    <PropertyGroup>
+      <_ImagerStageRoot>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/obj/imager-bundles/$(Configuration)/$([System.Guid]::NewGuid())'))</_ImagerStageRoot>
+      <_ImagerPublishDir>$(_ImagerStageRoot)/publish/</_ImagerPublishDir>
+      <_ImagerArchive>$(_ImagerStageRoot)/win-x64.zip</_ImagerArchive>
+      <_ImagerArm64PublishDir>$(_ImagerStageRoot)/publish-arm64/</_ImagerArm64PublishDir>
+      <_ImagerArm64Archive>$(_ImagerStageRoot)/win-arm64.zip</_ImagerArm64Archive>
+    </PropertyGroup>
+    <MSBuild Projects="$(MSBuildProjectDirectory)/../CloneDeploy-Imager/CloneDeploy-Imager.csproj"
+             Targets="Restore;Publish" BuildInParallel="false"
+             RemoveProperties="PublishProfile;PublishProfileFullPath;PublishUrl;WebPublishMethod;OutputPath;OutDir;NoBuild"
+             Properties="Version=$(Version);Configuration=$(Configuration);TargetFramework=net10.0-windows;RuntimeIdentifier=win-x64;SelfContained=true;PublishSingleFile=false;PublishTrimmed=false;PublishAot=false;PublishDir=$(_ImagerPublishDir)" />
+    <Error Condition="!Exists('$(_ImagerPublishDir)CloneDeploy-Imager.exe') Or !Exists('$(_ImagerPublishDir)coreclr.dll') Or !Exists('$(_ImagerPublishDir)winfsp-msil.dll')"
+           Text="The self-contained x64 Imager publish is incomplete." />
+    <ZipDirectory SourceDirectory="$(_ImagerPublishDir)" DestinationFile="$(_ImagerArchive)" />
+    <MSBuild Projects="$(MSBuildProjectDirectory)/../CloneDeploy-Imager/CloneDeploy-Imager.csproj"
+             Targets="Restore;Publish" BuildInParallel="false"
+             RemoveProperties="PublishProfile;PublishProfileFullPath;PublishUrl;WebPublishMethod;OutputPath;OutDir;NoBuild;PlatformTarget"
+             Properties="Version=$(Version);Configuration=$(Configuration);TargetFramework=net10.0-windows;RuntimeIdentifier=win-arm64;SelfContained=true;PublishSingleFile=false;PublishTrimmed=false;PublishAot=false;PublishDir=$(_ImagerArm64PublishDir)" />
+    <Error Condition="!Exists('$(_ImagerArm64PublishDir)CloneDeploy-Imager.exe') Or !Exists('$(_ImagerArm64PublishDir)coreclr.dll') Or !Exists('$(_ImagerArm64PublishDir)winfsp-msil.dll')"
+           Text="The self-contained ARM64 Imager publish is incomplete." />
+    <ZipDirectory SourceDirectory="$(_ImagerArm64PublishDir)" DestinationFile="$(_ImagerArm64Archive)" />
+    <Copy SourceFiles="$(_ImagerArchive)" DestinationFiles="$(TargetDir)Packaging/Imager/win-x64.zip" />
+    <Copy SourceFiles="$(_ImagerArm64Archive)" DestinationFiles="$(TargetDir)Packaging/Imager/win-arm64.zip" />
+    <ItemGroup>
+      <ResolvedFileToPublish Include="$(_ImagerArchive)">
+        <RelativePath>Packaging/Imager/win-x64.zip</RelativePath>
+        <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+      <ResolvedFileToPublish Include="$(_ImagerArm64Archive)">
+        <RelativePath>Packaging/Imager/win-arm64.zip</RelativePath>
+        <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+</Project>

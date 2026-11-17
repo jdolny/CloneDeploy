@@ -1,0 +1,4 @@
+.agent-general-settings ::deep .mud-input-control-input-container {
+    width: 100%;
+    max-width: 440px;
+}

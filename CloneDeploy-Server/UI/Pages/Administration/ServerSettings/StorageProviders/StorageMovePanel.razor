@@ -1,0 +1,100 @@
+@implements IAsyncDisposable
+@inject StorageMoveService Moves
+@inject StorageProviderService Providers
+
+<MudDivider Class="my-4" />
+<MudText Typo="Typo.h6">@Loc["Storage.Move.Title"]</MudText>
+@if (!Source.SiteServiceId.HasValue)
+{
+    <MudSelect T="int" @bind-Value="_destination" Label="@Loc["Storage.Move.Destination"]" Variant="Variant.Outlined" Class="mt-3">
+        @foreach (var item in _providers.Where(x => x.Id != Source.Id && x.IsEnabled && !x.SiteServiceId.HasValue))
+        {
+            <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+        }
+    </MudSelect>
+    <MudSelect T="StoragePurpose" @bind-Value="_purposes" Label="@Loc["Storage.Move.Purpose"]" Variant="Variant.Outlined">
+        <MudSelectItem Value="@StoragePurpose.Imaging">@Loc[LocKeys.Device.Imaging]</MudSelectItem>
+        <MudSelectItem Value="@StoragePurpose.DeviceManagement">@Loc[LocKeys.Ui.StorageProviderDialog.DeviceManagement]</MudSelectItem>
+        <MudSelectItem Value="@StoragePurpose.All">@Loc["Storage.Move.All"]</MudSelectItem>
+    </MudSelect>
+    <MudText Typo="Typo.caption">@Loc["Storage.Move.Help"]</MudText>
+    <MudButton Color="Color.Primary" Variant="Variant.Outlined" Class="mt-2" Disabled="@(_busy || _destination == 0)" OnClick="StartAsync">@Loc["Storage.Move.Start"]</MudButton>
+}
+else
+{
+    <MudText>@Loc["Storage.Move.Site"]</MudText>
+}
+@foreach (var job in _jobs)
+{
+    <MudPaper Outlined="true" Class="pa-3 mt-3" Elevation="0">
+        <MudText>@Name(job.SourceId) to @Name(job.DestinationId) - @job.Purposes</MudText>
+        <MudText>@Loc[$"Storage.Move.State.{job.State}"]</MudText>
+        <MudProgressLinear Color="Color.Primary" Value="@(job.BytesTotal > 0 ? 100d * job.BytesCompleted / job.BytesTotal : 0)" />
+        <MudText Typo="Typo.caption">@($"{(job.BytesTotal > 0 ? 100d * job.BytesCompleted / job.BytesTotal : 0):N0}%")</MudText>
+        @if (job.State == "Cleaning")
+        {
+            <MudText Typo="Typo.caption">@Loc["Storage.Move.Cleanup", job.CleanupAfterUtc?.ToLocalTime().ToString() ?? ""]</MudText>
+        }
+        @if (job.Error is not null) { <MudText Color="@(job.State == "Failed" ? Color.Error : Color.Default)">@job.Error</MudText> }
+        @if (job.State == "Failed")
+        {
+            <MudButton Disabled="_busy" OnClick="@(() => RetryAsync(job.Id))">@Loc["Storage.Move.Retry"]</MudButton>
+            @if (job.CleanupAfterUtc.HasValue)
+            {
+                <MudButton Disabled="_busy" OnClick="@(() => RunAsync(() => Moves.KeepOriginalsAsync(job.Id)))">@Loc["Storage.Move.Keep"]</MudButton>
+            }
+        }
+    </MudPaper>
+}
+
+@code {
+    [Parameter, EditorRequired] public StorageProviderDto Source { get; set; } = null!;
+    private List<StorageProviderDto> _providers = [];
+    private List<CloneDeploy_Server.Backend.Data.Models.StorageMove> _jobs = [];
+    private int _destination;
+    private StoragePurpose _purposes = StoragePurpose.All;
+    private bool _busy;
+    private readonly CancellationTokenSource _stop = new();
+    private Task? _poll;
+    private string Name(int id) => _providers.FirstOrDefault(x => x.Id == id)?.Name ?? id.ToString();
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Providers.GetAsync();
+        _providers = result.Data ?? [];
+        await RefreshAsync();
+        _poll = PollAsync();
+    }
+    private async Task RefreshAsync() => _jobs = await Moves.ListAsync(Source.Id);
+    private async Task PollAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(3));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(_stop.Token))
+                await InvokeAsync(async () => { await RefreshAsync(); StateHasChanged(); });
+        }
+        catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
+        catch (Exception) { }
+    }
+    private Task StartAsync() => RunAsync(() => Moves.StartAsync(Source.Id, _destination, _purposes));
+    private Task RetryAsync(Guid id) => RunAsync(() => Moves.RetryAsync(id));
+    private async Task RunAsync(Func<Task<ServiceResult>> action)
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var result = await action();
+            if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+            await RefreshAsync();
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _busy = false; }
+    }
+    public async ValueTask DisposeAsync()
+    {
+        await _stop.CancelAsync();
+        if (_poll is not null) await _poll;
+        _stop.Dispose();
+    }
+}

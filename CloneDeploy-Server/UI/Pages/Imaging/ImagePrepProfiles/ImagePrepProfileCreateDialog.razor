@@ -1,0 +1,53 @@
+@inject ImagingService Profiles
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" Disabled="_busy">
+            <MudTextField @bind-Value="_entity.Name" Label="@Loc[LocKeys.Common.Name]" Required="true" MaxLength="200" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_entity.Description" Label="@Loc[LocKeys.Common.Description]" Lines="3" MaxLength="2000" Variant="Variant.Outlined" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked" Disabled="_busy">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="OnCreateClicked" Disabled="_busy" Color="Color.Primary" Variant="Variant.Filled">@Loc[LocKeys.Common.Create]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private MudForm _form = null!;
+    private readonly ImagePrepProfile _entity = new() { Name = string.Empty };
+    private bool _busy;
+
+    private void OnCancelClicked() => MudDialog.Cancel();
+
+    private async Task OnCreateClicked()
+    {
+        if (_busy) return;
+        _busy = true;
+
+        try
+        {
+            await _form.ValidateAsync();
+            if (!_form.IsValid) return;
+
+            var result = await Profiles.SaveImagePrepAsync(_entity);
+            if (!result.Success)
+            {
+                Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+                return;
+            }
+
+            MudDialog.Close(DialogResult.Ok(_entity.Id));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

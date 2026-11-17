@@ -1,0 +1,161 @@
+@inject ActionDeploymentUiService Deployments
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6">@UiText.Get(LocKeys.Ui.DeviceDeployActionsDialog.DeployActionsTo0, (DeviceName))</MudText>
+        @if (_error is not null) { <MudAlert Severity="Severity.Error" Class="my-2">@_error</MudAlert> }
+        @if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+        else if (_queued is not null)
+        {
+            <MudAlert Severity="Severity.Success" Class="my-3">@UiText.Get(LocKeys.Ui.DeviceDeployActionsDialog.Text0ActionsQueuedFor1, (_queued.Count), (DeviceName))</MudAlert>
+            <MudText>@Loc[LocKeys.Ui.DeviceDeployActionsDialog.TrackIndividualResultsInActionDeploymentsOfflineDevicesReceive]</MudText>
+            @for (var i = 0; i < _queued.Count; i++)
+            {
+                var deploymentId = _queued[i];
+                var actionName = _selected[i].Name;
+                <MudLink Href="@($"/tasks/deployments/{deploymentId}")">@actionName</MudLink><br />
+            }
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="my-3">@Loc[LocKeys.Ui.DeviceDeployActionsDialog.DragActionsIntoSelectedActionsOrUseAddActions]</MudText>
+            <MudDropContainer T="PolicyActionOptionDto" @ref="_drop" @key="_dropVersion" Items="_items" ItemsSelector="InZone"
+                              ItemDisabled="@(_ => _busy)" ItemDropped="Dropped">
+                <ChildContent>
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudPaper Outlined="true" Class="pa-3">
+                                <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DeviceDeployActionsDialog.AvailableActions]</MudText>
+                                <MudTextField T="string" Value="_search" ValueChanged="SearchChanged" Label="@Loc[LocKeys.Ui.DeviceDeployActionsDialog.SearchActions]" Clearable="true"
+                                              Immediate="true" Disabled="_busy" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                                <MudSelect T="ActionType?" Value="_type" ValueChanged="TypeChanged" Label="@Loc[LocKeys.Ui.DeviceDeployActionsDialog.ActionType]" Clearable="true"
+                                           Disabled="_busy" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                    @foreach (var type in _items.Select(x => x.Type).Distinct().OrderBy(x => x.ToString()))
+                                    { <MudSelectItem T="ActionType?" Value="@((ActionType?)type)">@UiText.Label(type)</MudSelectItem> }
+                                </MudSelect>
+                                <MudDropZone T="PolicyActionOptionDto" Identifier="available" Style="min-height:180px;max-height:450px;overflow-y:auto" CanDrop="@(_ => !_busy)">
+                                    <ItemRenderer Context="item">
+                                        <MudPaper Outlined="true" Class="pa-2 my-2">
+                                            <MudStack Row="true" AlignItems="AlignItems.Center">
+                                                <MudDragHandle T="PolicyActionOptionDto"><MudIcon Icon="@Icons.Material.Filled.DragIndicator" /></MudDragHandle>
+                                                <div><MudText>@item.Name</MudText><MudText Typo="Typo.caption">@UiText.Label(item.Type)</MudText></div>
+                                                <MudSpacer /><MudButton Disabled="@(_busy || _selected.Count >= 100)" OnClick="@(() => Add(item))" aria-label="@(UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.Add0, (item.Name)))">@Loc[LocKeys.Ui.HelpConfigurationNamesTab.Add]</MudButton>
+                                            </MudStack>
+                                        </MudPaper>
+                                    </ItemRenderer>
+                                </MudDropZone>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudPaper Outlined="true" Class="pa-3">
+                                <MudText Typo="Typo.h6">@UiText.Get(LocKeys.Ui.DeviceDeployActionsDialog.SelectedActions0, (_selected.Count))</MudText>
+                                <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.DeviceDeployActionsDialog.DragOrUseTheArrowsToReorder]</MudText>
+                                <MudDropZone T="PolicyActionOptionDto" Identifier="selected" AllowReorder="true" Style="min-height:240px;max-height:550px;overflow-y:auto"
+                                             CanDrop="@(item => !_busy && (_selected.Contains(item) || _selected.Count < 100))">
+                                    <ChildContent>@if (_selected.Count == 0) { <MudText Class="pa-3">@Loc[LocKeys.Ui.DeviceDeployActionsDialog.DropActionsHere]</MudText> }</ChildContent>
+                                    <ItemRenderer Context="item">
+                                        <MudPaper Outlined="true" Class="pa-2 my-2">
+                                            <MudStack Row="true" AlignItems="AlignItems.Center">
+                                                <MudDragHandle T="PolicyActionOptionDto"><MudIcon Icon="@Icons.Material.Filled.DragIndicator" /></MudDragHandle>
+                                                <MudText>@item.Name</MudText><MudSpacer />
+                                                <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Size="Size.Small" Disabled="@(_busy || _selected.IndexOf(item) == 0)" OnClick="@(() => Move(item, -1))" aria-label="@(UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.Move0Up, (item.Name)))" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward" Size="Size.Small" Disabled="@(_busy || _selected.IndexOf(item) == _selected.Count - 1)" OnClick="@(() => Move(item, 1))" aria-label="@(UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.Move0Down, (item.Name)))" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Disabled="_busy" OnClick="@(() => Remove(item))" aria-label="@(UiText.Get(LocKeys.Group.RemoveDevice, (item.Name)))" />
+                                            </MudStack>
+                                        </MudPaper>
+                                    </ItemRenderer>
+                                </MudDropZone>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </ChildContent>
+            </MudDropContainer>
+            <MudText Typo="Typo.body2" Class="mt-3">@Loc[LocKeys.Ui.DeviceDeployActionsDialog.ConnectedAgentsAreNotifiedToFetchTheirTasksOffline]</MudText>
+            @if (_review is not null) { <MudAlert Severity="Severity.Info" Class="mt-3">@UiText.Get(LocKeys.Ui.DeviceDeployActionsDialog.Reviewed0ActionsFor1ReadyToDeploy, (_review.Count), (DeviceName))</MudAlert> }
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close" Disabled="_busy">@(_queued is null ? UiText.Get(LocKeys.Common.Cancel) : UiText.Get(LocKeys.Ui.ActionFiles.Close))</MudButton>
+        @if (_queued is null)
+        {
+            @if (_review is null)
+            { <MudButton OnClick="ReviewAsync" Disabled="@(_busy || _loading || _selected.Count == 0)" Color="Color.Primary" Variant="Variant.Filled">@Loc[LocKeys.Ui.DeviceDeployActionsDialog.ReviewActions]</MudButton> }
+            else
+            { <MudButton OnClick="DeployAsync" Disabled="_busy" Color="Color.Primary" Variant="Variant.Filled">@Loc[LocKeys.Ui.DeviceConnectionPanel.DeployActionsNow]</MudButton> }
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public int DeviceId { get; set; }
+    [Parameter] public string DeviceName { get; set; } = "";
+    private List<PolicyActionOptionDto> _items = [], _selected = [];
+    private MudDropContainer<PolicyActionOptionDto>? _drop;
+    private List<DeviceActionDeploymentDto>? _review;
+    private List<Guid>? _queued;
+    private string? _search, _error;
+    private ActionType? _type;
+    private bool _loading = true, _busy;
+    private int _dropVersion;
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Deployments.GetDeviceActionCatalogAsync();
+        if (result.Success) _items = result.Data!;
+        else _error = Loc[result.Error!.Code, result.Error.Args];
+        _loading = false;
+    }
+    private bool InZone(PolicyActionOptionDto item, string zone) => zone == "selected" ? _selected.Contains(item) :
+        !_selected.Contains(item) && (_type is null || item.Type == _type) &&
+        (string.IsNullOrWhiteSpace(_search) || item.Name.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase));
+    private void Refresh() { _items = _selected.Concat(_items.Except(_selected)).ToList(); _drop?.Refresh(); }
+    private void Changed() { _review = null; _error = null; _dropVersion++; Refresh(); }
+    private void Add(PolicyActionOptionDto item) { if (!_busy && !_selected.Contains(item) && _selected.Count < 100) { _selected.Add(item); Changed(); } }
+    private void Remove(PolicyActionOptionDto item) { if (!_busy) { _selected.Remove(item); Changed(); } }
+    private void Move(PolicyActionOptionDto item, int offset)
+    {
+        var index = _selected.IndexOf(item); var next = index + offset;
+        if (_busy || index < 0 || next < 0 || next >= _selected.Count) return;
+        _selected.RemoveAt(index); _selected.Insert(next, item); Changed();
+    }
+    private void Dropped(MudItemDropInfo<PolicyActionOptionDto> info)
+    {
+        if (_busy || info.Item is null) return;
+        if (info.DropzoneIdentifier == "available") { Remove(info.Item); return; }
+        if (!_selected.Contains(info.Item) && _selected.Count >= 100) return;
+        _selected.Remove(info.Item); _selected.Insert(Math.Clamp(info.IndexInZone, 0, _selected.Count), info.Item); Changed();
+    }
+    private void SearchChanged(string? value) { _search = value; Refresh(); }
+    private void TypeChanged(ActionType? value) { _type = value; Refresh(); }
+    private void Close() => MudDialog.Close();
+    private async Task ReviewAsync()
+    {
+        if (_busy || _selected.Count == 0) return;
+        _busy = true; _error = null;
+        try
+        {
+            var review = new List<DeviceActionDeploymentDto>();
+            foreach (var action in _selected)
+            {
+                var request = new DeploymentRequestDto { ActionGuid = action.Guid, DeviceIds = [DeviceId], Timing = DeviceTaskTiming.Now };
+                var result = await Deployments.PreviewAsync(request);
+                if (!result.Success) { _error = $"{action.Name}: {Loc[result.Error!.Code, result.Error.Args]}"; return; }
+                review.Add(new(request, result.Data!.ConfirmationHash));
+            }
+            _review = review;
+        }
+        finally { _busy = false; }
+    }
+    private async Task DeployAsync()
+    {
+        if (_busy || _review is null) return;
+        _busy = true;
+        try
+        {
+            var result = await Deployments.DeployDeviceActionsAsync(_review);
+            if (result.Success) _queued = result.Data;
+            else _error = Loc[result.Error!.Code, result.Error.Args];
+        }
+        finally { _busy = false; }
+    }
+}

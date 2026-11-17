@@ -1,0 +1,155 @@
+@page "/settings/site-services/{Id:guid}"
+@page "/settings/site-services/{Id:guid}/{Tab}"
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@implements IDisposable
+@inject SiteService Services
+@inject AuthenticationStateProvider Authentication
+
+@if (_loading) { <MudProgressLinear Color="Color.Primary" Indeterminate="true" /> }
+@if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+@if (_service is not null)
+{
+    <PageTitle>@_service.Name</PageTitle>
+    <Microsoft.AspNetCore.Components.Sections.SectionContent SectionName="page-title">
+        <div class="device-page-heading"><div class="device-heading-row">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Href="/settings/site-services" aria-label="@Loc[LocKeys.Ui.ManageSiteServicePage.BackToSiteServices]" />
+            <div class="device-heading-icon"><MudIcon Icon="@Icons.Material.Outlined.Dns" Size="Size.Large" /></div>
+            <div class="device-heading-copy"><div class="device-heading-name"><h1>@_service.Name</h1></div></div>
+        </div></div>
+    </Microsoft.AspNetCore.Components.Sections.SectionContent>
+    <ActionButtons>
+        <MainButton>
+            <MudButton OnClick="LoadAsync" Disabled="@(_loading || _revoking)" StartIcon="@Icons.Material.Filled.Refresh">@Loc[LocKeys.Dashboard.Refresh]</MudButton>
+        </MainButton>
+        <Content>
+            @if (_service.State != SiteRegistrationState.Revoked)
+            { <MudMenuItem OnClick="RevokeAsync" Disabled="@(_loading || _revoking)" Icon="@Icons.Material.Filled.Block">@Loc[LocKeys.Ui.ManageSiteServicePage.Revoke]</MudMenuItem> }
+            else
+            { <MudMenuItem OnClick="DeleteAsync" Disabled="@(_loading || _revoking)" Icon="@Icons.Material.Filled.Delete">@Loc[LocKeys.Common.Delete]</MudMenuItem> }
+        </Content>
+    </ActionButtons>
+    <div class="device-detail device-workspace">
+        <ResponsiveTabs @key="_service.IsWindowsWorker" PanelOrder="@(_service.IsWindowsWorker ? new int[] { 0, 1, 3 } : new int[] { 0, 1, 3, 4, 5 })" ActivePanelIndex="_activePanelIndex" ActivePanelIndexChanged="OnTabChanged" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.User.General]" Icon="@Icons.Material.Outlined.Info">
+                <TabHelp Href="ui/administration/site-services-general.html" Title="@Loc[LocKeys.User.General]" />
+                @if (_activePanelIndex == 0) { <MudStack Class="py-4"><SiteServiceGeneralTab Service="_service" /></MudStack> }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Image.Configuration]" Icon="@Icons.Material.Outlined.Tune">
+                <TabHelp Href="ui/administration/site-services-configuration.html" Title="@Loc[LocKeys.Image.Configuration]" />
+                @if (_activePanelIndex == 1) { <MudStack Class="pb-4"><SiteServiceConfigurationTab Service="_service" OnSaved="LoadAsync" @key="(_service.Id, _service.Revision)" /></MudStack> }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.AgentAdministrationPage.Enrollment]" Icon="@Icons.Material.Outlined.Security">
+                <TabHelp Href="ui/administration/site-services-enrollment.html" Title="@Loc[LocKeys.Ui.AgentAdministrationPage.Enrollment]" />
+                @if (_activePanelIndex == 3) { <MudStack Class="pb-4"><SiteServiceEnrollmentTab Service="_service" OnChanged="LoadAsync" @key="_service.Id" /></MudStack> }
+            </MudTabPanel>
+            @if (!_service.IsWindowsWorker)
+            {
+                <MudTabPanel Text="@Loc[LocKeys.Ui.ManageSiteServicePage.PXETFTP]" Icon="@Icons.Material.Outlined.SettingsEthernet">
+                    <TabHelp Href="ui/administration/site-services-pxe.html" Title="@Loc[LocKeys.Ui.ManageSiteServicePage.PXETFTP]" />
+                    @if (_activePanelIndex == 4) { <MudStack Class="pb-4"><SiteServiceBootTab Service="_service" OnSaved="LoadAsync" @key="(_service.Id, _service.Revision)" /></MudStack> }
+                </MudTabPanel>
+            }
+            @if (!_service.IsWindowsWorker)
+            {
+                <MudTabPanel Text="@Loc[LocKeys.Image.VersionStorage]" Icon="@Icons.Material.Outlined.Storage">
+                    <TabHelp Href="ui/administration/site-services-storage.html" Title="@Loc[LocKeys.Image.VersionStorage]" />
+                    @if (_activePanelIndex == 5)
+                    {
+                        <MudStack Class="pb-4">
+                            <CloneDeploy_Server.UI.Pages.Administration.ServerSettings.StorageProviders.StorageProviderTab Embedded="true" SiteServiceId="Id" @key="Id" />
+                        </MudStack>
+                    }
+                </MudTabPanel>
+            }
+        </ResponsiveTabs>
+    </div>
+}
+else if (!_loading)
+{
+    <AppPageTitle Text="@Loc[LocKeys.Ui.AdministrationNavigationGroup.SiteServices]" />
+    <MudText>@Loc[LocKeys.Ui.ManageSiteServicePage.SiteServiceNotFoundOrUnavailable]</MudText>
+    <MudButton Href="/settings/site-services" StartIcon="@Icons.Material.Filled.ArrowBack">@Loc[LocKeys.Ui.ManageSiteServicePage.BackToSiteServices]</MudButton>
+}
+@code {
+    [Parameter] public Guid Id { get; set; }
+    [Parameter] public string? Tab { get; set; }
+    private static readonly string[] TabRoutes = ["general", "configuration", "status", "enrollment", "boot", "storage"];
+    private SiteServiceDetails? _service;
+    private int _activePanelIndex;
+    private bool _loading = true, _revoking, _disposed;
+    private string? _error;
+    protected override async Task OnParametersSetAsync()
+    {
+        var index = Array.FindIndex(TabRoutes, x => string.Equals(x, Tab, StringComparison.OrdinalIgnoreCase));
+        _activePanelIndex = index < 0 || index == 2 ? 0 : index;
+        if (_service?.Id != Id) { _service = null; await LoadAsync(); }
+        if (_service?.IsWindowsWorker == true && _activePanelIndex is 4 or 5) _activePanelIndex = 0;
+    }
+    private async Task OnTabChanged(int index)
+    {
+        // MudTabs also reports selection changes while removing panels during disposal.
+        // Let the renderer finish disposal before deciding whether this is a live navigation.
+        await Task.Yield();
+        if (!_disposed && index >= 0 && index < TabRoutes.Length && index != _activePanelIndex)
+            _activePanelIndex = index;
+    }
+    public void Dispose() => _disposed = true;
+    private async Task LoadAsync()
+    {
+        _loading = true; _error = null;
+        var id = Id;
+        try
+        {
+            var service = await Services.GetByIdAsync((await Authentication.GetAuthenticationStateAsync()).User, id);
+            if (Id == id)
+            {
+                _service = service;
+                if (_service?.IsWindowsWorker == true && _activePanelIndex is 4 or 5) _activePanelIndex = 0;
+            }
+        }
+        catch { _error = UiText.Get(LocKeys.Ui.ManageSiteServicePage.UnableToLoadThisSiteServiceRefreshAndTryAgain); }
+        finally { _loading = false; }
+    }
+    private async Task DeleteAsync()
+    {
+        if (_revoking || _service is null) return;
+        _revoking = true;
+        try
+        {
+            var parameters = new DialogParameters<ConfirmationDialog>
+            {
+                { x => x.ContentText, UiText.Get(LocKeys.Ui.ManageSiteServicePage.Delete0FromSiteServicesItsIdentityRemainsRevoked, (_service.Name)) },
+                { x => x.ButtonText, UiText.Get(LocKeys.Common.Delete) }, { x => x.Color, Color.Error }
+            };
+            var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+            if (await dialog.Result is not { Canceled: false, Data: true }) return;
+            await Services.DeleteAsync((await Authentication.GetAuthenticationStateAsync()).User, Id, _service.Revision);
+            Snackbar.Add(UiText.Get(LocKeys.Ui.ManageSiteServicePage.SiteServiceDeleted), Severity.Success);
+            Navigation.NavigateTo("/settings/site-services");
+        }
+        catch (InvalidDataException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        catch { Snackbar.Add(UiText.Get(LocKeys.Ui.ManageSiteServicePage.UnableToDeleteTheServiceRefreshAndTryAgain), Severity.Error); }
+        finally { _revoking = false; }
+    }
+
+    private async Task RevokeAsync()
+    {
+        if (_revoking || _service is null) return;
+        _revoking = true;
+        try
+        {
+            var parameters = new DialogParameters<ConfirmationDialog>
+            {
+                { x => x.ContentText, UiText.Get(LocKeys.Ui.ManageSiteServicePage.Revoke0ThisRemovesItsAccessToTheMain, (_service.Name)) },
+                { x => x.ButtonText, UiText.Get(LocKeys.Ui.ManageSiteServicePage.Revoke) }, { x => x.Color, Color.Error }
+            };
+            var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+            if (await dialog.Result is not { Canceled: false, Data: true }) return;
+            await Services.RevokeAsync((await Authentication.GetAuthenticationStateAsync()).User, Id, _service.Revision);
+            await LoadAsync(); Snackbar.Add(UiText.Get(LocKeys.Ui.ManageSiteServicePage.SiteServiceRevoked), Severity.Success);
+        }
+        catch (InvalidDataException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        catch { Snackbar.Add(UiText.Get(LocKeys.Ui.ManageSiteServicePage.UnableToRevokeTheServiceRefreshAndTryAgain), Severity.Error); }
+        finally { _revoking = false; }
+    }
+}

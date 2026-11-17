@@ -1,0 +1,126 @@
+@using CloneDeploy_Agent.Contracts
+@using System.Text.Json
+@inject ImagingService Profiles
+
+<MudDialog>
+    <DialogContent>
+        <MudText Class="mb-4">@UiText.Label("Saving replaces the XML in the editor. Save the profile to keep your changes.")</MudText>
+        <MudText>@Loc[LocKeys.Ui.ImagePrepAnswerEditor.LeaveOptionalFieldsBlankToKeepWindowsDefaultsComputer]</MudText>
+        <MudStack Spacing="4">
+            <MudStack Spacing="2"><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ImagePrepAnswerEditor.RegionalSettings]</MudText>
+                <MudStack Spacing="2">
+                    <MudSelect T="string" @bind-Value="_options.Architecture" Label="@Loc[LocKeys.Device.Architecture]" Disabled="_loading" Variant="Variant.Outlined">
+                        <MudSelectItem Value='@("amd64")'>@Loc[LocKeys.Ui.ImagePrepAnswerEditor.X64]</MudSelectItem><MudSelectItem Value='@("arm64")'>@Loc[LocKeys.Ui.ImagePrepAnswerEditor.ARM64]</MudSelectItem>
+                    </MudSelect>
+                    <ImagePrepRegionalChoice @bind-Value="_options.Language" Options="ImagePrepRegionalOptions.Languages" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.WindowsDisplayLanguage]" Placeholder="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.EnUS]" HelperText="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.TheLanguageMustAlreadyBeInstalledInTheImage]" Disabled="_loading" />
+                    <ImagePrepRegionalChoice @bind-Value="_options.InputLocale" Options="ImagePrepRegionalOptions.Keyboards" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.KeyboardLayout]" Placeholder="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.EnUSOr040900000409]" HelperText="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.CustomValuesCanIncludeMultipleLayoutsSeparatedBySemicolons]" Disabled="_loading" />
+                    <ImagePrepRegionalChoice @bind-Value="_options.SystemLocale" Options="ImagePrepRegionalOptions.Regions" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.SystemLocale]" Placeholder="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.EnUS]" HelperText="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.LanguageUsedByNonUnicodeApplications]" Disabled="_loading" />
+                    <ImagePrepRegionalChoice @bind-Value="_options.UserLocale" Options="ImagePrepRegionalOptions.Regions" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.RegionalFormat]" Placeholder="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.EnUS]" HelperText="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.DateTimeNumberAndCurrencyFormats]" Disabled="_loading" />
+                    <MudSelect T="string" @bind-Value="_options.TimeZone" Label="@Loc[LocKeys.Device.TimeZone]" Clearable="true" Disabled="_loading" Variant="Variant.Outlined">
+                        @foreach (var zone in TimeZoneInfo.GetSystemTimeZones()) { <MudSelectItem T="string" Value="@zone.Id">@zone.DisplayName</MudSelectItem> }
+                    </MudSelect>
+                </MudStack>
+            </MudStack>
+            <MudStack Spacing="2"><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ImagePrepAnswerEditor.FirstBootOOBE]</MudText>
+                <MudCheckBox @bind-Value="_options.HideEula" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.HideLicenseAgreementPage]" Disabled="_loading" />
+                <MudCheckBox @bind-Value="_options.HideOemRegistration" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.HideOEMRegistration]" Disabled="_loading" />
+                <MudCheckBox @bind-Value="_options.HideOnlineAccountScreens" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.HideMicrosoftAccountScreens]" Disabled="_loading" />
+                <MudCheckBox @bind-Value="_options.HideWirelessSetup" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.HideWirelessNetworkSetup]" Disabled="_loading" />
+                <MudSelect T="int?" @bind-Value="_options.ProtectYourPc" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.PrivacyExpressSettings]" Clearable="true" Disabled="_loading" Variant="Variant.Outlined">
+                    <MudSelectItem T="int?" Value="1">@Loc[LocKeys.Ui.ImagePrepAnswerEditor.UseExpressSettingsValue1]</MudSelectItem>
+                    <MudSelectItem T="int?" Value="2">@Loc[LocKeys.Ui.ImagePrepAnswerEditor.UseExpressSettingsValue2]</MudSelectItem>
+                    <MudSelectItem T="int?" Value="3">@Loc[LocKeys.Ui.ImagePrepAnswerEditor.DoNotUseExpressSettings]</MudSelectItem>
+                </MudSelect>
+                <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.ImagePrepAnswerEditor.AvailableOOBEScreensVaryByWindowsEditionAndVersion]</MudText>
+            </MudStack>
+            <MudStack Spacing="2"><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ImagePrepAnswerEditor.LocalAccountsAndAutomaticLogon]</MudText>
+                <MudStack Spacing="2">
+                    <MudText>@Loc[LocKeys.Ui.ImagePrepAnswerEditor.AccountNamesComeFromManagedCredentialsPasswordsAreInserted]</MudText>
+                    @foreach (var account in _options.LocalAccounts)
+                    {
+                        <MudStack Row="true" AlignItems="AlignItems.Center" @key="account">
+                            <MudSelect T="int" @bind-Value="account.CredentialId" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.LocalAccountCredential]" Disabled="_loading" Variant="Variant.Outlined">
+                                @foreach (var credential in _credentials) { <MudSelectItem T="int" Value="@credential.Id">@credential.Name (@credential.Username)</MudSelectItem> }
+                            </MudSelect>
+                            <MudCheckBox @bind-Value="account.Administrator" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.Administrator]" Disabled="_loading" />
+                            <MudIconButton Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => RemoveAccount(account))" Disabled="_loading" aria-label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.RemoveLocalAccount]" />
+                        </MudStack>
+                    }
+                    <MudButton OnClick="@(() => _options.LocalAccounts.Add(new()))" Disabled="@(_loading || _options.LocalAccounts.Count >= 20)" StartIcon="@Icons.Material.Outlined.Add">@Loc[LocKeys.Ui.ImagePrepAnswerEditor.AddLocalAccount]</MudButton>
+                    <MudSelect T="int?" @bind-Value="_options.AdministratorCredentialId" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.BuiltInAdministratorPasswordCredential]" Clearable="true" Disabled="_loading" Variant="Variant.Outlined">
+                        @foreach (var credential in _credentials.Where(x => x.Username.Equals("Administrator", StringComparison.OrdinalIgnoreCase))) { <MudSelectItem T="int?" Value="@credential.Id">@credential.Name</MudSelectItem> }
+                    </MudSelect>
+                    <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.ImagePrepAnswerEditor.SettingTheBuiltInAdministratorPasswordAloneDoesNot]</MudText>
+                    <MudSelect T="int?" @bind-Value="_options.AutoLogonCredentialId" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.AutomaticLogonAccountOptional]" Clearable="true" Disabled="_loading" Variant="Variant.Outlined">
+                        @foreach (var credential in _credentials.Where(x => x.Id == _options.AdministratorCredentialId || _options.LocalAccounts.Any(a => a.CredentialId == x.Id))) { <MudSelectItem T="int?" Value="@credential.Id">@credential.Name (@credential.Username)</MudSelectItem> }
+                    </MudSelect>
+                    <MudNumericField T="int" @bind-Value="_options.AutoLogonCount" Min="1" Max="999" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.AutomaticLogonCount]" Disabled="_loading" Variant="Variant.Outlined" />
+                </MudStack>
+            </MudStack>
+            <MudStack Spacing="2"><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ImagePrepAnswerEditor.DomainJoin]</MudText>
+                <MudStack Spacing="2">
+                    <MudTextField @bind-Value="_options.JoinDomain" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.DomainDNSName]" Placeholder="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.ExampleOrg]" Disabled="_loading" Variant="Variant.Outlined" />
+                    <MudTextField @bind-Value="_options.OrganizationalUnit" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.ComputerOrganizationalUnitOptional]" Placeholder="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.OUWorkstationsDCExampleDCOrg]" Disabled="_loading" Variant="Variant.Outlined" />
+                    <MudSelect T="int?" @bind-Value="_options.DomainCredentialId" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.DomainJoinCredential]" Clearable="true" Disabled="_loading" Variant="Variant.Outlined">
+                        @foreach (var credential in _credentials) { <MudSelectItem T="int?" Value="@credential.Id">@credential.Name (@credential.Username)</MudSelectItem> }
+                    </MudSelect>
+                    <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.ImagePrepAnswerEditor.WindowsJoinsDuringFirstBootLeaveBlankWhenA]</MudText>
+                </MudStack>
+            </MudStack>
+            <MudStack Spacing="2"><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ImagePrepAnswerEditor.WindowsIdentity]</MudText>
+                <MudStack Spacing="2">
+                    <MudTextField @bind-Value="_options.RegisteredOwner" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.RegisteredOwner]" Disabled="_loading" Variant="Variant.Outlined" />
+                    <MudTextField @bind-Value="_options.RegisteredOrganization" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.RegisteredOrganization]" Disabled="_loading" Variant="Variant.Outlined" />
+                    <MudTextField @bind-Value="_options.ProductKey" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.ProductKeyOptional]" Disabled="_loading" Variant="Variant.Outlined" />
+                </MudStack>
+            </MudStack>
+        </MudStack>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="Generate" Disabled="_loading" Color="Color.Primary" Variant="Variant.Filled">@Loc[LocKeys.Common.Save]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public ImagePrepGeneratorOptions? Options { get; set; }
+    private ImagePrepGeneratorOptions _options = new();
+    private List<ManagedCredentialDto> _credentials = [];
+    private bool _loading = true;
+
+    public sealed record GeneratedAnswer(string Xml, ImagePrepGeneratorOptions Options);
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Edit a separate copy so cancelling leaves the profile untouched.
+        _options = Options is null ? new() : JsonSerializer.Deserialize<ImagePrepGeneratorOptions>(JsonSerializer.Serialize(Options))!;
+        var result = await Profiles.GetImagePrepCredentialsAsync();
+        if (result.Success)
+        {
+            _credentials = result.Data!;
+            _loading = false;
+        }
+        else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+    }
+
+    private void RemoveAccount(ImagePrepLocalAccount account)
+    {
+        _options.LocalAccounts.Remove(account);
+        if (_options.AutoLogonCredentialId == account.CredentialId) _options.AutoLogonCredentialId = null;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Generate()
+    {
+        if (_loading) return;
+        try
+        {
+            var xml = ImagingService.GenerateImagePrepAnswer(_options, _credentials.ToDictionary(x => x.Id, x => x.Username));
+            MudDialog.Close(DialogResult.Ok(new GeneratedAnswer(xml, _options)));
+        }
+        catch (InvalidOperationException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+    }
+}

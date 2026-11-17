@@ -1,0 +1,68 @@
+@inject AppUserService Groups
+
+<div class="section-action-bar">
+    <MudButton OnClick="@Snackbar.GuardAction(() => _busy || !_loaded, UiText.Get(LocKeys.Ui.UserGroupDirectoryTab.SettingsCouldNotBeLoadedRefreshAndTryAgain), Save)" Disabled="@(_busy)" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+</div>
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert> }
+<MudButton OnClick="@Snackbar.GuardAction(() => _busy || !_loaded, UiText.Get(LocKeys.Ui.UserGroupDirectoryTab.SettingsCouldNotBeLoadedRefreshAndTryAgain), OpenPicker)" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GroupAdd" Disabled="@(_busy)" Class="mb-3">@Loc[LocKeys.Ui.UserGroupDirectoryTab.AddGroups]</MudButton>
+<MudDataGrid T="AppUserGroupDirectoryMapping" Items="_mappings" QuickFilter="Matches" Dense="true" Hover="true" Elevation="0" Outlined="true" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize" HorizontalScrollbar="true">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ManageUserGroupPage.DirectoryGroups]</MudText><MudSpacer />
+        <MudTextField T="string" @bind-Value="_search" Immediate="true" Clearable="true" Placeholder="@Loc[LocKeys.Ui.UserGroupDirectoryTab.SearchAssignedGroups]" aria-label="@Loc[LocKeys.Ui.UserGroupDirectoryTab.SearchAssignedDirectoryGroups]" Variant="Variant.Outlined" Margin="Margin.Dense" Class="device-inventory-search" />
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.DisplayName" Title="@Loc[LocKeys.Ui.UserGroupDirectoryPickerDialog.GroupDirectory]" />
+        <PropertyColumn Property="x => x.ObjectGuid" Title="@Loc[LocKeys.Ui.UserGroupDirectoryPickerDialog.ObjectID]" />
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+            <CellTemplate><MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="@(() => _mappings.Remove(context.Item))" Disabled="_busy" aria-label="@(UiText.Get(LocKeys.Group.RemoveDevice, (context.Item.DisplayName)))" /></CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.UserGroupDirectoryTab.NoDirectoryGroupsMatchThisView]</MudText></NoRecordsContent>
+    <PagerContent><MudDataGridPager T="AppUserGroupDirectoryMapping" /></PagerContent>
+</MudDataGrid>
+
+@code {
+    [Parameter] public int GroupId { get; set; }
+    private List<AppUserGroupDirectoryMapping> _mappings = [];
+    private string? _error, _search;
+    private bool _busy = true, _loaded;
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Groups.GetDirectoryMappingsAsync(GroupId);
+        if (result.Success) { _mappings = result.Data!; _loaded = true; }
+        else _error = Loc[result.Error!.Code, result.Error.Args];
+        _busy = false;
+    }
+    private bool Matches(AppUserGroupDirectoryMapping item) => string.IsNullOrWhiteSpace(_search) ||
+        $"{item.DisplayName} {item.ObjectGuid}".Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+    private async Task OpenPicker()
+    {
+        if (_busy || !_loaded) return;
+        _busy = true;
+        try
+        {
+            var parameters = new DialogParameters<UserGroupDirectoryPickerDialog>
+            {
+                { x => x.Assigned, _mappings.Select(x => (x.DirectorySourceId, x.ObjectGuid)).ToHashSet() }
+            };
+            var dialog = await Dialog.ShowAsync<UserGroupDirectoryPickerDialog>(UiText.Get(LocKeys.Ui.UserGroupDirectoryTab.AddDirectoryGroups), parameters,
+                new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, CloseButton = true });
+            if (await dialog.Result is { Canceled: false, Data: List<AppUserGroupDirectoryMapping> selected })
+                foreach (var item in selected)
+                    if (!_mappings.Any(x => x.DirectorySourceId == item.DirectorySourceId && x.ObjectGuid == item.ObjectGuid)) _mappings.Add(item);
+        }
+        finally { _busy = false; }
+    }
+    private async Task Save()
+    {
+        if (_busy || !_loaded) return;
+        _busy = true;
+        try
+        {
+            var result = await Groups.SaveDirectoryMappingsAsync(GroupId, _mappings);
+            if (result.Success) { _error = null; Snackbar.Add(UiText.Get(LocKeys.Ui.UserGroupDirectoryTab.DirectoryGroupMappingsSaved), Severity.Success); }
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _busy = false; }
+    }
+}

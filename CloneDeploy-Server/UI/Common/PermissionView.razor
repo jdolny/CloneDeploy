@@ -1,0 +1,11 @@
+<PermissionScope Policy="@Policy" Context="allowed">
+    @if (allowed)
+    {
+        @ChildContent
+    }
+</PermissionScope>
+
+@code {
+    [Parameter, EditorRequired] public string Policy { get; set; } = "";
+    [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = null!;
+}

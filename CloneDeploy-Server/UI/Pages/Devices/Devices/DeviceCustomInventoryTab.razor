@@ -1,0 +1,16 @@
+<DeviceInventoryTable TItem="DeviceCustomInventory" Title="@Loc[LocKeys.Device.CustomInventory]"
+                      Items="@(Device.CustomInventories.OrderBy(x => x.ScriptAction!.Name))">
+    <Columns>
+        <PropertyColumn T="DeviceCustomInventory" TProperty="string" Property="x => x.ScriptAction == null ? string.Empty : x.ScriptAction.Name"
+                        Title="@Loc[LocKeys.Device.InventoryScript]"/>
+        <TemplateColumn T="DeviceCustomInventory" Title="@Loc[LocKeys.Device.Value]" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <div class="device-inventory-content">@(string.IsNullOrWhiteSpace(context.Item.Value) ? "—" : context.Item.Value)</div>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</DeviceInventoryTable>
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+}

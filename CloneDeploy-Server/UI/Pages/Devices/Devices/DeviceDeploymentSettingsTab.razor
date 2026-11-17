@@ -1,0 +1,159 @@
+@inject AuthenticationStateProvider Authentication
+@inject IAuthorizationService Authorization
+@inject ImagingService ImagingService
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true"/>
+}
+else if (_loadError is not null)
+{
+    <MudAlert Severity="Severity.Error">@_loadError</MudAlert>
+    <MudButton OnClick="OnRetryClicked">@Loc[LocKeys.Common.Retry]</MudButton>
+}
+else if (_device is not null)
+{
+    <MudPaper Class="pa-4" Elevation="2">
+        <MudForm @ref="_form">
+            
+            <MudStack Spacing="3">
+                <MudText Typo="Typo.h6">@Loc[LocKeys.Device.DeploymentSettings]</MudText>
+                @if (_effective is not null)
+                {
+                    <MudText Typo="Typo.subtitle2">@Loc[LocKeys.Ui.DeviceDeploymentSettingsTab.EffectiveSavedDeploymentSettings]</MudText>
+                    @if (_effective.Error is not null)
+                    {
+                        <MudAlert Severity="Severity.Warning">@_effective.Error</MudAlert>
+                    }
+                    <MudText Typo="Typo.body2">@UiText.Get(LocKeys.Ui.DeviceDeploymentSettingsTab.Image0, ((_images.FirstOrDefault(x => x.Id == _effective.ImageId)?.Name ?? UiText.Get(LocKeys.Ui.DeviceDeploymentSettingsTab.NotAssigned))))</MudText>
+                    <MudText Typo="Typo.body2">@UiText.Get(LocKeys.Ui.DeviceDeploymentSettingsTab.DeploymentProfile0, ((_profiles.FirstOrDefault(x => x.Id == _effective.ProfileId)?.Name ?? UiText.Get(LocKeys.Ui.DeviceDeploymentSettingsTab.NotAssigned))))</MudText>
+                    <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.DeviceDeploymentSettingsTab.Source0, (_effective.Source))</MudText>
+                }
+                <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.DeviceDeploymentSettingsTab.DeviceAssignmentsOverrideGroupImagingSettingsClearBothFields]</MudText>
+                <MudSelect T="int?" @bind-Value="_device.ImageId" Label="@Loc[LocKeys.Device.Image]" Validation="@(new Func<int?, string?>(ValidateImage))" Clearable="true"
+                           Variant="Variant.Outlined" Disabled="@(_saving || !_canEdit)">
+                    @foreach (var image in _images)
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)image.Id)" Disabled="@(!image.Enabled)">@image.Name</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudSelect T="int?" @bind-Value="_device.DeploymentProfileId" Label="@Loc[LocKeys.Device.DeploymentProfile]" Validation="@(new Func<int?, string?>(ValidateProfile))"
+                           Clearable="true" Variant="Variant.Outlined" Disabled="@(_saving || !_canEdit)">
+                    @foreach (var profile in _profiles)
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)profile.Id)" Disabled="@(!profile.Enabled)">@profile.Name</MudSelectItem>
+                    }
+                </MudSelect>
+                <DeviceTabAction SectionId="ActionSectionId">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save"
+                               Disabled="@(_saving || !_canEdit)"
+                               OnClick="@Snackbar.GuardAction(() => _saving || _failed, UiText.Get(LocKeys.Ui.DeviceDeploymentSettingsTab.DeploymentSettingsCouldNotBeLoadedReopenThisTab), OnSaveClicked)">@(_saving ? Loc[LocKeys.Common.Saving].Value : Loc[LocKeys.Common.SaveChanges].Value)</MudButton>
+                </DeviceTabAction>
+            </MudStack>
+        </MudForm>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public int DeviceId { get; set; }
+    [Parameter] public object? ActionSectionId { get; set; }
+    private Device? _device;
+    private EffectiveImagingSettings? _effective;
+    private List<Image> _images = [];
+    private List<DeploymentProfile> _profiles = [];
+    private MudForm _form = null!;
+    private bool _loading = true;
+    private bool _saving;
+    private bool _canEdit;
+    private bool _failed;
+    private string? _loadError;
+    private int? _loadedDeviceId;
+    
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedDeviceId == DeviceId) return;
+        _loadedDeviceId = DeviceId;
+        await OnRetryClicked();
+    }
+
+    private async Task OnRetryClicked()
+    {
+        _canEdit = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.DeviceEdit)).Succeeded;
+        _loading = true;
+        _loadError = null;
+        try
+        {
+            var device = await ImagingService.GetDeviceAsync(DeviceId);
+            var images = await ImagingService.GetImagesAsync(includeDisabled: true);
+            var profiles = await ImagingService.GetAllProfilesAsync(includeDisabled: true);
+            _failed = !device.HasData || !images.Success || !profiles.Success;
+            if (_failed)
+            {
+                var error = device.Error ?? images.Error ?? profiles.Error;
+                _loadError = error is not null ? Loc[error.Code, error.Args] : Loc[LocKeys.Device.NotFound];
+                return;
+            }
+
+            _device = device.Data;
+            _images = images.Data ?? [];
+            _profiles = profiles.Data ?? [];
+            await LoadEffectiveAsync();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private string? ValidateImage(int? value)
+    {
+        if (value.HasValue != (_device?.DeploymentProfileId.HasValue ?? false))
+            return Loc[LocKeys.Device.DeploymentPairRequired];
+
+        return value.HasValue && !_images.Any(image => image.Id == value && image.Enabled)
+            ? Loc[LocKeys.Device.EnabledImageRequired].Value
+            : null;
+    }
+
+    private string? ValidateProfile(int? value)
+    {
+        if (value.HasValue != (_device?.ImageId.HasValue ?? false))
+            return Loc[LocKeys.Device.DeploymentPairRequired];
+
+        return value.HasValue && !_profiles.Any(profile => profile.Id == value && profile.Enabled)
+            ? Loc[LocKeys.Device.EnabledProfileRequired].Value
+            : null;
+    }
+
+    private async Task LoadEffectiveAsync()
+    {
+        var result = await ImagingService.GetEffectiveSettingsAsync(DeviceId);
+        _effective = result.HasData ? result.Data : new(null, null, UiText.Get(LocKeys.Ui.OuTargetPickerNode.Unavailable), UiText.Get(LocKeys.Ui.DeviceDeploymentSettingsTab.UnableToLoadEffectiveImagingSettingsReloadTheTab));
+    }
+
+    
+    private async Task OnSaveClicked()
+    {
+        if (_saving || _loading || _failed || _device is null) return;
+        _saving = true;
+        try
+        {
+            await _form.ValidateAsync();
+            if (!_form.IsValid) return;
+
+            var result = await ImagingService.SaveDeviceDefaultsAsync(DeviceId, _device.ImageId, _device.DeploymentProfileId);
+            if (result.Success)
+            {
+                await LoadEffectiveAsync();
+            }
+
+            Snackbar.Add(result.Success ? Loc[LocKeys.Device.DeploymentDefaultsSaved].Value : Loc[result.Error!.Code, result.Error.Args], result.Success ? Severity.Success : Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+}

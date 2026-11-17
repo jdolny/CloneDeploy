@@ -1,0 +1,51 @@
+{
+  "build": {
+    "content": [
+      {
+        "files": [
+          "index.md",
+          "toc.yml",
+          "architecture-security/**/*.md",
+          "changelog/**/*.md",
+          "devicemanagement/**/*.md",
+          "imaging/**/*.md",
+          "installation/**/*.md",
+          "introduction/**/*.md",
+          "resources/**/*.md",
+          "troubleshooting/**/*.md",
+          "ui/**/*.md"
+        ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [
+          "assets/**"
+        ]
+      }
+    ],
+    "output": "_site",
+    "template": [
+      "default",
+      "modern",
+      "templates"
+    ],
+    "postProcessors": [
+      "ExtractSearchIndex"
+    ],
+    "globalMetadata": {
+      "_appTitle": "CloneDeploy Documentation",
+      "_appName": "CloneDeploy",
+      "_appLogoPath": "assets/CloneDeploy.svg",
+      "_appFaviconPath": "assets/CloneDeploy.ico",
+      "_enableSearch": true,
+      "_disableContribution": true,
+      "_disableToc": false,
+      "_disableAffix": true,
+      "_appFooter": "CloneDeploy documentation"
+    },
+    "sitemap": {
+      "baseUrl": "https://docs.clonedeploy.com/"
+    }
+  }
+}

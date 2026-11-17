@@ -1,0 +1,29 @@
+@inject HelpDeskUiService Settings
+@inject AuthenticationStateProvider Authentication
+
+<MudAutocomplete T="HelpDirectoryChoice" Value="_selected" ValueChanged="Selected" SearchFunc="Search"
+                 ToStringFunc="@(x => x?.Label ?? string.Empty)" Label="@Label" Disabled="Disabled" Clearable="true"
+                 Variant="Variant.Outlined" Margin="Margin.Dense" MaxItems="50" />
+@code {
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public DirectoryObjectKind Kind { get; set; }
+    [Parameter] public string Label { get; set; } = UiText.Get(LocKeys.Ui.UserAudienceMembersTab.DirectoryObject);
+    [Parameter] public bool Disabled { get; set; }
+    private string? _loaded;
+    private HelpDirectoryChoice? _selected;
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loaded == Value) return;
+        var key = Value; _loaded = key;
+        var selected = string.IsNullOrEmpty(key) ? null : await Settings.RoutingDirectoryChoiceAsync((await Authentication.GetAuthenticationStateAsync()).User, key);
+        if (_loaded == key) _selected = selected ?? (string.IsNullOrEmpty(key) ? null : new(key, UiText.Get(LocKeys.Ui.HelpDirectoryPicker.UnavailableDirectoryObject)));
+    }
+    private async Task<IEnumerable<HelpDirectoryChoice>> Search(string? text, CancellationToken ct) =>
+        await Settings.SearchRoutingDirectoryAsync((await Authentication.GetAuthenticationStateAsync()).User, Kind, text, ct);
+    private async Task Selected(HelpDirectoryChoice? selected)
+    {
+        _selected = selected; _loaded = selected?.Key;
+        await ValueChanged.InvokeAsync(_loaded);
+    }
+}

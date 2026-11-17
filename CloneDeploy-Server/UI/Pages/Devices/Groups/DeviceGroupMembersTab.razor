@@ -1,0 +1,137 @@
+@inject AuthenticationStateProvider Authentication
+@inject IAuthorizationService Authorization
+@inject DeviceGroupService DeviceGroupService
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true"/>
+}
+else if (_loadFailed)
+{
+    <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.DeviceGroupGeneralTab.UnableToLoadGroupSettingsReloadThePageTo]</MudAlert>
+}
+else
+{
+    @if (_group.Type == DeviceGroupType.AllDevices)
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-4">@Loc[LocKeys.Ui.DeviceGroupMembersTab.AllEnrolledNonArchivedDevicesAreIncludedAutomaticallyNo]</MudAlert>
+    }
+    else
+    {
+        <div class="section-action-bar">
+            <MudButton OnClick="OnEditClicked" Disabled="@(_saving || !_canEdit)" Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Edit">@(_type == DeviceGroupType.Manual ? UiText.Get(LocKeys.Ui.DeviceGroupMembersTab.EditMembers) : UiText.Get(LocKeys.Ui.DeviceGroupMembersTab.EditDynamicCriteria))</MudButton>
+        </div>
+    }
+
+    <div>
+        <MudDataGrid T="QueryDeviceDto" Items="@_members.Where(x => MatchesSearch(x, _memberSearch))" Dense="true" Elevation="0" Outlined="true" Hover="true" Class="device-list-grid" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu"
+                     RowsPerPage="@Constants.UI.DefaultPageSize" ColumnResizeMode="ResizeMode.Column">
+            <ToolBarContent>
+                <MudIcon Icon="@Icons.Material.Outlined.Computer" Color="Color.Primary"/>
+                <MudText Typo="Typo.h6">@(_group.Type == DeviceGroupType.AllDevices ? UiText.Get(LocKeys.Ui.DeviceGroupMembersTab.CurrentMembers) : Loc[LocKeys.Group.SavedMembers].Value)</MudText>
+                @if (_type == DeviceGroupType.Dynamic)
+                {
+                    <MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Ui.DeviceGroupMembersTab.QueueARecalculationUsingTheSavedDynamicCriteria]" ShowOnFocus="true">
+                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="@Snackbar.GuardAction(() => _saving || _group.QueryDefinitionJson is null, UiText.Get(LocKeys.Ui.DeviceGroupMembersTab.ConfigureAndSaveADynamicMembershipQueryBeforeRecalculating), OnRefreshMembersClicked)" Disabled="@(_saving || !_canEdit)" aria-label="@Loc[LocKeys.Ui.DeviceGroupMembersTab.RecalculateMembers]"/>
+                    </MudTooltip>
+                }
+                <MudSpacer/>
+                <MudTextField T="string" @bind-Value="_memberSearch" DebounceInterval="300" Clearable="true"
+                              Placeholder="@Loc[LocKeys.Common.Search]" aria-label="@Loc[LocKeys.Common.Search]"
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" Class="device-inventory-search"/>
+            </ToolBarContent>
+            <Columns>
+                <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]">
+                    <CellTemplate><MudLink Class="device-name-link" Href="@($"/devices/manage/{context.Item.Id}")">@context.Item.Name</MudLink></CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="x => x.Id" Title="@Loc[LocKeys.Device.Id]"/>
+            </Columns>
+            <PagerContent><MudDataGridPager T="QueryDeviceDto"/></PagerContent>
+            <NoRecordsContent><MudText>@Loc[LocKeys.Group.NoMembers]</MudText></NoRecordsContent>
+        </MudDataGrid>
+
+    </div>
+}
+
+@code {
+    private bool _canEdit;
+    [Parameter, EditorRequired] public int GroupId { get; set; }
+    [Parameter] public EventCallback<DeviceGroup> Saved { get; set; }
+    private int? _loadedGroupId;
+    private DeviceGroup _group = new() { Name = string.Empty };
+    private DeviceGroupType _type;
+    private List<QueryDeviceDto> _members = [];
+    private string? _memberSearch;
+    private bool _loading = true, _loadFailed, _saving;
+    private static bool MatchesSearch(QueryDeviceDto device, string? search) => string.IsNullOrWhiteSpace(search)
+        || device.Name.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase)
+        || device.Id.ToString().Contains(search.Trim(), StringComparison.OrdinalIgnoreCase);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _canEdit = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.DeviceGroupEdit)).Succeeded;
+        if (_loadedGroupId == GroupId) return;
+        _loadedGroupId = GroupId;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        var group = await DeviceGroupService.GetByIdAsync(GroupId);
+        var members = await DeviceGroupService.GetMembersAsync(GroupId);
+        _loadFailed = !group.Success || !members.Success;
+        if (_loadFailed)
+        {
+            var error = group.Error ?? members.Error!;
+            Snackbar.Add(Loc[error.Code, error.Args], Severity.Error);
+        }
+        else
+        {
+            _group = group.Data!;
+            _type = _group.Type;
+            _members = members.Data!;
+        }
+        _loading = false;
+    }
+
+    private async Task OnRefreshMembersClicked()
+    {
+        if (_saving || _group.Type != DeviceGroupType.Dynamic || _group.QueryDefinitionJson is null) return;
+        _saving = true;
+        try
+        {
+            var result = await DeviceGroupService.QueueRebuildAsync(GroupId);
+            if (result.Success)
+            {
+                Snackbar.Add(UiText.Get(LocKeys.Ui.DeviceGroupMembersTab.DynamicMembershipRecalculationQueuedReopenThisTabAfterThe), Severity.Success);
+                await LoadAsync();
+            }
+            else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _saving = false; }
+    }
+
+    private async Task OnEditClicked()
+    {
+        if (_saving) return;
+        _saving = true;
+        try
+        {
+            var parameters = new DialogParameters { ["GroupId"] = GroupId };
+            var options = new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = false };
+            var dialog = _type == DeviceGroupType.Manual
+                ? await Dialog.ShowAsync<DeviceGroupMembersDialog>(UiText.Get(LocKeys.Ui.DeviceGroupMembersTab.EditMembers), parameters, options)
+                : await Dialog.ShowAsync<DeviceGroupCriteriaDialog>(UiText.Get(LocKeys.Ui.DeviceGroupMembersTab.EditDynamicCriteria), parameters, options);
+            if (await dialog.Result is { Canceled: false })
+            {
+                await LoadAsync();
+                if (!_loadFailed) await Saved.InvokeAsync(_group);
+            }
+            else _type = _group.Type;
+        }
+        finally { _saving = false; }
+    }
+}

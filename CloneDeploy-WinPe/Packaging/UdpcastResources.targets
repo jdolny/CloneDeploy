@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <BundledUdpcastResourceRoot>$(MSBuildThisFileDirectory)../../third_party/udpcast/20250223</BundledUdpcastResourceRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(BundledUdpcastResourceRoot)/x64/udp-receiver.exe" LogicalName="CloneDeploy.Udpcast.x64.udp-receiver.exe" Link="Resources/udpcast/x64/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="$(BundledUdpcastResourceRoot)/a64/udp-receiver.exe" LogicalName="CloneDeploy.Udpcast.a64.udp-receiver.exe" Link="Resources/udpcast/a64/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="$(BundledUdpcastResourceRoot)/*" LogicalName="CloneDeploy.Udpcast.%(Filename)%(Extension)" Link="Resources/udpcast/%(Filename)%(Extension)" />
+  </ItemGroup>
+  <Target Name="RequireUdpcastResources" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('$(BundledUdpcastResourceRoot)/x64/udp-receiver.exe') Or !Exists('$(BundledUdpcastResourceRoot)/a64/udp-receiver.exe') Or !Exists('$(BundledUdpcastResourceRoot)/source.zip') Or !Exists('$(BundledUdpcastResourceRoot)/COPYING-UDPCAST.txt') Or !Exists('$(BundledUdpcastResourceRoot)/COPYING-TOOLCHAIN.txt')"
+           Text="Restore the bundled UDPcast receivers, source and licenses from source control." />
+  </Target>
+</Project>

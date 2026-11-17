@@ -1,0 +1,114 @@
+@inject AuthenticationStateProvider SharedCatalogAuthentication
+@inject IAuthorizationService SharedCatalogAuthorization
+@using CloneDeploy_Agent.Contracts
+@inject ActionService Service
+
+<PolicyActionEditScope Context="canEdit">
+@if (_model is null)
+{
+    @if (_loadingAction) { <MudProgressLinear Indeterminate="true"/> }
+    else { <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.CommandActionConfigurationTab.UnableToLoadActionSettingsReopenThisTabTo]</MudAlert> }
+}
+else
+{
+    <div class="section-action-bar"><MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="OnSaveClicked" Disabled="@(!canEdit || (_loading || _saving))">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton></div>
+    <div>
+            <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.Action.General]</MudText>
+            <MudForm @ref="_form" Disabled="@(!canEdit || (_saving))">
+                <MudGrid Spacing="3">
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="_model.Name" Label="@Loc[LocKeys.Common.Name]" Variant="Variant.Outlined" Required="true" />
+                        <MudTextField @bind-Value="_model.Description" Label="@Loc[LocKeys.Common.Description]" Variant="Variant.Outlined" Lines="3" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.subtitle2" Class="mb-2">@Loc[LocKeys.Common.Tags]</MudText>
+                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mb-2">
+                            @foreach (var id in SelectedTagIds)
+                            {
+                                var name = _tags.FirstOrDefault(x => x.Id == id)?.Name ?? id.ToString();
+                                <MudChip T="int" @key="id" Value="id" Color="Color.Primary" Variant="Variant.Outlined"
+                                         Disabled="_saving" OnClose="@(() => RemoveTag(id))">@name</MudChip>
+                            }
+                        </MudStack>
+                        <MudAutocomplete T="Tag" @ref="_tagPicker" Label="@Loc[LocKeys.Action.AddTag]" Variant="Variant.Outlined"
+                                         SearchFunc="SearchTags" ToStringFunc="@(tag => tag?.Name ?? string.Empty)" ValueChanged="AddTagAsync"
+                                         Clearable="true" ResetValueOnEmptyText="true" MaxItems="20" Disabled="_saving"
+                                         AdornmentIcon="@Icons.Material.Filled.Search" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        </div>
+
+
+}
+
+
+</PolicyActionEditScope>
+
+@code {
+    private WindowsUpdateAction _model = null!;
+    private bool _loadingAction = true;
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Service.GetWindowsUpdateAsync(WindowsUpdateAction.Id);
+        if (result.Success && result.HasData)
+        {
+            await LoadCatalogsAsync();
+            _model = result.Data;
+        }
+        else if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loadingAction = false;
+    }
+
+    [Parameter, EditorRequired] public WindowsUpdateAction WindowsUpdateAction { get; set; } = null!;
+    [Parameter] public EventCallback OnSaved { get; set; }
+    private MudForm _form = null!;
+    private List<Tag> _tags = [];
+    private MudAutocomplete<Tag>? _tagPicker;
+    private bool _loading = true;
+    private bool _saving;
+    private IReadOnlyCollection<int> SelectedTagIds => _model.ActionReference?.Tags.Select(x => x.TagId).ToArray() ?? [];
+    private async Task LoadCatalogsAsync()
+    {
+        _loading = true;
+        var result = ((await SharedCatalogAuthorization.AuthorizeAsync((await SharedCatalogAuthentication.GetAuthenticationStateAsync()).User, Constants.Permissions.TagView)).Succeeded ? await Service.GetTagsAsync() : ServiceResult<List<Tag>>.Ok([]));
+        _tags = result.Data ?? [];
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loading = false;
+    }
+    private Task<IEnumerable<Tag>> SearchTags(string? text, CancellationToken cancellationToken)
+    {
+        var selected = SelectedTagIds.ToHashSet();
+        return Task.FromResult(_tags.Where(x => !selected.Contains(x.Id) &&
+            (string.IsNullOrWhiteSpace(text) || x.Name.Contains(text.Trim(), StringComparison.OrdinalIgnoreCase))).OrderBy(x => x.Name).AsEnumerable());
+    }
+    private async Task AddTagAsync(Tag? tag)
+    {
+        if (_saving || tag is null) return;
+        SetTags(SelectedTagIds.Append(tag.Id));
+        if (_tagPicker is not null) await _tagPicker.ClearAsync();
+    }
+    private void RemoveTag(int id) { if (!_saving) SetTags(SelectedTagIds.Where(x => x != id)); }
+    private void SetTags(IEnumerable<int> ids)
+    {
+        _model.ActionReference ??= new ActionReference { ActionGuid = _model.Guid, ActionType = ActionType.WindowsUpdate };
+        _model.ActionReference.Tags = ids.Distinct().Select(x => new ActionTag { ActionGuid = _model.Guid, TagId = x }).ToList();
+    }
+    private async Task OnSaveClicked()
+    {
+        if (_loading || _saving) return;
+        _saving = true;
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            _saving = false;
+            return;
+        }
+        var result = await Service.UpdateGeneralWindowsUpdateAsync(_model);
+        _saving = false;
+        if (!result.Success) { Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); return; }
+        Snackbar.Add(Loc[LocKeys.Action.GeneralSaved], Severity.Success);
+        await OnSaved.InvokeAsync();
+    }
+}

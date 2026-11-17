@@ -1,0 +1,6 @@
+<PermissionScope Policy="@Policy" ChildContent="ChildContent" />
+
+@code {
+    [Parameter, EditorRequired] public string Policy { get; set; } = "";
+    [Parameter, EditorRequired] public RenderFragment<bool> ChildContent { get; set; } = null!;
+}

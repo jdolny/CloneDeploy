@@ -1,0 +1,171 @@
+@using CloneDeploy_Server.Backend.Services.Files
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div @ref="_root" >
+    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                   @ref="_fileUpload"
+                   @bind-Files="_files"
+                   Accept="@Accept"
+                   DragAndDrop="true"
+                   MaximumFileCount="@MaximumFileCount"
+                   Disabled="@_busy">
+
+        <SelectedTemplate Context="files">
+            @foreach (var file in files)
+            {
+                <MudChip T="string"
+                         Color="Color.Primary"
+                         Size="Size.Small"
+                         Disabled="@_busy"
+                         CloseIcon="@Icons.Material.Outlined.Close"
+                         OnClose="@(() => RemoveFile(file))">
+                    @file.Name
+                </MudChip>
+            }
+        </SelectedTemplate>
+    </MudFileUpload>
+    <MudStack Row Justify="Justify.FlexEnd" Class="mt-4">
+    <MudButton Color="Color.Primary" Disabled="@(_busy)" OnClick="@Snackbar.GuardAction(() => _busy || !_files.Any(), UiText.Get(LocKeys.Ui.ChunkedFileUpload.SelectAtLeastOneFileToUpload), Upload)" Variant="Variant.Outlined">@Loc[LocKeys.Ui.ChunkedFileUpload.Upload]</MudButton>
+    </MudStack>
+    @if (_busy)
+    {
+        <MudProgressLinear Color="Color.Primary" Value="@_progress" Class="my-3" />
+        <MudText Typo="Typo.body2">@UiText.Get(LocKeys.Ui.ChunkedFileUpload.Text01Uploaded, (_currentFile), (_progress.ToString("0")))</MudText>
+        <MudButton OnClick="Cancel" Disabled="@_finishing">@Loc[LocKeys.Ui.ChunkedFileUpload.CancelRemainingUploads]</MudButton>
+    }
+    @if (!string.IsNullOrEmpty(_message))
+    {
+        <MudAlert Severity="@_severity" Class="mt-3">@_message</MudAlert>
+    }
+</div>
+
+@code {
+    [Parameter] public string? Accept { get; set; }
+    [Parameter] public int MaximumFileCount { get; set; } = 10;
+    [Parameter] public long MaxFileSize { get; set; } = 10L * 1024 * 1024 * 1024;
+    [Parameter] public EventCallback<UploadResultDto> OnUploaded { get; set; }
+    [Parameter] public EventCallback<bool> BusyChanged { get; set; }
+
+    private ElementReference _root;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<ChunkedFileUpload>? _reference;
+    private bool _busy;
+    private bool _finishing;
+    private double _progress;
+    private string? _message;
+    private Severity _severity;
+    private string? _currentFile;
+    private int _completed;
+
+    private IReadOnlyList<IBrowserFile> _files = [];
+
+    private MudFileUpload<IReadOnlyList<IBrowserFile>>? _fileUpload;
+
+    private async Task RemoveFile(IBrowserFile file)
+    {
+        if (_busy) return;
+        if (_fileUpload is not null)
+            await _fileUpload.RemoveFileAsync(file.Name);
+    }
+
+    private async Task Upload()
+    {
+        if (_files is null || _files.Count == 0 || _busy) return;
+        _message = null;
+        if (_files.Count > MaximumFileCount || _files.Any(file => file.Size <= 0 || file.Size > MaxFileSize))
+        {
+            _severity = Severity.Error;
+            Snackbar.Add(UiText.Get(LocKeys.Ui.ChunkedFileUpload.ChooseUpTo0NonemptyFilesEachNoLarger, (MaximumFileCount), (MaxFileSize)), Severity.Error);
+            return;
+        }
+
+        _busy = true;
+        _finishing = false;
+        _progress = 0;
+        _completed = 0;
+        try
+        {
+            await BusyChanged.InvokeAsync(true);
+            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./UI/Common/ChunkedFileUpload.razor.js");
+            _reference ??= DotNetObjectReference.Create(this);
+            // Start returns immediately; callbacks keep long uploads outside the JS interop timeout.
+            var selectedFiles = _files.Select(file => new
+            {
+                name = file.Name,
+                size = file.Size,
+                lastModified = file.LastModified.ToUnixTimeMilliseconds()
+            }).ToArray();
+            await _module.InvokeVoidAsync("start", _root, _reference, MaxFileSize, MaximumFileCount, selectedFiles);
+        }
+        catch (JSException)
+        {
+            _busy = false;
+            _severity = Severity.Error;
+            Snackbar.Add(UiText.Get(LocKeys.Ui.ChunkedFileUpload.UnableToStartTheUploadPleaseTryAgain), Severity.Error);
+            await BusyChanged.InvokeAsync(false);
+        }
+    }
+
+    private async Task Cancel()
+    {
+        if (_module is not null) await _module.InvokeVoidAsync("cancel", _root);
+    }
+
+    [JSInvokable]
+    public Task ReportProgress(double percent, bool finishing) => InvokeAsync(() =>
+    {
+        _progress = percent;
+        _finishing = finishing;
+        StateHasChanged();
+    });
+
+    [JSInvokable]
+    public Task UploadStarted(string name, int index, int total) => InvokeAsync(() =>
+    {
+        _currentFile = UiText.Get(LocKeys.Ui.ChunkedFileUpload.Text0Of12, (index), (total), (name));
+        _progress = 0;
+        _finishing = false;
+        StateHasChanged();
+    });
+
+    [JSInvokable]
+    public Task UploadFinished(UploadResultDto? result, string? error) => InvokeAsync(async () =>
+    {
+        _finishing = false;
+        _severity = Severity.Success;
+        if (result is not null) _completed++;
+        _message = UiText.Get(LocKeys.Ui.ChunkedFileUpload.Uploaded0FileS, (_completed));
+        if (result is null) Snackbar.Add(error ?? UiText.Get(LocKeys.Ui.ChunkedFileUpload.TheUploadFailedPleaseTryAgain), Severity.Error);
+        StateHasChanged();
+        if (result is not null) await OnUploaded.InvokeAsync(result);
+    });
+
+    [JSInvokable]
+    public Task BatchFinished(string? error) => InvokeAsync(async () =>
+    {
+        _busy = false;
+        _finishing = false;
+        await BusyChanged.InvokeAsync(false);
+        if (error is not null)
+        {
+            Snackbar.Add(error, Severity.Error);
+        }
+        StateHasChanged();
+    });
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null)
+        {
+            try
+            {
+                await _module.InvokeVoidAsync("cancel", _root);
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException) { }
+            catch (TaskCanceledException) { }
+        }
+        _reference?.Dispose();
+    }
+}

@@ -1,0 +1,35 @@
+@page "/Error"
+@using System.Diagnostics
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.ErrorPage.Error]" />
+
+<h1 class="text-danger">@Loc[LocKeys.Ui.ErrorPage.Error_6df75112]</h1>
+<h2 class="text-danger">@Loc[LocKeys.Ui.ErrorPage.AnErrorOccurredWhileProcessingYourRequest]</h2>
+
+@if (ShowRequestId)
+{
+    <p>
+        <strong>@Loc[LocKeys.Ui.ErrorPage.RequestID]</strong> <code>@RequestId</code>
+    </p>
+}
+
+<h3>@Loc[LocKeys.Ui.ErrorPage.DevelopmentMode]</h3>
+<p>
+    @Loc[LocKeys.Ui.ErrorPage.SwappingTo] <strong>@Loc[LocKeys.Ui.ErrorPage.Development]</strong> @Loc[LocKeys.Ui.ErrorPage.EnvironmentWillDisplayMoreDetailedInformationAboutTheError]
+</p>
+<p>
+    <strong>@Loc[LocKeys.Ui.ErrorPage.TheDevelopmentEnvironmentShouldnTBeEnabledForDeployed]</strong>
+    @Loc[LocKeys.Ui.ErrorPage.ItCanResultInDisplayingSensitiveInformationFromExceptions] <strong>@Loc[LocKeys.Ui.ErrorPage.Development]</strong> @Loc[LocKeys.Ui.ErrorPage.EnvironmentBySettingThe] <strong>@Loc[LocKeys.Ui.ErrorPage.ASPNETCOREENVIRONMENT]</strong> @Loc[LocKeys.Ui.ErrorPage.EnvironmentVariableTo] <strong>@Loc[LocKeys.Ui.ErrorPage.Development]</strong>
+    @Loc[LocKeys.Ui.ErrorPage.AndRestartingTheApp]
+</p>
+
+@code{
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId { get; set; }
+    private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+
+    protected override void OnInitialized() =>
+        RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+
+}

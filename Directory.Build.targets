@@ -1,0 +1,40 @@
+<Project>
+  <!-- Keep this list explicit: other Microsoft packages have independent version lines. -->
+  <ItemGroup>
+    <CloneDeployNet10Package Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
+    <CloneDeployNet10Package Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <CloneDeployNet10Package Include="Microsoft.AspNetCore.SignalR.Client" />
+    <CloneDeployNet10Package Include="Microsoft.Data.Sqlite" />
+    <CloneDeployNet10Package Include="Microsoft.EntityFrameworkCore" />
+    <CloneDeployNet10Package Include="Microsoft.EntityFrameworkCore.Design" />
+    <CloneDeployNet10Package Include="Microsoft.Extensions.Hosting" />
+    <CloneDeployNet10Package Include="Microsoft.Extensions.Hosting.WindowsServices" />
+    <CloneDeployNet10Package Include="System.DirectoryServices.Protocols" />
+    <CloneDeployNet10Package Include="System.Drawing.Common" />
+    <CloneDeployNet10Package Include="System.Management" />
+    <CloneDeployNet10Package Include="System.Security.Cryptography.Pkcs" />
+    <CloneDeployNet10Package Include="System.Security.Cryptography.ProtectedData" />
+  </ItemGroup>
+
+  <!-- Inspect the restored graph, including transitive dependencies, before compilation.
+       Keep explicit versions in the projects; this guard does not automatically update them. -->
+  <Target Name="ValidateCloneDeployNet10Packages"
+          BeforeTargets="CoreCompile"
+          DependsOnTargets="ResolvePackageAssets"
+          Condition="'$(UsingMicrosoftNETSdk)' == 'true' And '$(DesignTimeBuild)' != 'true' And '$(TargetFramework)' != ''">
+    <Microsoft.NET.Build.Tasks.ResolvePackageDependencies
+        ProjectPath="$(MSBuildProjectFullPath)"
+        ProjectAssetsFile="$(ProjectAssetsFile)"
+        ProjectLanguage="$(Language)"
+        TargetFramework="$(TargetFramework)">
+      <Output TaskParameter="PackageDefinitions" ItemName="_CloneDeployResolvedPackage" />
+    </Microsoft.NET.Build.Tasks.ResolvePackageDependencies>
+    <PropertyGroup>
+      <_CloneDeployNet10Names>@(CloneDeployNet10Package)</_CloneDeployNet10Names>
+      <_CloneDeployNet10Pattern>^(?i:$([System.Text.RegularExpressions.Regex]::Escape('$(_CloneDeployNet10Names)').Replace(';', '|')))$</_CloneDeployNet10Pattern>
+    </PropertyGroup>
+    <Error Code="CDNET10"
+           Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(_CloneDeployResolvedPackage.Name)', '$(_CloneDeployNet10Pattern)')) And !$([System.Text.RegularExpressions.Regex]::IsMatch('%(_CloneDeployResolvedPackage.Version)', '^(0|[1-9]|10)\.'))"
+           Text="Package %(_CloneDeployResolvedPackage.Name) resolved to %(_CloneDeployResolvedPackage.Version). CloneDeploy blocks version 11 and later for this package. Select a 10.x version (including for any dependency that upgrades it). Existing older transitive dependencies are allowed. Change the policy in Directory.Build.targets only as part of a planned .NET upgrade." />
+  </Target>
+</Project>

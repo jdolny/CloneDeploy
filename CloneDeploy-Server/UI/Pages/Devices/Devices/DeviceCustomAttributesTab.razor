@@ -1,0 +1,152 @@
+@inject AuthenticationStateProvider Authentication
+@inject IAuthorizationService Authorization
+@inject CustomAttributeService Attributes
+@inject DeviceService Devices
+
+<div>
+  
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+    }
+    else if (_loadError is not null)
+    {
+        <MudAlert Severity="Severity.Error">@_loadError</MudAlert>
+        <MudButton OnClick="OnRetryClicked" Class="mt-2">@Loc[LocKeys.Common.Retry]</MudButton>
+    }
+    else if (_rows.Count == 0)
+    {
+        <MudText>@Loc[LocKeys.Device.NoCustomAttributes]</MudText>
+    }
+    else
+    {
+        <MudDataGrid T="AttributeValue" Items="_rows" Dense="true" Hover="true" Elevation="0" RowsPerPage="@Constants.UI.DefaultPageSize" Class="device-list-grid">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">@Loc[LocKeys.Device.CustomAttributes]</MudText>
+            </ToolBarContent>
+            <Columns>
+                <PropertyColumn Property="x => x.Attribute.Name" Title="@Loc[LocKeys.Device.Attribute]">
+                    <CellTemplate>
+                        <MudText>@context.Item.Attribute.Name</MudText>
+                        @if (!string.IsNullOrWhiteSpace(context.Item.Attribute.Description))
+                        {
+                            <MudText Typo="Typo.caption">@context.Item.Attribute.Description</MudText>
+                        }
+                    </CellTemplate>
+                </PropertyColumn>
+                <TemplateColumn Title="@Loc[LocKeys.Device.Value]" Sortable="false" Filterable="false">
+                    <CellTemplate>
+                        <MudTextField T="string" @bind-Value="context.Item.Value" Label="@context.Item.Attribute.Name" Placeholder="@Loc[LocKeys.Device.NotSet]"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Clearable="true" Disabled="@(_saving || !_canEdit)"/>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="AttributeValue"/>
+            </PagerContent>
+        </MudDataGrid>
+
+           
+        <DeviceTabAction SectionId="ActionSectionId">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save"
+                           Disabled="@(_saving || !_canEdit)"
+                           OnClick="OnSaveClicked">@(_saving ? Loc[LocKeys.Common.Saving].Value : Loc[LocKeys.Common.SaveChanges].Value)</MudButton>
+           
+        </DeviceTabAction>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+    [Parameter] public object? ActionSectionId { get; set; }
+    private List<AttributeValue> _rows = [];
+    private Device? _loadedDevice;
+    private bool _loading;
+    private bool _saving;
+    private bool _canEdit;
+    private string? _loadError;
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ReferenceEquals(Device, _loadedDevice)) return;
+        _loadedDevice = Device;
+        await OnRetryClicked();
+    }
+
+    private async Task OnRetryClicked()
+    {
+        _canEdit = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.DeviceEdit)).Succeeded;
+        _loading = true;
+        _loadError = null;
+        try
+        {
+            var canViewDefinitions = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.CustomAttributeView)).Succeeded;
+            var result = canViewDefinitions ? await Attributes.GetAsync() : ServiceResult<List<CustomAttribute>>.Ok(
+                Device.CustomAttributes.Where(x => x.CustomAttribute is not null).Select(x => x.CustomAttribute!).DistinctBy(x => x.Id).ToList());
+            if (!result.HasData)
+            {
+                _rows = [];
+                _loadError = Loc[result.Error!.Code, result.Error.Args];
+                return;
+            }
+
+            var attributes = result.Data;
+            var values = Device.CustomAttributes.OrderBy(x => x.Id).GroupBy(x => x.CustomAttributeId)
+                .ToDictionary(x => x.Key, x => x.Last().Value);
+            _rows = attributes.Select(attribute => new AttributeValue
+            {
+                Attribute = attribute,
+                Value = values.GetValueOrDefault(attribute.Id, ""),
+                SavedValue = values.GetValueOrDefault(attribute.Id, "")
+            }).ToList();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+    
+    private async Task OnSaveClicked()
+    {
+        if (_saving) return;
+        _saving = true;
+        try
+        {
+            var changed = _rows.Where(x => (x.Value ?? "") != x.SavedValue).ToList();
+            var result = await Devices.SaveCustomAttributesAsync(Device.Id,
+                changed.ToDictionary(x => x.Attribute.Id, x => x.Value ?? ""));
+            if (!result.Success)
+            {
+                Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+                return;
+            }
+
+            foreach (var row in changed)
+            {
+                row.SavedValue = row.Value ?? "";
+                foreach (var oldValue in Device.CustomAttributes.Where(x => x.CustomAttributeId == row.Attribute.Id).ToList())
+                    Device.CustomAttributes.Remove(oldValue);
+                if (row.SavedValue.Length > 0)
+                    Device.CustomAttributes.Add(new DeviceCustomAttribute
+                    {
+                        DeviceId = Device.Id, CustomAttributeId = row.Attribute.Id,
+                        CustomAttribute = row.Attribute, Value = row.SavedValue
+                    });
+            }
+
+            Snackbar.Add(Loc[LocKeys.Device.CustomAttributeValuesSaved].Value, Severity.Success);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private sealed class AttributeValue
+    {
+        public required CustomAttribute Attribute { get; init; }
+        public string? Value { get; set; }
+        public string SavedValue { get; set; } = "";
+    }
+
+}

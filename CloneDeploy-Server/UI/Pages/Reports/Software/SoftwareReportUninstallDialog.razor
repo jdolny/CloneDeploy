@@ -1,0 +1,121 @@
+@inject DeviceService Reports
+@inject ActionDeploymentUiService Deployments
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText>@Loc[LocKeys.Ui.DeviceSoftwareTab.Uninstall] <b>@Software.Name</b> @Loc[LocKeys.Ui.SoftwareReportUninstallDialog.FromTheSelectedDevices]</MudText>
+            <MudText>@UiText.Get(LocKeys.Ui.SoftwareReportUninstallDialog.Version0, ((string.IsNullOrEmpty(Software.Version) ? UiText.Get(LocKeys.Ui.SoftwareReportUninstallDialog.NotReportedMatchesOnlyAnEmptyVersion) : Software.Version)))</MudText>
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.SoftwareReportUninstallDialog.OnlyThisVersionWillBeRemovedDevicesThatBecome]</MudText>
+            @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+            <MudTable T="SoftwareReportDevice" Items="_devices" Loading="_loading" Dense="true" Hover="true" RowsPerPage="10">
+                <ToolBarContent>
+                    <MudText>@UiText.Get(LocKeys.Ui.SoftwareReportUninstallDialog.Text0Of1DevicesSelected, (_selected.Count), (_devices.Count))</MudText>
+                    <MudSpacer />
+                    <MudButton Disabled="@(_loading || _busy || _result is not null)" OnClick="SelectAll">@Loc[LocKeys.Ui.SoftwareReportUninstallDialog.SelectEligible]</MudButton>
+                    <MudButton Disabled="@(_busy || _result is not null)" OnClick="ClearSelection">@Loc[LocKeys.Ui.SoftwareReportUninstallDialog.Clear]</MudButton>
+                </ToolBarContent>
+                <HeaderContent><MudTh>@Loc[LocKeys.Ui.EmailNotificationOptions.Include]</MudTh><MudTh>@Loc[LocKeys.Dashboard.Device]</MudTh><MudTh>@Loc[LocKeys.Image.VersionStatus]</MudTh></HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="@Loc[LocKeys.Ui.EmailNotificationOptions.Include]"><MudCheckBox T="bool" Value="@_selected.Contains(context.Id)" ValueChanged="@(value => Select(context.Id, value))"
+                        Disabled="@(_busy || _result is not null || !context.CanUninstall)" aria-label="@(UiText.Get(LocKeys.Ui.SoftwareReportUninstallDialog.Include0, (context.Name)))" /></MudTd>
+                    <MudTd DataLabel="@Loc[LocKeys.Dashboard.Device]">@context.Name</MudTd>
+                    <MudTd DataLabel="@Loc[LocKeys.Image.VersionStatus]">@(context.Archived ? UiText.Get(LocKeys.Device.ArchivedText) : context.CanUninstall ? UiText.Get(LocKeys.Ui.SoftwareReportUninstallDialog.Eligible) : UiText.Get(LocKeys.Ui.SoftwareReportUninstallDialog.NoUninstallCommand))</MudTd>
+                </RowTemplate>
+                <PagerContent><MudTablePager /></PagerContent>
+            </MudTable>
+            <MudTextField T="string" Value="_arguments" ValueChanged="ArgumentsChanged" Label="@Loc[LocKeys.Ui.SoftwareReportUninstallDialog.SilentUninstallArgumentsOptional]"
+                          Variant="Variant.Outlined" Disabled="@(_busy || _result is not null)" MaxLength="4096"
+                          HelperText="@Loc[LocKeys.Ui.SoftwareReportUninstallDialog.MSIUsesSilentUninstallAutomaticallyOtherInstallersUseTheir]" />
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.SoftwareReportUninstallDialog.RunsAsSYSTEMSoftwareInstalledOnlyForAnotherUser]</MudText>
+            @if (_result is not null)
+            {
+                <MudAlert Severity="@(_result.Queued > 0 ? Severity.Success : Severity.Info)">
+                    @(_result.Queued > 0 ? UiText.Get(LocKeys.Ui.SoftwareReportUninstallDialog.UninstallQueuedFor0Devices1Skipped, (_result.Queued), (_result.Skipped.Count)) : UiText.Get(LocKeys.Ui.SoftwareReportUninstallDialog.NoDevicesRemainEligibleNothingWasQueued))
+                </MudAlert>
+            }
+            @if ((_result?.Skipped ?? _preview?.Skipped) is { Count: > 0 } skipped)
+            {
+                <MudText Typo="Typo.subtitle2">@Loc[LocKeys.Ui.SoftwareReportUninstallDialog.SkippedDevices]</MudText>
+                <MudTable T="BulkUninstallSkippedDto" Items="skipped" Dense="true" RowsPerPage="10">
+                    <HeaderContent><MudTh>@Loc[LocKeys.Dashboard.Device]</MudTh><MudTh>@Loc[LocKeys.Ui.SoftwareReportUninstallDialog.Reason]</MudTh></HeaderContent>
+                    <RowTemplate><MudTd>@context.Name</MudTd><MudTd>@context.Reason</MudTd></RowTemplate>
+                    <PagerContent><MudTablePager /></PagerContent>
+                </MudTable>
+            }
+            @if (_preview is not null && _result is null)
+            {
+                <MudAlert Severity="Severity.Warning">@(_preview.Devices.Count == 0 ? UiText.Get(LocKeys.Ui.SoftwareReportUninstallDialog.NoDevicesRemainEligibleNothingWillBeQueued) : UiText.Get(LocKeys.Ui.SoftwareReportUninstallDialog.ReadyToQueueThisVersionSUninstallOn0, (_preview.Devices.Count)))</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_busy">@(_result is null ? UiText.Get(LocKeys.Common.Cancel) : UiText.Get(LocKeys.Ui.ActionFiles.Close))</MudButton>
+        @if (_result is null && _preview is null)
+        {
+            <MudButton OnClick="ReviewAsync" Disabled="@(_busy || _loading || _selected.Count == 0)" Variant="Variant.Filled" Color="Color.Primary">@Loc[LocKeys.Ui.SoftwareReportUninstallDialog.ReviewUninstall]</MudButton>
+        }
+        else if (_result is null && _preview is not null && _preview.Devices.Count > 0)
+        {
+            <MudButton OnClick="QueueAsync" Disabled="@(_busy || _result is not null)" Variant="Variant.Filled" Color="Color.Error">@UiText.Get(LocKeys.Ui.SoftwareReportUninstallDialog.QueueUninstallOn0Devices, (_preview.Devices.Count))</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter, EditorRequired] public SoftwareReportRow Software { get; set; } = null!;
+    private List<SoftwareReportDevice> _devices = [];
+    private readonly HashSet<int> _selected = [];
+    private bool _loading = true, _busy;
+    private string? _error, _arguments;
+    private DeploymentRequestDto? _request;
+    private BulkUninstallPreviewDto? _preview;
+    private BulkUninstallResultDto? _result;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Reports.SoftwareReportDevicesAsync(Software.Id);
+        if (result.HasData) { _devices = result.Data; SelectAll(); }
+        else _error = Loc[result.Error!.Code, result.Error.Args];
+        _loading = false;
+    }
+
+    private void Select(int id, bool selected) { if (selected) _selected.Add(id); else _selected.Remove(id); _preview = null; }
+    private void SelectAll() { _selected.Clear(); _selected.UnionWith(_devices.Where(x => x.CanUninstall).Select(x => x.Id)); _preview = null; }
+    private void ClearSelection() { _selected.Clear(); _preview = null; }
+    private void ArgumentsChanged(string? value) { _arguments = value; _preview = null; }
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task ReviewAsync()
+    {
+        if (_busy || _selected.Count == 0) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            _request = new()
+            {
+                DeviceIds = _selected.Order().ToList(), Timing = DeviceTaskTiming.Now,
+                SoftwareUninstall = new(Software.Id, Software.Name ?? "", Software.Version ?? "", _arguments)
+            };
+            var result = await Deployments.PreviewBulkUninstallAsync(_request);
+            if (result.Success) _preview = result.Data;
+            else _error = Loc[result.Error!.Code, result.Error.Args];
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task QueueAsync()
+    {
+        if (_busy || _preview is null || _request is null) return;
+        _busy = true;
+        try
+        {
+            var result = await Deployments.DeployBulkUninstallAsync(_request, _preview);
+            if (result.Success) { _result = result.Data; _error = null; }
+            else { _error = Loc[result.Error!.Code, result.Error.Args]; }
+        }
+        finally { _busy = false; }
+    }
+}

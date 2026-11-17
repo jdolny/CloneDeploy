@@ -1,0 +1,162 @@
+@inject AuthenticationStateProvider Authentication
+@inject IAuthorizationService Authorization
+@inject DeviceGroupService DeviceGroupService
+@inject TagService TagService
+
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true"/>
+}
+else if (_loadFailed)
+{
+    <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.DeviceGroupGeneralTab.UnableToLoadGroupSettingsReloadThePageTo]</MudAlert>
+}
+else
+{
+    <div>
+        <div class="section-action-bar">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Save"
+                       Disabled="@(_saving || !_canEdit)" OnClick="OnSaveClicked">
+                @Loc[LocKeys.Ui.ActionFiles.SaveChanges]
+            </MudButton>
+        </div>
+        <MudForm @ref="_form">
+            <MudGrid Spacing="3">
+
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_group.Name" Label="@Loc[LocKeys.Common.Name]" Variant="Variant.Outlined" Required="true" MaxLength="200" Disabled="@(_saving || !_canEdit || _group.Type == DeviceGroupType.AllDevices)"/>
+                    <MudTextField @bind-Value="_group.Description" Label="@Loc[LocKeys.Common.Description]" Variant="Variant.Outlined" Lines="3" Disabled="@(_saving || !_canEdit)"/>
+                </MudItem>
+                @if (_group.Type != DeviceGroupType.AllDevices)
+                {
+                    <MudItem xs="12">
+                        <MudSelect T="DeviceGroupType" @bind-Value="_group.Type" Label="@Loc[LocKeys.Group.MembershipMode]"
+                                   Variant="Variant.Outlined" Disabled="@(_saving || !_canEdit)">
+                            <MudSelectItem Value="DeviceGroupType.Manual">@Loc[LocKeys.Group.Manual]</MudSelectItem>
+                            <MudSelectItem Value="DeviceGroupType.Dynamic">@Loc[LocKeys.Group.Dynamic]</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                }
+                <MudItem xs="12">
+                    <MudText Typo="Typo.subtitle2" Class="mb-2">@Loc[LocKeys.Common.Tags]</MudText>
+                    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mb-2">
+                        @foreach (var id in _tagIds)
+                        {
+                            var name = _tags.FirstOrDefault(x => x.Id == id)?.Name ?? id.ToString();
+                            <MudChip T="int" @key="id" Value="id" Color="Color.Primary" Variant="Variant.Outlined"
+                                     Disabled="@(_saving || !_canEdit)" OnClose="@(() => OnRemoveTag(id))">@name</MudChip>
+                        }
+                    </MudStack>
+                    <MudAutocomplete T="Tag" @ref="_tagPicker" Label="@Loc[LocKeys.Group.AddTag]" Variant="Variant.Outlined"
+                                     SearchFunc="SearchTags" ToStringFunc="@(tag => tag?.Name ?? string.Empty)" ValueChanged="OnAddTag"
+                                     Clearable="true" ResetValueOnEmptyText="true" MaxItems="20" Disabled="@(_saving || !_canEdit)"
+                                     AdornmentIcon="@Icons.Material.Filled.Search"/>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+
+    </div>
+}
+
+@code {
+    private bool _canEdit;
+    [Parameter, EditorRequired] public int GroupId { get; set; }
+    private int? _loadedGroupId;
+    [Parameter] public EventCallback<DeviceGroup> Saved { get; set; }
+    private DeviceGroup _group = new() { Name = string.Empty };
+
+    private MudForm _form = null!;
+    private List<Tag> _tags = [];
+    private MudAutocomplete<Tag> _tagPicker = null!;
+    private IReadOnlyCollection<int> _tagIds = [];
+    private bool _loading = true;
+    private bool _loadFailed;
+    private bool _saving;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _canEdit = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.DeviceGroupEdit)).Succeeded;
+        if (_loadedGroupId == GroupId) return;
+        _loadedGroupId = GroupId;
+        _loading = true;
+        _loadFailed = false;
+        var group = await DeviceGroupService.GetByIdAsync(GroupId);
+        if (!group.Success || !group.HasData)
+        {
+            if (!group.Success) Snackbar.Add(Loc[group.Error.Code, group.Error.Args], Severity.Error);
+            _loading = false;
+            _loadFailed = true;
+            return;
+        }
+        _group = group.Data!;
+        var tags = await DeviceGroupService.GetTagIdsAsync(GroupId);
+        if (!tags.Success)
+        {
+            Snackbar.Add(Loc[tags.Error.Code, tags.Error.Args], Severity.Error);
+            _loading = false;
+            _loadFailed = true;
+            return;
+        }
+        _tagIds = tags.Data!;
+        var canViewTags = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.TagView)).Succeeded;
+        var availableTags = canViewTags ? await TagService.GetAsync() : ServiceResult<List<Tag>>.Ok([]);
+        if (!availableTags.Success)
+        {
+            Snackbar.Add(Loc[availableTags.Error.Code, availableTags.Error.Args], Severity.Error);
+            _loading = false;
+            _loadFailed = true;
+            return;
+        }
+        _tags = availableTags.Data ?? [];
+
+        _loading = false;
+    }
+
+    private Task<IEnumerable<Tag>> SearchTags(string? text, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(_tags.Where(x => !_tagIds.Contains(x.Id) &&
+            (string.IsNullOrWhiteSpace(text) || x.Name.Contains(text.Trim(), StringComparison.OrdinalIgnoreCase))));
+    }
+
+    private async Task OnAddTag(Tag? tag)
+    {
+        if (_saving || tag is null) return;
+        _tagIds = _tagIds.Append(tag.Id).Distinct().ToArray();
+        await _tagPicker.ClearAsync();
+    }
+
+    private void OnRemoveTag(int id)
+    {
+        if (_saving) return;
+        _tagIds = _tagIds.Where(x => x != id).ToArray();
+    }
+
+    private async Task OnSaveClicked()
+    {
+        if (_saving || _loading || _loadFailed) return;
+        _saving = true;
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+        {
+            _saving = false;
+            return;
+        }
+
+        var result = await DeviceGroupService.UpdateGeneralAsync(_group, _tagIds);
+        if (result.Success)
+        {
+            _group.Name = _group.Name.Trim();
+            _group.Description = _group.Description?.Trim();
+            Snackbar.Add(Loc[LocKeys.Common.Updated, _group.Name!], Severity.Success);
+            await Saved.InvokeAsync(_group);
+        }
+        else
+            Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+
+        _saving = false;
+    }
+
+}

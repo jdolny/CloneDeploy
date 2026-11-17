@@ -1,0 +1,20 @@
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-3">@Summary</MudText>
+        @if (!string.IsNullOrWhiteSpace(Hash))
+        {
+            <MudText Typo="Typo.caption" Class="mb-3" Style="overflow-wrap:anywhere">@UiText.Get(LocKeys.Ui.DeviceHistoryResultDialog.PolicyVersion0, (Hash))</MudText>
+        }
+        <pre tabindex="0" aria-label="@Loc[LocKeys.Ui.DeviceHistoryResultDialog.ReportedResult]" style="margin:0;padding:16px;max-height:60vh;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--mud-palette-lines-default);border-radius:4px;background:var(--mud-palette-background-grey);font-size:.875rem;line-height:1.5">@(string.IsNullOrWhiteSpace(Result) ? UiText.Get(LocKeys.Ui.DeviceHistoryResultDialog.NoResultReported) : Result)</pre>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Close())" Color="Color.Primary">@Loc[LocKeys.Ui.ActionFiles.Close]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public string? Result { get; set; }
+    [Parameter] public string? Summary { get; set; }
+    [Parameter] public string? Hash { get; set; }
+}

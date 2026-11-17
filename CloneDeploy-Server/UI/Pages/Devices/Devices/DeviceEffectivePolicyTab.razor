@@ -1,0 +1,98 @@
+@implements IDisposable
+@inject IJSRuntime JavaScript
+@inject PolicyService PolicyService
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+<DeviceTabAction SectionId="ActionSectionId">
+    <MudButton OnClick="@Snackbar.GuardAction(() => _loading || _downloading || _error is not null, UiText.Get(LocKeys.Ui.DeviceEffectivePolicyTab.PolicyDataCouldNotBeLoadedRefreshBeforeDownloading), DownloadAsync)" Disabled="@(_loading || _downloading)"
+               Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Download">@Loc[LocKeys.Ui.DeviceEffectivePolicyTab.DownloadJSON]</MudButton>
+</DeviceTabAction>
+
+<MudDataGrid T="EffectivePolicyDetailsDto" Items="FilteredPolicies" Loading="_loading" Dense="true" Hover="true"
+             Outlined="true" Elevation="0" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.VerifiedUser" Color="Color.Primary"/>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Device.EffectivePolicy]</MudText>
+        <div style="margin-left:auto;flex:0 1 190px;width:190px;max-width:100%">
+            <MudSelect T="PolicyTrigger?" @bind-Value="_trigger" Label="@Loc[LocKeys.Ui.DeviceEffectivePolicyTab.Trigger]" aria-label="@Loc[LocKeys.Ui.DeviceEffectivePolicyTab.PolicyTrigger]"
+                       Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:100%">
+                <MudSelectItem T="PolicyTrigger?" Value="@((PolicyTrigger?)null)">@Loc[LocKeys.Ui.DeviceEffectivePolicyTab.AllTriggers]</MudSelectItem>
+                <MudSelectItem T="PolicyTrigger?" Value="@((PolicyTrigger?)PolicyTrigger.Checkin)">@Loc[LocKeys.Ui.DeviceEffectivePolicyTab.CheckIn]</MudSelectItem>
+                <MudSelectItem T="PolicyTrigger?" Value="@((PolicyTrigger?)PolicyTrigger.Startup)">@Loc[LocKeys.Ui.DeviceEffectivePolicyTab.Startup]</MudSelectItem>
+                <MudSelectItem T="PolicyTrigger?" Value="@((PolicyTrigger?)PolicyTrigger.Login)">@Loc[LocKeys.Ui.DeviceEffectivePolicyTab.Login]</MudSelectItem>
+            </MudSelect>
+        </div>
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Snapshot.Policy.Name" Title="@Loc[LocKeys.Group.Policy]">
+            <CellTemplate><MudLink Href="@($"/policies/{context.Item.Snapshot.Policy.Id}/targeting")">@context.Item.Snapshot.Policy.Name</MudLink></CellTemplate>
+        </PropertyColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.DeviceEffectivePolicyTab.Assignment]" Sortable="false" Filterable="false">
+            <CellTemplate>
+                @foreach (var source in context.Item.Sources)
+                {
+                    <MudText Typo="Typo.body2" Style="overflow-wrap:anywhere">@source.Assignment — @source.Location</MudText>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <NoRecordsContent>
+        @if (!_loading && _error is null)
+        {
+            <MudText Class="pa-4">@(Device.ArchivedAtUtc.HasValue ? Loc[LocKeys.Device.ArchivedDevicesDoNotReceivePolicies].Value : _trigger is null ? Loc[LocKeys.Device.NoActivePoliciesCurrentlyMatchThisDevice].Value : UiText.Get(LocKeys.Ui.DeviceEffectivePolicyTab.NoActivePoliciesMatchThisDeviceForTheSelected))</MudText>
+        }
+    </NoRecordsContent>
+    <PagerContent><MudDataGridPager T="EffectivePolicyDetailsDto"/></PagerContent>
+</MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+    [Parameter] public object? ActionSectionId { get; set; }
+    private List<EffectivePolicyDetailsDto> _policies = [];
+    private PolicyTrigger? _trigger = PolicyTrigger.Checkin;
+    private IEnumerable<EffectivePolicyDetailsDto> FilteredPolicies => _policies.Where(x => x.MatchesTrigger(_trigger));
+    private string? _error;
+    private bool _loading, _downloading;
+    private int? _loadedId;
+    private int _version;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedId == Device.Id) return;
+        _loadedId = Device.Id;
+        await GetEffectivePolicies();
+    }
+    private async Task GetEffectivePolicies()
+    {
+        var version = ++_version;
+        _loading = true; _error = null; _policies = [];
+        var result = await PolicyService.GetEffectivePolicyDetailsAsync(Device.Id);
+        if (version != _version) return;
+        _loading = false;
+        if (!result.Success) _error = Loc[result.Error!.Code, result.Error.Args].Value;
+        else _policies = result.Data!;
+    }
+    private async Task DownloadAsync()
+    {
+        if (_loading || _downloading || _error is not null) return;
+        _downloading = true;
+        try
+        {
+            // Export every matching policy across all pages, using the same trigger filter as the list.
+            var bytes = JsonSerializer.SerializeToUtf8Bytes(FilteredPolicies.Select(x => x.Snapshot).ToArray());
+            using var stream = new MemoryStream(bytes);
+            using var reference = new DotNetStreamReference(stream);
+            await using var module = await JavaScript.InvokeAsync<IJSObjectReference>("import", "./js/effective-policy.js");
+            await module.InvokeVoidAsync("download", reference, $"effective-policy-{Device.Id}.json");
+        }
+        catch (JSException)
+        {
+            Snackbar.Add(UiText.Get(LocKeys.Ui.DeviceEffectivePolicyTab.UnableToDownloadTheEffectivePolicyPleaseTryAgain), Severity.Error);
+        }
+        finally { _downloading = false; }
+    }
+    public void Dispose() => ++_version;
+}

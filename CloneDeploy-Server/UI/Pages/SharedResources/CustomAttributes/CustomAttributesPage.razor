@@ -1,0 +1,206 @@
+@attribute [Authorize(Policy = Constants.Permissions.CustomAttributeView)]
+@inject AuthenticationStateProvider SharedAuthentication
+@inject IAuthorizationService SharedAuthorization
+@page "/shared/customattributes"
+
+@inject CustomAttributeService CustomAttributeService
+<AppPageTitle Text="@Loc[LocKeys.Common.CustomAttributes]" />
+
+<ActionButtons>
+    <MainButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   Disabled="@(!_canEditShared)" OnClick="@OnNewClicked" StartIcon="@Icons.Material.Filled.Add">
+            @Loc[LocKeys.CustomAttribute.NewCustomAttribute]
+        </MudButton>
+    </MainButton>
+</ActionButtons>
+
+<MudPaper Class="device-list-filters device-search-panel" Elevation="0">
+    <MudTextField T="string" Class="shared-resource-search" Value="_search" ValueChanged="OnSearchChanged" DebounceInterval="300" Clearable="true"
+                  Placeholder="@Loc[LocKeys.Ui.CustomAttributesPage.SearchCustomAttributes]" aria-label="@Loc[LocKeys.Ui.CustomAttributesPage.SearchCustomAttributes_6fc579d7]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"/>
+</MudPaper>
+
+<MudDataGrid T="CustomAttribute"
+             Items="@_items"
+             Dense="true"
+             Elevation="0"
+             Outlined="true"
+             Loading="_isLoading"
+             SelectOnRowClick="false"
+             MultiSelection="true"
+             @bind-SelectedItems="_selectedItems"
+             RowsPerPage="@Constants.UI.DefaultPageSize"
+             Filterable="true"
+             FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+             HorizontalScrollbar="true"
+             FilterMode="DataGridFilterMode.ColumnFilterMenu"
+             ColumnResizeMode="ResizeMode.Column"
+             Hover="true"
+             Class="device-list-grid mb-8">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.Tune" Color="Color.Primary"/>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Common.CustomAttributes]</MudText>
+        <MudSpacer/>
+        <div class="grid-toolbar-actions">
+            <GridSelectionCount Count="_selectedItems.Count"/>
+            @if (_selectedItems.Count > 0)
+        {
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       Disabled="@(!_canEditShared)" OnClick="@OnDeleteSelectedClicked"
+                       StartIcon="@Icons.Material.Filled.Delete"
+                      >
+                @Loc[LocKeys.Common.DeleteSelected]
+            </MudButton>
+        }
+        </div>
+    </ToolBarContent>
+
+    <Columns>
+        <SelectColumn T="CustomAttribute"/>
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]">
+            <CellTemplate>
+                <button type="button" class="resource-name-link" @onclick="@(() => OnEditClicked(context.Item))">@context.Item.Name</button>
+            </CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Description" Title="@Loc[LocKeys.Common.Description]"/>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <MudTooltip Text="@($"{Loc[LocKeys.Common.Delete]} - {context.Item.Name}")" Placement="Placement.Left"
+                            Arrow="true" Delay="200">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Medium"
+                                   Color="Color.Primary"
+                                   aria-label="@($"{Loc[LocKeys.Common.Delete]} {context.Item.Name}")"
+                                   Disabled="@(!_canEditShared)" OnClick="@(() => OnDeleteClicked(context.Item))"/>
+                </MudTooltip>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager T="CustomAttribute"/>
+    </PagerContent>
+
+    <NoRecordsContent>
+        <MudText>@Loc[LocKeys.CustomAttribute.NoCustomAttributesFound]</MudText>
+    </NoRecordsContent>
+</MudDataGrid>
+
+@code {
+    private bool _canEditShared;
+    protected override async Task OnParametersSetAsync()
+    {
+        _canEditShared = (await SharedAuthorization.AuthorizeAsync((await SharedAuthentication.GetAuthenticationStateAsync()).User, Constants.Permissions.CustomAttributeEdit)).Succeeded;
+    }
+
+    private List<CustomAttribute> _items = [];
+    private HashSet<CustomAttribute> _selectedItems = [];
+    private bool _isLoading = true;
+    private string? _search;
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        var result = await CustomAttributeService.GetAsync(_search);
+        _items = result.HasData ? result.Data : [];
+        if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _selectedItems.Clear();
+
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task OnSearchChanged(string? value)
+    {
+        _search = value;
+        await LoadAsync();
+    }
+
+    private async Task OnNewClicked()
+    {
+        var dialog = await Dialog.ShowAsync<CustomAttributeDialog>(Constants.UI.StandardDialogBox);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: true })
+            await LoadAsync();
+    }
+
+    private async Task OnEditClicked(CustomAttribute item)
+    {
+        var parameters = new DialogParameters<CustomAttributeDialog>
+        {
+            { x => x.CustomAttribute, item }
+        };
+
+        var dialog = await Dialog.ShowAsync<CustomAttributeDialog>(parameters, Constants.UI.StandardDialogBox);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: true })
+            await LoadAsync();
+    }
+
+    private async Task OnDeleteClicked(CustomAttribute item)
+    {
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, Loc[LocKeys.CustomAttribute.ConfirmDelete, item.Name] },
+            { x => x.ButtonText, Loc[LocKeys.Common.Delete] },
+            { x => x.Color, Color.Error }
+        };
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        var dialogResult = await dialog.Result;
+
+        if (dialogResult is { Canceled: false, Data: true })
+        {
+            var result = await CustomAttributeService.DeleteAsync(item.Id);
+
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[LocKeys.Common.Deleted, item.Name], Severity.Success);
+                await LoadAsync();
+            }
+            else
+            {
+                Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+            }
+        }
+    }
+
+    private async Task OnDeleteSelectedClicked()
+    {
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, Loc[LocKeys.CustomAttribute.ConfirmDeleteMany] },
+            { x => x.ButtonText, Loc[LocKeys.Common.Delete] },
+            { x => x.Color, Color.Error }
+        };
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        var dialogResult = await dialog.Result;
+
+        if (dialogResult is { Canceled: false, Data: true })
+        {
+            var result = await CustomAttributeService.DeleteManyAsync(_selectedItems.Select(x => x.Id).ToList());
+
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[LocKeys.Common.DeletedMany], Severity.Success);
+                await LoadAsync();
+            }
+            else
+            {
+                Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+            }
+        }
+    }
+}

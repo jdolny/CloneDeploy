@@ -1,0 +1,57 @@
+@inject DeviceService Reports
+
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+<MudDataGrid T="SoftwareReportRow" Items="_items" Loading="_loading" QuickFilter="Matches" Dense="true" Hover="true"
+             Outlined="true" Elevation="0" Class="device-list-grid" HorizontalScrollbar="true" RowsPerPage="25">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.SoftwareInventoryReportTab.KnownSoftware]</MudText><MudSpacer />
+        <MudTextField T="string" @bind-Value="_search" Immediate="true" Clearable="true" Placeholder="@Loc[LocKeys.Ui.SoftwareInventoryReportTab.SearchSoftware]"
+                      aria-label="@Loc[LocKeys.Ui.SoftwareInventoryReportTab.SearchSoftware_86db0c29]" Variant="Variant.Outlined" Margin="Margin.Dense" Class="shared-resource-search"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]" />
+        <PropertyColumn Property="x => x.Version" Title="@Loc[LocKeys.Image.VersionNumber]" />
+        <PropertyColumn Property="x => x.DeviceCount" Title="@Loc[LocKeys.Group.Devices]" />
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+            <CellTemplate><MudButton Color="Color.Primary" StartIcon="@Icons.Material.Outlined.Devices" OnClick="@(() => ViewDevicesAsync(context.Item))">@Loc[LocKeys.Ui.SoftwareInventoryReportTab.ViewDevices]</MudButton>
+                <PermissionView Policy="@Constants.Permissions.ReportSoftwareRemovalAll">
+                    <MudButton Color="Color.Error" StartIcon="@Icons.Material.Outlined.Delete" Disabled="@(context.Item.DeviceCount == 0 || string.IsNullOrWhiteSpace(context.Item.Name))"
+                               OnClick="@(() => UninstallAsync(context.Item))">@Loc[LocKeys.Ui.SoftwareInventoryReportTab.UninstallFromAllDevices]</MudButton>
+                </PermissionView>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.SoftwareInventoryReportTab.NoSoftwareFound]</MudText></NoRecordsContent>
+    <PagerContent><MudDataGridPager T="SoftwareReportRow" /></PagerContent>
+</MudDataGrid>
+
+@code {
+    private List<SoftwareReportRow> _items = [];
+    private string? _search, _error;
+    private bool _loading = true;
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Reports.ListSoftwareReportAsync();
+        if (result.HasData) _items = result.Data;
+        else _error = Loc[result.Error!.Code, result.Error.Args];
+        _loading = false;
+    }
+    private bool Matches(SoftwareReportRow row) => string.IsNullOrWhiteSpace(_search)
+        || $"{row.Name} {row.Version}".Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+    private async Task UninstallAsync(SoftwareReportRow row)
+    {
+        var parameters = new DialogParameters<SoftwareReportUninstallDialog> { { x => x.Software, row } };
+        var dialog = await Dialog.ShowAsync<SoftwareReportUninstallDialog>(UiText.Get(LocKeys.Ui.SoftwareInventoryReportTab.UninstallSoftwareVersion), parameters,
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = false });
+        if (await dialog.Result is { Canceled: false })
+            Snackbar.Add(UiText.Get(LocKeys.Ui.SoftwareInventoryReportTab.UninstallTasksQueuedTrackEachDeviceInActionDeployments), Severity.Success);
+    }
+
+    private async Task ViewDevicesAsync(SoftwareReportRow row)
+    {
+        var parameters = new DialogParameters<SoftwareReportDevicesDialog> { { x => x.SoftwareId, row.Id } };
+        await Dialog.ShowAsync<SoftwareReportDevicesDialog>($"{row.Name ?? UiText.Get(LocKeys.Device.Software)} {row.Version}".Trim(), parameters,
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, CloseButton = true, CloseOnEscapeKey = true });
+    }
+}

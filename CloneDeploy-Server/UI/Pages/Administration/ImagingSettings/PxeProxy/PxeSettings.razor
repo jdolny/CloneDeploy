@@ -1,0 +1,3 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+<CloneDeploy_Server.UI.Pages.Administration.ImagingSettings.ImagingInfrastructurePage Tab="@Tab"/>
+@code { [Parameter] public string? Tab { get; set; } }

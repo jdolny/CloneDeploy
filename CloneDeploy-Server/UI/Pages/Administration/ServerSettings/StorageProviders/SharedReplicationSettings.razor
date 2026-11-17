@@ -1,0 +1,28 @@
+@inject StorageProviderService Replication
+
+<MudExpansionPanels Class="mb-4">
+    <MudExpansionPanel Text="@Loc[LocKeys.Ui.SharedReplicationSettings.SharedResourceReplication]">
+        <MudStack Spacing="3">
+            <MudText>@Loc[LocKeys.Ui.SharedReplicationSettings.ImagingAndBothStorageProvidersAutomaticallyReceiveCurrentWinPE]</MudText>
+            <MudAlert Severity="Severity.Info">@Loc[LocKeys.Ui.SharedReplicationSettings.RemovingAProviderPurposeRemovesTheCorrespondingSharedReplicas]</MudAlert>
+            <MudButton OnClick="LoadAsync" Disabled="_busy">@Loc[LocKeys.Ui.DriverFilesTab.RefreshStatus]</MudButton>
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.SharedReplicationSettings.SynchronizationRunsAutomaticallyStatusShowsUpTo500Files]</MudText>
+            <MudSimpleTable Dense="true" Outlined="true">
+                <thead><tr><th>@Loc[LocKeys.Ui.DriverFilesTab.File]</th><th>@Loc[LocKeys.StorageProvider.Type]</th><th>@Loc[LocKeys.Device.Provider]</th><th>@Loc[LocKeys.Image.VersionStatus]</th><th>@Loc[LocKeys.User.ObjectJson]</th></tr></thead>
+                <tbody>@foreach (var copy in _copies) { <tr><td>@copy.Name</td><td>@UiText.Label(copy.Kind)</td><td>@copy.Provider</td><td>@UiText.Label(copy.State)</td><td>@copy.Error</td></tr> }</tbody>
+            </MudSimpleTable>
+        </MudStack>
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+@code {
+    private List<SharedReplicationStatus> _copies = [];
+    private bool _busy;
+    protected override Task OnInitializedAsync() => LoadAsync();
+    private async Task LoadAsync()
+    {
+        _busy = true;
+        try { var result = await Replication.ReadReplicationAsync(); if (result.HasData) { _copies = result.Data.Copies; } else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); }
+        finally { _busy = false; }
+    }
+}

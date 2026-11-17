@@ -1,0 +1,152 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    <Import Project="../Build/ServerRuntime.props" />
+
+    <ItemGroup>
+      <!-- Installation-specific overrides must never enter an upgrade payload. -->
+      <Content Update="server.json" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
+      <None Update="server.json" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
+      <EmbeddedResource Include="Legal/AGPL-3.0.txt" LogicalName="CloneDeploy.Legal.AGPLv3" />
+      <EmbeddedResource Include="THIRD-PARTY-NOTICES.txt" LogicalName="CloneDeploy.Legal.Third-party notices" />
+      <EmbeddedResource Include="UI/wwwroot/vendor/xterm/LICENSE" LogicalName="CloneDeploy.Legal.xterm.js" />
+      <EmbeddedResource Include="UI/wwwroot/vendor/xterm/LICENSE-addon-fit" LogicalName="CloneDeploy.Legal.xterm addon-fit" />
+      <EmbeddedResource Include="UI/wwwroot/vendor/monaco/LICENSE.txt" LogicalName="CloneDeploy.Legal.Monaco license" />
+      <EmbeddedResource Include="UI/wwwroot/vendor/monaco/ThirdPartyNotices.txt" LogicalName="CloneDeploy.Legal.Monaco third-party notices" />
+      <EmbeddedResource Include="Backend/Services/Tftp/Protocol/LICENSE.txt" LogicalName="CloneDeploy.Legal.TFTP" />
+      <EmbeddedResource Include="../CloneDeploy-Agent.Core/ControlR-LICENSE.txt" LogicalName="CloneDeploy.Legal.ControlR" />
+      <EmbeddedResource Include="Packaging/CustomActions/LICENSE-WIX.txt" LogicalName="CloneDeploy.Legal.WiX" />
+      <EmbeddedResource Include="../third_party/wimlib/1.14.5/x64/COPYING*.txt" LogicalName="CloneDeploy.Legal.wimlib %(Filename)" />
+      <EmbeddedResource Include="../third_party/udpcast/20250223/COPYING*.txt" LogicalName="CloneDeploy.Legal.udpcast %(Filename)" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <DefaultItemExcludes>$(DefaultItemExcludes);Published/**;Mounts/**;Staging/**;Temp/**;App_Data/**</DefaultItemExcludes>
+        <DefaultItemExcludes>$(DefaultItemExcludes);App_Data/WinPe/**</DefaultItemExcludes>
+        <DefaultItemExcludes>$(DefaultItemExcludes);App_Data/Tftp/**;App_Data/PxeBootFiles/**</DefaultItemExcludes>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RootNamespace>CloneDeploy_Server</RootNamespace>
+        <AssemblyName>CloneDeploy-Server</AssemblyName>
+        <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+        <!-- The nested agent project owns its source, resources, and build output. -->
+        <DefaultItemExcludes>$(DefaultItemExcludes);CloneDeploy-Agent.Win/**</DefaultItemExcludes>
+        <DefaultItemExcludes>$(DefaultItemExcludes);CloneDeploy-Agent.Contracts/**</DefaultItemExcludes>
+        <DefaultItemExcludes>$(DefaultItemExcludes);Tools/**/node_modules/**;App_Data/Storage/**</DefaultItemExcludes>
+        <DefaultItemExcludes>$(DefaultItemExcludes);App_Data/TempStorage/**</DefaultItemExcludes>
+		 <DefaultItemExcludes>$(DefaultItemExcludes);CloneDeploy-Agent.Win/Portal/**</DefaultItemExcludes>
+		 <DefaultItemExcludes>$(DefaultItemExcludes);CloneDeploy-Imager/**</DefaultItemExcludes>
+    </PropertyGroup>
+
+    <!-- Keep UI assets together in source and publish them at the standard web root. -->
+    <ItemGroup>
+      <Content Remove="UI/wwwroot/**" />
+      <None Remove="UI/wwwroot/**" />
+      <Content Include="UI/wwwroot/**/*" UiStaticAsset="true" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+    <!-- Apply the SDK web-root mapping during builds, without creating a virtual IDE folder. -->
+    <Target Name="MapUiStaticWebAssets" BeforeTargets="ResolveProjectStaticWebAssets" Condition="'$(DesignTimeBuild)' != 'true'">
+      <ItemGroup>
+        <Content Update="@(Content)" Condition="'%(Content.UiStaticAsset)' == 'true'">
+          <Link>wwwroot/%(RecursiveDir)%(Filename)%(Extension)</Link>
+        </Content>
+      </ItemGroup>
+    </Target>
+    <!-- The SDK discovers linked assets as wwwroot; development serves their physical UI location. -->
+    <Target Name="SetUiStaticWebAssetContentRoot" AfterTargets="ResolveProjectStaticWebAssets">
+      <ItemGroup>
+        <StaticWebAsset Update="@(StaticWebAsset)" Condition="'%(StaticWebAsset.SourceId)' == '$(PackageId)' and '%(StaticWebAsset.SourceType)' == 'Discovered'">
+          <ContentRoot>$(MSBuildProjectDirectory)/UI/wwwroot/</ContentRoot>
+        </StaticWebAsset>
+      </ItemGroup>
+    </Target>
+    <!-- Runtime published files, workspaces and provider mounts never enter release output. -->
+    <ItemGroup>
+      <Compile Remove="Packaging/**/*.cs" />
+      <Content Remove="Packaging/**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="../artifacts/mac-agent/CloneDeploy-Agent-macOS-arm64.pkg.json" Condition="Exists('../artifacts/mac-agent/CloneDeploy-Agent-macOS-arm64.pkg.json')" Link="Packaging/Agent/CloneDeploy-Agent-macOS-arm64.pkg.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+      <Content Include="../artifacts/mac-agent/CloneDeploy-Agent-macOS-arm64.pkg" Condition="Exists('../artifacts/mac-agent/CloneDeploy-Agent-macOS-arm64.pkg')" Link="Packaging/Agent/CloneDeploy-Agent-macOS-arm64.pkg" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+      <Content Include="../artifacts/agent-installer/CloneDeploy-Agent-x64.msi" Condition="Exists('../artifacts/agent-installer/CloneDeploy-Agent-x64.msi')" Link="Packaging/Agent/CloneDeploy-Agent-x64.msi" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+      <Content Include="../artifacts/agent-installer/CloneDeploy-Agent-x64.msi.json" Condition="Exists('../artifacts/agent-installer/CloneDeploy-Agent-x64.msi.json')" Link="Packaging/Agent/CloneDeploy-Agent-x64.msi.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+      <Content Include="../artifacts/agent-installer/CloneDeploy-Agent-arm64.msi.json" Condition="Exists('../artifacts/agent-installer/CloneDeploy-Agent-arm64.msi.json')" Link="Packaging/Agent/CloneDeploy-Agent-arm64.msi.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+      <Content Include="../artifacts/agent-installer/CloneDeploy-Agent-arm64.msi" Condition="Exists('../artifacts/agent-installer/CloneDeploy-Agent-arm64.msi')" Link="Packaging/Agent/CloneDeploy-Agent-arm64.msi" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+      <Content Remove="App_Data/AgentInstallers/**" />
+      <None Remove="App_Data/AgentInstallers/**" />
+
+      <ProjectReference Include="../CloneDeploy-Agent.Contracts/CloneDeploy-Agent.Contracts.csproj" />
+      <ProjectReference Include="../CloneDeploy-SiteService.Transport/CloneDeploy-SiteService.Transport.csproj" />
+
+      <Content Remove="Tools/**" />
+      <Content Remove="App_Data/Uploads/**" />
+      <Content Remove="App_Data/Storage/**" />
+      <None Remove="App_Data/Storage/**" />
+
+      <Compile Remove="Backend\Services\DynamicGroups\DeviceQueryCompiler.cs" />
+      <Compile Remove="Backend\Services\DynamicGroups\DeviceQueryDefinition.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.15" />
+      <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.15" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.15" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.15">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.15" />
+      <PackageReference Include="Microsoft.Identity.Client" Version="4.92.0" />
+      <PackageReference Include="MudBlazor" Version="9.12.0" />
+      <PackageReference Include="QRCoder" Version="1.8.1" />
+      <PackageReference Include="YamlDotNet" Version="18.1.0" />
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+      <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.15" />
+      <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+      <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+      <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+      <PackageReference Include="System.DirectoryServices.Protocols" Version="10.0.15" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="UI\Components\Layout\MainLayout.razor" />
+      <_ContentIncludedByDefault Remove="UI\Components\Layout\NavMenu.razor" />
+      <_ContentIncludedByDefault Remove="UI\Components\Layout\ReconnectModal.razor" />
+      <_ContentIncludedByDefault Remove="UI\Components\Pages\Counter.razor" />
+      <_ContentIncludedByDefault Remove="UI\Components\Pages\Error.razor" />
+      <_ContentIncludedByDefault Remove="UI\Components\Pages\Home.razor" />
+      <_ContentIncludedByDefault Remove="UI\Components\Pages\NotFound.razor" />
+      <_ContentIncludedByDefault Remove="UI\Components\Pages\Weather.razor" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="logs\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Update="Localization\LocalizationResources.resx">
+        <Generator>ResXFileCodeGenerator</Generator>
+        <LastGenOutput>SharedResource.Designer.cs</LastGenOutput>
+      </EmbeddedResource>
+    </ItemGroup>
+
+	<ItemGroup>
+  <None Update="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+</ItemGroup>
+
+	<ItemGroup>
+	  <AdditionalFiles Include="UI\Pages\PoliciesAndActions\Actions\Software\SoftwareActionConfigurationTab.razor" />
+	</ItemGroup>
+
+  <Import Project="Packaging/ImagerBundle.targets" />
+  <ItemGroup>
+    <EmbeddedResource Include="../CloneDeploy-Docs/help-topics.json" LogicalName="CloneDeploy.HelpTopics.json" />
+  </ItemGroup>
+
+  <Import Project="../third_party/7zip/SevenZip.targets" />
+  <Import Project="../third_party/udpcast/Udpcast.targets" />
+  <Import Project="../Build/Localization.targets" />
+  <ItemGroup>
+    <ProjectReference Include="../CloneDeploy-WinPe/CloneDeploy-WinPe.csproj" />
+  </ItemGroup>
+</Project>

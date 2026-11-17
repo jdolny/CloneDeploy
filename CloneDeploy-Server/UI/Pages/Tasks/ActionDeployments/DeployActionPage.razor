@@ -1,0 +1,168 @@
+@using CloneDeploy_Agent.Contracts
+@page "/actions/deploy/{ActionGuid:guid}"
+@attribute [Authorize(Policy = Constants.Permissions.ActionDeploy)]
+@inject ActionDeploymentUiService Service
+@inject IDialogService Dialogs
+@inject NavigationManager Navigation
+@inject IStringLocalizer<LocalizationResources> Loc
+
+@if (!Embedded) { <AppPageTitle Text="@(UiText.Get(LocKeys.Ui.DeployActionPage.DeployAction0, (_actionName)))" /> }
+@if (_deploymentId is Guid deploymentId)
+{
+    <MudAlert Severity="Severity.Success">@UiText.Get(LocKeys.Ui.DeployActionPage.DeploymentQueuedFor0Devices, (_preview!.Total))</MudAlert>
+    <MudButton Href="@($"/tasks/deployments/{deploymentId}")" OnClick="CloseDialog" Color="Color.Primary" Class="mt-3">@Loc[LocKeys.Ui.DeployActionPage.ViewDeployment]</MudButton>
+
+}
+else
+@if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+else if (_catalog is null || _actionName is null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert><MudButton OnClick="LoadAsync">@Loc[LocKeys.Common.Retry]</MudButton>
+}
+else
+{
+    <MudPaper Class="@(Embedded ? "pa-1" : "pa-5")" Elevation="@(Embedded ? 0 : 3)">
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.overline">@UiText.Get(LocKeys.Ui.DeployActionPage.Step0Of31, ((_step + 1)), ((_step == 0 ? UiText.Get(LocKeys.Policy.Targets) : _step == 1 ? UiText.Get(LocKeys.Ui.PolicyTriggers.Timing) : UiText.Get(LocKeys.Ui.DeployActionPage.ReviewDeploy))))</MudText>
+            @if (TestUpdates.Count > 0)
+            {
+                <MudAlert Severity="Severity.Warning">@Loc[LocKeys.Ui.DeployActionPage.TestOnlyTheseSelectedUpdateRevisionsOnTheDevices]</MudAlert>
+                @foreach (var update in TestUpdates)
+                { <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.DeployActionPage.Text0Revision1, (update.UpdateId), (update.RevisionNumber))</MudText> }
+            }
+            else { <MudText>@Loc[LocKeys.Ui.DeployActionPage.RunThisSavedActionOnceOnEachSelectedDevice]</MudText> }
+            @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+            @if (_step == 0)
+            {
+                <MudStack Row="true" Wrap="Wrap.Wrap">
+                    <MudButton OnClick="@(() => PickTargetsAsync(false))" Disabled="_busy" Variant="Variant.Outlined">@Loc[LocKeys.Ui.UserGroupDirectoryTab.AddGroups]</MudButton>
+                    <MudButton OnClick="@(() => PickTargetsAsync(true))" Disabled="_busy" Variant="Variant.Outlined">@Loc[LocKeys.Ui.PolicyTargetingTab.AddOUs]</MudButton>
+                    <MudButton OnClick="PickDevicesAsync" Disabled="_busy" Variant="Variant.Outlined">@Loc[LocKeys.Ui.PolicyTargetingTab.AddDevices]</MudButton>
+                </MudStack>
+                <MudTable T="PolicyTargetSelectionDto" Items="_request.Targets" Dense="true">
+                    <HeaderContent><MudTh>@Loc[LocKeys.Ui.DeployActionPage.GroupOU]</MudTh><MudTh>@Loc[LocKeys.Ui.TargetPolicies.Scope]</MudTh><MudTh /></HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@(_catalog.Targets.FirstOrDefault(x => x.Key == context.Key)?.Name ?? UiText.Get(LocKeys.Ui.DeployActionPage.UnavailableTarget))</MudTd>
+                        <MudTd>@if (context.Key.IsOu) { <MudCheckBox T="bool" @bind-Value="context.IncludeDescendants" Label="@Loc[LocKeys.Ui.PolicyTargetingTab.IncludeDescendantOUs]" /> } else { <MudText>@Loc[LocKeys.Ui.DeployActionPage.CurrentGroupMembers]</MudText> }</MudTd>
+                        <MudTd><MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="@(() => _request.Targets.Remove(context))" aria-label="@Loc[LocKeys.Ui.DeployActionPage.RemoveTarget]" /></MudTd>
+                    </RowTemplate>
+                    <NoRecordsContent><MudText>@Loc[LocKeys.Ui.DeployActionPage.NoGroupsOrOUsSelected]</MudText></NoRecordsContent>
+                </MudTable>
+                <MudStack Row="true" Wrap="Wrap.Wrap">
+                    @foreach (var device in _devices) { <MudChip T="int" OnClose="@(() => _devices.Remove(device.Key))">@device.Value</MudChip> }
+                </MudStack>
+                <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.DeployActionPage.OverlappingSelectionsProduceOneTaskPerDeviceMembershipIs]</MudText>
+            }
+            else if (_step == 1)
+            {
+                <MudRadioGroup T="DeviceTaskTiming" @bind-Value="_request.Timing">
+                    <MudRadio Value="DeviceTaskTiming.Now">@Loc[LocKeys.Ui.DeployActionPage.DeployNow]</MudRadio>
+                    <MudRadio Value="DeviceTaskTiming.NextCheckin">@Loc[LocKeys.Ui.DeployActionPage.NextCheckIn]</MudRadio>
+                </MudRadioGroup>
+                <MudText>@(_request.Timing == DeviceTaskTiming.Now ? UiText.Get(LocKeys.Ui.DeployActionPage.RequestAnImmediateFetchFromConnectedAgentsOfflineDevices) : UiText.Get(LocKeys.Ui.DeployActionPage.WaitForEachDeviceSNextRegularCheckIn))</MudText>
+                <MudNumericField T="int" @bind-Value="_request.ExpireAfterDays" Min="1" Max="365" Label="@Loc[LocKeys.Ui.DeployActionPage.ExpireUnstartedTasksAfterDays]" Variant="Variant.Outlined" />
+            }
+            else if (_preview is not null)
+            {
+                <MudText Typo="Typo.h6">@_preview.ActionName</MudText>
+                <MudText>@UiText.Get(LocKeys.Ui.DeployActionPage.Text0UniqueDevices1, (_preview.Total), ((_request.Timing == DeviceTaskTiming.Now ? UiText.Get(LocKeys.Ui.DeployActionPage.DeployNow) : UiText.Get(LocKeys.Ui.DeployActionPage.NextCheckIn))))</MudText>
+                <MudText>@UiText.Get(LocKeys.Ui.DeployActionPage.UnstartedTasksExpireAfter0DaysConcurrencyLimitsMay, (_request.ExpireAfterDays))</MudText>
+                <MudTable T="PolicyTargetDeviceDto" Items="_preview.Devices" Dense="true" RowsPerPage="10">
+                    <HeaderContent><MudTh>@Loc[LocKeys.Dashboard.Device]</MudTh><MudTh>@Loc[LocKeys.Ui.DeployActionPage.ID]</MudTh></HeaderContent>
+                    <RowTemplate><MudTd>@context.Name</MudTd><MudTd>@context.Id</MudTd></RowTemplate>
+                    <PagerContent><MudTablePager /></PagerContent>
+                </MudTable>
+                <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.DeployActionPage.ShowingUpTo100DevicesAll0MatchingDevices, (_preview.Total))</MudText>
+                <MudAlert Severity="Severity.Info">@Loc[LocKeys.Ui.DeployActionPage.ImmediateDeploymentsNotifyConnectedAgentsToFetchTheirTasks]</MudAlert>
+            }
+            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                <MudButton OnClick="@Snackbar.GuardAction(() => _busy || _step == 0, UiText.Get(LocKeys.Ui.DeployActionPage.YouAreAlreadyOnTheFirstStep), Back)" Disabled="@(_busy)">@Loc[LocKeys.Ui.DeployActionPage.Back]</MudButton>
+                @if (_step < 2) { <MudButton OnClick="NextAsync" Disabled="_busy" Color="Color.Primary" Variant="Variant.Filled">@(_step == 0 ? UiText.Get(LocKeys.Ui.InstallationWelcomePanel.Continue) : UiText.Get(LocKeys.Ui.DeployActionPage.ReviewDeployment))</MudButton> }
+                else { <MudButton OnClick="@Snackbar.GuardAction(() => _busy || _preview is null, UiText.Get(LocKeys.Ui.DeployActionPage.ReviewTheDeploymentBeforeQueuingIt), DeployAsync)" Disabled="@(_busy)" Color="Color.Primary" Variant="Variant.Filled">@Loc[LocKeys.Device.QueueDeployment]</MudButton> }
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+}
+@code {
+    [Parameter] public Guid ActionGuid { get; set; }
+    [Parameter] public List<WindowsUpdateIdentity> TestUpdates { get; set; } = [];
+    private bool _initialized;
+    [Parameter] public bool Embedded { get; set; }
+    [Parameter] public EventCallback<bool> SubmittingChanged { get; set; }
+    [CascadingParameter] private IMudDialogInstance? MudDialog { get; set; }
+    private Guid? _deploymentId;
+    private void CloseDialog() => MudDialog?.Close();
+    private DeploymentRequestDto _request = new();
+    private DeploymentCatalogDto? _catalog;
+    private DeploymentPreviewDto? _preview;
+    private Dictionary<int, string> _devices = [];
+    private string? _error, _actionName;
+    private bool _loading, _busy;
+    private int _step, _version;
+    protected override async Task OnParametersSetAsync() { if (!_initialized || _request.ActionGuid != ActionGuid || !_request.TestUpdates.SequenceEqual(TestUpdates)) await LoadAsync(); }
+    private async Task LoadAsync()
+    {
+        _initialized = true;
+        var version = ++_version; _loading = true; _busy = false; _error = null;
+        _request = new() { ActionGuid = ActionGuid, TestUpdates = TestUpdates.ToList() }; _devices = []; _step = 0; _preview = null;
+        var name = TestUpdates.Count > 0 ? ServiceResult<string>.Ok(UiText.Get(LocKeys.Ui.DeployActionPage.TestWindowsUpdates0Selected, (TestUpdates.Count))) : await Service.GetActionNameAsync(ActionGuid);
+        var catalog = await Service.GetCatalogAsync();
+        if (version != _version) return;
+        _actionName = name.Data; _catalog = catalog.Data;
+        if (!name.Success) _error = Loc[name.Error!.Code, name.Error.Args];
+        else if (!catalog.Success) _error = Loc[catalog.Error!.Code, catalog.Error.Args];
+        _loading = false;
+    }
+    private async Task PickTargetsAsync(bool ous)
+    {
+        var request = _request;
+        var parameters = new DialogParameters { ["Assigned"] = _request.Targets.Select(x => x.Key).ToHashSet() };
+        if (ous) parameters["Nodes"] = _catalog!.DirectoryNodes; else parameters["Options"] = _catalog!.Targets;
+        var options = new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, CloseButton = true };
+        var dialog = ous ? await Dialogs.ShowAsync<OuTargetPickerDialog>(UiText.Get(LocKeys.Ui.DeployActionPage.ChooseOUs), parameters, options)
+            : await Dialogs.ShowAsync<GroupTargetPickerDialog>(UiText.Get(LocKeys.Ui.DeployActionPage.ChooseGroups), parameters, options);
+        if (await dialog.Result is { Canceled: false, Data: List<PolicyTargetSelectionDto> selected } && ReferenceEquals(request, _request))
+            foreach (var item in selected) if (_request.Targets.All(x => x.Key != item.Key)) _request.Targets.Add(item);
+    }
+    private async Task PickDevicesAsync()
+    {
+        var request = _request;
+        var parameters = new DialogParameters<DeviceDeploymentPickerDialog> { { x => x.Selected, _devices } };
+        var dialog = await Dialogs.ShowAsync<DeviceDeploymentPickerDialog>(UiText.Get(LocKeys.Ui.DeployActionPage.ChooseDevices), parameters, new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large });
+        if (await dialog.Result is { Canceled: false, Data: Dictionary<int, string> selected } && ReferenceEquals(request, _request)) _devices = selected;
+    }
+    private void Back() { if (!_busy && _step > 0) { _step--; _preview = null; _error = null; } }
+    private async Task NextAsync()
+    {
+        if (_busy) return;
+        _error = null;
+        if (_step == 0)
+        {
+            if (_request.Targets.Count + _devices.Count == 0) { Snackbar.Add(UiText.Get(LocKeys.Ui.DeployActionPage.ChooseAtLeastOneGroupOUOrDevice), Severity.Error); return; }
+            _step = 1; return;
+        }
+        var version = _version;
+        _busy = true; _request.DeviceIds = _devices.Keys.ToList();
+        var result = await Service.PreviewAsync(_request);
+        if (version != _version) return;
+        _preview = result.Data;
+        if (result.Success) _step = 2; else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        _busy = false;
+    }
+    private async Task DeployAsync()
+    {
+        if (_busy || _preview is null) return;
+        var version = _version;
+        _busy = true;
+        await SubmittingChanged.InvokeAsync(true);
+        var result = await Service.DeployAsync(_request, _preview.ConfirmationHash);
+        await SubmittingChanged.InvokeAsync(false);
+        if (version != _version) return;
+        if (result.Success)
+        {
+            _deploymentId = result.Data;
+        }
+        else { Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); _step = 1; _preview = null; }
+        _busy = false;
+    }
+}

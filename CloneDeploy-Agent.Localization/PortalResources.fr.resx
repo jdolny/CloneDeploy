@@ -1,0 +1,1247 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <data xml:space="preserve" name="Admin.BackToMenuHint">
+    <value>Revenir au menu des outils. Les tâches en cours continuent.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.BackToTools">
+    <value>← Outils d’administration</value>
+  </data>
+  <data xml:space="preserve" name="Admin.ConnectBeforeSignIn">
+    <value>Connectez-vous en tant qu’administrateur après la connexion au service de l’agent.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.EndSessionAgentUnavailable">
+    <value>Impossible de joindre l’agent pour terminer la session. Les outils d’administration restent indisponibles ici.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.InvalidSessionResponse">
+    <value>Réponse de session administrateur invalide.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.SessionExpiresAt">
+    <value>La session expire à {0:t}.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.SignInDescription">
+    <value>Outils d’administration de cet ordinateur. Connectez-vous avec votre compte CloneDeploy.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.SignInWithCloneDeploy">
+    <value>Connectez-vous avec votre compte administrateur CloneDeploy.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.SignedInAs">
+    <value>Outils d’administration — connecté en tant que {0}</value>
+  </data>
+  <data xml:space="preserve" name="Admin.StartBrowserSignInFailed">
+    <value>Impossible de lancer la connexion dans le navigateur. Vérifiez le service de l’agent et la connexion au serveur, puis réessayez.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.VerifyAccessFailed">
+    <value>Impossible de vérifier l’accès administrateur. Vérifiez le service de l’agent et la connexion au serveur.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.VerifyEndSessionFailed">
+    <value>Impossible de vérifier et de terminer la session administrateur. Reconnectez-vous pour fermer l’interface.</value>
+  </data>
+  <data xml:space="preserve" name="Common.Acknowledge">
+    <value>Reconnaissez</value>
+  </data>
+  <data xml:space="preserve" name="Common.AdminTools">
+    <value>Outils d’administration</value>
+  </data>
+  <data xml:space="preserve" name="Common.AdministratorTools">
+    <value>Outils d'administrateur</value>
+  </data>
+  <data xml:space="preserve" name="Common.AgentVersionConnecting">
+    <value>Version de l’agent : connexion…</value>
+  </data>
+  <data xml:space="preserve" name="Common.AgentVersionNotReported">
+    <value>Version de l’agent : non communiquée</value>
+  </data>
+  <data xml:space="preserve" name="Common.AgentVersionUnavailable">
+    <value>Version de l’agent : indisponible</value>
+  </data>
+  <data xml:space="preserve" name="Common.AllCategories">
+    <value>Toutes les catégories</value>
+  </data>
+  <data xml:space="preserve" name="Common.Allow">
+    <value>Autoriser</value>
+  </data>
+  <data xml:space="preserve" name="Common.AssignedPolicies">
+    <value>Politiques assignées (</value>
+  </data>
+  <data xml:space="preserve" name="Common.AvailableSelfServicePolicies">
+    <value>Stratégies en libre-service disponibles</value>
+  </data>
+  <data xml:space="preserve" name="Common.Cancel">
+    <value>Annuler</value>
+  </data>
+  <data xml:space="preserve" name="Common.CancelSignIn">
+    <value>Annuler la connexion</value>
+  </data>
+  <data xml:space="preserve" name="Common.CancelUSBCreation">
+    <value>Annuler la création USB</value>
+  </data>
+  <data xml:space="preserve" name="Common.Category">
+    <value>Catégorie</value>
+  </data>
+  <data xml:space="preserve" name="Common.CloneDeployLogo">
+    <value>Logo CloneDeploy</value>
+  </data>
+  <data xml:space="preserve" name="Common.CloseAgentUI">
+    <value>Fermer l’interface de l’agent</value>
+  </data>
+  <data xml:space="preserve" name="Common.Completed">
+    <value>Achevé</value>
+  </data>
+  <data xml:space="preserve" name="Common.CreateBootableUSB">
+    <value>Créer une clé USB amorçable</value>
+  </data>
+  <data xml:space="preserve" name="Common.CreateDriverPack">
+    <value>Créer un pack de pilotes</value>
+  </data>
+  <data xml:space="preserve" name="Common.Deny">
+    <value>Refuser</value>
+  </data>
+  <data xml:space="preserve" name="Common.Device">
+    <value>Appareil</value>
+  </data>
+  <data xml:space="preserve" name="Common.DeviceServiceUnavailable">
+    <value>Service de l’appareil indisponible</value>
+  </data>
+  <data xml:space="preserve" name="Common.Dismiss">
+    <value>Ignorer</value>
+  </data>
+  <data xml:space="preserve" name="Common.DownloadISO">
+    <value>Télécharger l’ISO</value>
+  </data>
+  <data xml:space="preserve" name="Common.DriverPackName">
+    <value>Nom du pack de pilotes</value>
+  </data>
+  <data xml:space="preserve" name="Common.Enrolled">
+    <value>Produits laminés</value>
+  </data>
+  <data xml:space="preserve" name="Common.EraseAndCreateUSB">
+    <value>Effacer et créer le support USB</value>
+  </data>
+  <data xml:space="preserve" name="Common.ExternalUSBDisk">
+    <value>Disque USB externe</value>
+  </data>
+  <data xml:space="preserve" name="Common.Failed">
+    <value>Échec</value>
+  </data>
+  <data xml:space="preserve" name="Common.Finished">
+    <value>Terminé</value>
+  </data>
+  <data xml:space="preserve" name="Common.ImagePrepProfile">
+    <value>Profil de préparation d'image</value>
+  </data>
+  <data xml:space="preserve" name="Common.LabelAndTimestamp">
+    <value>{0} {1:g}</value>
+  </data>
+  <data xml:space="preserve" name="Common.Later">
+    <value>Plus tard</value>
+  </data>
+  <data xml:space="preserve" name="Common.MessageHistory">
+    <value>Historique des messages</value>
+  </data>
+  <data xml:space="preserve" name="Common.NotApplicable">
+    <value>Sans objet</value>
+  </data>
+  <data xml:space="preserve" name="Common.Notifications">
+    <value>Notifications</value>
+  </data>
+  <data xml:space="preserve" name="Common.Open">
+    <value>Ouvrir</value>
+  </data>
+  <data xml:space="preserve" name="Common.OrganizationLogo">
+    <value>Logo de l'organisation</value>
+  </data>
+  <data xml:space="preserve" name="Common.Other">
+    <value>Autres</value>
+  </data>
+  <data xml:space="preserve" name="Common.Policy">
+    <value>Stratégie</value>
+  </data>
+  <data xml:space="preserve" name="Common.PoweredBy">
+    <value>Propulsé par</value>
+  </data>
+  <data xml:space="preserve" name="Common.PrepareAndShutDown">
+    <value>Préparer et éteindre</value>
+  </data>
+  <data xml:space="preserve" name="Common.Priority">
+    <value>Priorité</value>
+  </data>
+  <data xml:space="preserve" name="Common.ReadyToRun">
+    <value>Prêt à exécuter ?</value>
+  </data>
+  <data xml:space="preserve" name="Common.Refresh">
+    <value>Actualiser</value>
+  </data>
+  <data xml:space="preserve" name="Common.RefreshBootEnvironments">
+    <value>Actualiser les environnements de démarrage</value>
+  </data>
+  <data xml:space="preserve" name="Common.RefreshDrives">
+    <value>Actualiser les lecteurs</value>
+  </data>
+  <data xml:space="preserve" name="Common.RefreshPortal">
+    <value>Actualiser le portail</value>
+  </data>
+  <data xml:space="preserve" name="Common.RefreshProfiles">
+    <value>Actualiser les profils</value>
+  </data>
+  <data xml:space="preserve" name="Common.Result">
+    <value>Résultat</value>
+  </data>
+  <data xml:space="preserve" name="Common.ResultPending">
+    <value>Résultat en attente</value>
+  </data>
+  <data xml:space="preserve" name="Common.RunImagePrep">
+    <value>Exécuter la préparation d’image</value>
+  </data>
+  <data xml:space="preserve" name="Common.RunNow">
+    <value>Exécuter maintenant</value>
+  </data>
+  <data xml:space="preserve" name="Common.Running">
+    <value>En cours</value>
+  </data>
+  <data xml:space="preserve" name="Common.SelfService">
+    <value>Libre-service</value>
+  </data>
+  <data xml:space="preserve" name="Common.SelfServiceCategory">
+    <value>Catégorie de libre-service</value>
+  </data>
+  <data xml:space="preserve" name="Common.SelfServiceMessage">
+    <value>Self-service:</value>
+  </data>
+  <data xml:space="preserve" name="Common.Skipped">
+    <value>Ignoré</value>
+  </data>
+  <data xml:space="preserve" name="Common.StopSharing">
+    <value>Arrêter de partager</value>
+  </data>
+  <data xml:space="preserve" name="Common.TargetArchitecture">
+    <value>Architecture cible</value>
+  </data>
+  <data xml:space="preserve" name="Common.USBTargetArchitecture">
+    <value>Architecture cible USB</value>
+  </data>
+  <data xml:space="preserve" name="Common.UnableToRefresh">
+    <value>Actualisation impossible</value>
+  </data>
+  <data xml:space="preserve" name="Common.UnknownResult">
+    <value>Résultat inconnu</value>
+  </data>
+  <data xml:space="preserve" name="Common.WinPEBootEnvironment">
+    <value>Environnement de démarrage WinPE :</value>
+  </data>
+  <data xml:space="preserve" name="Common.WorkAccount">
+    <value>Compte professionnel</value>
+  </data>
+  <data xml:space="preserve" name="Common.WorkAccountSignIn">
+    <value>Connexion au compte professionnel</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentClosedWithoutResponse">
+    <value>L’agent a fermé la connexion du portail sans répondre. Recherchez 'Portal connection ended' dans son journal.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentNotAcceptingConnections">
+    <value>Le portail de l’agent local a refusé la connexion. Vérifiez que le service CloneDeploy Agent installé fonctionne.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentResponseTimeout">
+    <value>L’agent local n’a pas répondu à temps. Vérifiez sa connexion au serveur, puis actualisez.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentServiceQueryFailed">
+    <value>Impossible d’interroger le service de l’agent installé</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentServiceUnavailable">
+    <value>Impossible de joindre le service Windows CloneDeployAgent. Vérifiez qu’il fonctionne, puis actualisez.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentStatusReadFailed">
+    <value>Impossible de lire l’état du service de l’agent</value>
+  </data>
+  <data xml:space="preserve" name="Connection.ConnectingToDeviceService">
+    <value>Connexion au service de l’appareil…</value>
+  </data>
+  <data xml:space="preserve" name="Connection.ConnectingToLocalAgent">
+    <value>Connexion à l’agent local…</value>
+  </data>
+  <data xml:space="preserve" name="Connection.ContactAgentFailed">
+    <value>Impossible de joindre l’agent. Réessayez.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.DeviceServiceStarting">
+    <value>Le service de l’appareil démarre</value>
+  </data>
+  <data xml:space="preserve" name="Connection.InvalidPortalResponse">
+    <value>Réponse du portail invalide.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.InvalidResponseSize">
+    <value>Taille de réponse du portail invalide.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.OrganizationConnected">
+    <value>Connecté à votre organisation</value>
+  </data>
+  <data xml:space="preserve" name="Connection.PipeOwnerUnknown">
+    <value>Impossible d’identifier le propriétaire du canal du portail</value>
+  </data>
+  <data xml:space="preserve" name="Connection.RetryingSoon">
+    <value>Le service réessaiera dans un instant</value>
+  </data>
+  <data xml:space="preserve" name="Connection.ServiceRestartingHint">
+    <value>Un redémarrage est peut-être en cours. Réessayez dans un instant.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.UnsupportedServiceVersion">
+    <value>Version du service de l’appareil non prise en charge.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.UntrustedPipeOwner">
+    <value>La connexion du portail n’appartient pas au service CloneDeploy Agent en cours d’exécution.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WaitForAgentStartup">
+    <value>Le service de l’agent n’est pas encore démarré. Attendez son démarrage, puis actualisez.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WaitingForApproval">
+    <value>En attente de l’approbation de l’administrateur</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WaitingForFirstCheckIn">
+    <value>En attente du premier contact</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WaitingForIdentityReset">
+    <value>En attente d’approbation de la réinitialisation d’identité</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WaitingForOrganization">
+    <value>En attente d’une connexion à votre organisation</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WindowsError">
+    <value>{0} : {1} (erreur Windows {2}).</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WindowsServiceQueryFailed">
+    <value>Impossible d’interroger les services Windows</value>
+  </data>
+  <data xml:space="preserve" name="Device.AccountDescription">
+    <value>Cet ordinateur et votre compte professionnel.</value>
+  </data>
+  <data xml:space="preserve" name="Device.AgentServiceVersion">
+    <value>Version du service de l’agent connecté</value>
+  </data>
+  <data xml:space="preserve" name="Device.AgentVersion">
+    <value>Version de l’agent {0}</value>
+  </data>
+  <data xml:space="preserve" name="Device.AgentVersionDescription">
+    <value>Version du service Windows CloneDeployAgent connecté.</value>
+  </data>
+  <data xml:space="preserve" name="Device.AgentVersionNotReportedHint">
+    <value>Ce service ne communique pas sa version. Réinstallez l’agent de développement actuel et actualisez.</value>
+  </data>
+  <data xml:space="preserve" name="Device.AgentVersionPrefix">
+    <value>Version de l'agent</value>
+  </data>
+  <data xml:space="preserve" name="Device.LastCheckIn">
+    <value>Dernier contact : {0:g}</value>
+  </data>
+  <data xml:space="preserve" name="Device.LocalWindowsUser">
+    <value>Utilisateur Windows local</value>
+  </data>
+  <data xml:space="preserve" name="Device.Overview">
+    <value>APERÇU DE L’APPAREIL</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.CancelFailed">
+    <value>Impossible de demander l’annulation. Vérifiez le service de l’agent.</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.DefaultPackName">
+    <value>Pilotes {0} {1}</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.ExportDescription">
+    <value>Exportez les pilotes tiers installés et envoyez-les dans un nouveau pack pour le modèle de cet ordinateur.</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.ExportHeading">
+    <value>Exporter les pilotes tiers installés pour ce modèle</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.InvalidCollectionResponse">
+    <value>Réponse de collecte des pilotes invalide.</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.ReadProgressFailed">
+    <value>Impossible de lire la progression de la collecte. Vérifiez le service de l’agent.</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.StartCollectionFailed">
+    <value>Impossible de lancer la collecte des pilotes. Vérifiez la connexion administrateur et le service de l’agent.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AboutSupportRequests">
+    <value>À propos des demandes d’assistance</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ActualSize">
+    <value>Taille réelle</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AllMyRequests">
+    <value>Toutes mes demandes</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AttachScreenshot">
+    <value>Joindre la capture</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AutomaticReplies">
+    <value>Les réponses apparaissent automatiquement. Vous pouvez fermer cette fenêtre et revenir consulter les mises à jour plus tard.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AutomaticRepliesWhileOpen">
+    <value>Les réponses apparaissent automatiquement tant que cet onglet est ouvert. Vous pouvez fermer le portail et revenir consulter les mises à jour plus tard.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AwaitingReview">
+    <value>En attente d’examen</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.BriefDescription">
+    <value>Description courte</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ChooseRequestDescription">
+    <value>Choisissez une demande pour voir la conversation ou créez-en une.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ChooseScreenshot">
+    <value>Choisir une capture</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Close">
+    <value>Fermer</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Closed">
+    <value>Fermé</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ConfirmDiscardDraft">
+    <value>Abandonner la description ou la réponse non envoyée ?</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DefaultSupportResponse">
+    <value>Notre équipe d’assistance répondra dès qu’elle sera disponible.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DescriptionOrReply">
+    <value>Description ou réponse</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DescriptionRequired">
+    <value>Saisissez une description courte et une description détaillée.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DetailedDescription">
+    <value>Description détaillée</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DetailedDescriptionRequired">
+    <value>Saisissez la description requise.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DisabledByAdministrator">
+    <value>{0} est désactivé par votre administrateur.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.FilterRequestsByStatus">
+    <value>Filtrer les demandes par état</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.FitToWindow">
+    <value>Adapter à la fenêtre</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.GetYourScreenshotReady">
+    <value>Préparez votre capture d’écran</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.HowCanWeHelp">
+    <value>Comment pouvons-nous vous aider ?</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.InProgress">
+    <value>En cours</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.InvalidResponse">
+    <value>Réponse d’assistance invalide.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.LoadEarlierMessages">
+    <value>Charger les messages précédents</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.MessageSent">
+    <value>Votre message a été envoyé.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.MyHelpRequests">
+    <value>Mes demandes d’assistance</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NamedUpdate">
+    <value>{0} mise à jour</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NewHelpRequest">
+    <value>Nouvelle demande d’assistance</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NewNamedRequest">
+    <value>Nouvelle demande {0}</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Next">
+    <value>Suivant</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NoMatchingRequestsHint">
+    <value>Aucune demande ne correspond à cette vue. Sélectionnez Demander de l’aide pour commencer.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NoRequestsWithStatus">
+    <value>Aucune demande dans cet état</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NoRequestsYet">
+    <value>Aucune demande pour le moment</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.OpenNamed">
+    <value>Ouvrir {0}</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.PreviewAttachedScreenshot">
+    <value>Aperçu de la capture jointe</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Previous">
+    <value>Précédent</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RefreshFailedDraftSaved">
+    <value>Impossible d’actualiser les demandes. Votre brouillon est conservé ; actualisez de nouveau.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RemoveAttachedScreenshot">
+    <value>Retirer la capture jointe</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RemoveScreenshot">
+    <value>Retirer la capture</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ReopenRequest">
+    <value>Rouvrir la demande</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ReplyPlaceholder">
+    <value>Saisissez votre réponse ici…</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ReplyRequired">
+    <value>Saisissez d’abord votre réponse.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RequestReopened">
+    <value>Votre demande a été rouverte.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RequestUpdated">
+    <value>#{0} · Mis à jour {1:g}</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RetakeScreenshot">
+    <value>Reprendre la capture</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Screenshot">
+    <value>Capture d'écran</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ScreenshotAttached">
+    <value>Capture jointe</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SendOrClearDraftFirst">
+    <value>Envoyez votre brouillon ou effacez son texte et retirez la capture avant de choisir une autre demande.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SendReply">
+    <value>Envoyer la réponse</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SendUnconfirmed">
+    <value>Envoi non confirmé. Réessayez pour vérifier la même demande sans la dupliquer.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SignInOnDeviceTab">
+    <value>Connectez-vous avec votre compte professionnel dans l’onglet Appareil pour voir vos demandes.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SubmitRequest">
+    <value>Envoyer la demande</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SupportUnavailable">
+    <value>Impossible de joindre l’assistance. Réessayez dans un instant.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SupportUnavailableDraftSaved">
+    <value>Impossible de joindre l’assistance. Votre brouillon est conservé ; actualisez ou renvoyez-le.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.TakeScreenshot">
+    <value>Prendre une capture</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.TheScreenshotCouldNotBeLoaded">
+    <value>La capture d'écran n'a pas pu être chargée.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.TicketScreenshot">
+    <value>Capture de la demande</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Title">
+    <value>Aide</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.UnavailableRetry">
+    <value>Assistance indisponible. Vérifiez votre connexion et réessayez.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.UnreadCount">
+    <value>{0} demande(s) {1} non lue(s)</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.UnreadIndicator">
+    <value>● Non lu</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.UpdatesCount">
+    <value>Vous avez des mises à jour pour {0} demande(s). Ouvrez {1} pour les voir.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ViewScreenshot">
+    <value>Affichage de la capture d'écran</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.WaitingOnYou">
+    <value>En attente de votre réponse</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.WorkAccountChanged">
+    <value>Le compte professionnel a changé. Actualisez pour continuer.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.You">
+    <value>Vous</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.AgentUninstallWarning">
+    <value>L’agent CloneDeploy sera désinstallé avant la capture. </value>
+  </data>
+  <data xml:space="preserve" name="Imaging.CaptureDestination">
+    <value>Destination de capture</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.CaptureDestinationDescription">
+    <value>Capturez une nouvelle version d’une image existante ou créez une image.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.CaptureDestinationPermissionRequired">
+    <value>L’autorisation de voir ou créer des images est requise pour choisir une destination de capture.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.ConfirmRunPreparation">
+    <value>Exécuter '{0}' sur cet ordinateur ?
+
+Enregistrez d’abord votre travail. Les paramètres et scripts sélectionnés seront exécutés en tant que SYSTEM. {1} La préparation continue si cette fenêtre se ferme.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.Continue">
+    <value>Continuer</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.CreateNewImage">
+    <value>Créer une image</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.FFUWholeGPTDisk">
+    <value>FFU — disque GPT entier</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.ImageName">
+    <value>Nom de l’image</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.ImageType">
+    <value>Type d'image</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.InvalidImageName">
+    <value>Saisissez un nom d’image valide.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.InvalidPreparationResponse">
+    <value>Réponse de préparation d’image invalide.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.LoadProfilesFailed">
+    <value>Impossible de charger les profils de préparation. Vérifiez la connexion administrateur et la connexion au serveur.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.NoEnabledProfiles">
+    <value>Aucun profil activé. Créez-en un dans Imagerie → Profils de préparation d’image dans l’interface web.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.PreparationDescription">
+    <value>Préparez cet ordinateur à la capture d’image. Le profil peut l’éteindre ou le redémarrer dans WinPE pour une capture automatique. Enregistrez votre travail avant de commencer.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.PreparationStartUnconfirmed">
+    <value>Impossible de confirmer le début de la préparation. Vérifiez la progression et le journal de l’agent avant de réessayer.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.PrepareAndCapture">
+    <value>Préparer et capturer</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.PrepareComputerForImageCapture">
+    <value>Préparer l’ordinateur à la capture d’image</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.PrepareThisComputer">
+    <value>Préparer cet ordinateur à la capture d’image</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.ReadProgressFailed">
+    <value>Impossible de lire la progression de la préparation. Vérifiez le service et le journal de l’agent.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.RestartAndCaptureDescription">
+    <value>Après la préparation, l’ordinateur redémarrera dans WinPE et capturera une nouvelle version d’image. Gardez Ethernet connecté.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.SelectAnImage">
+    <value>Sélectionnez une image</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.ShutdownAfterPreparationDescription">
+    <value>Après la préparation, l’ordinateur s’éteindra. Démarrez ensuite votre environnement de capture.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.UseExistingImage">
+    <value>Utiliser une image existante</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.WIMWindowsPartition">
+    <value>WIM (distribution Windows)</value>
+  </data>
+  <data xml:space="preserve" name="LoginPolicies.ExecutionError">
+    <value>Stratégies de connexion : {0}</value>
+  </data>
+  <data xml:space="preserve" name="LoginPolicies.FileChecksumMismatch">
+    <value>La somme de contrôle du fichier de connexion ne correspond pas.</value>
+  </data>
+  <data xml:space="preserve" name="LoginPolicies.InvalidCommand">
+    <value>Commande de stratégie de connexion invalide.</value>
+  </data>
+  <data xml:space="preserve" name="LoginPolicies.InvalidFile">
+    <value>Fichier de stratégie de connexion invalide.</value>
+  </data>
+  <data xml:space="preserve" name="LoginPolicies.ServerCredentialsUnavailable">
+    <value>Les actions de connexion ne peuvent pas accéder aux identifiants serveur de l’agent.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgeMessageFailed">
+    <value>Impossible de confirmer ce message. Actualisez l’historique et réessayez.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgeNotificationFailed">
+    <value>Impossible de confirmer cette notification. Elle a peut-être expiré ; actualisez et réessayez.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgedAt">
+    <value>Confirmé {0:g}</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgedLabel">
+    <value>Confirmé : {0:g}</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgementRequired">
+    <value>Confirmation requise</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgmentNotSaved">
+    <value>La confirmation n’a pas été enregistrée. Réessayez.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.CloneDeployMessage">
+    <value>Message CloneDeploy</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.CloneDeployRemoteAccessRequest">
+    <value>Demande d’accès à distance CloneDeploy</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.CloneDeployRemoteSharing">
+    <value>Partage à distance CloneDeploy</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.CloseMessage">
+    <value>Fermer le message</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Critical">
+    <value>Critique</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Expired">
+    <value>Expiré</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.ExpiresAt">
+    <value>Expire : {0:g}</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.HistoryDescription">
+    <value>Avis récents de votre organisation pour cet appareil. Conservés jusqu’à 7 jours.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Information">
+    <value>Information</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.InvalidSnapshot">
+    <value>Instantané des messages invalide.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.NoNotificationsYet">
+    <value>Aucune notification pour le moment.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.NoRecentMessages">
+    <value>Aucun message récent pour cet appareil.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Notification">
+    <value>Notification</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.OpenDetails">
+    <value>Ouvrir les détails</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.OpenDetailsDescription">
+    <value>{0}. {1}. Ouvrir les détails.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.OpenHelp">
+    <value>Ouvrir l’aide</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.OpenNotifications">
+    <value>Ouvrir les notifications</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.RefreshFailedAcknowledgmentsRetained">
+    <value>Impossible d’actualiser les notifications. Vos confirmations enregistrées seront réessayées automatiquement.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.RemoteAccessRequest">
+    <value>Demande d'accès à distance</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.RemoteSharingIsActive">
+    <value>Le partage à distance est actif</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.SaveAcknowledgmentFailed">
+    <value>Impossible d’enregistrer la confirmation. Réessayez quand le service de l’agent sera disponible.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Success">
+    <value>Réussite</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.UnavailableRetry">
+    <value>Notifications indisponibles. Réessayez dans un instant.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Warning">
+    <value>Avertissement</value>
+  </data>
+  <data xml:space="preserve" name="Policies.AssignedDescription">
+    <value>Stratégies actives affectées à cet appareil. Gérées par votre organisation.</value>
+  </data>
+  <data xml:space="preserve" name="Policies.LastStarted">
+    <value>Dernier démarrage</value>
+  </data>
+  <data xml:space="preserve" name="Policies.LatestRunDescription">
+    <value>Dernière exécution de chaque stratégie publiée sur cet appareil signalée par le serveur. Heures locales.</value>
+  </data>
+  <data xml:space="preserve" name="Policies.NoReportedRun">
+    <value>Aucune exécution signalée</value>
+  </data>
+  <data xml:space="preserve" name="Policies.NoneAssigned">
+    <value>Aucune stratégie active n’est affectée à cet appareil.</value>
+  </data>
+  <data xml:space="preserve" name="Policies.NotRunYet">
+    <value>Pas encore exécuté</value>
+  </data>
+  <data xml:space="preserve" name="Policies.StartedResultPending">
+    <value>Démarré {0:g} · résultat en attente</value>
+  </data>
+  <data xml:space="preserve" name="Policies.ViewResultsDescription">
+    <value>Voir les stratégies de l’appareil et leurs derniers résultats signalés</value>
+  </data>
+  <data xml:space="preserve" name="Portal.CloseDescription">
+    <value>Ferme le portail et son icône de notification pour cette session. Les notifications reprennent à la réouverture.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.ExecutableUnavailable">
+    <value>L’exécutable du portail est indisponible. Rouvrez-le depuis Applications.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.LoadFailed">
+    <value>Impossible de charger le portail : {0}</value>
+  </data>
+  <data xml:space="preserve" name="Portal.Navigation">
+    <value>Navigation du portail</value>
+  </data>
+  <data xml:space="preserve" name="Portal.Open">
+    <value>Ouvrir le portail</value>
+  </data>
+  <data xml:space="preserve" name="Portal.OpenBrowserManually">
+    <value>Impossible d’ouvrir votre navigateur. Ouvrez l’adresse manuellement.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.OpenLowercase">
+    <value>Ouvrir le portail</value>
+  </data>
+  <data xml:space="preserve" name="Portal.RefreshDescription">
+    <value>Recharger les stratégies et catégories du portail. Les demandes d’aide s’actualisent automatiquement.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.RegisterUpdateRestartFailed">
+    <value>Impossible d’enregistrer le redémarrage du portail après mise à jour : HRESULT 0x{0:X8}</value>
+  </data>
+  <data xml:space="preserve" name="Portal.RestartFailed">
+    <value>Échec du redémarrage du portail : {0}</value>
+  </data>
+  <data xml:space="preserve" name="Portal.RestartManually">
+    <value>Le portail ne peut pas redémarrer maintenant. Fermez-le et rouvrez-le depuis Applications.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.RestartUnavailable">
+    <value>Le portail ne peut pas redémarrer maintenant.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.Title">
+    <value>Portail d'auto-service</value>
+  </data>
+  <data xml:space="preserve" name="Portal.UpdatedAt">
+    <value>Mis à jour {0:t}</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.AccessibilityPermission">
+    <value>Autorisation d’accessibilité</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.AccessibilityRequired">
+    <value>L’autorisation d’accessibilité est requise.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.AttachmentRejected">
+    <value>La connexion distante a été refusée.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.CaptureDisplayFailed">
+    <value>macOS n’a pas pu capturer cet écran. Vérifiez l’autorisation d’enregistrement de l’écran et redémarrez le portail.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.CaptureSurfaceFailed">
+    <value>Impossible de créer la surface de capture.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ClipboardTextExceedsTheLimit">
+    <value>Le texte du presse-papiers dépasse la limite.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ClipboardTextSent">
+    <value>Texte envoyé au presse-papiers distant.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ClipboardUnavailable">
+    <value>Presse-papiers indisponible.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ConnectedToScreen">
+    <value>{0} est connecté à votre écran.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ConsentDescription">
+    <value>{0} demande à voir et contrôler votre ordinateur. Autoriser l’accès ? Cette demande expire dans 60 secondes.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ConsentRequest">
+    <value>{0} souhaite voir et contrôler votre écran.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ConsoleSessionUnavailable">
+    <value>Session de console indisponible.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.CtrlAltDeleteWindowsOnly">
+    <value>Ctrl+Alt+Suppr n’est disponible que sous Windows.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.DesktopUnavailable">
+    <value>Le bureau du Mac est verrouillé, la session a changé ou l’autorisation d’enregistrement de l’écran a été retirée.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.DisplaysUnavailable">
+    <value>Écrans indisponibles.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.EndedPrefix">
+    <value>Assistance à distance terminée : </value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.FrameRateUpdated">
+    <value>Fréquence d’images mise à jour.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.FrameTooLarge">
+    <value>L’image du bureau dépasse la limite.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.InputEventFailed">
+    <value>macOS n’a pas pu créer d’événement de saisie.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.InvalidCommand">
+    <value>Commande distante invalide.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.InvalidResponse">
+    <value>Réponse d’accès à distance invalide.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.MessageQueued">
+    <value>Message mis en file pour cet utilisateur.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.MonitorSelected">
+    <value>Écran sélectionné.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.MonitorUnavailable">
+    <value>Écran indisponible.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.NoDisplay">
+    <value>Aucun écran disponible.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.NoDisplayAvailable">
+    <value>Aucun écran n’est disponible.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.QualityUpdated">
+    <value>Qualité d’affichage mise à jour.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.RemoteSupport">
+    <value>Assistance à distance</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.RemoteSupportConnected">
+    <value>Assistance à distance connectée</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.RemoteSupportRequest">
+    <value>Demande d’assistance à distance</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.RequestExpired">
+    <value>La demande distante a expiré.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.RestartPortal">
+    <value>Redémarrer le portail</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ScreenRecordingPermission">
+    <value>Autorisation d’enregistrement de l’écran</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.SendDecisionFailed">
+    <value>Impossible d’envoyer votre décision d’accès à distance. Réessayez.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.SharingActiveDescription">
+    <value>{0} peut voir et contrôler votre ordinateur. Vous pouvez arrêter le partage à tout moment.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.StartFailed">
+    <value>Impossible de démarrer l’assistance à distance.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.UnsupportedDisplaySize">
+    <value>Dimensions d’écran non prises en charge.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ViewOnlyAccessibilityRequired">
+    <value>Affichage seul : l’autorisation d’accessibilité n’a pas été accordée.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.CaptureFailed">
+    <value>Impossible de capturer l’écran.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.CaptureFailedPermissionHint">
+    <value>Échec de la capture d’écran. Vérifiez l’autorisation d’enregistrement de l’écran et réessayez.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.ImageTooLargeHint">
+    <value>La capture est trop grande. Essayez de n’afficher que l’application concernée.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.MacPermissionInstructions">
+    <value>Autorisez CloneDeploy Portal dans Réglages Système → Confidentialité et sécurité → Enregistrement de l’écran, puis redémarrez le portail et réessayez.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.MultipleMonitorsHint">
+    <value>Plusieurs écrans ? Placez l’application sur le même écran que le portail en libre-service.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.PrepareMacInstructions">
+    <value>Ouvrez ce que vous souhaitez montrer à l’assistance. Le portail sera masqué pendant la sélection. Appuyez sur Espace pour choisir une fenêtre ou sur Échap pour annuler.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.PrepareWindowsInstructions">
+    <value>Ouvrez l’application ou le message concerné, puis choisissez Prendre une capture. Le portail sera brièvement masqué pour capturer tout le reste.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.PreviewHint">
+    <value>Cliquer pour prévisualiser · Envoyée avec votre message</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.PrivacyReminder">
+    <value>Vérifiez l’absence de mots de passe, de données personnelles et d’autres informations sensibles. Rien n’est envoyé avant la soumission.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.RequiresMacOS">
+    <value>La capture d’écran nécessite macOS.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.ReviewBeforeAttaching">
+    <value>Vérifier la capture avant de la joindre</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.ReviewBeforeSendingHint">
+    <value>Vous pourrez la vérifier avant de la joindre à votre demande.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.SelectSmallerArea">
+    <value>Cette capture est trop grande. Sélectionnez une zone plus petite.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.StartFailed">
+    <value>Impossible de démarrer la capture d’écran.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.Unavailable">
+    <value>Capture indisponible.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.AvailableDescription">
+    <value>Disponible sur cet appareil. Chaque stratégie utilise les autorisations configurées.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.CheckingRequestAccepted">
+    <value>Vérification de l’acceptation de la demande. Patientez avant de réessayer.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.CompletedAt">
+    <value>Terminé {0:g}</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.CompletionUnconfirmed">
+    <value>Fin non confirmée · actualisez pour voir le résultat</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.CompletionVerificationFailed">
+    <value>Impossible de confirmer la réussite : {0} Consultez l’historique de la stratégie avant de la relancer.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Confirm">
+    <value>Confirmer</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.ConfirmRunOnMac">
+    <value>Exécuter {0} sur ce Mac ?</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.LastRun">
+    <value>Dernière exécution : {0:g} · {1}</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.LatestRunDescription">
+    <value>Dernière exécution signalée de la version publiée. Les stratégies utilisateur affichent vos exécutions sur cet appareil ; celles de SYSTEM affichent les exécutions de l’appareil.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Loading">
+    <value>Chargement du libre-service…</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.NoAvailablePolicies">
+    <value>Aucune stratégie en libre-service disponible pour votre compte sur cet appareil.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.NoMatchingPolicies">
+    <value>Aucune stratégie en libre-service ne correspond à votre compte, appareil ou filtres.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.NoSearchMatches">
+    <value>Aucune stratégie ne correspond à votre recherche ou catégorie.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.PolicyCompleted">
+    <value>{0} s’est terminé correctement.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.PolicyUnsuccessful">
+    <value>La stratégie ne s’est pas terminée correctement. Consultez son historique.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.RefreshFailed">
+    <value>Impossible d’actualiser. Réessayez une fois connecté.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.RequestFailed">
+    <value>Impossible de terminer la demande. Vérifiez la connectivité de l’agent, sa version et l’accès à la stratégie. Consultez l’historique avant de réessayer.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.RequestingPolicy">
+    <value>Demande de {0}…</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Run">
+    <value>Courez</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Running">
+    <value>En cours</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.RunningPolicy">
+    <value>Exécution de {0}…</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SaveWorkReminder">
+    <value>Enregistrez votre travail avant de continuer. L’ordinateur peut redémarrer.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Search">
+    <value>Rechercher dans le libre-service</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SearchDescription">
+    <value>Rechercher dans les noms et descriptions des stratégies</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SearchPlaceholder">
+    <value>Rechercher dans le libre-service…</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SelectRunHint">
+    <value>Sélectionnez Exécuter pour lancer une stratégie.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SelfServiceIsDisabledByYourAdministrator">
+    <value>Le libre-service est désactivé par votre administrateur.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SignInRequired">
+    <value>Connectez-vous avec votre compte professionnel pour utiliser le libre-service.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Unavailable">
+    <value>Libre-service indisponible.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.AccountCheckFailed">
+    <value>Impossible de vérifier votre compte professionnel. Actualisez pour réessayer.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.AvailableAfterEnrollment">
+    <value>La connexion sera disponible après l’inscription de l’appareil.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.BrowserPageTitle">
+    <value>Connexion au portail</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.BrowserVerificationHint">
+    <value>Votre navigateur gérera la connexion et les vérifications nécessaires.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.CancelledOrExpired">
+    <value>Connexion annulée ou expirée.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.CancelledOrExpiredRetry">
+    <value>La connexion a été annulée ou a expiré. Vous pouvez réessayer.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.CheckEnrollmentAndVersion">
+    <value>Connexion indisponible. Vérifiez la version du serveur et l’inscription de l’appareil.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.CompleteInBrowser">
+    <value>Terminez la connexion dans votre navigateur.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.CompleteReturnToPortal">
+    <value>Connecté. Vous pouvez fermer cet onglet et revenir au portail.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.ConnectActiveDirectory">
+    <value>Connectez votre compte Active Directory à ce portail.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.ConnectWorkAccountDescription">
+    <value>Connectez votre compte professionnel pour accéder à l’assistance, aux notifications et aux stratégies qui vous sont affectées.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.ConnectionFailed">
+    <value>Impossible de terminer la connexion. Vérifiez votre connexion et réessayez.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.DirectoryAccountAmbiguous">
+    <value>Votre compte correspond à plusieurs sources d’annuaire. Contactez votre administrateur.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.DirectoryAccountDisabled">
+    <value>Votre compte d’annuaire est désactivé.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.DirectoryAccountMissing">
+    <value>Votre compte ne figure plus dans le périmètre de synchronisation de l’annuaire.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.DirectoryUserDetails">
+    <value>Utilisateur de l’annuaire : {0}
+{1}
+{2}</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.ExpiredOrRejected">
+    <value>La connexion a expiré ou a été refusée. Réessayez.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.IncompleteRetry">
+    <value>La connexion n’a pas abouti. Réessayez.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.InvalidSavedSession">
+    <value>Session du portail enregistrée invalide.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.InvalidWorkAccountResponse">
+    <value>Réponse de compte professionnel invalide.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.KeychainRequiredToRemember">
+    <value>Connecté temporairement. L’accès au trousseau macOS est nécessaire pour mémoriser la session.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.KeychainUnavailable">
+    <value>L’accès au trousseau macOS était indisponible. Autorisez l’accès ou déverrouillez votre trousseau de connexion.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.NoWorkAccount">
+    <value>Aucun compte professionnel connecté</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.OpenBrowserFailed">
+    <value>Impossible d’ouvrir votre navigateur.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.OrganizationConnected">
+    <value>Connecté à votre organisation.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.RestartFromPortal">
+    <value>La connexion n’a pas abouti. Recommencez depuis le portail.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.RestoreSessionFailed">
+    <value>Impossible de restaurer votre session. Vérifiez votre connexion et autorisez l’accès au trousseau macOS si demandé.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SessionEndedDeviceTab">
+    <value>Votre session est terminée. Reconnectez-vous dans l’onglet Appareil.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SessionEndedReconnect">
+    <value>Votre session est terminée. Reconnectez-vous pour rétablir votre compte professionnel.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SessionRevokedKeychainEntryRetained">
+    <value>Déconnecté. L’entrée du trousseau n’a pas pu être supprimée, mais sa session a été révoquée.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SignIn">
+    <value>Se connecter</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SignOut">
+    <value>Se déconnecter</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SignOutFailed">
+    <value>Impossible de vous déconnecter. Reconnectez-vous et réessayez.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SignOutIncomplete">
+    <value>Impossible de terminer la déconnexion. Actualisez pour vérifier votre compte.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SignedInAs">
+    <value>Connecté en tant que {0}</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.UserSignedIn">
+    <value>{0} • Connecté</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.VerifySessionFailed">
+    <value>Impossible de vérifier votre session. Actualisez une fois connecté.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WindowsAccountLinked">
+    <value>Votre compte Windows est automatiquement lié à votre organisation.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WindowsAccountNotLinked">
+    <value>Ce compte Windows n’est pas lié à un utilisateur d’annuaire synchronisé.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WindowsAccountNotMatched">
+    <value>Votre compte Windows n’a pas pu être identifié. Connectez-vous pour accéder à votre compte professionnel sur cet appareil.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WithWorkAccount">
+    <value>Se connecter avec un compte professionnel</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WithYourWorkAccount">
+    <value>Se connecter avec votre compte professionnel</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WorkAccountBanner">
+    <value>Connectez-vous avec votre compte professionnel pour accéder à l’assistance, aux notifications personnelles et aux stratégies affectées.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WorkAccountHeading">
+    <value>Se connecter à votre compte professionnel</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WorkAccountUnavailable">
+    <value>Connexion professionnelle indisponible. Contactez votre administrateur.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.AdministratorPermissionRequired">
+    <value>Cette session administrateur n’autorise pas la création USB. Vérifiez la version du serveur et reconnectez-vous.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.ConfirmEraseDisk">
+    <value>Effacer définitivement TOUTES les partitions et tous les fichiers de :
+
+{0}
+
+Créer un support de démarrage WinPE {1} sur ce disque ?</value>
+  </data>
+  <data xml:space="preserve" name="Usb.CreateMediaDescription">
+    <value>Créer un support WinPE pour le déploiement et la récupération</value>
+  </data>
+  <data xml:space="preserve" name="Usb.DownloadAndEraseDescription">
+    <value>Téléchargez un environnement WinPE, puis choisissez un disque externe à effacer et à rendre amorçable.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.DownloadAndVerifyDescription">
+    <value>Télécharger et vérifier l’ISO WinPE sélectionnée.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.EraseExternalDisk">
+    <value>Effacer le disque externe</value>
+  </data>
+  <data xml:space="preserve" name="Usb.ExternalDiskEraseWarning">
+    <value>Disque externe (toutes les partitions seront effacées)</value>
+  </data>
+  <data xml:space="preserve" name="Usb.InvalidResponse">
+    <value>Réponse de l’outil USB invalide.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.OperationInProgress">
+    <value>Terminez ou annulez l’opération USB avant de télécharger une autre ISO.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.ReadProgressFailed">
+    <value>Impossible de lire la progression USB. Vérifiez le service de l’agent.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.RequestFailed">
+    <value>Impossible de terminer la demande USB. Vérifiez le service de l’agent et la connexion administrateur.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.SelectBootEnvironment">
+    <value>Sélectionnez un environnement de démarrage WinPE à télécharger.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.SelectReadyBuildFirst">
+    <value>Actualisez les environnements de démarrage et choisissez une version WinPE prête avant de télécharger.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.WaitingForAgent">
+    <value>En attente de la fin de cette demande par l’agent.</value>
+  </data>
+</root>

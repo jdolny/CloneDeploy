@@ -1,0 +1,56 @@
+@inject DeviceService Renaming
+@inject AuthenticationStateProvider Authentication
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="_name" Label="@Loc[LocKeys.Ui.DeviceRenameDialog.NewComputerName]" Variant="Variant.Outlined" MaxLength="15" Disabled="_busy" />
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.DeviceRenameDialog.IfTheAgentIsConnectedRenameWindowsTooOtherwise]</MudText>
+            <MudSelect T="int?" @bind-Value="_credentialId" Label="@Loc[LocKeys.Ui.DeviceRenameDialog.DomainCredentialForDomainJoinedDevices]" Clearable="true" Variant="Variant.Outlined" Disabled="_busy">
+                @foreach (var credential in _credentials)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)credential.Id)">@credential.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.DeviceRenameDialog.ChooseAManagedCredentialAuthorizedToRenameTheDomain]</MudText>
+            @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())" Disabled="_busy">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="SaveAsync" Disabled="_busy" Color="Color.Primary" Variant="Variant.Filled">@Loc[LocKeys.Ui.DeviceRenameDialog.Rename]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int DeviceId { get; set; }
+    [Parameter] public string Name { get; set; } = "";
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private string _name = "";
+    private int? _credentialId;
+    private List<ManagedCredentialDto> _credentials = [];
+    private bool _busy;
+    private string? _error;
+    protected override async Task OnInitializedAsync()
+    {
+        _name = Name;
+        try { _credentials = await Renaming.GetRenameCredentialsAsync((await Authentication.GetAuthenticationStateAsync()).User); }
+        catch { _error = UiText.Get(LocKeys.Ui.DeviceRenameDialog.CouldNotLoadCredentialsAvailableForDeviceRenaming); }
+    }
+    private async Task SaveAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            var result = await Renaming.RenameAsync(user, DeviceId, _name, true, _credentialId);
+            if (!result.Success) { Snackbar.Add(result.Detail, Severity.Error); return; }
+            Snackbar.Add(result.Detail, Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (UnauthorizedAccessException) { Snackbar.Add(UiText.Get(LocKeys.Ui.DeviceRenameDialog.DevicePermissionIsRequired), Severity.Error); }
+        catch (Exception) { Snackbar.Add(UiText.Get(LocKeys.Ui.DeviceRenameDialog.RenameCouldNotBeConfirmedCheckTheDeviceBefore), Severity.Error); }
+        finally { _busy = false; }
+    }
+}

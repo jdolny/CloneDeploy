@@ -1,0 +1,29 @@
+@using System.Net.Http
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Components.Sections
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.JSInterop
+@using CloneDeploy_Server
+@using CloneDeploy_Server.Backend.Auth
+@using CloneDeploy_Server.Backend.Common
+@using CloneDeploy_Server.Backend.Enum
+@using CloneDeploy_Server.Backend.Services
+@using CloneDeploy_Server.Backend.Data.Models
+@using CloneDeploy_Server.Localization
+@using CloneDeploy_Server.UI
+@using CloneDeploy_Server.UI.Common
+@using CloneDeploy_Server.UI.Common.Dialogs
+@using CloneDeploy_Server.UI.Layout
+@using MudBlazor
+@using Microsoft.Extensions.Localization
+@inject ISnackbar Snackbar
+@inject IDialogService Dialog
+@inject IStringLocalizer<LocalizationResources> Loc
+@inject NavigationManager Navigation
+@attribute [Authorize]

@@ -1,0 +1,69 @@
+@inject AppUserService AppUserService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.User.NewUser]</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="AppUser.UserName" Label="@Loc[LocKeys.Auth.UserName]" Variant="Variant.Outlined"
+                          Required="true"/>
+            <MudTextField @bind-Value="AppUser.Email" Label="@Loc[LocKeys.User.Email]" Variant="Variant.Outlined"
+                          Required="false"/>
+            <MudSelect @bind-Value="AppUser.Membership" Label="@Loc[LocKeys.User.Membership]" Variant="Variant.Outlined"
+                       Required="true">
+                <MudSelectItem Value="@Constants.UserMembership.User">@Loc[LocKeys.User.UserMembership]</MudSelectItem>
+                <MudSelectItem Value="@Constants.UserMembership.Admin">@Loc[LocKeys.User.AdminMembership]</MudSelectItem>
+            </MudSelect>
+            <MudTextField @bind-Value="_password" Label="@(Loc[LocKeys.Auth.Password])" Variant="Variant.Outlined" InputType="InputType.Password"
+                          Required="true"/>
+            <MudCheckBox @bind-Value="AppUser.LockoutEnabled" Label="@Loc[LocKeys.User.LockoutEnabled]" Color="Color.Primary"/>
+            <MudCheckBox T="bool" Value="@(MfaPolicy.RequiresWeb(AppUser))" ValueChanged="@(value => AppUser.EnableMfa = value)" Disabled="@(AppUser.Membership == Constants.UserMembership.Admin)" Label="@Loc[LocKeys.Ui.NewUserGroupDialog.RequireWebMFA]" Color="Color.Primary"/>
+        <MudCheckBox T="bool" @bind-Value="AppUser.EnableImagingMfa" Label="@Loc[LocKeys.Ui.NewUserGroupDialog.RequireImagingMFA]" Color="Color.Primary"/>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Disabled="_saving" OnClick="@(() => MudDialog.Cancel())">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="_saving" OnClick="@OnCreateClicked">@(Loc[LocKeys.Common.Create])</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public AppUser AppUser { get; set; } = new() { Membership = Constants.UserMembership.User, LockoutEnabled = true };
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private bool _saving;
+    private MudForm _form = null!;
+    private string _password = null!;
+
+    private async Task OnCreateClicked()
+    {
+        if (_saving) return;
+        _saving = true;
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+        {
+            _saving = false;
+            return;
+        }
+
+        var result = await AppUserService.CreateAsync(AppUser, _password);
+
+        if (!result.Success)
+        {
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+            if (result.Error.Code == ErrorKeys.User.CreateIncomplete)
+                MudDialog.Close(DialogResult.Ok(true));
+        }
+        else if (result.HasData)
+        {
+            Snackbar.Add(Loc[LocKeys.Common.Created, AppUser.UserName!] , Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+
+        _saving = false;
+    }
+}

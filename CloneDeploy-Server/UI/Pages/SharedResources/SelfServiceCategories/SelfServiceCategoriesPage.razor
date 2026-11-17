@@ -1,0 +1,153 @@
+@page "/policies/self-service-categories"
+@page "/shared/self-service-categories"
+@attribute [Authorize(Policy = Constants.Permissions.SelfServiceCategoryView)]
+@inject PolicyService Categories
+@inject IAuthorizationService Authorization
+@inject AuthenticationStateProvider Authentication
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.SelfServiceCategoriesPage.SelfServiceCategories]" />
+
+@if (_canEdit)
+{
+    <ActionButtons>
+        <MainButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="@(() => OnOpenDialogClicked())" Disabled="_busy">@Loc[LocKeys.Ui.SelfServiceCategoriesPage.NewCategory]</MudButton>
+        </MainButton>
+    </ActionButtons>
+}
+
+<MudDataGrid T="SelfServiceCategory" Items="_categories" Loading="_isLoading" Dense="true" Elevation="0" SortMode="SortMode.None"
+             RowsPerPage="@(Math.Max(1, _categories.Count))" Filterable="false"
+             ColumnResizeMode="ResizeMode.Column" HorizontalScrollbar="true" Hover="true" Class="device-list-grid mb-10">
+    <Columns>
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]">
+            <CellTemplate>
+                @if (_canEdit)
+                {
+                    <button type="button" class="resource-name-link" disabled="@_busy"
+                            @onclick="@(() => OnOpenDialogClicked(context.Item))">@context.Item.Name</button>
+                }
+                else
+                {
+                    @context.Item.Name
+                }
+            </CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Icon" Title="@Loc[LocKeys.Ui.SelfServiceCategoriesPage.Icon]">
+            <CellTemplate>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@SelfServiceCategoryIcon.Get(context.Item.Icon)" Size="Size.Small" />
+                    <span>@context.Item.Icon</span>
+                </MudStack>
+            </CellTemplate>
+        </PropertyColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.SelfServiceCategoriesPage.DisplayOrder]" Sortable="false" Filterable="false"><CellTemplate>@(_categories.IndexOf(context.Item) + 1)</CellTemplate></TemplateColumn>
+        @if (_canEdit)
+        {
+            <TemplateColumn T="SelfServiceCategory" Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+                <CellTemplate>
+                    <MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Ui.ManageOuNamingRulePage.MoveUp]">
+                        <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Primary"
+                                       aria-label="@(UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.Move0Up, (context.Item.Name)))" Disabled="@(_busy || _isLoading)"
+                                       OnClick="@Snackbar.GuardAction(() => !CanMove(context.Item, -1), _canEdit ? UiText.Get(LocKeys.Ui.SelfServiceCategoriesPage.ThisCategoryCannotMoveUpAnyFurther) : UiText.Get(LocKeys.Ui.SelfServiceCategoriesPage.YouDoNotHavePermissionToEditCategories), () => OnMoveClicked(context.Item, -1))" />
+                    </MudTooltip>
+                    <MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Ui.ManageOuNamingRulePage.MoveDown]">
+                        <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Primary"
+                                       aria-label="@(UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.Move0Down, (context.Item.Name)))" Disabled="@(_busy || _isLoading)"
+                                       OnClick="@Snackbar.GuardAction(() => !CanMove(context.Item, 1), _canEdit ? UiText.Get(LocKeys.Ui.SelfServiceCategoriesPage.ThisCategoryCannotMoveDownAnyFurther) : UiText.Get(LocKeys.Ui.SelfServiceCategoriesPage.YouDoNotHavePermissionToEditCategories), () => OnMoveClicked(context.Item, 1))" />
+                    </MudTooltip>
+                    <MudTooltip Text="@(UiText.Get(LocKeys.Ui.ActionFiles.Delete0, (context.Item.Name)))" Placement="Placement.Left" Arrow="true" Delay="200">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Primary" Size="Size.Medium"
+                                       aria-label="@(UiText.Get(LocKeys.Ui.ActionFiles.Delete0_7eab122c, (context.Item.Name)))" Disabled="_busy"
+                                       OnClick="@(() => OnDeleteClicked(context.Item))" />
+                    </MudTooltip>
+                </CellTemplate>
+            </TemplateColumn>
+        }
+    </Columns>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Ui.SelfServiceCategoriesPage.NoCategoriesFound]</MudText></NoRecordsContent>
+</MudDataGrid>
+
+@code {
+    private List<SelfServiceCategory> _categories = [];
+    private bool _busy, _canEdit;
+    private bool _isLoading = true;
+    private bool CanMove(SelfServiceCategory category, int direction)
+    {
+        var index = _categories.IndexOf(category);
+        return _canEdit && !_busy && !_isLoading && index >= 0 && index + direction >= 0 && index + direction < _categories.Count;
+    }
+
+    private async Task OnMoveClicked(SelfServiceCategory category, int direction)
+    {
+        if (!CanMove(category, direction)) return;
+        _busy = true;
+        try
+        {
+            var result = await Categories.MoveCategoryAsync(category.Id, category.Revision, direction);
+            if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+            await OnRefreshClicked();
+        }
+        catch { Snackbar.Add(UiText.Get(LocKeys.Ui.SelfServiceCategoriesPage.CouldNotReorderCategoriesReloadBeforeTryingAgain), Severity.Error); }
+        finally { _busy = false; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _canEdit = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User,
+            Constants.Permissions.SelfServiceCategoryEdit)).Succeeded;
+        await OnRefreshClicked();
+    }
+
+    private async Task OnRefreshClicked()
+    {
+        _isLoading = true;
+        try
+        {
+            var result = await Categories.ListCategoryAsync();
+            if (result.Success)
+            {
+                _categories = result.Data ?? [];
+            }
+            else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        catch { Snackbar.Add(UiText.Get(LocKeys.Ui.SelfServiceCategoriesPage.CouldNotLoadCategoriesTryReloading), Severity.Error); }
+        finally { _isLoading = false; }
+    }
+
+    private async Task OnOpenDialogClicked(SelfServiceCategory? category = null)
+    {
+        if (!_canEdit || _busy) return;
+        var parameters = new DialogParameters<SelfServiceCategoryDialog> { { x => x.Category, category } };
+        var dialog = await Dialog.ShowAsync<SelfServiceCategoryDialog>(parameters, Constants.UI.StandardDialogBox);
+        if (await dialog.Result is { Canceled: false, Data: true }) await OnRefreshClicked();
+    }
+
+    private async Task OnDeleteClicked(SelfServiceCategory category)
+    {
+        if (!_canEdit || _busy) return;
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, UiText.Get(LocKeys.Ui.SelfServiceCategoriesPage.Delete0PoliciesInThisCategoryWillAppearUnder, (category.Name)) },
+            { x => x.ButtonText, Loc[LocKeys.Common.Delete] },
+            { x => x.Color, Color.Error }
+        };
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        if (await dialog.Result is not { Canceled: false, Data: true }) return;
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var result = await Categories.SaveCategoryAsync(category, delete: true);
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[LocKeys.Common.Deleted, category.Name], Severity.Success);
+                await OnRefreshClicked();
+            }
+            else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        catch { Snackbar.Add(UiText.Get(LocKeys.Ui.SelfServiceCategoriesPage.CouldNotDeleteCategoryReloadBeforeTryingAgain), Severity.Error); }
+        finally { _busy = false; }
+    }
+}

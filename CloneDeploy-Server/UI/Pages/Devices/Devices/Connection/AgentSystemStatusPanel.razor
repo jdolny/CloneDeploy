@@ -1,0 +1,73 @@
+@inject AgentService Tools
+@inject AuthenticationStateProvider Authentication
+@inject ILogger<AgentSystemStatusPanel> Logger
+@implements IDisposable
+
+<div aria-live="polite">
+    @if (_loading)
+    {
+        <MudText Typo="Typo.caption" Class="connection-device-meta">@Loc[LocKeys.Ui.AgentSystemStatusPanel.ReadingUptimeAndLoggedOnUsers]</MudText>
+    }
+    else if (_status is { } status)
+    {
+        <MudText Typo="Typo.caption" Class="connection-device-meta">@UiText.Get(LocKeys.Ui.AgentSystemStatusPanel.Uptime0, (FormatUptime(status.UptimeSeconds)))</MudText>
+        <MudText Typo="Typo.caption" Class="connection-device-meta">@UiText.Get(LocKeys.Ui.AgentSystemStatusPanel.LoggedOnUsers0, ((status.UsersError ?? (status.LoggedOnUsers.Length == 0 ? UiText.Get(LocKeys.Ui.AgentSystemStatusPanel.NoUsersLoggedOn) : string.Join(", ", status.LoggedOnUsers)))))</MudText>
+    }
+    else
+    {
+        <MudText Typo="Typo.caption" Class="connection-device-meta">@_error</MudText>
+    }
+</div>
+
+@code {
+    [Parameter] public int DeviceId { get; set; }
+    private readonly CancellationTokenSource _stop = new();
+    private AgentSystemStatus? _status;
+    private string? _error;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        if (!_stop.IsCancellationRequested) _ = PollAsync();
+    }
+
+    private async Task PollAsync()
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
+            while (await timer.WaitForNextTickAsync(_stop.Token))
+                await InvokeAsync(async () => { await LoadAsync(); if (!_stop.IsCancellationRequested) StateHasChanged(); });
+        }
+        catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
+        catch (Exception ex) { Logger.LogWarning(ex, "Connection status refresh stopped for device {DeviceId}", DeviceId); }
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            var reply = await Tools.ExecuteDeviceToolAsync(user, DeviceId, AgentDeviceOperation.SystemStatus, ct: _stop.Token);
+            if (_stop.IsCancellationRequested) return;
+            _status = reply.Success ? reply.SystemStatus : null;
+            _error = reply.Success ? null : reply.Detail;
+        }
+        catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Could not read connection status for device {DeviceId}", DeviceId);
+            _status = null;
+            _error = UiText.Get(LocKeys.Ui.AgentSystemStatusPanel.UptimeAndLoggedOnUsersAreUnavailableRetryingAutomatically);
+        }
+        finally { _loading = false; }
+    }
+
+    internal static string FormatUptime(long seconds)
+    {
+        var duration = TimeSpan.FromTicks(checked(seconds * TimeSpan.TicksPerSecond));
+        return UiText.Get(LocKeys.Ui.AgentSystemStatusPanel.Text0D1H2M, (duration.Days), (duration.Hours), (duration.Minutes));
+    }
+    public void Dispose() => _stop.Cancel();
+}

@@ -1,0 +1,98 @@
+@inject ImagingService ImagingService
+@using CloneDeploy_Server.UI.Pages.Devices.Groups.Dialogs
+<ImagingEditScope Policy="@Constants.Permissions.DeploymentProfileEdit" Context="canEditImage">
+<div><MudStack Spacing="3">
+    <div class="section-action-bar">
+        <MudButton OnClick="@Snackbar.GuardAction(() => _busy || _failed, UiText.Get(LocKeys.Ui.DeploymentPoliciesTab.PolicySettingsCouldNotBeLoadedReopenThisTab), OnEditClicked)" Disabled="@(!canEditImage || (_busy))" Variant="Variant.Filled"
+                   Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">@Loc[LocKeys.Ui.TargetPolicies.EditAssignedPolicies]</MudButton>
+    </div>
+    <MudDataGrid T="DeploymentPolicy" Items="_items" Dense="true" Hover="true" Elevation="0" Outlined="true" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize" QuickFilter="@(x => string.IsNullOrWhiteSpace(_gridSearch0) || (x.Policy!.Name).Contains(_gridSearch0.Trim(), StringComparison.OrdinalIgnoreCase))"><ToolBarContent><MudIcon Icon="@Icons.Material.Outlined.VerifiedUser" Color="Color.Primary"/><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DeploymentPoliciesTab.PostDeploymentPolicies]</MudText><MudSpacer/><MudTextField T="string" @bind-Value="_gridSearch0" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" aria-label="@Loc[LocKeys.Ui.DeploymentPoliciesTab.SearchPostDeploymentPolicies]" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/></ToolBarContent>
+        <Columns>
+            <TemplateColumn Title="@Loc[LocKeys.Ui.DeploymentPoliciesTab.Order]"><CellTemplate>@(_items.IndexOf(context.Item) + 1)</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="@Loc[LocKeys.Group.Policy]"><CellTemplate>@context.Item.Policy?.Name</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="@Loc[LocKeys.Common.Actions]"><CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Disabled="@(_busy)" OnClick="@Snackbar.GuardAction(() => _busy || _items.IndexOf(context.Item) == 0, UiText.Get(LocKeys.Ui.DeploymentPoliciesTab.ThisItemIsAlreadyFirst), () => OnMoveClicked(context.Item, -1))" aria-label="@Loc[LocKeys.Ui.DeploymentPoliciesTab.MovePolicyUp]" />
+                <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward" Disabled="@(_busy)" OnClick="@Snackbar.GuardAction(() => _busy || _items.IndexOf(context.Item) == _items.Count - 1, UiText.Get(LocKeys.Ui.DeploymentPoliciesTab.ThisItemIsAlreadyLast), () => OnMoveClicked(context.Item, 1))" aria-label="@Loc[LocKeys.Ui.DeploymentPoliciesTab.MovePolicyDown]" />
+                <MudIconButton Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Disabled="@(!canEditImage || (_busy))" OnClick="@(() => OnRemoveClicked(context.Item))" aria-label="@Loc[LocKeys.Ui.DeploymentPoliciesTab.RemovePolicy]" />
+            </CellTemplate></TemplateColumn>
+        </Columns>
+        <NoRecordsContent><MudText>@Loc[LocKeys.Ui.DeploymentPoliciesTab.NoPostDeploymentPoliciesSelected]</MudText></NoRecordsContent>
+    <PagerContent><MudDataGridPager T="DeploymentPolicy"/></PagerContent></MudDataGrid>
+</MudStack></div>
+
+
+</ImagingEditScope>
+@code {
+    private string? _gridSearch0;
+
+    [Parameter] public int ProfileId { get; set; }
+    private List<Policy> _available = [];
+    private List<DeploymentPolicy> _items = [];
+    private bool _busy = true, _failed;
+    protected override async Task OnInitializedAsync()
+    {
+        _busy = true;
+        var available = await ImagingService.GetAvailablePoliciesAsync(); var selected = await ImagingService.GetPoliciesAsync(ProfileId);
+        _available = available.Data ?? []; _items = selected.Data ?? []; _failed = !available.Success || !selected.Success;
+        var error = available.Error ?? selected.Error;
+        if (error is not null) Snackbar.Add(Loc[error.Code, error.Args], Severity.Error);
+        _busy = false;
+    }
+    private async Task OnEditClicked()
+    {
+        if (_busy || _failed) return;
+        _busy = true;
+        try
+        {
+            var policies = _available.Concat(_items.Where(x => x.Policy is not null).Select(x => x.Policy!))
+                .DistinctBy(x => x.Id).ToList();
+            var parameters = new DialogParameters<DeviceGroupPoliciesDialog>
+            {
+                { x => x.Options, policies.Select(x => new TargetPolicyOptionDto(x.Id, x.Name) { ExecutionPriority = x.ExecutionPriority }).ToList() },
+                { x => x.SelectedIds, _items.Select(x => x.PolicyId).ToHashSet() }
+            };
+            var options = new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = false };
+            var dialog = await Dialog.ShowAsync<DeviceGroupPoliciesDialog>(UiText.Get(LocKeys.Ui.DeploymentPoliciesTab.EditPostDeploymentPolicies), parameters, options);
+            if (await dialog.Result is { Canceled: false, Data: List<int> selected })
+            {
+                var retained = _items.Where(x => selected.Contains(x.PolicyId)).ToList();
+                var added = selected.Where(id => retained.All(x => x.PolicyId != id))
+                    .Select(id => new DeploymentPolicy { PolicyId = id, Policy = policies.Single(x => x.Id == id) });
+                await SavePoliciesAsync([..retained, ..added]);
+            }
+        }
+        finally { _busy = false; }
+    }
+    private async Task OnMoveClicked(DeploymentPolicy item, int direction)
+    {
+        var index = _items.IndexOf(item);
+        var next = index + direction;
+        if (_busy || _failed || index < 0 || next < 0 || next >= _items.Count) return;
+        _busy = true;
+        try
+        {
+            var updated = _items.ToList();
+            updated.RemoveAt(index);
+            updated.Insert(next, item);
+            await SavePoliciesAsync(updated);
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnRemoveClicked(DeploymentPolicy item)
+    {
+        if (_busy || _failed) return;
+        _busy = true;
+        try { await SavePoliciesAsync(_items.Where(x => x != item).ToList()); }
+        finally { _busy = false; }
+    }
+
+    private async Task SavePoliciesAsync(List<DeploymentPolicy> updated)
+    {
+        var ids = updated.Select(x => x.PolicyId).ToList();
+        if (_items.Select(x => x.PolicyId).SequenceEqual(ids)) return;
+        var result = await ImagingService.SavePoliciesAsync(ProfileId, ids);
+        if (result.Success) _items = updated;
+        Snackbar.Add(result.Success ? UiText.Get(LocKeys.Ui.DeploymentPoliciesTab.PostDeploymentPoliciesSaved) : Loc[result.Error!.Code, result.Error.Args], result.Success ? Severity.Success : Severity.Error);
+    }
+}

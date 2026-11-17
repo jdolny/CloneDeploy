@@ -1,0 +1,73 @@
+<MudTabs @bind-ActivePanelIndex="_activePanelIndex" KeepPanelsAlive="false"
+         TabPanelsClass="pt-4 detail-tab-content" Class="device-subtabs">
+    <MudTabPanel Text="@Loc[LocKeys.Device.SystemInfo]">
+        <TabHelp Href="ui/devices/device-inventory-system-information.html" Title="@Loc[LocKeys.Device.SystemInfo]" />
+        @if (IsActive)
+        {
+            <MudStack Class="stack-full">
+                <DeviceSystemInformationTab Device="Device"/>
+            </MudStack>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Loc[LocKeys.Device.Software]">
+        <TabHelp Href="ui/devices/device-inventory-software.html" Title="@Loc[LocKeys.Device.Software]" />
+        @if (IsActive)
+        {
+            <MudStack Class="stack-full">
+                <DeviceSoftwareTab Device="Device"/>
+            </MudStack>
+        }
+    </MudTabPanel>
+    @if (Device.AgentPlatform != CloneDeploy_Agent.Contracts.AgentPlatform.MacOS)
+    {
+        <MudTabPanel Text="@Loc[LocKeys.Device.WindowsUpdates]">
+            <TabHelp Href="ui/devices/device-inventory-windows-updates.html" Title="@Loc[LocKeys.Device.WindowsUpdates]" />
+            @if (IsActive)
+            {
+                <MudStack Class="stack-full">
+                    <DeviceWindowsUpdatesTab Device="Device"/>
+                </MudStack>
+            }
+        </MudTabPanel>
+        <MudTabPanel Text="@Loc[LocKeys.Device.Certificates]">
+            <TabHelp Href="ui/devices/device-inventory-certificates.html" Title="@Loc[LocKeys.Device.Certificates]" />
+            @if (IsActive)
+            {
+                <MudStack Class="stack-full">
+                    <DeviceCertificatesTab Device="Device"/>
+                </MudStack>
+            }
+        </MudTabPanel>
+    }
+    <MudTabPanel Text="@Loc[LocKeys.Device.CustomInventoryText]">
+        <TabHelp Href="ui/devices/device-inventory-custom-inventory.html" Title="@Loc[LocKeys.Device.CustomInventoryText]" />
+        @if (IsActive)
+        {
+            <MudStack Class="stack-full">
+                <DeviceCustomInventoryTab Device="Device"/>
+            </MudStack>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Loc[LocKeys.Device.UserLogins]">
+        <TabHelp Href="ui/devices/device-inventory-user-logins.html" Title="@Loc[LocKeys.Device.UserLogins]" />
+        @if (IsActive)
+        {
+            <MudStack Class="stack-full">
+                <DeviceUserLoginsTab Device="Device"/>
+            </MudStack>
+        }
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+    [Parameter] public bool IsActive { get; set; } = true;
+    private int _activePanelIndex;
+
+    public void ShowSystemInformation()
+    {
+        _activePanelIndex = 0;
+        StateHasChanged();
+    }
+
+}

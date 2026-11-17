@@ -1,0 +1,68 @@
+@using CloneDeploy_Agent.Contracts
+@inject ImagingService ImagingService
+@inject ImagingService ProfileSettings
+<ImagingEditScope Policy="@Constants.Permissions.DeploymentProfileEdit" Context="canEditImage">
+@if (_model is null)
+{
+    @if (_loadingModel) { <MudProgressLinear Indeterminate="true"/> }
+    else { <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.DeploymentDriversTab.UnableToLoadSettingsReopenThisTabToTry]</MudAlert> }
+}
+else
+{
+<div class="section-action-bar"><MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" Disabled="@(!canEditImage || (_saving))" OnClick="OnSaveClicked">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton></div>
+
+<div>
+    <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.Image.Configuration]</MudText>
+    <MudCheckBox @bind-Value="_model.Enabled" Label="@Loc[LocKeys.StorageProvider.Enabled]" Disabled="@(!canEditImage || (_saving))" />
+    <MudCheckBox @bind-Value="_model.VisibleInWinPe" Label="@Loc[LocKeys.Ui.DeploymentProfileConfigurationTab.ShowInWinPEDeploymentProfileSelection]" Disabled="@(!canEditImage || (_saving))" />
+    <MudCheckBox @bind-Value="_model.SetComputerName" Label="@Loc[LocKeys.Ui.DeploymentProfileConfigurationTab.SetComputerNameToDeviceName]" Disabled="@(!canEditImage || (_saving))" />
+
+    <MudSelect T="DeploymentCompletionAction" @bind-Value="_model.AfterDeployment" Label="@Loc["Deployment.AfterSuccess"]" Variant="Variant.Outlined" Disabled="@(!canEditImage || _saving)" Class="my-3">
+        <MudSelectItem Value="DeploymentCompletionAction.ReturnToMenu">@Loc["Deployment.ReturnToMenu"]</MudSelectItem>
+        <MudSelectItem Value="DeploymentCompletionAction.Restart">@Loc["Deployment.Restart"]</MudSelectItem>
+        <MudSelectItem Value="DeploymentCompletionAction.ShutDown">@Loc["Deployment.ShutDown"]</MudSelectItem>
+    </MudSelect>
+    <MudSelect T="int?" @bind-Value="_model.OuNamingRuleSetId" Label="@Loc[LocKeys.Ui.DeploymentProfileConfigurationTab.OUNamingRules]" Clearable="true" Variant="Variant.Outlined" Disabled="@(!canEditImage || _saving)">
+        @foreach (var rule in _rules)
+        {
+            <MudSelectItem T="int?" Value="@((int?)rule.Id)" Disabled="@(!rule.Enabled)">@rule.Name (@rule.DomainName)</MudSelectItem>
+        }
+    </MudSelect>
+    <MudSelect T="DeploymentOuPrompt" @bind-Value="_model.OuPrompt" Label="@Loc[LocKeys.Ui.DeploymentProfileConfigurationTab.PromptForOUAtEndOfImaging]" Variant="Variant.Outlined" Disabled="@(!canEditImage || _saving)">
+        <MudSelectItem Value="DeploymentOuPrompt.Never">@Loc[LocKeys.Ui.DeploymentProfileConfigurationTab.NeverPrompt]</MudSelectItem>
+        <MudSelectItem Value="DeploymentOuPrompt.IfNoMatch">@Loc[LocKeys.Ui.DeploymentProfileConfigurationTab.PromptIfNoRuleMatches]</MudSelectItem>
+        <MudSelectItem Value="DeploymentOuPrompt.Always">@Loc[LocKeys.Ui.DeploymentProfileConfigurationTab.AlwaysPrompt]</MudSelectItem>
+    </MudSelect>
+</div>
+
+}
+
+</ImagingEditScope>
+@code {
+    private DeploymentProfile _model = null!;
+    private bool _loadingModel = true;
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await ImagingService.GetProfileByIdAsync(Profile.Id);
+        if (result.Success && result.HasData) { _model = result.Data; await LoadOptionsAsync(); }
+        else if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loadingModel = false;
+    }
+
+    private List<DomainJoinRuleChoice> _rules = [];
+    private async Task LoadOptionsAsync()
+    {
+        var result = await ProfileSettings.GetOuRuleChoicesAsync();
+        if (result.Success) _rules = result.Data ?? [];
+        else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+    }
+    [Parameter, EditorRequired] public DeploymentProfile Profile { get; set; } = null!;
+    private bool _saving;
+    private async Task OnSaveClicked()
+    {
+        if (_saving) return; _saving = true;
+        var result = await ImagingService.SaveProfileConfigurationAsync(_model);
+        Snackbar.Add(result.Success ? UiText.Get(LocKeys.Image.ConfigurationUpdated) : Loc[result.Error!.Code, result.Error.Args], result.Success ? Severity.Success : Severity.Error);
+        _saving = false;
+    }
+}

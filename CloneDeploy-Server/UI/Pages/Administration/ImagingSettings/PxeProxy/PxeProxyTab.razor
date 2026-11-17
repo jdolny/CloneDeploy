@@ -1,0 +1,154 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+
+@inject PxeService Settings
+
+<MudTabs Class="device-subtabs" KeepPanelsAlive="false" ActivePanelIndex="_activityTab" ActivePanelIndexChanged="@(index => _activityTab = index)" TabPanelsClass="pt-4 detail-tab-content">
+    <Header>
+        <div class="device-overview-save">
+            @if (_activityTab == 0)
+            {
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@Snackbar.GuardAction(() => _loading || _busy || _settings is null, UiText.Get(LocKeys.Ui.UserGroupDirectoryTab.SettingsCouldNotBeLoadedRefreshAndTryAgain), OnSaveClicked)" Disabled="@(_busy || _loading)" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+            }
+            else
+            {
+                <SectionOutlet SectionId="_activityActions" />
+            }
+        </div>
+    </Header>
+    <ChildContent>
+    <MudTabPanel Text="@Loc[LocKeys.Ui.PxeProxyTab.Settings]">
+        <TabHelp Href="ui/administration/pxe-proxy-settings.html" Title="@Loc[LocKeys.Ui.PxeProxyTab.Settings]" />
+        @if (_activityTab == 0)
+        {
+            <div>
+<MudPaper Class="pa-4 mb-4" Elevation="0" Outlined="true">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudText Typo="Typo.h6">@UiText.Get(LocKeys.Ui.PxeProxyTab.ProxyDHCP0, (UiText.Label(_status.State)))</MudText>
+    </MudStack>
+    <MudAlert Severity="@(_status.State == "Error" ? Severity.Error : Severity.Info)" Class="mt-3">@Loc[_status.Detail]</MudAlert>
+</MudPaper>
+<MudPaper Class="pa-4" Elevation="0" Outlined="true">
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else if (_settings is null)
+    {
+        <MudAlert Severity="Severity.Error">@_loadError</MudAlert>
+        <MudButton OnClick="OnLoadClicked">@Loc[LocKeys.Common.Retry]</MudButton>
+    }
+    else
+    {
+        <MudForm Disabled="_busy">
+            <MudSwitch @bind-Value="_settings.Enabled" Color="Color.Primary" Label="@Loc[LocKeys.Ui.SiteServiceBootTab.EnableProxyDHCP]" />
+            <MudSelect T="string" @bind-Value="_settings.Interface" Label="@Loc[LocKeys.Ui.PxeProxyTab.ListenIPv4Address]" Variant="Variant.Outlined">
+                <MudSelectItem T="string" Value='@("0.0.0.0")'>@Loc[LocKeys.Ui.PxeProxyTab.AllInterfaces0000]</MudSelectItem>
+                @foreach (var address in _bindAddresses)
+                {
+                    <MudSelectItem T="string" Value="@address.Address">@address.AdapterName — @address.Address</MudSelectItem>
+                }
+                @if (_settings.Interface != "0.0.0.0" && !_bindAddresses.Any(address => address.Address == _settings.Interface))
+                {
+                    <MudSelectItem T="string" Value="@_settings.Interface">@UiText.Get(LocKeys.Ui.PxeProxyTab.Text0SavedAddressCurrentlyUnavailable, (_settings.Interface))</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="_settings.ServerIdentifierOverride" Label="@Loc[LocKeys.Ui.PxeProxyTab.ServerIdentifierOverride]" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_settings.NextServer" Label="@Loc[LocKeys.Ui.PxeProxyTab.TFTPServerIPv4Address]" Variant="Variant.Outlined" />
+            <div class="mt-3">
+                <MudText Typo="Typo.subtitle2">@Loc[LocKeys.Ui.PxeProxyTab.BIOSBootFile]</MudText>
+                <MudText Typo="Typo.body2" Style="overflow-wrap: anywhere;">@_settings.BiosBootFile</MudText>
+            </div>
+            <div class="mt-3">
+                <MudText Typo="Typo.subtitle2">@Loc[LocKeys.Ui.PxeProxyTab.UEFIX86BootFile]</MudText>
+                <MudText Typo="Typo.body2" Style="overflow-wrap: anywhere;">@_settings.Efi32BootFile</MudText>
+            </div>
+            <div class="mt-3">
+                <MudText Typo="Typo.subtitle2">@Loc[LocKeys.Ui.PxeProxyTab.UEFIX64BootFile]</MudText>
+                <MudText Typo="Typo.body2" Style="overflow-wrap: anywhere;">@_settings.Efi64BootFile</MudText>
+            </div>
+            <div class="mt-3">
+                <MudText Typo="Typo.subtitle2">@Loc[LocKeys.Ui.PxeProxyTab.UEFIARM64BootFile]</MudText>
+                <MudText Typo="Typo.body2" Style="overflow-wrap: anywhere;">@_settings.EfiArm64BootFile</MudText>
+            </div>
+        </MudForm>
+    }
+</MudPaper>
+
+            </div>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Loc[LocKeys.Ui.PxeProxyTab.LiveActivity]">
+        <TabHelp Href="ui/administration/pxe-proxy-live-activity.html" Title="@Loc[LocKeys.Ui.PxeProxyTab.LiveActivity]" />
+        @if (_activityTab == 1)
+        {
+            <div><BootLiveActivityTab ActionSectionId="_activityActions" Tftp="false" /></div>
+        }
+    </MudTabPanel>
+    </ChildContent>
+</MudTabs>
+
+@code {
+    private readonly object _activityActions = new();
+    private int _activityTab;
+    private PxeSettingsDto? _settings;
+    private PxeStatusDto _status = new("Starting", UiText.Get(LocKeys.Ui.PxeProxyTab.WaitingForStatus));
+    private bool _loading = true;
+    private bool _busy;
+    private string? _loadError;
+    private List<PxeBindAddressDto> _bindAddresses = [];
+
+    protected override Task OnInitializedAsync() => OnLoadClicked();
+
+    private async Task OnRefreshStatusClicked()
+    {
+        var result = await Settings.GetStatusAsync();
+        if (result.HasData) _status = result.Data;
+        else if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+    }
+
+    private async Task OnRefreshBindAddressesClicked()
+    {
+        var result = await Settings.GetBindAddressesAsync();
+        if (result.HasData) _bindAddresses = result.Data;
+        else if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+    }
+
+    private async Task OnLoadClicked()
+    {
+        _loading = true;
+        _loadError = null;
+        try
+        {
+            var result = await Settings.ReadAsync();
+            if (!result.Success)
+            {
+                _loadError = Loc[result.Error.Code, result.Error.Args];
+                return;
+            }
+            _settings = result.Data;
+            await OnRefreshBindAddressesClicked();
+            await OnRefreshStatusClicked();
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task OnSaveClicked()
+    {
+        if (_busy || _settings is null) return;
+        _busy = true;
+
+        try
+        {
+            var result = await Settings.SaveAsync(_settings);
+            if (!result.Success)
+            {
+                Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+                return;
+            }
+            _settings = result.Data;
+            Snackbar.Add(UiText.Get(LocKeys.Ui.PxeProxyTab.PXESettingsSavedRefreshStatusInFiveSecondsTo), Severity.Success);
+            await OnRefreshStatusClicked();
+        }
+        finally { _busy = false; }
+    }
+}

@@ -1,0 +1,1168 @@
+[
+  {
+    "route": "/images/ounamingrules",
+    "title": "OU Naming Rules",
+    "href": "ui/imaging/ou-naming-rules.html"
+  },
+  {
+    "route": "/administration/agent/features",
+    "title": "Agent administration — Features",
+    "href": "ui/administration/agent-features.html"
+  },
+  {
+    "route": "/helpdesk",
+    "title": "Help Desk",
+    "href": "ui/helpdesk/helpdesk.html"
+  },
+  {
+    "route": "/helpdesk/{Id:int}",
+    "title": "Help request",
+    "href": "ui/helpdesk/help-request.html"
+  },
+  {
+    "route": "/access-denied",
+    "navigation": false,
+    "title": "Troubleshooting and unavailable pages — Access denied",
+    "href": "troubleshooting/troubleshooting-access-denied.html"
+  },
+  {
+    "route": "/Error",
+    "navigation": false,
+    "title": "Troubleshooting and unavailable pages — Application error",
+    "href": "troubleshooting/troubleshooting-application-error.html"
+  },
+  {
+    "route": "/not-found",
+    "navigation": false,
+    "title": "Troubleshooting and unavailable pages — Page not found",
+    "href": "troubleshooting/troubleshooting-page-not-found.html"
+  },
+  {
+    "route": "/",
+    "title": "Dashboard",
+    "href": "ui/dashboard/dashboard.html"
+  },
+  {
+    "route": "/dashboard",
+    "title": "Dashboard",
+    "href": "ui/dashboard/dashboard.html"
+  },
+  {
+    "route": "/login",
+    "navigation": false,
+    "title": "Sign in — Login",
+    "href": "ui/sign-in/sign-in-login.html"
+  },
+  {
+    "route": "/login/mfa",
+    "navigation": false,
+    "title": "Sign in — MFA verification",
+    "href": "ui/sign-in/sign-in-mfa-verification.html"
+  },
+  {
+    "route": "/setup/admin",
+    "navigation": false,
+    "title": "First-time setup — Create first administrator",
+    "href": "installation/getting-started-create-first-administrator.html"
+  },
+  {
+    "route": "/account/options",
+    "title": "Application users — Options",
+    "href": "ui/administration/users-options.html"
+  },
+  {
+    "route": "/account/mfa",
+    "title": "Sign in — Authenticator setup",
+    "href": "ui/sign-in/sign-in-authenticator-setup.html"
+  },
+  {
+    "route": "/actions/command",
+    "title": "Command actions",
+    "href": "ui/policies-actions/command-actions.html"
+  },
+  {
+    "route": "/actions/domainjoin",
+    "title": "Domain join actions",
+    "href": "ui/policies-actions/domainjoin-actions.html"
+  },
+  {
+    "route": "/actions/file",
+    "title": "File deployment actions",
+    "href": "ui/policies-actions/file-actions.html"
+  },
+  {
+    "route": "/actions/command/{Id:int}",
+    "title": "Command actions",
+    "href": "ui/policies-actions/command-actions.html"
+  },
+  {
+    "route": "/actions/command/{Id:int}/{Tab}",
+    "title": "Command actions",
+    "href": "ui/policies-actions/command-actions.html"
+  },
+  {
+    "route": "/actions/command/{Id:int}/general",
+    "title": "Command actions — General",
+    "href": "ui/policies-actions/command-actions-general.html"
+  },
+  {
+    "route": "/actions/command/{Id:int}/configuration",
+    "title": "Command actions — Configuration",
+    "href": "ui/policies-actions/command-actions-configuration.html"
+  },
+  {
+    "route": "/actions/command/{Id:int}/files",
+    "title": "Command actions — Files",
+    "href": "ui/policies-actions/command-actions-files.html"
+  },
+  {
+    "route": "/actions/command/{Id:int}/used-by",
+    "title": "Command actions — Used by",
+    "href": "ui/policies-actions/command-actions-used-by.html"
+  },
+  {
+    "route": "/actions/command/{Id:int}/audit",
+    "title": "Command actions — Audit",
+    "href": "ui/policies-actions/command-actions-audit.html"
+  },
+  {
+    "route": "/actions/domainjoin/{Id:int}",
+    "title": "Domain join actions",
+    "href": "ui/policies-actions/domainjoin-actions.html"
+  },
+  {
+    "route": "/actions/domainjoin/{Id:int}/{Tab}",
+    "title": "Domain join actions",
+    "href": "ui/policies-actions/domainjoin-actions.html"
+  },
+  {
+    "route": "/actions/domainjoin/{Id:int}/general",
+    "title": "Domain join actions — General",
+    "href": "ui/policies-actions/domainjoin-actions-general.html"
+  },
+  {
+    "route": "/actions/domainjoin/{Id:int}/configuration",
+    "title": "Domain join actions — Configuration",
+    "href": "ui/policies-actions/domainjoin-actions-configuration.html"
+  },
+  {
+    "route": "/actions/domainjoin/{Id:int}/used-by",
+    "title": "Domain join actions — Used by",
+    "href": "ui/policies-actions/domainjoin-actions-used-by.html"
+  },
+  {
+    "route": "/actions/domainjoin/{Id:int}/audit",
+    "title": "Domain join actions — Audit",
+    "href": "ui/policies-actions/domainjoin-actions-audit.html"
+  },
+  {
+    "route": "/actions/file/{Id:int}",
+    "title": "File deployment actions",
+    "href": "ui/policies-actions/file-actions.html"
+  },
+  {
+    "route": "/actions/file/{Id:int}/{Tab}",
+    "title": "File deployment actions",
+    "href": "ui/policies-actions/file-actions.html"
+  },
+  {
+    "route": "/actions/file/{Id:int}/general",
+    "title": "File deployment actions — General",
+    "href": "ui/policies-actions/file-actions-general.html"
+  },
+  {
+    "route": "/actions/file/{Id:int}/configuration",
+    "title": "File deployment actions — Configuration",
+    "href": "ui/policies-actions/file-actions-configuration.html"
+  },
+  {
+    "route": "/actions/file/{Id:int}/files",
+    "title": "File deployment actions — Files",
+    "href": "ui/policies-actions/file-actions-files.html"
+  },
+  {
+    "route": "/actions/file/{Id:int}/used-by",
+    "title": "File deployment actions — Used by",
+    "href": "ui/policies-actions/file-actions-used-by.html"
+  },
+  {
+    "route": "/actions/file/{Id:int}/audit",
+    "title": "File deployment actions — Audit",
+    "href": "ui/policies-actions/file-actions-audit.html"
+  },
+  {
+    "route": "/actions/notification/{Id:int}",
+    "title": "Notification actions",
+    "href": "ui/policies-actions/notification-actions.html"
+  },
+  {
+    "route": "/actions/notification/{Id:int}/{Tab}",
+    "title": "Notification actions",
+    "href": "ui/policies-actions/notification-actions.html"
+  },
+  {
+    "route": "/actions/notification/{Id:int}/general",
+    "title": "Notification actions — General",
+    "href": "ui/policies-actions/notification-actions-general.html"
+  },
+  {
+    "route": "/actions/notification/{Id:int}/configuration",
+    "title": "Notification actions — Configuration",
+    "href": "ui/policies-actions/notification-actions-configuration.html"
+  },
+  {
+    "route": "/actions/notification/{Id:int}/used-by",
+    "title": "Notification actions — Used by",
+    "href": "ui/policies-actions/notification-actions-used-by.html"
+  },
+  {
+    "route": "/actions/notification/{Id:int}/audit",
+    "title": "Notification actions — Audit",
+    "href": "ui/policies-actions/notification-actions-audit.html"
+  },
+  {
+    "route": "/actions/printer/{Id:int}",
+    "title": "Printer actions",
+    "href": "ui/policies-actions/printer-actions.html"
+  },
+  {
+    "route": "/actions/printer/{Id:int}/{Tab}",
+    "title": "Printer actions",
+    "href": "ui/policies-actions/printer-actions.html"
+  },
+  {
+    "route": "/actions/printer/{Id:int}/general",
+    "title": "Printer actions — General",
+    "href": "ui/policies-actions/printer-actions-general.html"
+  },
+  {
+    "route": "/actions/printer/{Id:int}/configuration",
+    "title": "Printer actions — Configuration",
+    "href": "ui/policies-actions/printer-actions-configuration.html"
+  },
+  {
+    "route": "/actions/printer/{Id:int}/used-by",
+    "title": "Printer actions — Used by",
+    "href": "ui/policies-actions/printer-actions-used-by.html"
+  },
+  {
+    "route": "/actions/printer/{Id:int}/audit",
+    "title": "Printer actions — Audit",
+    "href": "ui/policies-actions/printer-actions-audit.html"
+  },
+  {
+    "route": "/actions/script/{Id:int}",
+    "title": "Script actions",
+    "href": "ui/policies-actions/script-actions.html"
+  },
+  {
+    "route": "/actions/script/{Id:int}/{Tab}",
+    "title": "Script actions",
+    "href": "ui/policies-actions/script-actions.html"
+  },
+  {
+    "route": "/actions/script/{Id:int}/general",
+    "title": "Script actions — General",
+    "href": "ui/policies-actions/script-actions-general.html"
+  },
+  {
+    "route": "/actions/script/{Id:int}/configuration",
+    "title": "Script actions — Configuration",
+    "href": "ui/policies-actions/script-actions-configuration.html"
+  },
+  {
+    "route": "/actions/script/{Id:int}/files",
+    "title": "Script actions — Files",
+    "href": "ui/policies-actions/script-actions-files.html"
+  },
+  {
+    "route": "/actions/script/{Id:int}/used-by",
+    "title": "Script actions — Used by",
+    "href": "ui/policies-actions/script-actions-used-by.html"
+  },
+  {
+    "route": "/actions/script/{Id:int}/audit",
+    "title": "Script actions — Audit",
+    "href": "ui/policies-actions/script-actions-audit.html"
+  },
+  {
+    "route": "/actions/software/{Id:int}",
+    "title": "Software actions",
+    "href": "ui/policies-actions/software-actions.html"
+  },
+  {
+    "route": "/actions/software/{Id:int}/{Tab}",
+    "title": "Software actions",
+    "href": "ui/policies-actions/software-actions.html"
+  },
+  {
+    "route": "/actions/software/{Id:int}/general",
+    "title": "Software actions — General",
+    "href": "ui/policies-actions/software-actions-general.html"
+  },
+  {
+    "route": "/actions/software/{Id:int}/configuration",
+    "title": "Software actions — Configuration",
+    "href": "ui/policies-actions/software-actions-configuration.html"
+  },
+  {
+    "route": "/actions/software/{Id:int}/files",
+    "title": "Software actions — Files",
+    "href": "ui/policies-actions/software-actions-files.html"
+  },
+  {
+    "route": "/actions/software/{Id:int}/used-by",
+    "title": "Software actions — Used by",
+    "href": "ui/policies-actions/software-actions-used-by.html"
+  },
+  {
+    "route": "/actions/software/{Id:int}/audit",
+    "title": "Software actions — Audit",
+    "href": "ui/policies-actions/software-actions-audit.html"
+  },
+  {
+    "route": "/actions/windowsupdate/{Id:int}",
+    "title": "Windows Update actions",
+    "href": "ui/policies-actions/windowsupdate-actions.html"
+  },
+  {
+    "route": "/actions/windowsupdate/{Id:int}/{Tab}",
+    "title": "Windows Update actions",
+    "href": "ui/policies-actions/windowsupdate-actions.html"
+  },
+  {
+    "route": "/actions/windowsupdate/{Id:int}/general",
+    "title": "Windows Update actions — General",
+    "href": "ui/policies-actions/windowsupdate-actions-general.html"
+  },
+  {
+    "route": "/actions/windowsupdate/{Id:int}/configuration",
+    "title": "Windows Update actions — Configuration",
+    "href": "ui/policies-actions/windowsupdate-actions-configuration.html"
+  },
+  {
+    "route": "/actions/windowsupdate/{Id:int}/used-by",
+    "title": "Windows Update actions — Used by",
+    "href": "ui/policies-actions/windowsupdate-actions-used-by.html"
+  },
+  {
+    "route": "/actions/windowsupdate/{Id:int}/audit",
+    "title": "Windows Update actions — Audit",
+    "href": "ui/policies-actions/windowsupdate-actions-audit.html"
+  },
+  {
+    "route": "/actions/notification",
+    "title": "Notification actions",
+    "href": "ui/policies-actions/notification-actions.html"
+  },
+  {
+    "route": "/actions/printer",
+    "title": "Printer actions",
+    "href": "ui/policies-actions/printer-actions.html"
+  },
+  {
+    "route": "/actions/script",
+    "title": "Script actions",
+    "href": "ui/policies-actions/script-actions.html"
+  },
+  {
+    "route": "/actions/software",
+    "title": "Software actions",
+    "href": "ui/policies-actions/software-actions.html"
+  },
+  {
+    "route": "/actions/windowsupdate",
+    "title": "Windows Update actions",
+    "href": "ui/policies-actions/windowsupdate-actions.html"
+  },
+  {
+    "route": "/settings/directories",
+    "title": "Directory connections",
+    "href": "ui/shared-resources/directories.html"
+  },
+  {
+    "route": "/settings/scheduler",
+    "title": "Task scheduler",
+    "href": "ui/tasks/scheduler.html"
+  },
+  {
+    "route": "/settings/winget",
+    "title": "WinGet catalog settings",
+    "href": "ui/shared-resources/winget.html"
+  },
+  {
+    "route": "/administration/agent",
+    "title": "Agent administration",
+    "href": "ui/administration/agent-enrollment.html"
+  },
+  {
+    "route": "/administration/agent/{Tab}",
+    "title": "Agent administration",
+    "href": "ui/administration/agent-enrollment.html"
+  },
+  {
+    "route": "/administration/agent/general",
+    "title": "Agent administration — General",
+    "href": "ui/administration/agent-enrollment-general.html"
+  },
+  {
+    "route": "/administration/agent/enrollment",
+    "title": "Agent administration — Enrollment",
+    "href": "ui/administration/agent-enrollment-overview.html"
+  },
+  {
+    "route": "/administration/agent/installer",
+    "title": "Agent administration — Installer",
+    "href": "ui/administration/agent-enrollment-installer.html"
+  },
+  {
+    "route": "/settings/agent",
+    "title": "Agent administration",
+    "href": "ui/administration/agent-enrollment.html"
+  },
+  {
+    "route": "/settings/device-tasks",
+    "title": "Agent administration",
+    "href": "ui/administration/agent-enrollment.html"
+  },
+  {
+    "route": "/settings/agent-enrollment",
+    "title": "Agent administration",
+    "href": "ui/administration/agent-enrollment.html"
+  },
+  {
+    "route": "/administration/imaging",
+    "title": "Imaging infrastructure",
+    "href": "ui/administration/imaging-infrastructure.html"
+  },
+  {
+    "route": "/administration/imaging/{Tab}",
+    "title": "Imaging infrastructure",
+    "href": "ui/administration/imaging-infrastructure.html"
+  },
+  {
+    "route": "/administration/imaging/proxy",
+    "title": "Imaging infrastructure — Proxy",
+    "href": "ui/administration/pxe-proxy.html"
+  },
+  {
+    "route": "/administration/imaging/tftp",
+    "title": "Imaging infrastructure — Tftp",
+    "href": "ui/administration/tftp-boot-files.html"
+  },
+  {
+    "route": "/administration/imaging/queue",
+    "title": "Imaging infrastructure — Queue",
+    "href": "ui/administration/imaging-infrastructure-queue.html"
+  },
+  {
+    "route": "/administration/imaging/performance",
+    "title": "Imaging infrastructure — Performance",
+    "href": "ui/administration/imaging-infrastructure-performance.html"
+  },
+  {
+    "route": "/settings/pxe",
+    "title": "Imaging infrastructure",
+    "href": "ui/administration/imaging-infrastructure.html"
+  },
+  {
+    "route": "/settings/pxe/proxy",
+    "title": "Imaging infrastructure",
+    "href": "ui/administration/imaging-infrastructure.html"
+  },
+  {
+    "route": "/settings/pxe/tftp",
+    "title": "Imaging infrastructure",
+    "href": "ui/administration/imaging-infrastructure.html"
+  },
+  {
+    "route": "/settings/tftp",
+    "title": "Imaging infrastructure",
+    "href": "ui/administration/imaging-infrastructure.html"
+  },
+  {
+    "route": "/administration/server",
+    "title": "Server administration",
+    "href": "ui/administration/server-settings.html"
+  },
+  {
+    "route": "/administration/server/{Tab}",
+    "title": "Server administration",
+    "href": "ui/administration/server-settings.html"
+  },
+  {
+    "route": "/administration/server/general",
+    "title": "Server administration — General",
+    "href": "ui/administration/server-settings-general.html"
+  },
+  {
+    "route": "/administration/server/storage",
+    "title": "Storage providers",
+    "href": "ui/administration/storage.html"
+  },
+  {
+    "route": "/administration/server/certificates",
+    "title": "Certificate authority and HTTPS",
+    "href": "ui/administration/certificates.html"
+  },
+  {
+    "route": "/administration/server/credentials",
+    "title": "Managed credentials",
+    "href": "ui/shared-resources/credentials.html"
+  },
+  {
+    "route": "/administration/agent/branding",
+    "title": "Agent administration — Branding",
+    "href": "ui/administration/server-settings-branding.html"
+  },
+  {
+    "route": "/settings/server",
+    "title": "Server administration",
+    "href": "ui/administration/server-settings.html"
+  },
+  {
+    "route": "/settings/storage",
+    "title": "Storage providers",
+    "href": "ui/administration/storage.html"
+  },
+  {
+    "route": "/settings/certificate-authority",
+    "title": "Certificate authority and HTTPS",
+    "href": "ui/administration/certificates.html"
+  },
+  {
+    "route": "/settings/managedcredentials",
+    "title": "Managed credentials",
+    "href": "ui/shared-resources/credentials.html"
+  },
+  {
+    "route": "/administration/users",
+    "title": "Application users",
+    "href": "ui/administration/users.html"
+  },
+  {
+    "route": "/administration/users/{Tab}",
+    "title": "Application users",
+    "href": "ui/administration/users.html"
+  },
+  {
+    "route": "/users/manage/{Id:int}",
+    "title": "Application users",
+    "href": "ui/administration/users.html"
+  },
+  {
+    "route": "/users/manage/{Id:int}/{Tab}",
+    "title": "Application users",
+    "href": "ui/administration/users.html"
+  },
+  {
+    "route": "/users/manage/{Id:int}/general",
+    "title": "Application users — General",
+    "href": "ui/administration/users-general.html"
+  },
+  {
+    "route": "/users/manage/{Id:int}/options",
+    "title": "Application users — Options",
+    "href": "ui/administration/users-options.html"
+  },
+  {
+    "route": "/users/manage/{Id:int}/permissions",
+    "title": "Application users — Permissions",
+    "href": "ui/administration/users-permissions.html"
+  },
+  {
+    "route": "/users/manage/{Id:int}/audit",
+    "title": "Application users — Audit",
+    "href": "ui/administration/users-audit.html"
+  },
+  {
+    "route": "/users/manage",
+    "title": "Application users",
+    "href": "ui/administration/users.html"
+  },
+  {
+    "route": "/dashboard/devices/{Bucket}",
+    "title": "Dashboard",
+    "href": "ui/dashboard/dashboard.html"
+  },
+  {
+    "route": "/dashboard/fleet/{Bucket}",
+    "title": "Dashboard",
+    "href": "ui/dashboard/dashboard.html"
+  },
+  {
+    "route": "/dashboard/tasks",
+    "title": "Dashboard",
+    "href": "ui/dashboard/dashboard.html"
+  },
+  {
+    "route": "/actions/deploy/{ActionGuid:guid}",
+    "title": "Deploy an action",
+    "href": "ui/policies-actions/deploy-action.html"
+  },
+  {
+    "route": "/tasks/deployments",
+    "title": "Action deployments",
+    "href": "ui/tasks/deployments.html"
+  },
+  {
+    "route": "/tasks/deployments/{DeploymentId:guid}",
+    "title": "Action deployments — Device tasks",
+    "href": "ui/tasks/deployments-device-tasks.html"
+  },
+  {
+    "route": "/devices/approval-and-reset",
+    "title": "Agent approval and reset requests",
+    "href": "ui/devices/approvals.html"
+  },
+  {
+    "route": "/devices/manage/{Id:int}",
+    "title": "Device workspace",
+    "href": "ui/devices/devices.html"
+  },
+  {
+    "route": "/devices/manage",
+    "title": "Devices",
+    "href": "ui/devices/devices.html"
+  },
+  {
+    "route": "/directory-users",
+    "title": "Directory users",
+    "href": "ui/shared-resources/directory-users.html"
+  },
+  {
+    "route": "/images/driverpacks",
+    "title": "Driver packs",
+    "href": "ui/imaging/drivers.html"
+  },
+  {
+    "route": "/images/driverpacks/{Id:int}",
+    "title": "Driver packs",
+    "href": "ui/imaging/drivers.html"
+  },
+  {
+    "route": "/images/driverpacks/{Id:int}/{Tab}",
+    "title": "Driver packs",
+    "href": "ui/imaging/drivers.html"
+  },
+  {
+    "route": "/images/driverpacks/{Id:int}/general",
+    "title": "Driver packs — General",
+    "href": "ui/imaging/drivers-general.html"
+  },
+  {
+    "route": "/images/driverpacks/{Id:int}/files",
+    "title": "Driver packs — Files",
+    "href": "ui/imaging/drivers-files.html"
+  },
+  {
+    "route": "/images/driverpacks/{Id:int}/library",
+    "title": "Driver packs — Library",
+    "href": "ui/imaging/drivers-library.html"
+  },
+  {
+    "route": "/images/driverpacks/{Id:int}/models",
+    "title": "Driver packs — Models",
+    "href": "ui/imaging/drivers-models.html"
+  },
+  {
+    "route": "/images/driverpacks/{Id:int}/configuration",
+    "title": "Driver packs — Configuration",
+    "href": "ui/imaging/drivers-configuration.html"
+  },
+  {
+    "route": "/images/driverpacks/{Id:int}/used-by",
+    "title": "Driver packs — Used by",
+    "href": "ui/imaging/drivers-used-by.html"
+  },
+  {
+    "route": "/images/driverpacks/{Id:int}/audit",
+    "title": "Driver packs — Audit",
+    "href": "ui/imaging/drivers-audit.html"
+  },
+  {
+    "route": "/groups",
+    "title": "Device groups",
+    "href": "ui/devices/device-groups.html"
+  },
+  {
+    "route": "/groups/search",
+    "title": "Device groups",
+    "href": "ui/devices/device-groups.html"
+  },
+  {
+    "route": "/groups/new",
+    "title": "Device groups",
+    "href": "ui/devices/device-groups.html"
+  },
+  {
+    "route": "/groups/manage/{Id:int}",
+    "title": "Device groups",
+    "href": "ui/devices/device-groups.html"
+  },
+  {
+    "route": "/groups/manage/{Id:int}/{Tab}",
+    "title": "Device groups",
+    "href": "ui/devices/device-groups.html"
+  },
+  {
+    "route": "/groups/manage/{Id:int}/history",
+    "title": "Device groups — History",
+    "href": "ui/devices/device-groups-history.html"
+  },
+  {
+    "route": "/groups/manage/{Id:int}/relations",
+    "title": "Device groups — Relations",
+    "href": "ui/devices/device-groups-relations.html"
+  },
+  {
+    "route": "/groups/manage/{Id:int}/imaging",
+    "title": "Device groups — Imaging",
+    "href": "ui/devices/device-groups-imaging.html"
+  },
+  {
+    "route": "/groups/manage/{Id:int}/general",
+    "title": "Device groups — General",
+    "href": "ui/devices/device-groups-general.html"
+  },
+  {
+    "route": "/groups/manage/{Id:int}/policies",
+    "title": "Device groups — Policies",
+    "href": "ui/devices/device-groups-policies.html"
+  },
+  {
+    "route": "/groups/manage/{Id:int}/members",
+    "title": "Device groups — Members",
+    "href": "ui/devices/device-groups-members.html"
+  },
+  {
+    "route": "/groups/oubrowser",
+    "title": "Directory OU browser",
+    "href": "ui/shared-resources/organizational-units.html"
+  },
+  {
+    "route": "/images/prepprofiles",
+    "title": "Image preparation profiles",
+    "href": "ui/imaging/image-prep.html"
+  },
+  {
+    "route": "/images/deploymentprofiles",
+    "title": "Deployment profiles",
+    "href": "ui/imaging/deployment-profiles.html"
+  },
+  {
+    "route": "/images/manage",
+    "title": "Images",
+    "href": "ui/imaging/images.html"
+  },
+  {
+    "route": "/images",
+    "title": "Images",
+    "href": "ui/imaging/images.html"
+  },
+  {
+    "route": "/images/manage/{Id:int}",
+    "title": "Images",
+    "href": "ui/imaging/images.html"
+  },
+  {
+    "route": "/images/manage/{Id:int}/{Tab}",
+    "title": "Images",
+    "href": "ui/imaging/images.html"
+  },
+  {
+    "route": "/images/manage/{Id:int}/general",
+    "title": "Images — General",
+    "href": "ui/imaging/images-general.html"
+  },
+  {
+    "route": "/images/manage/{Id:int}/versions",
+    "title": "Images — Versions",
+    "href": "ui/imaging/images-versions.html"
+  },
+  {
+    "route": "/images/manage/{Id:int}/used-by",
+    "title": "Images — Used by",
+    "href": "ui/imaging/images-used-by.html"
+  },
+  {
+    "route": "/images/manage/{Id:int}/audit",
+    "title": "Images — Audit",
+    "href": "ui/imaging/images-audit.html"
+  },
+  {
+    "route": "/images/prepprofiles/{Id:int}",
+    "title": "Image preparation profiles",
+    "href": "ui/imaging/image-prep.html"
+  },
+  {
+    "route": "/images/deploymentprofiles/{Id:int}",
+    "title": "Deployment profiles",
+    "href": "ui/imaging/deployment-profiles.html"
+  },
+  {
+    "route": "/images/deploymentprofiles/{Id:int}/{Tab}",
+    "title": "Deployment profiles",
+    "href": "ui/imaging/deployment-profiles.html"
+  },
+  {
+    "route": "/images/deploymentprofiles/{Id:int}/general",
+    "title": "Deployment profiles — General",
+    "href": "ui/imaging/deployment-profiles-general.html"
+  },
+  {
+    "route": "/images/deploymentprofiles/{Id:int}/configuration",
+    "title": "Deployment profiles — Configuration",
+    "href": "ui/imaging/deployment-profiles-configuration.html"
+  },
+  {
+    "route": "/images/deploymentprofiles/{Id:int}/drivers",
+    "title": "Deployment profiles — Drivers",
+    "href": "ui/imaging/deployment-profiles-drivers.html"
+  },
+  {
+    "route": "/images/deploymentprofiles/{Id:int}/policies",
+    "title": "Deployment profiles — Policies",
+    "href": "ui/imaging/deployment-profiles-policies.html"
+  },
+  {
+    "route": "/images/deploymentprofiles/{Id:int}/used-by",
+    "title": "Deployment profiles — Used by",
+    "href": "ui/imaging/deployment-profiles-used-by.html"
+  },
+  {
+    "route": "/images/deploymentprofiles/{Id:int}/audit",
+    "title": "Deployment profiles — Audit",
+    "href": "ui/imaging/deployment-profiles-audit.html"
+  },
+  {
+    "route": "/policies/manage",
+    "title": "Policies",
+    "href": "ui/policies-actions/policies.html"
+  },
+  {
+    "route": "/policies",
+    "title": "Policies",
+    "href": "ui/policies-actions/policies.html"
+  },
+  {
+    "route": "/policies/{Id:int}",
+    "title": "Policies",
+    "href": "ui/policies-actions/policies.html"
+  },
+  {
+    "route": "/policies/{Id:int}/{Tab}",
+    "title": "Policies",
+    "href": "ui/policies-actions/policies.html"
+  },
+  {
+    "route": "/policies/{Id:int}/general",
+    "title": "Policies — General",
+    "href": "ui/policies-actions/policies-general.html"
+  },
+  {
+    "route": "/policies/{Id:int}/actions",
+    "title": "Policies — Actions",
+    "href": "ui/policies-actions/policies-actions.html"
+  },
+  {
+    "route": "/policies/{Id:int}/targeting",
+    "title": "Policies — Targeting",
+    "href": "ui/policies-actions/policies-targeting.html"
+  },
+  {
+    "route": "/policies/{Id:int}/schedule",
+    "title": "Policies — Schedule",
+    "href": "ui/policies-actions/policies-schedule.html"
+  },
+  {
+    "route": "/policies/{Id:int}/execution",
+    "title": "Policies — Execution",
+    "href": "ui/policies-actions/policies-execution.html"
+  },
+  {
+    "route": "/policies/{Id:int}/self-service",
+    "title": "Policies — Self service",
+    "href": "ui/policies-actions/policies-self-service.html"
+  },
+  {
+    "route": "/policies/{Id:int}/activity",
+    "title": "Policies — Activity",
+    "href": "ui/policies-actions/policies-activity.html"
+  },
+  {
+    "route": "/policies/self-service-categories",
+    "title": "Self-service categories",
+    "href": "ui/shared-resources/self-service-categories.html"
+  },
+  {
+    "route": "/shared/self-service-categories",
+    "title": "Self-service categories",
+    "href": "ui/shared-resources/self-service-categories.html"
+  },
+  {
+    "route": "/reports/devices",
+    "title": "Device reports",
+    "href": "ui/reports/device-reports.html"
+  },
+  {
+    "route": "/reports/computer",
+    "title": "Device reports",
+    "href": "ui/reports/device-reports.html"
+  },
+  {
+    "route": "/reports/windowsupdates",
+    "title": "Windows Update reporting and approval",
+    "href": "ui/shared-resources/windows-updates.html"
+  },
+  {
+    "route": "/reports/windows-updates",
+    "title": "Windows Update reporting and approval",
+    "href": "ui/shared-resources/windows-updates.html"
+  },
+  {
+    "route": "/reports/windowsupdates/{Tab}",
+    "title": "Windows Update reporting and approval",
+    "href": "ui/shared-resources/windows-updates.html"
+  },
+  {
+    "route": "/reports/windows-updates/{Tab}",
+    "title": "Windows Update reporting and approval",
+    "href": "ui/shared-resources/windows-updates.html"
+  },
+  {
+    "route": "/shared/customattributes",
+    "title": "Custom attributes",
+    "href": "ui/shared-resources/custom-attributes.html"
+  },
+  {
+    "route": "/shared/schedules",
+    "title": "Shared schedules",
+    "href": "ui/shared-resources/schedules.html"
+  },
+  {
+    "route": "/shared/tags",
+    "title": "Tags",
+    "href": "ui/shared-resources/tags.html"
+  },
+  {
+    "route": "/tasks/imaging",
+    "title": "Imaging tasks",
+    "href": "ui/tasks/imaging-tasks.html"
+  },
+  {
+    "route": "/usergroups/manage/{Id:int}",
+    "title": "User groups",
+    "href": "ui/administration/user-groups.html"
+  },
+  {
+    "route": "/usergroups/manage/{Id:int}/{Tab}",
+    "title": "User groups",
+    "href": "ui/administration/user-groups.html"
+  },
+  {
+    "route": "/usergroups/manage/{Id:int}/general",
+    "title": "User groups — General",
+    "href": "ui/administration/user-groups-general.html"
+  },
+  {
+    "route": "/usergroups/manage/{Id:int}/permissions",
+    "title": "User groups — Permissions",
+    "href": "ui/administration/user-groups-permissions.html"
+  },
+  {
+    "route": "/usergroups/manage/{Id:int}/members",
+    "title": "User groups — Members",
+    "href": "ui/administration/user-groups-members.html"
+  },
+  {
+    "route": "/usergroups/manage",
+    "title": "User groups",
+    "href": "ui/administration/user-groups.html"
+  },
+  {
+    "route": "/images/winpe",
+    "title": "WinPE Manager",
+    "href": "ui/administration/winpe-boot-variants.html"
+  },
+  {
+    "route": "/images/winpe/{Id:int}",
+    "title": "WinPE Manager",
+    "href": "ui/administration/winpe-boot-variants.html"
+  },
+  {
+    "route": "/images/winpe/new/{Kind}",
+    "title": "WinPE Manager",
+    "href": "ui/administration/winpe-boot-variants.html"
+  },
+  {
+    "route": "/administration/users/groups",
+    "title": "User groups",
+    "href": "ui/administration/user-groups.html"
+  },
+  {
+    "route": "/administration/users/directory",
+    "title": "Directory users",
+    "href": "ui/shared-resources/directory-users.html"
+  },
+  {
+    "route": "/reports/windowsupdates/autoapproval",
+    "title": "Windows Update reporting and approval — Auto-approve rules",
+    "href": "ui/shared-resources/windows-updates-auto-approve-rules.html"
+  },
+  {
+    "route": "/reports/windows-updates/autoapproval",
+    "title": "Windows Update reporting and approval — Auto-approve rules",
+    "href": "ui/shared-resources/windows-updates-auto-approve-rules.html"
+  },
+  {
+    "route": "/settings/site-services",
+    "title": "Site Services",
+    "href": "ui/administration/site-services.html"
+  },
+  {
+    "route": "/settings/site-services/{Id:guid}",
+    "title": "Site Services",
+    "href": "ui/administration/site-services.html"
+  },
+  {
+    "route": "/settings/site-services/{Id:guid}/{Tab}",
+    "title": "Site Services",
+    "href": "ui/administration/site-services.html"
+  },
+  {
+    "route": "/settings/site-services/{Id:guid}/general",
+    "title": "Site Services — General",
+    "href": "ui/administration/site-services-general.html"
+  },
+  {
+    "route": "/settings/site-services/{Id:guid}/configuration",
+    "title": "Site Services — Configuration",
+    "href": "ui/administration/site-services-configuration.html"
+  },
+  {
+    "route": "/settings/site-services/{Id:guid}/status",
+    "title": "Site Services — Status",
+    "href": "ui/administration/site-services-general.html"
+  },
+  {
+    "route": "/settings/site-services/{Id:guid}/enrollment",
+    "title": "Site Services — Enrollment",
+    "href": "ui/administration/site-services-enrollment.html"
+  },
+  {
+    "route": "/shared/user-audiences",
+    "title": "User audiences",
+    "href": "ui/administration/user-audiences.html"
+  },
+  {
+    "route": "/shared/user-audiences/new",
+    "title": "User audiences",
+    "href": "ui/administration/user-audiences.html"
+  },
+  {
+    "route": "/shared/user-audiences/{Id:int}",
+    "title": "User audiences",
+    "href": "ui/administration/user-audiences.html"
+  },
+  {
+    "route": "/settings/directories/sso",
+    "title": "Entra sign-in",
+    "href": "ui/administration/entra.html"
+  },
+  {
+    "route": "/settings/directories/{DirectoryId:int}",
+    "title": "Directory connection",
+    "href": "ui/shared-resources/directories-connection-configuration.html"
+  },
+  {
+    "route": "/settings/directories/{DirectoryId:int}/{DirectoryTab}",
+    "title": "Directory connection",
+    "href": "ui/shared-resources/directories-connection-configuration.html"
+  },
+  {
+    "route": "/account/password",
+    "title": "Application users — Options",
+    "href": "ui/administration/users-options.html"
+  },
+  {
+    "route": "/directory-users/{SourceId:int}/{ObjectGuid:guid}",
+    "title": "Directory user details",
+    "href": "ui/shared-resources/directory-user-details.html"
+  },
+  {
+    "route": "/reports/software",
+    "title": "Software reports",
+    "href": "ui/reports/software-reports.html"
+  },
+  {
+    "route": "/reports/user",
+    "title": "User reports",
+    "href": "ui/reports/user-reports.html"
+  },
+  {
+    "route": "/reports/users",
+    "title": "User reports",
+    "href": "ui/reports/user-reports.html"
+  },
+  {
+    "route": "/about/licenses",
+    "title": "Licenses and notices",
+    "href": "ui/administration/licenses.html"
+  },
+  {
+    "route": "/administration/helpdesk",
+    "title": "Help Desk settings",
+    "href": "ui/administration/helpdesk-settings.html"
+  },
+  {
+    "route": "/administration/helpdesk/{Tab}",
+    "title": "Help Desk settings",
+    "href": "ui/administration/helpdesk-settings.html"
+  },
+  {
+    "route": "/administration/helpdesk/{Tab}/{SubTab}",
+    "title": "Help Desk settings",
+    "href": "ui/administration/helpdesk-settings.html"
+  },
+  {
+    "route": "/administration/server/directories/{DirectoryId:int}",
+    "title": "Directory connection",
+    "href": "ui/shared-resources/directories-connection-configuration.html"
+  },
+  {
+    "route": "/administration/server/directories/{DirectoryId:int}/{DirectoryTab}",
+    "title": "Directory connection",
+    "href": "ui/shared-resources/directories-connection-configuration.html"
+  },
+  {
+    "route": "/reports/helpdesk",
+    "title": "Help Desk reports",
+    "href": "ui/reports/helpdesk-reports.html"
+  },
+  {
+    "route": "/reports/policies",
+    "title": "Policy reports",
+    "href": "ui/reports/policy-reports.html"
+  },
+  {
+    "route": "/images/deploymentrules",
+    "title": "Deployment rules",
+    "href": "ui/imaging/deployment-rules.html"
+  },
+  {
+    "route": "/images/deploymentrules/{Id:int}",
+    "title": "Deployment rules",
+    "href": "ui/imaging/deployment-rules.html"
+  },
+  {
+    "route": "/images/ounamingrules/new",
+    "title": "OU Naming Rules",
+    "href": "ui/imaging/ou-naming-rules.html"
+  },
+  {
+    "route": "/images/ounamingrules/{Id:int}",
+    "title": "OU Naming Rules",
+    "href": "ui/imaging/ou-naming-rules.html"
+  }
+]

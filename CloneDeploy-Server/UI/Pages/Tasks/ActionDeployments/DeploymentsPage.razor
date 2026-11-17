@@ -1,0 +1,161 @@
+@page "/tasks/deployments"
+@page "/tasks/deployments/{DeploymentId:guid}"
+@attribute [Authorize]
+@inject AuthenticationStateProvider TaskAuthentication
+@inject IAuthorizationService TaskAuthorization
+@inject ActionDeploymentUiService Service
+<AppPageTitle Text="@Loc[LocKeys.Ui.NavMenu.ActionDeployments]" />
+
+@if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+@if (DeploymentId is null)
+{
+@if (_access?.ViewAll == true)
+{
+    <MudToggleGroup T="bool" Value="_allTasks" ValueChanged="ScopeChanged" SelectionMode="SelectionMode.SingleSelection" Color="Color.Primary" Class="mb-3" Style="width: 33.333%; min-width: min(100%, 20rem); align-self: flex-start;">
+        <MudToggleItem Value="false" Text="@Loc[LocKeys.Ui.DeploymentsPage.MyTasks]" />
+        <MudToggleItem Value="true" Text="@Loc[LocKeys.Ui.DeploymentsPage.AllTasks]" />
+    </MudToggleGroup>
+}
+    @if (StatusFilter == "Unknown")
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-3">@Loc[LocKeys.Ui.DeploymentsPage.ShowingDeploymentsWithUnknownOutcomesReviewTheDeviceTasks] <MudLink Href="/tasks/deployments">@Loc[LocKeys.Ui.DeploymentsPage.ShowAllDeployments]</MudLink></MudAlert>
+    }
+    <div class="device-detail device-workspace">
+        <ResponsiveTabs PanelOrder="@(new int[] { 0, 1 })" ActivePanelIndex="_view" ActivePanelIndexChanged="OnViewChanged" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.Policy.Active]" Icon="@Icons.Material.Outlined.PendingActions">
+                <TabHelp Href="ui/tasks/deployments-active.html" Title="@Loc[LocKeys.Policy.Active]" />
+                @if (_view == 0) { <MudStack Class="py-4">@DeploymentGrid</MudStack> }
+            </MudTabPanel>
+            <MudTabPanel Class="page-tab-divider" Text="@Loc[LocKeys.Policy.Activity]" Icon="@Icons.Material.Outlined.History">
+                <TabHelp Href="ui/tasks/deployments-history.html" Title="@Loc[LocKeys.Policy.Activity]" />
+                @if (_view == 1) { <MudStack Class="py-4">@DeploymentGrid</MudStack> }
+            </MudTabPanel>
+        </ResponsiveTabs>
+    </div>
+
+}
+else
+{
+    <MudButton Href="/tasks/deployments" StartIcon="@Icons.Material.Filled.ArrowBack" Class="mb-3">@Loc[LocKeys.Ui.DeploymentsPage.BackToDeployments]</MudButton>
+    <ActionButtons><MainButton><MudButton OnClick="@Snackbar.GuardAction(() => _busy || !_tasks.Any(x => x.Status is DeviceTaskStatus.Queued or DeviceTaskStatus.Offered), UiText.Get(LocKeys.Ui.DeploymentsPage.ThereAreNoUnstartedTasksToCancel), OnCancelDeploymentClicked)" Disabled="@(_busy || !_tasks.Any(CanManage))" Color="Color.Warning">@Loc[LocKeys.Ui.DeploymentsPage.CancelUnstartedTasks]</MudButton></MainButton></ActionButtons>
+    <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.DeploymentsPage.RunningTasksAreNotInterruptedUnknownOutcomesContinueTo]</MudText>
+    <MudDataGrid T="DeviceTask" Items="_tasks" Loading="_busy" Elevation="0" Outlined="true" Class="device-list-grid mt-3" QuickFilter="MatchesTask" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" Dense="true" RowsPerPage="25">
+        <ToolBarContent>
+            <MudIcon Icon="@Icons.Material.Outlined.Devices" Color="Color.Primary"/>
+            <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DeploymentsPage.DeviceTasks]</MudText><MudSpacer/>
+            <MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Ui.DeploymentsPage.RefreshTasks]"><MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="OnRefreshClicked" Disabled="_busy" aria-label="@Loc[LocKeys.Ui.DeploymentsPage.RefreshTasks]"/></MudTooltip>
+            <MudTextField T="string" @bind-Value="_search" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ManageDevicesPage.SearchDevices]" aria-label="@Loc[LocKeys.Ui.DeploymentsPage.SearchDeviceTasks]" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/>
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.DeviceName" Title="@Loc[LocKeys.Dashboard.Device]" />
+            <PropertyColumn Property="x => x.Status" Title="@Loc[LocKeys.Image.VersionStatus]" />
+            <PropertyColumn Property="x => x.StartedAtUtc" Title="@Loc[LocKeys.Ui.DeploymentsPage.StartedUTC]" />
+            <PropertyColumn Property="x => x.FinishedAtUtc" Title="@Loc[LocKeys.Ui.DeploymentsPage.FinishedUTC]" />
+            <PropertyColumn Property="x => x.Result" Title="@Loc[LocKeys.Dashboard.Result]" />
+            <TemplateColumn Title="@Loc[LocKeys.Common.Actions]"><CellTemplate>
+                @if (CanManage(context.Item) && context.Item.Status is DeviceTaskStatus.Queued or DeviceTaskStatus.Offered)
+                {
+                    <MudButton OnClick="@(() => OnCancelTaskClicked(context.Item))" Disabled="_busy" Color="Color.Warning">@Loc[LocKeys.Device.CancelTask]</MudButton>
+                }
+                @if (CanManage(context.Item) && context.Item.Status == DeviceTaskStatus.Unknown) { <MudButton OnClick="@(() => OnConfirmStoppedClicked(context.Item.Id))" Disabled="_busy">@Loc[LocKeys.Ui.DeploymentsPage.ConfirmStopped]</MudButton> }</CellTemplate></TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="DeviceTask" /></PagerContent>
+        <NoRecordsContent><MudText>@Loc[LocKeys.Ui.DeploymentsPage.NoDeviceTasksFound]</MudText></NoRecordsContent>
+    </MudDataGrid>
+}
+@code {
+    private RenderFragment DeploymentGrid => @<MudDataGrid T="DeploymentRowDto" Items="_deployments" Loading="_busy" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" Dense="true" RowsPerPage="@Constants.UI.DefaultPageSize" Elevation="0" Outlined="true" Class="device-list-grid" QuickFilter="MatchesDeployment">
+        <ToolBarContent>
+            <MudIcon Icon="@Icons.Material.Outlined.PlayCircle" Color="Color.Primary"/>
+            <MudText Typo="Typo.h6">@(StatusFilter == "Unknown" ? UiText.Get(LocKeys.Ui.DeploymentsPage.UnknownOutcomes) : _view == 0 ? UiText.Get(LocKeys.Ui.DeploymentsPage.ActiveDeployments) : UiText.Get(LocKeys.Ui.DeploymentsPage.DeploymentHistory))</MudText>
+            <MudSpacer/>
+            <MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Ui.DeploymentsPage.RefreshDeployments]"><MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="OnRefreshClicked" Disabled="_busy" aria-label="@Loc[LocKeys.Ui.DeploymentsPage.RefreshDeployments]"/></MudTooltip>
+            <MudTextField T="string" @bind-Value="_search" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.DeploymentsPage.SearchDeployments]" aria-label="@Loc[LocKeys.Ui.DeploymentsPage.SearchDeployments_03fa9171]" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/>
+        </ToolBarContent>
+        <Columns>
+            <TemplateColumn Title="@Loc[LocKeys.Dashboard.Action]"><CellTemplate><MudLink Class="device-name-link" Href="@($"/tasks/deployments/{context.Item.Id}")">@context.Item.ActionName</MudLink></CellTemplate></TemplateColumn>
+            <PropertyColumn Property="x => x.RequestedBy" Title="@Loc[LocKeys.Dashboard.RequestedBy]" />
+            <PropertyColumn Property="x => x.CreatedAtUtc" Title="@Loc[LocKeys.Ui.HelpDeskReportPage.CreatedUTC]" />
+            <PropertyColumn Property="x => x.Timing" Title="@Loc[LocKeys.Ui.DeploymentsPage.Delivery]" />
+            <PropertyColumn Property="x => x.Total" Title="@Loc[LocKeys.Group.Devices]" />
+            <PropertyColumn Property="x => x.Queued" Title="@Loc[LocKeys.Scheduler.StatusQueued]" />
+            <PropertyColumn Property="x => x.Running" Title="@Loc[LocKeys.Ui.DeploymentsPage.OfferedRunning]" />
+            <PropertyColumn Property="x => x.Succeeded" Title="@Loc[LocKeys.Scheduler.StatusSucceeded]" />
+            <PropertyColumn Property="x => x.Failed" Title="@Loc[LocKeys.Scheduler.StatusFailed]" />
+            <PropertyColumn Property="x => x.Cancelled" Title="@Loc[LocKeys.Ui.DeploymentsPage.Cancelled]" />
+            <PropertyColumn Property="x => x.Unknown" Title="@Loc[LocKeys.Scheduler.StatusUnknown]" />
+            <PropertyColumn Property="x => x.Source" Title="@Loc[LocKeys.Ui.DeviceActionHistoryTab.Source]" />
+        </Columns>
+        <PagerContent><MudDataGridPager T="DeploymentRowDto" /></PagerContent>
+        <NoRecordsContent><MudText>@(StatusFilter == "Unknown" ? UiText.Get(LocKeys.Ui.DeploymentsPage.NoDeploymentsWithUnknownOutcomes) : _view == 0 ? UiText.Get(LocKeys.Ui.DeploymentsPage.NoActiveDeploymentsChooseDeployNowFromAnAction) : UiText.Get(LocKeys.Ui.DeploymentsPage.NoCompletedOrCancelledDeployments))</MudText></NoRecordsContent>
+    </MudDataGrid>;
+
+    [Parameter] public Guid? DeploymentId { get; set; }
+    [SupplyParameterFromQuery(Name = "status")] public string? StatusFilter { get; set; }
+    private TaskAccess? _access;
+    private bool _allTasks;
+    private bool CanManage(DeviceTask task) => _access?.CanManage(task.Deployment.RequestedByUserId) == true;
+    private async Task ScopeChanged(bool all) { _allTasks = all; await OnRefreshClicked(); }
+    private List<DeploymentRowDto> _deployments = [];
+    private List<DeviceTask> _tasks = [];
+    private bool _busy;
+    private string? _error;
+    private int _version;
+    private int _view;
+    [SupplyParameterFromQuery(Name = "view")] public string? View { get; set; }
+    private string? _search;
+    private bool MatchesDeployment(DeploymentRowDto row) => string.IsNullOrWhiteSpace(_search) ||
+        $"{row.ActionName} {row.RequestedBy} {row.Source} {row.Timing}".Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+    private bool MatchesTask(DeviceTask task) => string.IsNullOrWhiteSpace(_search) ||
+        $"{task.DeviceName} {task.Status} {task.Result}".Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+    private void OnViewChanged(int view) => Navigation.NavigateTo(view == 1 ? "/tasks/deployments?view=history" : "/tasks/deployments");
+    protected override Task OnParametersSetAsync()
+    {
+        _view = StatusFilter == "Unknown" ? 0 : string.Equals(View, "history", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+        _search = null;
+        return OnRefreshClicked();
+    }
+    private async Task OnRefreshClicked()
+    {
+        var version = ++_version; _busy = true; _error = null;
+        _access = await TaskAccess.ReadAsync(TaskAuthentication, TaskAuthorization);
+        if (_access?.ViewAll != true) _allTasks = false;
+        if (DeploymentId is Guid id)
+        {
+            var result = await Service.GetTasksAsync(id);
+            if (version != _version) return;
+            _tasks = result.Data ?? []; if (!result.Success) _error = Loc[result.Error!.Code, result.Error.Args];
+        }
+        else
+        {
+            var result = StatusFilter == "Unknown" ? await Service.GetUnknownDeploymentsAsync(_allTasks) : await Service.GetDeploymentsAsync(history: _view == 1, allTasks: _allTasks);
+            if (version != _version) return;
+            _deployments = result.Data ?? [];
+            if (!result.Success) _error = Loc[result.Error!.Code, result.Error.Args];
+        }
+        _busy = false;
+    }
+    private async Task OnCancelDeploymentClicked()
+    {
+        if (_busy || DeploymentId is not Guid id) return;
+        if (await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.DeploymentsPage.CancelPendingTasks), UiText.Get(LocKeys.Ui.DeploymentsPage.CancelTasksThatHaveNotStartedRunningTasksWill), yesText: UiText.Get(LocKeys.Ui.DeploymentsPage.CancelPendingTasks), cancelText: UiText.Get(LocKeys.Ui.DeployActionPage.Back)) != true) return;
+        _busy = true; var result = await Service.CancelAsync(id);
+        if (result.Success) await OnRefreshClicked(); else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); _busy = false;
+    }
+    private async Task OnCancelTaskClicked(DeviceTask task)
+    {
+        if (_busy) return;
+        if (await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.DeploymentsPage.CancelDeviceTask), UiText.Get(LocKeys.Ui.DeploymentsPage.CancelTheUnstartedTaskFor0OtherDevicesWill, (task.DeviceName)), yesText: UiText.Get(LocKeys.Device.CancelTask), cancelText: UiText.Get(LocKeys.Ui.DeployActionPage.Back)) != true) return;
+        _busy = true;
+        var result = await Service.CancelTaskAsync(task.Id);
+        await OnRefreshClicked();
+        if (!result.Success) Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+    }
+    private async Task OnConfirmStoppedClicked(Guid id)
+    {
+        if (_busy) return;
+        if (await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.DeploymentsPage.ConfirmExecutionStopped), UiText.Get(LocKeys.Ui.DeploymentsPage.OnlyContinueAfterVerifyingThisTaskIsNoLonger), yesText: UiText.Get(LocKeys.Ui.DeploymentsPage.ExecutionHasStopped), cancelText: UiText.Get(LocKeys.Ui.DeployActionPage.Back)) != true) return;
+        _busy = true; var result = await Service.ResolveUnknownAsync(id);
+        if (result.Success) await OnRefreshClicked(); else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); _busy = false;
+    }
+}

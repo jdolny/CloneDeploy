@@ -1,0 +1,64 @@
+@inject ImagingService Deployments
+@inject ImagingService Imaging
+@inject DeviceGroupService Groups
+
+<MudDialog>
+    <DialogContent>
+        @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+        <fieldset disabled="@_busy" style="border: 0; padding: 0; margin: 0; min-width: 0;">
+        <MudStack Spacing="2">
+            <MudTextField @bind-Value="_name" Label="@Loc[LocKeys.Ui.CreateMulticastDialog.SessionName]" MaxLength="100" />
+            <MudSelect T="int" Value="_image" ValueChanged="ImageChanged" Label="@Loc[LocKeys.Device.Image]" Strict="true" Placeholder="@Loc[LocKeys.Ui.CreateMulticastDialog.SelectAnImage]">
+                @foreach (var image in _images) { <MudSelectItem T="int" Value="image.Id">@image.Name</MudSelectItem> }
+            </MudSelect>
+            <MudSelect T="int" @bind-Value="_profile" Label="@Loc[LocKeys.Device.DeploymentProfile]" Strict="true" Placeholder="@Loc[LocKeys.Ui.CreateMulticastDialog.SelectADeploymentProfile]">
+                @foreach (var profile in _profiles) { <MudSelectItem T="int" Value="profile.Id">@profile.Name</MudSelectItem> }
+            </MudSelect>
+            <MudSelect T="int" @bind-Value="_provider" Label="@Loc[LocKeys.Ui.CreateMulticastDialog.StorageSenderHost]" Strict="true" Placeholder="@Loc[LocKeys.Ui.CreateMulticastDialog.SelectAStorageSenderHost]">
+                @foreach (var provider in _providers) { <MudSelectItem T="int" Value="provider.Id">@provider.Name (@provider.Host)</MudSelectItem> }
+            </MudSelect>
+            <MudNumericField T="int" @bind-Value="_receivers" Min="1" Max="1000" Label="@Loc[LocKeys.Ui.CreateMulticastDialog.ExpectedReceivers]" />
+            <MudNumericField T="int" @bind-Value="_rate" Min="1" Max="100000" Label="@Loc[LocKeys.Ui.CreateMulticastDialog.MaximumRateMbitS]" />
+            <MudNumericField T="int" @bind-Value="_ttl" Min="1" Max="32" Label="@Loc[LocKeys.Ui.CreateMulticastDialog.MulticastTTL]" HelperText="@Loc[LocKeys.Ui.CreateMulticastDialog.Text1StaysOnTheLocalSubnetRoutedMulticastRequires]" />
+        </MudStack>
+        </fieldset>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())" Disabled="_busy">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _busy || _image == 0 || _profile == 0 || _provider == 0, UiText.Get(LocKeys.Ui.CreateMulticastDialog.SelectAnImageDeploymentProfileAndStorageProviderBefore), Create)" Disabled="@(_busy)" Variant="Variant.Filled" Color="Color.Primary">@Loc[LocKeys.Ui.CreateMulticastDialog.CreateSession]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private string _name = "Multicast";
+    private string? _error;
+    private int _image, _profile, _provider, _receivers = 2, _rate = 1000, _ttl = 32;
+    private bool _busy;
+    private List<Image> _images = [];
+    private List<DeploymentProfile> _profiles = [];
+    private List<MulticastProvider> _providers = [];
+    protected override async Task OnInitializedAsync()
+    {
+        _busy = true;
+        try
+        {
+        var images = await Imaging.GetImagesAsync(includeDisabled: false);
+        var profiles = await Imaging.GetAllProfilesAsync(includeDisabled: false);
+        if (images.HasData) _images = images.Data.Where(x => x.Format == ImageFormat.Wim).ToList();
+        if (profiles.HasData) _profiles = profiles.Data.Where(x => x.VisibleInWinPe).ToList();
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
+    }
+    private async Task ImageChanged(int image)
+    { _image = image; _provider = 0; try { _providers = await Deployments.MulticastProvidersAsync(image); } catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); } }
+    private async Task Create()
+    {
+        if (_busy) return;
+        _busy = true; _error = null;
+        try { await Deployments.CreateMulticastAsync(new(_name, _image, _profile, _provider, _receivers, _rate, _ttl), Groups); MudDialog.Close(DialogResult.Ok(true)); }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _busy = false; }
+    }
+}

@@ -1,0 +1,206 @@
+@page "/images/ounamingrules/new"
+@page "/images/ounamingrules/{Id:int}"
+@attribute [Authorize(Policy = Constants.Permissions.OuNamingRuleView)]
+@using System.Text.Json
+@inject ImagingService Service
+@inject AuthenticationStateProvider Authentication
+@inject IAuthorizationService Authorization
+
+<PageTitle>@Heading</PageTitle>
+<SectionContent SectionName="page-title">
+    <div class="device-page-heading"><div class="device-heading-row">
+        <MudIconButton Href="/images/ounamingrules" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" aria-label="@Loc[LocKeys.Ui.ManageOuNamingRulePage.BackToOUNamingRules]" Disabled="_busy" />
+        <div class="device-heading-icon"><MudIcon Icon="@Icons.Material.Outlined.Rule" Size="Size.Large" /></div>
+        <div class="device-heading-copy"><div class="device-heading-name"><h1>@Heading</h1></div></div>
+    </div></div>
+</SectionContent>
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert> }
+@if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+@if (_draft is not null)
+{
+    <ActionButtons>
+        <Content>
+            <MudMenuItem OnClick="Delete" Disabled="@(_busy || !_canEdit || _draft.Id == 0)" Icon="@Icons.Material.Filled.Delete">@Loc[LocKeys.Common.Delete]</MudMenuItem>
+        </Content>
+    </ActionButtons>
+    <div class="device-detail device-workspace">
+        <ResponsiveTabs @bind-ActivePanelIndex="_tab" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.User.General]" Icon="@Icons.Material.Outlined.Info">
+                <TabHelp Href="ui/imaging/ou-naming-rules-general.html" Title="@Loc[LocKeys.User.General]" />
+                <MudStack Class="py-4" Spacing="3">
+                    <div class="section-action-bar">
+                        <MudButton OnClick="Save" Disabled="@(_busy || !_canEdit)" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+                    </div>
+                    @if (_catalog.Domains.Count == 0) { <MudAlert Severity="Severity.Info">@Loc[LocKeys.Ui.ManageOuNamingRulePage.SynchronizeAnActiveDirectorySourceToSelectItsDomain]</MudAlert> }
+                    <MudTextField @bind-Value="_draft.Name" @bind-Value:after="Invalidate" Label="@Loc[LocKeys.Ui.ManageOuNamingRulePage.RuleSetName]" MaxLength="200" Disabled="@(_busy || !_canEdit)" Variant="Variant.Outlined" />
+                    <MudTextField @bind-Value="_draft.Description" @bind-Value:after="Invalidate" Label="@Loc[LocKeys.Common.Description]" MaxLength="2000" Lines="3" Disabled="@(_busy || !_canEdit)" Variant="Variant.Outlined" />
+                    <MudSwitch @bind-Value="_draft.Enabled" @bind-Value:after="Invalidate" Label="@Loc[LocKeys.StorageProvider.Enabled]" Disabled="@(_busy || !_canEdit)" />
+                    <div>
+                        <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.ManageOuNamingRulePage.TargetADDomain]</MudText>
+                        <MudText>@(string.IsNullOrEmpty(_draft.DomainName) ? "—" : _draft.DomainName)</MudText>
+                    </div>
+                    <MudSelect T="OuNoMatch" @bind-Value="_draft.Fallback" @bind-Value:after="Invalidate" Label="@Loc[LocKeys.Ui.ManageOuNamingRulePage.WhenNoRuleMatches]" Disabled="@(_busy || !_canEdit)" Variant="Variant.Outlined">
+                        <MudSelectItem Value="OuNoMatch.Fail">@Loc[LocKeys.Ui.ManageOuNamingRulePage.FailWithAnError]</MudSelectItem>
+                        <MudSelectItem Value="OuNoMatch.DomainDefault">@Loc[LocKeys.Ui.ManageOuNamingRulePage.UseDomainDefaultExistingAccountLocation]</MudSelectItem>
+                        <MudSelectItem Value="OuNoMatch.SpecificOu">@Loc[LocKeys.Ui.ManageOuNamingRulePage.UseASpecificOU]</MudSelectItem>
+                    </MudSelect>
+                    @if (_draft.Fallback == OuNoMatch.SpecificOu)
+                    {
+                        <MudText Style="overflow-wrap:anywhere">@UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.FallbackOU0, (OuLabel(_draft.FallbackOuGuid)))</MudText>
+                        <MudButton OnClick="@(() => PickOu(null))" Disabled="@(_busy || !_canEdit || string.IsNullOrEmpty(_draft.DomainName))">@Loc[LocKeys.Ui.ManageOuNamingRulePage.ChooseFallbackOU]</MudButton>
+                    }
+
+                </MudStack>
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ManageOuNamingRulePage.MatchingRules]" Icon="@Icons.Material.Outlined.Rule">
+                <TabHelp Href="ui/imaging/ou-naming-rules-matching-rules.html" Title="@Loc[LocKeys.Ui.ManageOuNamingRulePage.MatchingRules]" />
+                <MudStack Class="py-4" Spacing="3">
+                    <div class="section-action-bar">
+                        <MudButton OnClick="Save" Disabled="@(_busy || !_canEdit)" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+                    </div>
+                    <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.ManageOuNamingRulePage.RulesAreEvaluatedFromTopToBottomTheFirst]</MudText>
+                    <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.ManageOuNamingRulePage.MatchingIgnoresCaseWildcardsMatchTheEntireNameMatches]</MudText>
+                    @foreach (var rule in _rules)
+                    {
+                        var index = _rules.IndexOf(rule);
+                        <MudPaper @key="rule" Outlined="true" Class="pa-3">
+                            <MudStack Spacing="2">
+                                <MudText Typo="Typo.subtitle1">@UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.Rule0, ((index + 1)))</MudText>
+                                <MudTextField @bind-Value="rule.Name" @bind-Value:after="Invalidate" Label="@Loc[LocKeys.Ui.ManageOuNamingRulePage.RuleName]" MaxLength="200" Disabled="@(_busy || !_canEdit)" Variant="Variant.Outlined" />
+                                <MudSelect T="OuNameMatch" @bind-Value="rule.Match" @bind-Value:after="Invalidate" Label="@Loc[LocKeys.Ui.DeploymentRulesPage.MatchType]" Disabled="@(_busy || !_canEdit)" Variant="Variant.Outlined">
+                                    <MudSelectItem Value="OuNameMatch.Wildcard">@Loc[LocKeys.Ui.ManageOuNamingRulePage.Wildcard]</MudSelectItem>
+                                    <MudSelectItem Value="OuNameMatch.Regex">@Loc[LocKeys.Ui.ManageOuNamingRulePage.Regex]</MudSelectItem>
+                                </MudSelect>
+                                <MudTextField @bind-Value="rule.Pattern" @bind-Value:after="Invalidate" Label="@Loc[LocKeys.Ui.ManageOuNamingRulePage.ComputerNamePattern]" Placeholder="@Loc[LocKeys.Ui.ManageOuNamingRulePage.HSLAB]" MaxLength="256" Disabled="@(_busy || !_canEdit)" Variant="Variant.Outlined" />
+                                <MudText Style="overflow-wrap:anywhere">@UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.OU0, (OuLabel(rule.OuGuid)))</MudText>
+                                <MudStack Row="true" Wrap="Wrap.Wrap">
+                                    <MudButton OnClick="@(() => PickOu(rule))" Disabled="@(_busy || !_canEdit || string.IsNullOrEmpty(_draft.DomainName))">@Loc[LocKeys.Ui.ManageOuNamingRulePage.ChooseOU]</MudButton>
+                                    <MudButton OnClick="@(() => Move(rule, -1))" Disabled="@(_busy || !_canEdit || index == 0)">@Loc[LocKeys.Ui.ManageOuNamingRulePage.MoveUp]</MudButton>
+                                    <MudButton OnClick="@(() => Move(rule, 1))" Disabled="@(_busy || !_canEdit || index == _rules.Count - 1)">@Loc[LocKeys.Ui.ManageOuNamingRulePage.MoveDown]</MudButton>
+                                    <MudButton OnClick="@(() => Remove(rule))" Disabled="@(_busy || !_canEdit)" Color="Color.Error">@Loc[LocKeys.Ui.ManageOuNamingRulePage.RemoveRule]</MudButton>
+                                </MudStack>
+                </MudStack>
+            </MudPaper>
+        }
+        <MudButton OnClick="Add" Disabled="@(_busy || !_canEdit || _rules.Count >= 100)">@Loc[LocKeys.Ui.ManageOuNamingRulePage.AddRule]</MudButton>
+
+                </MudStack>
+            </MudTabPanel>
+        </ResponsiveTabs>
+    </div>
+}
+@code {
+    [Parameter] public int Id { get; set; }
+    private int? _loadedId;
+    private int _tab;
+    private OuNamingCatalog _catalog = new([], []);
+    private OuNamingRuleSet? _draft;
+    private List<OuNamingRule> _rules = [];
+    private bool _busy, _canEdit, _loading = true;
+    private string? _error, _savedSnapshot;
+    private string Heading => _draft?.Name is { Length: > 0 } name ? name : Id == 0 ? UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.NewOUNamingRuleSet) : UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.OUNamingRule);
+    private string DomainKey => _draft is null ? "" : $"{_draft.DirectorySourceId}|{_draft.DomainName}";
+    private static string Key(OuNamingDomain domain) => $"{domain.SourceId}|{domain.Name}";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedId == Id) return;
+        _loading = _busy = true; _draft = null; _error = null;
+        try
+        {
+            _canEdit = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.OuNamingRuleEdit)).Succeeded;
+            if (Id == 0 && !_canEdit) { _error = UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.YouDoNotHavePermissionToCreateOUNaming); return; }
+            var catalog = await Service.OuNamingCatalogAsync();
+            if (!catalog.Success) { _error = Loc[catalog.Error!.Code, catalog.Error.Args]; return; }
+            _catalog = catalog.Data!;
+            if (Id == 0) _draft = new();
+            else
+            {
+                var sets = await Service.ListOuNamingAsync();
+                if (!sets.Success) { _error = Loc[sets.Error!.Code, sets.Error.Args]; return; }
+                _draft = sets.Data!.SingleOrDefault(x => x.Id == Id);
+                if (_draft is null) { _error = UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.OUNamingRuleSetNotFound); return; }
+            }
+            _rules = _draft.Rules;
+            _savedSnapshot = JsonSerializer.Serialize(_draft);
+            if (_draft.DirectorySourceId is null && string.IsNullOrEmpty(_draft.DomainName) && _catalog.Domains.Count == 1)
+                ChangeDomain(Key(_catalog.Domains[0]));
+            _loadedId = Id;
+        }
+        catch { _error = UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.UnableToLoadTheRuleSetRefreshAndTry); }
+        finally { _loading = _busy = false; }
+    }
+
+    private async Task Delete()
+    {
+        if (_draft is null || _draft.Id == 0 || _busy || !_canEdit ||
+            await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.DeleteRuleSet), UiText.Get(LocKeys.Ui.ManageImageProfilePage.Delete0, (_draft.Name)), yesText: UiText.Get(LocKeys.Common.Delete), cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+        _busy = true;
+        try
+        {
+            var result = await Service.DeleteOuNamingAsync(_draft.Id, _draft.Revision);
+            if (!result.Success) { Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); return; }
+            _savedSnapshot = JsonSerializer.Serialize(_draft);
+            Snackbar.Add(UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.OUNamingRuleSetDeleted), Severity.Success);
+            Navigation.NavigateTo("/images/ounamingrules");
+        }
+        finally { _busy = false; }
+    }
+    private void Invalidate()
+    {
+        if (_draft is not null) _draft.Rules = _rules;
+    }
+    private void ChangeDomain(string key)
+    {
+        var domain = _catalog.Domains.SingleOrDefault(x => Key(x) == key);
+        if (_draft is null || domain is null || key == DomainKey) return;
+        _draft.DirectorySourceId = domain.SourceId; _draft.DomainName = domain.Name; _draft.FallbackOuGuid = null;
+        foreach (var rule in _rules) rule.OuGuid = Guid.Empty;
+        Invalidate();
+    }
+    private string OuLabel(Guid? guid) => _draft is null ? "" : ImagingService.FindNamingOu(_draft, guid, _catalog)?.Path ?? UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.NotSelectedOrNoLongerAvailable);
+    private void Add() { _rules.Add(new()); Invalidate(); }
+    private void Remove(OuNamingRule rule) { _rules.Remove(rule); Invalidate(); }
+    private void Move(OuNamingRule rule, int delta)
+    {
+        var index = _rules.IndexOf(rule); var next = index + delta;
+        if (index < 0 || next < 0 || next >= _rules.Count) return;
+        _rules.RemoveAt(index); _rules.Insert(next, rule); Invalidate();
+    }
+    private async Task PickOu(OuNamingRule? rule)
+    {
+        var draft = _draft!;
+        var domain = _catalog.Domains.FirstOrDefault(x => Key(x) == DomainKey);
+        if (domain is null) return;
+        var nodes = _catalog.Nodes.Where(x => x.SourceId == domain.SourceId && (x.Path.Equals(domain.Path, StringComparison.OrdinalIgnoreCase) || x.Path.EndsWith("," + domain.Path, StringComparison.OrdinalIgnoreCase)) &&
+            (!x.IsOu || ImagingService.FindNamingOu(draft, x.Guid, _catalog) is not null)).ToList();
+        var dialog = await Dialog.ShowAsync<OuTargetPickerDialog>(UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.ChooseOrganizationalUnit),
+            new DialogParameters<OuTargetPickerDialog> { { x => x.Nodes, nodes }, { x => x.SingleSelection, true } },
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, CloseButton = true });
+        if (await dialog.Result is not { Canceled: false, Data: List<PolicyTargetSelectionDto> selections } || selections.Count != 1 || !ReferenceEquals(draft, _draft)) return;
+        if (selections[0].Key.OuGuid is not Guid id) return;
+        if (ImagingService.FindNamingOu(draft, id, _catalog) is null) return;
+        if (rule is null) draft.FallbackOuGuid = id; else rule.OuGuid = id;
+        Invalidate();
+    }
+    private async Task Save()
+    {
+        if (_draft is null || _busy || !_canEdit) return;
+        _busy = true; _error = null;
+        try
+        {
+            var saved = JsonSerializer.Deserialize<OuNamingRuleSet>(_savedSnapshot!)!;
+            var input = _tab == 0 ? JsonSerializer.Deserialize<OuNamingRuleSet>(JsonSerializer.Serialize(_draft))! : saved;
+            input.Rules = _tab == 0 ? saved.Rules : _rules;
+            var result = await Service.SaveOuNamingAsync(input);
+            if (!result.Success) { _error = Loc[result.Error!.Code, result.Error.Args]; Snackbar.Add(_error, Severity.Error); return; }
+            Snackbar.Add(UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.OUNamingRuleSetSaved), Severity.Success);
+            _draft.Id = input.Id;
+            _draft.Revision = input.Revision;
+            _savedSnapshot = JsonSerializer.Serialize(input);
+            if (Id == 0) Navigation.NavigateTo($"/images/ounamingrules/{input.Id}", replace: true);
+        }
+        finally { _busy = false; }
+    }
+
+}

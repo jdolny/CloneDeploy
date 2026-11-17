@@ -1,0 +1,43 @@
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(UiText.Get(LocKeys.Ui.PolicyActionsDialog.Actions0, (Details.Policy.Name)))</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" Disabled="@(ReadOnly || _saving)">
+            <PolicyActions Details="_draft" ReadOnly="@(ReadOnly || _saving)" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked" Disabled="_saving">@(ReadOnly ? UiText.Get(LocKeys.Ui.ActionFiles.Close) : UiText.Get(LocKeys.Common.Cancel))</MudButton>
+        @if (!ReadOnly)
+        {
+            <MudButton OnClick="OnSaveClicked" Disabled="_saving" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save">@(_saving ? UiText.Get(LocKeys.Action.Saving) : UiText.Get(LocKeys.Ui.PolicyActionsDialog.SaveActions))</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private void OnCancelClicked() => MudDialog.Cancel();
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter, EditorRequired] public PolicyDetailsDto Details { get; set; } = null!;
+    [Parameter, EditorRequired] public Func<PolicyDetailsDto, Task<ServiceResult>> SaveChanges { get; set; } = null!;
+    [Parameter] public bool ReadOnly { get; set; }
+    private PolicyDetailsDto _draft = null!;
+    private MudForm _form = null!;
+    private bool _saving;
+
+    protected override void OnInitialized() => _draft = PolicyActionEditor.CreateDraft(Details);
+
+    private async Task OnSaveClicked()
+    {
+        if (_saving || ReadOnly) return;
+        await _form.ValidateAsync();
+        if (!_form.IsValid) return;
+        _saving = true;
+        var result = await SaveChanges(_draft);
+        if (result.Success) MudDialog.Close(DialogResult.Ok(_draft.Policy.PolicyActions));
+        else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _saving = false;
+    }
+}

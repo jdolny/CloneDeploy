@@ -1,0 +1,23 @@
+@using CloneDeploy_Server.WinPe
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText>@UiText.Get(LocKeys.Ui.WinPeInstallDialog.DownloadAndInstallMicrosoftADKAndWinPE0On, (ToolchainSpecDto.MicrosoftDefault.Version))</MudText>
+            <MudText>@Loc[LocKeys.Ui.WinPeInstallDialog.TheApplicationUsesThisPinnedVersionRegardlessOfThe]</MudText>
+            <MudText>@Loc[LocKeys.Ui.WinPeInstallDialog.BySelectingAcceptAndInstallYouAcceptTheMicrosoft]</MudText>
+            <MudLink Href="https://learn.microsoft.com/en-us/windows-hardware/get-started/adk-install" Target="_blank">@Loc[LocKeys.Ui.WinPeInstallDialog.MicrosoftADKDownloadsAndLicenseInformation]</MudLink>
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.WinPeInstallDialog.InstallationWaitsForTheCurrentBuildToFinishAnd]</MudText>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="Accept" Variant="Variant.Filled" Color="Color.Primary">@Loc[LocKeys.Ui.WinPeInstallDialog.AcceptAndInstall]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private void Cancel() => MudDialog.Cancel();
+    private void Accept() => MudDialog.Close(DialogResult.Ok(true));
+}

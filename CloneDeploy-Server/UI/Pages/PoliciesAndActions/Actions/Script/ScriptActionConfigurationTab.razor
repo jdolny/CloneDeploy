@@ -1,0 +1,154 @@
+@using CloneDeploy_Agent.Contracts
+@inject ActionService Service
+
+<PolicyActionEditScope Context="canEdit">
+@if (_model is null)
+{
+    @if (_loadingAction) { <MudProgressLinear Indeterminate="true"/> }
+    else { <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.CommandActionConfigurationTab.UnableToLoadActionSettingsReopenThisTabTo]</MudAlert> }
+}
+else
+{
+    <div class="section-action-bar"><MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="OnSaveClicked" Disabled="@(!canEdit || (_loading || _saving))">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton></div>
+    <MudForm @ref="_form" Disabled="@(!canEdit || (_saving))">
+            <MudStack Spacing="6">
+                <div>
+                    <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.Ui.NavMenu.Script]</MudText>
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <MudSelect T="ActionScriptType" @bind-Value="ScriptType" Label="@Loc[LocKeys.Ui.ScriptActionConfigurationTab.ScriptType]" Variant="Variant.Outlined">
+                                @foreach (var type in ScriptRuntime.SupportedTypes)
+                                {
+                                    <MudSelectItem Value="type">@ScriptTypeLabels.GetLabel(type)</MudSelectItem>
+                                }
+                            </MudSelect>
+                            @if (_model.ScriptType == ActionScriptType.Powershell7)
+                            {
+                                <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.ScriptActionConfigurationTab.PowerShell7MustBeInstalledOnTheTargetDevice]</MudText>
+                            }
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudSelect T="ScriptPurpose?" @bind-Value="Purpose" Label="@Loc[LocKeys.Ui.ScriptActionConfigurationTab.Purpose]" Variant="Variant.Outlined"
+                                       Required="true" RequiredError="@Loc[LocKeys.Ui.ScriptActionConfigurationTab.ChooseOneScriptPurpose]">
+                                <MudSelectItem T="ScriptPurpose?" Value="@((ScriptPurpose?)ScriptPurpose.Deployment)">@Loc[LocKeys.Ui.ManageDeploymentRulePage.Deployment]</MudSelectItem>
+                                <MudSelectItem T="ScriptPurpose?" Value="@((ScriptPurpose?)ScriptPurpose.Condition)">@Loc[LocKeys.Ui.PolicyActionsTab.Condition]</MudSelectItem>
+                                <MudSelectItem T="ScriptPurpose?" Value="@((ScriptPurpose?)ScriptPurpose.CustomInventory)">@Loc[LocKeys.Device.CustomInventory]</MudSelectItem>
+                            </MudSelect>
+                            @if (_model.IsCondition && _model.AddInventoryCollection)
+                            {
+                                <MudText Color="Color.Warning" Typo="Typo.caption">@Loc[LocKeys.Ui.ScriptActionConfigurationTab.ThisScriptHasBothConditionAndInventoryEnabledChoose]</MudText>
+                            }
+                        </MudItem>
+                        <MudItem xs="12" md="6"><MudTextField @bind-Value="_model.WorkingDirectory" Label="@Loc[LocKeys.Ui.CommandActionConfigurationTab.WorkingDirectory]" Variant="Variant.Outlined" /></MudItem>
+                        <MudItem xs="12" md="12">
+                            <ScriptContentsEditor @key="_model.Guid" @bind-Value="_model.ScriptContents"
+                                                  ScriptType="_model.ScriptType" Disabled="@(!canEdit || _saving)"
+                                                  Error="@(_validateContents && string.IsNullOrWhiteSpace(_model.ScriptContents))" />
+                        </MudItem>
+                        <MudItem xs="12" md="12"><MudTextField @bind-Value="_model.Arguments" Label="@Loc[LocKeys.Ui.CommandActionConfigurationTab.Arguments]" Variant="Variant.Outlined" Lines="2" /></MudItem>
+                    </MudGrid>
+                </div>
+                <MudDivider/>
+                <div>
+                    <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.Policy.Execution]</MudText>
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6"><MudNumericField T="int" @bind-Value="_model.Timeout" Label="@Loc[LocKeys.Ui.CommandActionConfigurationTab.Timeout]" Min="0" Variant="Variant.Outlined" /></MudItem>
+                        <MudItem xs="12" md="6"><MudTextField @bind-Value="_model.SuccessCodes" Label="@Loc[LocKeys.Ui.CommandActionConfigurationTab.SuccessExitCodes]" Variant="Variant.Outlined" Required="true" Validation="@(new Func<string, string?>(ValidateSuccessCodes))" /></MudItem>
+                        <MudItem xs="12">
+                            <MudSelect T="int?" @bind-Value="_model.ManagedCredentialId" Label="@Loc[LocKeys.Ui.CommandActionConfigurationTab.RunAs]" Clearable="true" Variant="Variant.Outlined" Disabled="IsMacScript">
+                                @foreach (var credential in _credentials)
+                                {
+                                    <MudSelectItem T="int?" Value="@((int?)credential.Id)">@credential.Name (@credential.Username)</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="6"><MudCheckBox @bind-Value="_model.RedirectStdOut" Label="@Loc[LocKeys.Ui.CommandActionConfigurationTab.LogStandardOutput]" Color="Color.Primary" /></MudItem>
+                        <MudItem xs="12" md="6"><MudCheckBox @bind-Value="_model.RedirectStdError" Label="@Loc[LocKeys.Ui.CommandActionConfigurationTab.LogStandardError]" Color="Color.Primary" /></MudItem>
+                    </MudGrid>
+                </div>
+            </MudStack>
+        </MudForm>
+
+
+}
+
+
+</PolicyActionEditScope>
+
+@code {
+    [Parameter] public EventCallback OnSaved { get; set; }
+    private ScriptAction _model = null!;
+    private bool IsMacScript => _model.ScriptType is ActionScriptType.Bash or ActionScriptType.Zsh;
+    private ActionScriptType ScriptType
+    {
+        get => _model.ScriptType;
+        set
+        {
+            _model.ScriptType = value;
+            if (IsMacScript) _model.ManagedCredentialId = null;
+        }
+    }
+    private bool _loadingAction = true;
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Service.GetScriptAsync(ScriptAction.Id);
+        if (result.Success && result.HasData)
+        {
+            await LoadCatalogsAsync();
+            _model = result.Data;
+        }
+        else if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loadingAction = false;
+    }
+
+    [Parameter, EditorRequired] public ScriptAction ScriptAction { get; set; } = null!;
+    private MudForm _form = null!;
+    private bool _saving;
+    private bool _validateContents;
+    private bool _loading = true;
+    private List<ManagedCredential> _credentials = [];
+    private enum ScriptPurpose { Deployment, Condition, CustomInventory }
+    private ScriptPurpose? Purpose
+    {
+        get => (_model.IsCondition, _model.AddInventoryCollection) switch
+        {
+            (false, false) => ScriptPurpose.Deployment,
+            (true, false) => ScriptPurpose.Condition,
+            (false, true) => ScriptPurpose.CustomInventory,
+            _ => null
+        };
+        set
+        {
+            if (value is null) return;
+            _model.IsCondition = value == ScriptPurpose.Condition;
+            _model.AddInventoryCollection = value == ScriptPurpose.CustomInventory;
+        }
+    }
+    private async Task LoadCatalogsAsync()
+    {
+        _loading = true;
+        var result = await Service.GetCredentialsAsync();
+        _credentials = result.Data ?? [];
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loading = false;
+    }
+    private static string? ValidateSuccessCodes(string? value) => !string.IsNullOrWhiteSpace(value) && value.Split(',').All(x => int.TryParse(x.Trim(), out _))
+        ? null : UiText.Get(LocKeys.Ui.CommandActionConfigurationTab.EnterCommaSeparatedIntegerExitCodes);
+    private async Task OnSaveClicked()
+    {
+        if (_saving || _loading) return;
+        _saving = true;
+        await _form.ValidateAsync();
+        _validateContents = true;
+        if (!_form.IsValid || string.IsNullOrWhiteSpace(_model.ScriptContents))
+        {
+            _saving = false;
+            return;
+        }
+        var result = await Service.UpdateScriptAsync(_model);
+        _saving = false;
+        if (result.Success) await OnSaved.InvokeAsync();
+        Snackbar.Add(result.Success ? Loc[LocKeys.Action.ConfigurationSaved] : Loc[result.Error!.Code, result.Error.Args], result.Success ? Severity.Success : Severity.Error);
+    }
+}

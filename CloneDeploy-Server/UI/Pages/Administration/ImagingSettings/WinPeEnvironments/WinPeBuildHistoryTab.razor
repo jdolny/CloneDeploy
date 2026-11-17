@@ -1,0 +1,121 @@
+@inject WinPeService Service
+<MudDataGrid T="StableGridRow<WinPeBuildRowDto>" Items="_rows.Items" Dense="true" Hover="true"
+             RowsPerPage="10" QuickFilter="@(row => Matches(row.Value))" Class="device-list-grid winpe-grid" Outlined="true" Elevation="0">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.History" Color="Color.Primary" Class="mr-2"/>
+        <MudText Typo="Typo.h6">@(DefinitionId == 0 ? UiText.Get(LocKeys.Ui.WinPeBuildHistoryTab.Builds) : UiText.Get(LocKeys.Ui.WinPeBuildHistoryTab.BuildResults))</MudText><MudSpacer/>
+        <MudTextField @bind-Value="_search" Immediate="true" Placeholder="@Loc[LocKeys.Ui.WinPeBuildHistoryTab.SearchBuilds]" Clearable="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense"/>
+    </ToolBarContent>
+    <Columns>
+        <TemplateColumn Title="@Loc[LocKeys.Device.Build]">
+            <CellTemplate>
+                <MudLink Href="@($"/images/winpe/{context.Item.Value.Build.DefinitionId}")">@Name(context.Item.Value.Build.DefinitionId) @(IsBase(context.Item.Value) ? UiText.Get(LocKeys.Ui.WinPeBuildHistoryTab.Version0, (context.Item.Value.Build.Number)) : "")</MudLink>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.WinPeBuildHistoryTab.Created]">
+            <CellTemplate>@context.Item.Value.Build.CreatedAtUtc.ToLocalTime().ToString("g")<MudText Typo="Typo.caption">@context.Item.Value.Build.CreatedBy</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Image.VersionStatus]">
+            <CellTemplate>
+                <MudText>@(context.Item.Value.Status.State switch { "SavingToStorage" => UiText.Get(LocKeys.Ui.WinPeBuildHistoryTab.SavingToStorage), "StorageFailed" => UiText.Get(LocKeys.Ui.WinPeBuildHistoryTab.StorageTransferFailed), "BootPreparationFailed" => UiText.Get(LocKeys.Ui.WinPeBuildHistoryTab.BootPreparationFailed), "Ready" when !IsBase(context.Item.Value) && DownloadBuild(context.Item.Value)?.Build.Id != context.Item.Value.Build.Id => UiText.Get(LocKeys.Ui.WinPeBuildHistoryTab.PreparingBootImage), _ => context.Item.Value.Status.State })</MudText>
+                <MudText Typo="Typo.caption">@context.Item.Value.Status.Message</MudText>
+                @if (context.Item.Value.Status.State is "Running" or "SavingToStorage")
+                {
+                    <MudProgressLinear Indeterminate="true"/>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.WinPeBuildHistoryTab.DownloadsActions]">
+            <CellTemplate>
+                <MudStack Spacing="1">
+                    @if (DownloadBuild(context.Item.Value) is { Status.State: "Ready" } available)
+                    {
+                        @if (available.Build.Id != context.Item.Value.Build.Id)
+                        {
+                            <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.WinPeBuildHistoryTab.CurrentBootImageReplacementIsNotReadyYet]</MudText>
+                        }
+                        @foreach (var file in available.Status.Artifacts.Where(x => x.Name is "winpe-x64.iso" or "winpe-arm64.iso"))
+                        {
+                            <MudLink Href="@($"/api/ui/winpe/builds/{available.Build.Id}/{file.Name}")" Target="_blank">@Label(file.Name) (@Size(file.Size))
+                            </MudLink>
+                        }
+
+                    }
+                    @if (context.Item.Value.Status.State is "Queued" or "Running")
+                    {
+                        <MudButton OnClick="@(() => OnCancelClicked(context.Item.Value.Build.Id))" Disabled="_busy" Size="MudBlazor.Size.Small">@Loc[LocKeys.Ui.WinPeBuildHistoryTab.CancelBuild]</MudButton>
+                    }
+                    @if (context.Item.Value.Status.State is "StorageFailed" or "BootPreparationFailed")
+                    {
+                        <MudButton OnClick="@(() => OnRetryStorageClicked(context.Item.Value.Build.Id))" Disabled="_busy" Size="MudBlazor.Size.Small" Color="Color.Primary">
+                            @Loc[LocKeys.Ui.DriverFilesTab.RetryPreparation]
+                        </MudButton>
+                    }
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <NoRecordsContent>
+        <MudText>@Loc[LocKeys.Ui.WinPeBuildHistoryTab.NoBuildsYetSaveTheEnvironmentAndSelectBuild]</MudText>
+    </NoRecordsContent>
+    <PagerContent>
+        <MudDataGridPager T="StableGridRow<WinPeBuildRowDto>"/>
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    private readonly StableGridRows<WinPeBuildRowDto, Guid> _rows = new(x => x.Build.Id);
+    protected override void OnParametersSet() => _rows.Update(VisibleBuilds);
+    [Parameter, EditorRequired] public WinPeCatalogDto Catalog { get; set; } = null!;
+    [Parameter] public int DefinitionId { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+    private bool _busy;
+    private string? _search;
+    private bool Matches(WinPeBuildRowDto row) => string.IsNullOrWhiteSpace(_search) || $"{Name(row.Build.DefinitionId)} {row.Build.Number} {row.Status.State} {row.Status.Message}".Contains(_search, StringComparison.OrdinalIgnoreCase);
+    private string Name(int id) => Catalog.Definitions.FirstOrDefault(x => x.Id == id)?.Name ?? UiText.Get(LocKeys.Ui.WinPeBuildHistoryTab.WinPE);
+    private bool IsBase(WinPeBuildRowDto row) => Catalog.Definitions.Any(x => x.Id == row.Build.DefinitionId && x.IsBase);
+    private IEnumerable<WinPeBuildRowDto> VisibleBuilds => Catalog.Builds
+        .Where(x => !IsBase(x) && (DefinitionId == 0 || x.Build.DefinitionId == DefinitionId))
+        .GroupBy(x => x.Build.DefinitionId)
+        .SelectMany(group => Catalog.Definitions.Any(d => d.Id == group.Key && d.IsBase)
+            ? group : group.OrderByDescending(x => x.Build.Number).Take(1));
+    private WinPeBuildRowDto? DownloadBuild(WinPeBuildRowDto row) => IsBase(row) ? row :
+        Catalog.Builds.FirstOrDefault(x => x.Build.Id == Catalog.Definitions.FirstOrDefault(d => d.Id == row.Build.DefinitionId)?.PublishedBuildId);
+    private static string Label(string name) => name == "winpe-arm64.iso" ? "ARM64 ISO" : "x64 ISO";
+    private static string Size(long bytes) => bytes > 1024 * 1024 ? UiText.Get(LocKeys.Ui.DriverLibraryTab.Text0N1MB, bytes / 1048576d) : UiText.Get(LocKeys.Ui.DriverLibraryTab.Text0N1KB, bytes / 1024d);
+
+    private async Task OnCancelClicked(Guid id)
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var result = await Service.CancelAsync(id);
+            Snackbar.Add(result.Success ? UiText.Get(LocKeys.Ui.WinPeBuildHistoryTab.CancellationRequested) : Loc[result.Error!.Code, result.Error.Args], result.Success ? Severity.Info : Severity.Error);
+            await Changed.InvokeAsync();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task OnRetryStorageClicked(Guid id)
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var result = await Service.RetryStorageAsync(id);
+            Snackbar.Add(result.Success ? UiText.Get(LocKeys.Ui.WinPeBuildHistoryTab.BuildPreparationQueued) : Loc[result.Error!.Code, result.Error.Args], result.Success ? Severity.Info : Severity.Error);
+            await Changed.InvokeAsync();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+}
+

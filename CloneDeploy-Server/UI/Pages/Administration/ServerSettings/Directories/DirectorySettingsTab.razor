@@ -1,0 +1,151 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@inject DirectoryService Sources
+@inject CloneDeploy_Server.Backend.Services.Scheduler.SchedulerService ScheduledTaskService
+
+@if (_selectedId is { } selectedId)
+{
+    <div class="py-4"><ManageDirectoryPage @key="selectedId" Id="selectedId" Tab="@_selectedTab" Closed="BackAsync" /></div>
+}
+else
+{
+<div class="section-action-bar">
+    <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+        <MudButton OnClick="@Snackbar.GuardAction(() => _busy || _sources.Any(x => x.Provider == DirectoryProvider.ActiveDirectory), UiText.Get(LocKeys.Ui.DirectorySettingsTab.AnLDAPDirectoryAlreadyExistsEditTheExistingConnection), () => Create(DirectoryProvider.ActiveDirectory))" Disabled="@(_busy)" StartIcon="@Icons.Material.Filled.Add">@Loc[LocKeys.Ui.DirectorySettingsTab.AddLDAPDirectory]</MudButton>
+    <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Style="align-self: auto;" Disabled="_busy" aria-label="@Loc[LocKeys.Ui.DirectorySettingsTab.MoreDirectoryConnectionActions]">
+        <MudMenuItem OnClick="@Snackbar.GuardAction(() => _busy || _sources.Any(x => x.Provider == DirectoryProvider.EntraId), UiText.Get(LocKeys.Ui.DirectorySettingsTab.AnEntraDirectoryAlreadyExistsEditTheExistingConnection), () => Create(DirectoryProvider.EntraId))" Disabled="@(_busy)">@Loc[LocKeys.Ui.DirectorySettingsTab.AddEntraDirectory]</MudMenuItem>
+    </MudMenu>
+    </MudButtonGroup>
+</div>
+
+@if (_message is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@_message <MudButton OnClick="OnLoadClicked" Disabled="_busy">@Loc[LocKeys.Common.Retry]</MudButton></MudAlert>
+}
+
+<MudDataGrid T="DirectorySource" Items="_sources" Loading="_busy" Dense="true" Hover="true" Elevation="0"
+             RowsPerPage="@Constants.UI.DefaultPageSize" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu"
+             ColumnResizeMode="ResizeMode.Column" QuickFilter="MatchesSearch" Class="device-list-grid mb-8" Outlined="true">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.AccountTree" Color="Color.Primary"/>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ServerAdministrationPage.DirectoryConnections]</MudText>
+
+        <MudSpacer />
+        <MudTextField T="string" @bind-Value="_search" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true" Class="mt-0"  Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true"/>
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]" ><CellTemplate><MudLink OnClick="@(() => Open(context.Item.Id, "configuration"))">@context.Item.Name</MudLink></CellTemplate></PropertyColumn>
+        <PropertyColumn Property="@(x => x.Provider == DirectoryProvider.ActiveDirectory ? UiText.Get(LocKeys.Ui.DirectorySettingsTab.ActiveDirectoryLDAP) : UiText.Get(LocKeys.Ui.DirectorySettingsTab.MicrosoftEntraID))" Title="@Loc[LocKeys.StorageProvider.Type]" />
+        <PropertyColumn Property="x => x.LdapSettings == null ? string.Empty : x.LdapSettings.Host" Title="@Loc[LocKeys.Ui.SiteServiceStatusTab.Hostname]" />
+        <PropertyColumn Property="@(x => x.ApplicationAccessOnly ? UiText.Get(LocKeys.Ui.DirectoryConnectionDialog.ApplicationAccessOnly) : UiText.Get(LocKeys.Ui.DirectorySettingsTab.FullDirectorySync))" Title="@Loc[LocKeys.Ui.DirectorySettingsTab.Mode]" />
+        <PropertyColumn Property="x => x.Description" Title="@Loc[LocKeys.Common.Description]" />
+        <TemplateColumn Title="@Loc[LocKeys.StorageProvider.Enabled]"><CellTemplate>
+            <MudText>@context.Item.IsEnabled</MudText>
+        </CellTemplate></TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <div style="display: inline-flex; align-items: center; white-space: nowrap;">
+                <MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Ui.DirectorySettingsTab.SyncNow]">
+                    <MudIconButton Icon="@Icons.Material.Filled.Sync" Color="Color.Primary" aria-label="@Loc[LocKeys.Ui.DirectorySettingsTab.SyncNow]"
+                                   Disabled="@(_busy)" OnClick="@Snackbar.GuardAction(() => _busy || !context.Item.IsEnabled, UiText.Get(LocKeys.Ui.DirectorySettingsTab.EnableThisDirectoryConnectionBeforeSynchronizingIt), () => OnSyncClicked(context.Item))" />
+                </MudTooltip>
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="@Loc[LocKeys.Ui.DirectorySettingsTab.DeleteDirectoryConnection]" Disabled="_busy" OnClick="@(() => Delete(context.Item))" />
+                <MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Ui.DirectorySettingsTab.BrowseDirectory]">
+                    <MudIconButton Icon="@Icons.Material.Filled.AccountTree" Color="Color.Primary" aria-label="@Loc[LocKeys.Ui.DirectorySettingsTab.BrowseDirectory]"
+                                   OnClick="@(() => Open(context.Item.Id, "users"))" />
+                </MudTooltip>
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent><MudDataGridPager T="DirectorySource" /></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Ui.DirectorySettingsTab.NoDirectoryConnectionsFound]</MudText></NoRecordsContent>
+</MudDataGrid>
+}
+
+@code {
+    [Parameter] public int? DirectoryId { get; set; }
+    [Parameter] public string? DirectoryTab { get; set; }
+    private (int?, string?)? _loadedRoute;
+    private int? _selectedId;
+    private string? _selectedTab;
+    protected override void OnParametersSet()
+    {
+        if (_loadedRoute == (DirectoryId, DirectoryTab)) return;
+        _loadedRoute = (DirectoryId, DirectoryTab);
+        _selectedId = DirectoryId;
+        _selectedTab = DirectoryTab;
+    }
+    private void Open(int id, string tab) { _selectedId = id; _selectedTab = tab; }
+    private async Task BackAsync()
+    {
+        _selectedId = null;
+        _selectedTab = null;
+
+        await OnLoadClicked();
+    }
+    private async Task Create(DirectoryProvider provider)
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var parameters = new DialogParameters<NewDirectoryDialog> { { x => x.Provider, provider } };
+            var dialog = await Dialog.ShowAsync<NewDirectoryDialog>(parameters, Constants.UI.StandardDialogBox);
+            if (await dialog.Result is { Canceled: false, Data: int id })
+                Open(id, "configuration");
+        }
+        finally { _busy = false; }
+    }
+    private async Task Delete(DirectorySource source)
+    {
+        if (_busy || await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.DirectorySettingsTab.RemoveDirectory), UiText.Get(LocKeys.Ui.DirectorySettingsTab.ThisRemovesImportedDirectoryObjectsMembershipsAndDirectoryPolicy), yesText: UiText.Get(LocKeys.Ui.DeviceGroupPowerSchedulesTab.Remove), cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+        _busy = true;
+        try
+        {
+            var result = await Sources.DeleteAsync(source.Id);
+            if (!result.Success) Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error); else await OnLoadClicked();
+        }
+        finally { _busy = false; }
+    }
+    private List<DirectorySource> _sources = [];
+    private bool _busy = true;
+    private string? _message;
+    private string? _search;
+
+    protected override Task OnInitializedAsync() => OnLoadClicked();
+
+    private bool MatchesSearch(DirectorySource source) => string.IsNullOrWhiteSpace(_search)
+        || source.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)
+        || source.Description.Contains(_search, StringComparison.OrdinalIgnoreCase)
+        || (source.LdapSettings?.Host.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false);
+
+    private async Task OnLoadClicked()
+    {
+        _busy = true;
+        _message = null;
+        var result = await Sources.GetSourcesAsync();
+        if (result.Success)
+            _sources = result.Data!;
+        else
+            _message = Loc[result.Error!.Code, result.Error.Args];
+        _busy = false;
+    }
+
+    private async Task OnSyncClicked(DirectorySource source)
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var result = await ScheduledTaskService.RunTargetNowAsync(ScheduledTaskType.DirectorySync, source.Id);
+            if (!result.Success)
+            {
+                Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+                return;
+            }
+            Snackbar.Add(UiText.Get(LocKeys.Ui.DirectorySettingsTab.DirectorySyncQueuedViewItsProgressInTheTask), Severity.Success);
+        }
+        finally { _busy = false; }
+    }
+}

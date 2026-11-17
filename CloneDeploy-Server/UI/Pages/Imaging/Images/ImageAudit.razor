@@ -1,0 +1,57 @@
+@inject ImagingService ImagingService
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    <MudText Typo="Typo.caption" Class="mb-3">@Loc[LocKeys.Image.AuditLimit]</MudText>
+
+    <MudDataGrid RowsPerPage="@Constants.UI.DefaultPageSize" Dense="true" Hideable="false" HorizontalScrollbar="true" ColumnsPanelReordering="false"
+                 ShowMenuIcon="false" T="AuditLog" Items="@AuditLogs" ColumnResizeMode="ResizeMode.Column"
+                 Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" Elevation="0" Outlined="true" Class="device-list-grid" QuickFilter="@(x => string.IsNullOrWhiteSpace(_gridSearch0) || (x.UserName + " " + x.AuditType + " " + x.ObjectName).Contains(_gridSearch0.Trim(), StringComparison.OrdinalIgnoreCase))"><ToolBarContent><MudIcon Icon="@Icons.Material.Outlined.History" Color="Color.Primary"/><MudText Typo="Typo.h6">@Loc[LocKeys.Policy.AuditHistory]</MudText><MudSpacer/><MudTextField T="string" @bind-Value="_gridSearch0" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" aria-label="@Loc[LocKeys.Ui.DriverAudit.SearchAuditHistory]" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/></ToolBarContent>
+        <PagerContent>
+            <MudDataGridPager T="AuditLog"/>
+        </PagerContent>
+        <Columns>
+            <PropertyColumn Property="x => x.AuditType" Title="@Loc[LocKeys.Image.AuditType]"></PropertyColumn>
+            <PropertyColumn Property="x => x.ObjectName" Title="@Loc[LocKeys.Image.ObjectName]"></PropertyColumn>
+            <PropertyColumn Property="x => x.ObjectType" Title="@Loc[LocKeys.Image.ObjectType]"></PropertyColumn>
+            <PropertyColumn Property="x => x.ObjectJson" Title="@Loc[LocKeys.Image.ObjectJson]"></PropertyColumn>
+            <PropertyColumn Property="x => x.LoggedAtUtc" Title="@Loc[LocKeys.Image.LoggedAtUtc]"></PropertyColumn>
+            <PropertyColumn Property="x => x.UserName" Title="@Loc[LocKeys.Auth.UserName]"></PropertyColumn>
+        </Columns>
+        <NoRecordsContent>
+            <MudText>@Loc[LocKeys.Image.NoAuditLogs]</MudText>
+        </NoRecordsContent>
+    </MudDataGrid>
+}
+
+@code {
+    private string? _gridSearch0;
+
+
+    [Parameter] public int ImageId { get; set; }
+    [Parameter] public int? ProfileId { get; set; }
+    private IEnumerable<AuditLog> AuditLogs = [];
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        var result = ProfileId is int id
+            ? await ImagingService.GetProfileAuditAsync(id)
+            : await ImagingService.GetAuditAsync(ImageId);
+        if (!result.Success)
+        {
+            AuditLogs = [];
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        else if (result.HasData)
+            AuditLogs = result.Data;
+
+        _loading = false;
+    }
+
+}

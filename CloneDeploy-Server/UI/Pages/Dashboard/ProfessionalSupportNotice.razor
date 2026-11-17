@@ -1,0 +1,14 @@
+@inject ProfessionalSupport Support
+
+@if (Support.Status is { } status && status.ExpirationNotice(DateOnly.FromDateTime(DateTime.UtcNow)) is { } notice)
+{
+    <MudAlert Severity="@(status.Active ? Severity.Warning : Severity.Error)" Class="mb-4">
+        <MudText>@notice</MudText>
+        <MudText Typo="Typo.body2">@UiText.Get(LocKeys.Ui.ProfessionalSupportNotice.LastVerified0CachedCoverage, (status.VerifiedAt?.ToString("MM-dd-yyyy HH:mm 'UTC'")))</MudText>
+        @if (status.Error is not null)
+        {
+            <MudText Typo="Typo.body2">@UiText.Label(status.Error)</MudText>
+        }
+        <MudLink Href="/administration/server/support">@Loc[LocKeys.Ui.ProfessionalSupportNotice.ReviewCoverageAndContactSupport]</MudLink>
+    </MudAlert>
+}

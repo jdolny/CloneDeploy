@@ -1,0 +1,56 @@
+@inject ServerSettingsUiService Settings
+
+<div class="section-action-bar">
+    <MudButton OnClick="@Snackbar.GuardAction(() => !_loaded || _busy || !Current.Valid, !_loaded ? UiText.Get(LocKeys.Ui.UserGroupDirectoryTab.SettingsCouldNotBeLoadedRefreshAndTryAgain) : UiText.Get(LocKeys.Ui.DeploymentPerformanceSettingsTab.Use48Or16MiBBlocks14), OnSaveClicked)" Disabled="@(_busy)" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+</div>
+<MudPaper Class="pa-4" Elevation="0" Outlined="true">
+    @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+    <MudSwitch T="bool" @bind-Value="_verify" Disabled="@(!_loaded || _busy)" Color="Color.Primary">@Loc[LocKeys.Ui.DeploymentPerformanceSettingsTab.VerifyImageIntegrityDuringDeployment]</MudSwitch>
+    <MudText Class="mt-3">@Loc[LocKeys.Ui.DeploymentPerformanceSettingsTab.HTTPSFFUReads]</MudText>
+    <MudSelect T="int" Value="_block" ValueChanged="SetBlock" Label="@Loc[LocKeys.Ui.DeploymentPerformanceSettingsTab.BlockSizeMiB48Or16]" Disabled="@(!_loaded || _busy)">
+        @foreach (var value in new[] { 4, 8, 16 }) { <MudSelectItem T="int" Value="value">@value</MudSelectItem> }
+    </MudSelect>
+    <MudSelect T="int" Value="_parallel" ValueChanged="SetParallel" Label="@Loc[LocKeys.Ui.DeploymentPerformanceSettingsTab.ParallelReads141DisablesReadAhead]" Disabled="@(!_loaded || _busy)">
+        @foreach (var value in Enumerable.Range(1, 4)) { <MudSelectItem T="int" Value="value">@value</MudSelectItem> }
+    </MudSelect>
+    <MudSelect T="int" @bind-Value="_cache" Label="@Loc[LocKeys.Ui.DeploymentPerformanceSettingsTab.CachePerDeviceMiB]" Disabled="@(!_loaded || _busy)">
+        @foreach (var value in CacheChoices) { <MudSelectItem T="int" Value="value">@value</MudSelectItem> }
+    </MudSelect>
+
+
+</MudPaper>
+@code {
+    private bool _verify = true, _loaded, _busy;
+    private int _block = 8, _cache = 64, _parallel = 4;
+    private IEnumerable<int> CacheChoices => Enumerable.Range(32, 225)
+        .Where(value => new DeploymentPerformanceOptions(_verify, _block, value, _parallel).Valid);
+    private void SetBlock(int value) { _block = value; AdjustCache(); }
+    private void SetParallel(int value) { _parallel = value; AdjustCache(); }
+    private void AdjustCache()
+    {
+        if (!Current.Valid) _cache = CacheChoices.First(value => value >= _cache);
+    }
+    private string? _error;
+    private DeploymentPerformanceOptions _original = new();
+    private DeploymentPerformanceOptions Current => new(_verify, _block, _cache, _parallel);
+    protected override Task OnInitializedAsync() => OnLoadClicked();
+    private async Task OnLoadClicked()
+    {
+        _busy = true; _loaded = false; _error = null;
+        try {
+            var result = await Settings.ReadDeploymentPerformanceAsync();
+            if (result.Success) { _original = result.Data!; _verify = _original.VerifyImage; _block = _original.BlockMiB; _cache = _original.CacheMiB; _parallel = _original.ParallelReads; _loaded = true; }
+            else _error = Loc[result.Error.Code, result.Error.Args];
+        } finally { _busy = false; }
+    }
+    private async Task OnSaveClicked()
+    {
+        if (_busy || !_loaded) return;
+        _busy = true; _error = null;
+        try {
+            var result = await Settings.SaveDeploymentPerformanceAsync(Current, _original);
+            if (result.Success) { _original = result.Data!; Snackbar.Add(UiText.Get(LocKeys.Ui.DeploymentPerformanceSettingsTab.DeploymentPerformanceSettingsSaved), Severity.Success); }
+            else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        } finally { _busy = false; }
+    }
+}

@@ -1,0 +1,55 @@
+@using CloneDeploy_Server.UI.Pages.Devices.Devices.Dialogs
+<MudDataGrid T="Attachment" Items="Attachments" Dense="true" Hover="true" Elevation="0" Class="device-list-grid"
+             RowsPerPage="@Constants.UI.DefaultPageSize" HorizontalScrollbar="true">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Device.Attachments]</MudText>
+        <MudSpacer />
+        <DeviceTabAction SectionId="ActionSectionId">
+        <PermissionView Policy="@Constants.Permissions.DeviceEdit">
+            <MudButton OnClick="OnUploadClicked" Disabled="_dialogOpen" StartIcon="@Icons.Material.Filled.UploadFile" Variant="Variant.Filled"
+                       Color="Color.Primary">@Loc[LocKeys.Device.UploadAFile]</MudButton>
+        </PermissionView>
+        </DeviceTabAction>
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]">
+            <CellTemplate><MudLink Href="@($"api/ui/devices/{Device.Id}/attachments/{context.Item.Id}")" download="@context.Item.Name">@context.Item.Name</MudLink></CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.UserName" Title="@Loc[LocKeys.Device.AttachedBy]" />
+        <PropertyColumn Property="x => x.AttachedAtUtc" Title="@Loc[LocKeys.Device.Attached]">
+            <CellTemplate>@context.Item.AttachedAtUtc.ToLocalTime().ToString("g")</CellTemplate>
+        </PropertyColumn>
+    </Columns>
+    <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Device.NoAttachmentsAreLinkedToThisDevice]</MudText></NoRecordsContent>
+    <PagerContent><MudDataGridPager T="Attachment" /></PagerContent>
+</MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+    [Parameter] public object? ActionSectionId { get; set; }
+    private bool _dialogOpen;
+    private IEnumerable<Attachment> Attachments => Device.Attachments.Select(x => x.Attachment).OfType<Attachment>().OrderBy(x => x.Name);
+
+    private async Task OnUploadClicked()
+    {
+        if (_dialogOpen) return;
+        _dialogOpen = true;
+        var deviceId = Device.Id;
+        try
+        {
+            var parameters = new DialogParameters<DeviceAttachmentUploadDialog>
+            {
+                { x => x.DeviceId, deviceId },
+                { x => x.Attached, EventCallback.Factory.Create<Attachment>(this, attachment =>
+                    {
+                        if (Device.Id == deviceId && !Device.Attachments.Any(x => x.AttachmentId == attachment.Id))
+                            Device.Attachments.Add(new DeviceAttachment { DeviceId = deviceId, AttachmentId = attachment.Id, Attachment = attachment });
+                    }) }
+            };
+            var dialog = await Dialog.ShowAsync<DeviceAttachmentUploadDialog>(Loc[LocKeys.Device.UploadAFile], parameters,
+                new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Small, BackdropClick = false, CloseOnEscapeKey = false });
+            await dialog.Result;
+        }
+        finally { _dialogOpen = false; }
+    }
+}

@@ -1,0 +1,80 @@
+@inject AgentService Agents
+
+    @if (_error is not null)
+    {
+        <MudAlert Severity="Severity.Error">@_error</MudAlert>
+    }
+    <MudDataGrid T="AgentPolicyHistoryRowDto" Items="_runs" Loading="_loading" Dense="true" RowsPerPage="10" Class="device-list-grid" Hover="true" Elevation="0">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">@Loc[LocKeys.Device.PolicyHistory]</MudText>
+            <MudSpacer />
+            <MudButton OnClick="LoadPolicyHistory" Disabled="_loading" StartIcon="@Icons.Material.Filled.Refresh">@Loc[LocKeys.Dashboard.Refresh]</MudButton>
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Device.Policy]"/>
+            <TemplateColumn Title="@Loc[LocKeys.Device.Started]">
+                <CellTemplate>@context.Item.StartedAtUtc.ToLocalTime().ToString("g")</CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="@Loc[LocKeys.Device.Result]">
+                <CellTemplate>@Status(context.Item.Result)</CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="@Loc[LocKeys.Device.Details]" Sortable="false" Filterable="false">
+                <CellTemplate>
+                    <MudButton Color="Color.Primary" OnClick="@(() => ViewResultAsync(context.Item))">@Loc[LocKeys.Device.ViewResult]</MudButton>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="AgentPolicyHistoryRowDto"/>
+        </PagerContent>
+        <NoRecordsContent>
+            <MudText>@Loc[LocKeys.Device.NoPolicyRunsReported]</MudText>
+        </NoRecordsContent>
+    </MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+    private List<AgentPolicyHistoryRowDto> _runs = [];
+    private bool _loading;
+    private string? _error;
+    private int? _loadedId;
+
+    private async Task ViewResultAsync(AgentPolicyHistoryRowDto run)
+    {
+        var parameters = new DialogParameters<DeviceHistoryResultDialog>
+        {
+            { x => x.Result, run.Detail },
+            { x => x.Hash, run.Hash },
+            { x => x.Summary, UiText.Get(LocKeys.Ui.DevicePolicyHistoryTab.Text0Started1G, (Status(run.Result)), (run.StartedAtUtc.ToLocalTime())) }
+        };
+        await Dialog.ShowAsync<DeviceHistoryResultDialog>(run.Name, parameters,
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, CloseButton = true, CloseOnEscapeKey = true });
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedId == Device.Id) return;
+        _loadedId = Device.Id;
+        await LoadPolicyHistory();
+    }
+    
+    private string Status(int? result) => Loc[result switch
+    {
+        0 => LocKeys.Device.PolicySucceeded,
+        1 => LocKeys.Device.PolicyFailed,
+        2 => LocKeys.Device.PolicySkipped,
+        3 => LocKeys.Device.PolicyNotApplicable,
+        _ => LocKeys.Device.PolicyAwaitingResult
+    }];
+
+    private async Task LoadPolicyHistory()
+    {
+        _loading = true;
+        _error = null;
+        _runs = [];
+        var result = await Agents.GetPolicyHistoryAsync(Device.Id);
+        if (result.HasData) _runs = result.Data;
+        else _error = Loc[result.Error!.Code, result.Error.Args];
+        _loading = false;
+    }
+}

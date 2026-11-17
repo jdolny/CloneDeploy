@@ -1,0 +1,65 @@
+@using CloneDeploy_Agent.Contracts
+@inject PolicyService Categories
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(_isNew ? UiText.Get(LocKeys.Ui.SelfServiceCategoriesPage.NewCategory) : UiText.Get(LocKeys.Ui.SelfServiceCategoryDialog.EditCategory))</MudText></TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudTextField T="string" @bind-Value="_category.Name" Label="@Loc[LocKeys.Common.Name]"
+                          Variant="Variant.Outlined" Required="true" MaxLength="80" Disabled="_busy" />
+            <MudSelect T="string" @bind-Value="_category.Icon" Label="@Loc[LocKeys.Ui.SelfServiceCategoriesPage.Icon]" Variant="Variant.Outlined" Class="mt-4" Disabled="_busy">
+                @foreach (var icon in PortalCategoryIcons.Keys)
+                {
+                    <MudSelectItem T="string" Value="@icon">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@SelfServiceCategoryIcon.Get(icon)" Size="Size.Small" /><span>@icon</span>
+                        </MudStack>
+                    </MudSelectItem>
+                }
+            </MudSelect>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked" Disabled="_busy">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="OnSaveClicked" Color="Color.Primary" Variant="Variant.Filled" Disabled="_busy">
+            @(_isNew ? Loc[LocKeys.Common.Create] : Loc[LocKeys.Common.Save])
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private void OnCancelClicked() => MudDialog.Cancel();
+    [Parameter] public SelfServiceCategory? Category { get; set; }
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private MudForm _form = null!;
+    private SelfServiceCategory _category = new();
+    private bool _busy;
+    private bool _isNew => Category is null;
+
+    protected override void OnInitialized()
+    {
+        if (Category is not null)
+            _category = new() { Id = Category.Id, Name = Category.Name, Icon = Category.Icon,
+                SortOrder = Category.SortOrder, Revision = Category.Revision };
+    }
+
+    private async Task OnSaveClicked()
+    {
+        if (_busy) return;
+        await _form.ValidateAsync();
+        if (!_form.IsValid) return;
+        _busy = true;
+        try
+        {
+            var result = await Categories.SaveCategoryAsync(_category);
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[_isNew ? LocKeys.Common.Created : LocKeys.Common.Updated, _category.Name], Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        catch { Snackbar.Add(UiText.Get(LocKeys.Ui.SelfServiceCategoryDialog.CouldNotSaveCategoryReloadBeforeTryingAgain), Severity.Error); }
+        finally { _busy = false; }
+    }
+}

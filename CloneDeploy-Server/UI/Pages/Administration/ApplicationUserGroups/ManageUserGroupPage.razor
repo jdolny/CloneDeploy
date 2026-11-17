@@ -1,0 +1,127 @@
+@page "/usergroups/manage/{Id:int}"
+@page "/usergroups/manage/{Id:int}/{Tab}"
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@inject AppUserService AppUserService
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_group is not null)
+{
+    <PageTitle>@_group.Name</PageTitle>
+    <Microsoft.AspNetCore.Components.Sections.SectionContent SectionName="page-title">
+        <div class="device-page-heading"><div class="device-heading-row">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Href="/usergroups/manage" aria-label="@Loc[LocKeys.Group.BackToGroups]"/>
+            <div class="device-heading-icon"><MudIcon Icon="@Icons.Material.Outlined.Groups" Size="Size.Large"/></div>
+            <div class="device-heading-copy"><div class="device-heading-name"><h1>@_group.Name</h1></div></div>
+        </div></div>
+    </Microsoft.AspNetCore.Components.Sections.SectionContent>
+    <ActionButtons>
+        <Content>
+            <MudMenuItem OnClick="OnDeleteClicked" Disabled="_deleting" Icon="@Icons.Material.Filled.Delete">@Loc[LocKeys.Common.Delete]</MudMenuItem>
+        </Content>
+    </ActionButtons>
+    <div class="device-detail device-workspace">
+        <ResponsiveTabs PanelOrder="@(new int[] { 0, 2, 3, 1 })" ActivePanelIndex="_activePanelIndex" ActivePanelIndexChanged="OnTabChanged" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.User.General]" Icon="@Icons.Material.Outlined.Info">
+                <TabHelp Href="ui/administration/user-groups-general.html" Title="@Loc[LocKeys.User.General]" />
+                @if (_activePanelIndex == 0)
+                {
+                    <MudStack Class="pb-4"><UserGroupGeneralTab Group="_group"  OnSaved="RefreshHeaderAsync"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.UserGroup.Members]" Icon="@Icons.Material.Outlined.People">
+                <TabHelp Href="ui/administration/user-groups-members.html" Title="@Loc[LocKeys.UserGroup.Members]" />
+                @if (_activePanelIndex == 2)
+                {
+                    <MudStack Class="pb-4"><UserGroupMembersTab GroupId="_group.Id" /></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ManageUserGroupPage.DirectoryGroups]" Icon="@Icons.Material.Outlined.AccountTree">
+                <TabHelp Href="ui/administration/entra-directory-groups.html" Title="@Loc[LocKeys.Ui.ManageUserGroupPage.DirectoryGroups]" />
+                @if (_activePanelIndex == 3) { <MudStack Class="pb-4"><UserGroupDirectoryTab GroupId="_group.Id" @key="_group.Id" /></MudStack> }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.User.Permissions]" Icon="@Icons.Material.Outlined.Security">
+                <TabHelp Href="ui/administration/user-groups-permissions.html" Title="@Loc[LocKeys.User.Permissions]" />
+                @if (_activePanelIndex == 1)
+                {
+                    <MudStack Class="pb-4">
+                        @if (_group.GrantAdministrator)
+                        {
+                            <MudAlert Severity="Severity.Info">@Loc[LocKeys.User.AdminPermissions]</MudAlert>
+                        }
+                        else
+                        {
+                            <UserGroupPermissionsTab GroupId="_group.Id" />
+                        }
+                    </MudStack>
+                }
+            </MudTabPanel>
+        </ResponsiveTabs>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [Parameter] public string? Tab { get; set; }
+    private static readonly string[] TabRoutes = ["general", "permissions", "members", "directory"];
+    private AppUserGroup? _group;
+    private bool _loading = true;
+    private int _activePanelIndex;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var index = Math.Max(0, Array.FindIndex(TabRoutes, x => string.Equals(x, Tab, StringComparison.OrdinalIgnoreCase)));
+        _activePanelIndex = index;
+        if (_group?.Id == Id) return;
+        await LoadAsync();
+    }
+
+    private void OnTabChanged(int index)
+    {
+        if (index == _activePanelIndex || index < 0 || index >= TabRoutes.Length) return;
+        _activePanelIndex = index;
+    }
+    private async Task RefreshHeaderAsync()
+    {
+        var result = await AppUserService.GetGroupByIdAsync(Id);
+        if (result.Success && result.HasData) _group = result.Data;
+    }
+    private bool _deleting;
+    private async Task OnDeleteClicked()
+    {
+        if (_deleting || _group is null) return;
+        _deleting = true;
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, Loc[LocKeys.UserGroup.ConfirmDelete, _group.Name] },
+            { x => x.ButtonText, Loc[LocKeys.Common.Delete] },
+            { x => x.Color, Color.Error }
+        };
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        if (await dialog.Result is { Canceled: false, Data: true })
+        {
+            var result = await AppUserService.DeleteGroupsAsync([_group.Id]);
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[LocKeys.Common.Deleted, _group.Name], Severity.Success);
+                Navigation.NavigateTo("/usergroups/manage");
+            }
+            else
+                Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        _deleting = false;
+    }
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _group = null;
+        var result = await AppUserService.GetGroupByIdAsync(Id);
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        else if (result.HasData)
+            _group = result.Data;
+        _loading = false;
+    }
+}

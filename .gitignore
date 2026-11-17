@@ -1,0 +1,169 @@
+# ========================
+# Rider / JetBrains
+# ========================
+.idea/
+*.sln.iml
+*.DotSettings.user
+*.rsuser
+
+# ========================
+# Visual Studio / VS Code (common in mixed teams)
+# ========================
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# ========================
+# Build results
+# ========================
+.release-build.lock
+Release-VersionState.json.tmp
+Release-VersionState.json.bak
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+[Dd]ebug/
+[Rr]elease/
+x64/
+!third_party/wimlib/*/x64/
+!third_party/udpcast/*/x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+!/CloneDeploy-Agent.Win/Packaging/Arm64/
+/CloneDeploy-Agent.Win/Packaging/Arm64/*
+!/CloneDeploy-Agent.Win/Packaging/Arm64/Agent.wixproj
+!/CloneDeploy-Agent.Win/Packaging/Arm64/Agent.wxs
+bld/
+[Bb]uild/
+!/Build/
+!/Build/*.ps1
+[Oo]ut/
+cmake-build-*/
+
+# ========================
+# NuGet / packages
+# ========================
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+**/App_Data/AgentInstallers/
+CloneDeploy-Server/Published/
+CloneDeploy-Server/Mounts/
+CloneDeploy-Server/Staging/
+CloneDeploy-Server/Temp/
+# Advanced Installer regenerates these cabinet caches from the agent bundle.
+/CloneDeploy-Agent.Win/Packaging/*-cache/
+
+# ========================
+# Test / Coverage
+# ========================
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+coverage/
+TestResults/
+*.lcov
+
+# ========================
+# Logs (explicit request)
+# ========================
+*.log
+*.log.*
+logs/
+log/
+*.binlog
+msbuild.binlog
+
+# ========================
+# Keys / Secrets / Credentials (explicit request)
+# ========================
+# Environment & user secrets
+.env
+.env.*
+!.env.example
+*.env
+secrets.json
+siteservice.json
+appsettings.*.local.json
+# Remove this rule if you want to commit a development settings template.
+appsettings.Development.json
+
+# Certificates & keys
+*.pfx
+*.p12
+*.key
+*.pem
+*.crt
+*.cer
+*.snk
+*.jks
+*.keystore
+
+# Common secret folders / files
+
+keys/
+private/
+
+
+
+# ========================
+# OS generated
+# ========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ========================
+# Others
+# ========================
+*.swp
+*~
+*.tmp
+*.temp
+*.bak
+*.cache
+*.pid
+*.seed
+node_modules/
+**/App_Data/Uploads/
+**/App_Data/TempStorage/
+# Client-side libraries
+**/wwwroot/lib/
+
+# Application-managed storage links and mount ownership records
+**/App_Data/Storage/
+**/App_Data/WinPe/
+
+# Runtime-generated TFTP files; bundled files elsewhere in Tftp remain tracked.
+**/App_Data/Tftp/Generated/
+
+# Downloaded PXE assets and installation state are runtime data.
+**/App_Data/PxeBootFiles/
+**/App_Data/Tftp/ipxeboot/
+**/App_Data/Tftp/wimboot
+**/App_Data/Tftp/wimboot.COPYING
+**/App_Data/Tftp/autoexec.ipxe
+
+# Generated DocFX site
+CloneDeploy-Docs/_site/
+
+# Local server configuration may contain installation credentials.
+/CloneDeploy-Server/server.json

@@ -1,0 +1,483 @@
+@inject AuthenticationStateProvider SharedCatalogAuthentication
+@inject IAuthorizationService SharedCatalogAuthorization
+@page "/devices/manage"
+@attribute [Authorize(Policy = Constants.Permissions.DeviceView)]
+
+@inject TagService TagService
+@inject DeviceService DeviceService
+@inject DeviceService ActivityService
+@implements IDisposable
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.ManageDevicesPage.ManageDevices]" />
+<DeviceListActions OnAddDevice="AddDevicesAsync" />
+
+
+    
+    <MudPaper Class="device-list-filters device-search-panel device-manage-search" Elevation="0">
+        <MudToggleGroup Class="device-list-selection" ValueChanged="@(s => FilterUpdated(s))" Value="_computerSelection" T="string" SelectionMode="SelectionMode.SingleSelection" Color="Color.Primary">
+            <MudToggleItem Value="@("Active")" Text="@Loc[LocKeys.Policy.Active]"/>
+            <MudToggleItem Value="@("All")" Text="@Loc[LocKeys.Ui.ManageDevicesPage.All]"/>
+            <MudToggleItem Value="@("Unmanaged")" Text="@Loc[LocKeys.Ui.ManageDevicesPage.Unmanaged]"/>
+        </MudToggleGroup>
+        <div class="device-manage-search-row">
+            <div class="device-list-search">
+            <MudTextField T="string" ValueChanged="OnSearchChanged" DebounceInterval="300" Placeholder="@Loc[LocKeys.Ui.ManageDevicesPage.SearchDevices]" aria-label="@Loc[LocKeys.Ui.ManageDevicesPage.SearchDevices_3aebaefc]"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Class="device-list-search-input" />
+                <MudTooltip Placement="Placement.Left" RootClass="device-search-help" Text="@Loc[LocKeys.Ui.ManageDevicesPage.SearchByComputerNameSerialNumberIPAddressMAC]" ShowOnFocus="true">
+                    <MudIconButton Icon="@Icons.Material.Outlined.Info" Size="Size.Small" aria-label="@Loc[LocKeys.Ui.ManageDevicesPage.SearchableDeviceFields]" />
+                </MudTooltip>
+            </div>
+            <div class="device-list-limit">
+            <MudSelect T="string" ValueChanged="LimitUpdated" Label="@Loc[LocKeys.Ui.ManageDevicesPage.ResultLimit]" Variant="Variant.Outlined" Margin="Margin.Dense" Value="_selectedLimit" ShrinkLabel>
+                @foreach (var limit in Constants.UI.Limits.Append("50").Distinct().OrderBy(int.Parse))
+                {
+                    <MudSelectItem Value="@limit">@limit</MudSelectItem>
+                }
+                <MudSelectItem T="string" Value="@("0")">@Loc[LocKeys.Ui.ManageDevicesPage.All]</MudSelectItem>
+            </MudSelect>
+            </div>
+            <MudButton Class="@($"device-tag-toggle {(_showTagFilters || _selectedCategories.Count > 0 ? "device-tag-toggle-active" : "")}")"
+                       Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.FilterAlt"
+                       EndIcon="@(_showTagFilters ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                       OnClick="@(() => _showTagFilters = !_showTagFilters)"
+                       aria-expanded="@(_showTagFilters ? "true" : "false")" aria-controls="device-tag-filters">
+                @(_selectedCategories.Count > 0 ? UiText.Get(LocKeys.Ui.TagSearchPanel.Tags0, (_selectedCategories.Count)) : UiText.Get(LocKeys.Ui.TagSearchPanel.FilterByTags))
+            </MudButton>
+        </div>
+        @if (_showTagFilters)
+        {
+            <div id="device-tag-filters" class="device-manage-tag-panel" role="region" aria-label="@Loc[LocKeys.Ui.TagSearchPanel.TagFilters]">
+                <div class="device-manage-tags">
+                    <MudAutocomplete T="Tag" @ref="_tagPicker" Label="@Loc[LocKeys.Common.Tags]" Placeholder="@Loc[LocKeys.Ui.ManageDevicesPage.FilterByTag]" ShrinkLabel="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                     SearchFunc="SearchTags" ToStringFunc="@(tag => tag?.Name ?? string.Empty)" ValueChanged="OnAddTag"
+                                     Clearable="true" ResetValueOnEmptyText="true" MaxItems="20"
+                                     AdornmentIcon="@Icons.Material.Filled.Search" />
+                    @if (_selectedCategories.Count > 0)
+                    {
+                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-2">
+                            @foreach (var tag in _selectedCategories)
+                            {
+                                <MudChip T="int" @key="tag.Id" Value="tag.Id" Color="Color.Primary" Variant="Variant.Filled"
+                                         OnClose="@(() => OnCategoryChanged(_selectedCategories.Where(x => x.Id != tag.Id).ToArray()))">@tag.Name</MudChip>
+                            }
+                        </MudStack>
+                    }
+                </div>
+                <div class="device-manage-tag-match">
+                <MudSelect T="string" Value="_selectedCategoryType" Label="@Loc[LocKeys.Ui.ManageDevicesPage.Match]"
+                           ValueChanged="@(value => OnCategoryFilterTypeChanged(new[] { value }))"
+                           Variant="Variant.Outlined" Margin="Margin.Dense">
+                    <MudSelectItem Value="@("Or")">@Loc[LocKeys.Ui.ManageDevicesPage.AnyTagOR]</MudSelectItem>
+                    <MudSelectItem Value="@("And")">@Loc[LocKeys.Ui.ManageDevicesPage.AllTagsAND]</MudSelectItem>
+                </MudSelect>
+                </div>
+                <MudButton Class="device-clear-tags" Color="Color.Primary"
+                           OnClick="@Snackbar.GuardAction(() => _selectedCategories.Count == 0, UiText.Get(LocKeys.Ui.TagSearchPanel.NoTagFiltersAreSelected), () => OnCategoryChanged(Array.Empty<Tag>()))">@Loc[LocKeys.Ui.TagSearchPanel.ClearTags]</MudButton>
+            </div>
+        }
+    </MudPaper>
+    <div style="height: 4px; overflow: hidden;" aria-busy="@(_isLoading || (!_columnsLoaded && !_columnLoadFailed))">
+        @if (_isLoading || (!_columnsLoaded && !_columnLoadFailed))
+        {
+            <MudProgressLinear Color="Color.Default" Indeterminate="true"/>
+        }
+    </div>
+
+
+    @* Mount the grid once its columns, rows, custom values, and initial activity are ready.
+       An empty grid measures different widths and moves the pager when the rows arrive. *@
+    @if (_columnLoadFailed)
+    {
+        <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.ManageDevicesPage.CouldNotLoadDisplayPreferencesReloadThePageTo]</MudAlert>
+    }
+    @if (_columnsLoaded && _initialResultsLoaded)
+    {
+    @* Share authorization across rows: per-button checks create a database query burst
+       when a large result set is mounted or replaced. Actions still authorize on the server. *@
+    <PermissionScope Policy="@Constants.Permissions.DeviceView" Context="canViewDevices">
+    <PermissionScope Policy="@Constants.Permissions.DeviceEdit" Context="canEditDevices">
+    <MudDataGrid SelectOnRowClick="false" @key="_layoutVersion" RowsPerPage="@Constants.UI.DefaultPageSize" Dense="true" Hover="true" Hideable="false" HorizontalScrollbar="true" ColumnsPanelReordering="false" ShowMenuIcon="false"  T="DeviceSearchResultDto" Class="device-list-grid device-search-grid mb-10" Elevation="0" MultiSelection="true" Items="@Devices" ColumnResizeMode="ResizeMode.Column" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" @bind-SelectedItems="_selectedDevices">
+        <ToolBarContent>
+                <MudIcon Icon="@Icons.Material.Outlined.Computer" Color="Color.Primary"/>
+                <MudText Typo="Typo.h6">@Loc[LocKeys.Group.Devices]</MudText>
+        <MudSpacer/>
+        <div class="grid-toolbar-actions">
+            <GridSelectionCount Count="_selectedDevices.Count"/>
+            @if (canEditDevices && _selectedDevices.Count > 0)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Archive"
+                               OnClick="@(() => OnArchiveOrDeleteSelectedClicked("Archive"))">@Loc[LocKeys.Ui.ManageDevicesPage.ArchiveSelected]</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Delete"
+                               OnClick="@(() => OnArchiveOrDeleteSelectedClicked("Delete"))">@Loc[LocKeys.Common.DeleteSelected]</MudButton>
+                }
+                <MudButton StartIcon="@Icons.Material.Filled.Settings" OnClick="@Snackbar.GuardAction(() => !_columnsLoaded, UiText.Get(LocKeys.Ui.ManageDevicesPage.DisplayPreferencesCouldNotBeLoadedReloadThePage), OnChooseColumnsClicked)">@Loc[LocKeys.Ui.ManageDevicesPage.ColumnsActions]</MudButton>
+        </div>
+    </ToolBarContent>
+        <PagerContent><MudDataGridPager T="DeviceSearchResultDto"/></PagerContent>
+        <Columns>
+            <SelectColumn T="DeviceSearchResultDto"/>
+            @foreach (var preference in _columns.Where(x => x.Visible && !_catalog.First(c => c.Key == x.ColumnKey).IsAction))
+            {
+                @_catalog.First(x => x.Key == preference.ColumnKey).Content
+            }
+            @if (_columns.Any(x => x.Visible && _catalog.First(c => c.Key == x.ColumnKey).IsAction))
+            {
+            <TemplateColumn T="DeviceSearchResultDto" Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+                <CellTemplate>
+                    @foreach (var preference in _columns.Where(x => x.Visible && _catalog.First(c => c.Key == x.ColumnKey).IsAction))
+                    {
+                        var action = DeviceRowActionCatalog.All.First(x => x.Key == preference.ColumnKey);
+                        if (action.Action == DeviceRowAction.Archive && (context.Item.ArchivedAtUtc is not null || context.Item.ProvisionStatus == DeviceProvisionStatus.Archived))
+                            action = action with { Title = UiText.Get(LocKeys.Policy.Restore), Icon = Icons.Material.Filled.Restore, Action = DeviceRowAction.Restore };
+                        @if (action.Action == DeviceRowAction.Connect ? canViewDevices : canEditDevices)
+                        {
+                        <MudTooltip @key="action.Key" Text="@action.Title" Placement="Placement.Left" Arrow="true" Delay="200">
+                            <MudIconButton Icon="@action.Icon" Size="Size.Medium" Color="Color.Primary"
+                                           aria-label="@($"{action.Title} {context.Item.Name}")"
+                                           OnClick="@(() => OnRowActionClicked(action.Action, context.Item))" />
+                        </MudTooltip>
+                        }
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            }
+            
+          
+        </Columns>
+    </MudDataGrid>
+    </PermissionScope>
+    </PermissionScope>
+    }
+
+@if (_connectionDevice is not null)
+{
+    <DeviceConnectionPanel Device="_connectionDevice" @key="_connectionDevice" ShowConnectButton="false" InitiallyOpen="true" />
+}
+
+@code {
+    private bool _showTagFilters;
+    private IDisposable? _activitySubscription;
+    private int _activityGeneration;
+    private bool _disposed;
+    private readonly SemaphoreSlim _loadGate = new(1, 1);
+    private int _loadGeneration;
+
+    private async Task WatchActivityAsync()
+    {
+        _activitySubscription?.Dispose();
+        var generation = ++_activityGeneration;
+        var subscription = await ActivityService.SubscribeAsync(Devices.Select(x => x.Id).ToArray(), snapshots => InvokeAsync(() =>
+        {
+            if (_disposed || generation != _activityGeneration) return;
+            var updates = snapshots.ToDictionary(x => x.DeviceId);
+            var selectedIds = _selectedDevices.Select(x => x.Id).ToHashSet();
+            Devices = Devices.Select(row => updates.TryGetValue(row.Id, out var status)
+                ? row with { Name = status.DeviceName ?? row.Name, Activity = status.Text, Status = status.Connected ? UiText.Get(LocKeys.Ui.ManageDevicesPage.Connected) : UiText.Get(LocKeys.Ui.ManageDevicesPage.Disconnected),
+                    ClientVersion = status.ClientVersion, LastCheckinTime = status.LastCheckinAtUtc, LastIp = status.LastKnownIp } : row).ToList();
+            _selectedDevices = Devices.Where(x => selectedIds.Contains(x.Id)).ToHashSet();
+            StateHasChanged();
+        }));
+        if (_disposed || generation != _activityGeneration) subscription.Dispose();
+        else _activitySubscription = subscription;
+    }
+
+    public void Dispose() { _disposed = true; ++_loadGeneration; ++_activityGeneration; _activitySubscription?.Dispose(); }
+    private Device? _connectionDevice;
+    private IEnumerable<DeviceSearchResultDto> Devices = new List<DeviceSearchResultDto>();
+    private IEnumerable<Tag> Tags = new List<Tag>();
+    private List<DeviceColumnDefinition> _catalog = [];
+    private List<AppUserGridColumn> _columns = [];
+    private bool _columnsLoaded;
+    private bool _initialResultsLoaded;
+    private bool _columnLoadFailed;
+    private int _layoutVersion;
+
+    private async Task OnChooseColumnsClicked()
+    {
+        var parameters = new DialogParameters<DeviceColumnsDialog>
+        {
+            { x => x.Catalog, _catalog },
+            { x => x.Columns, _columns }
+        };
+        var dialog = await Dialog.ShowAsync<DeviceColumnsDialog>(UiText.Get(LocKeys.Ui.ManageDevicesPage.DeviceColumnsAndActions), parameters, new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Medium });
+        var result = await dialog.Result;
+        if (result is { Canceled: false, Data: List<AppUserGridColumn> columns })
+        {
+            _columns = columns;
+            _layoutVersion++;
+            await LoadComputers();
+        }
+    }
+
+    private IReadOnlyCollection<Tag> _selectedCategories = new HashSet<Tag> { };
+    private HashSet<DeviceSearchResultDto> _selectedDevices = [];
+    private string? _selectedCategoryType = "Or";
+    private MudAutocomplete<Tag> _tagPicker = null!;
+    private string? _computerSelection = "Active";
+    private string? _selectedLimit = "50";
+    private bool _isLoading;
+    private async Task AddDevicesAsync()
+    {
+        var dialog = await Dialog.ShowAsync<AddDevicesDialog>(UiText.Get(LocKeys.Ui.PolicyTargetingTab.AddDevices), new DialogOptions
+        {
+            FullWidth = true, MaxWidth = MaxWidth.Small, BackdropClick = false, CloseOnEscapeKey = false
+        });
+        if (await dialog.Result is { Canceled: false })
+        {
+            _computerSelection = "All";
+            await LoadComputers();
+        }
+    }
+    private string? _searchString;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        var attributes = await DeviceService.GetColumnAttributesAsync();
+        var preferences = await DeviceService.LoadColumnsAsync();
+        if (!attributes.Success || !preferences.Success)
+        {
+            _columnLoadFailed = true;
+            var error = attributes.Error ?? preferences.Error!;
+            Snackbar.Add(Loc[error.Code, error.Args], Severity.Error);
+            return;
+        }
+        _catalog = DeviceColumnCatalog.Create(attributes.Data!);
+        _columns = DeviceColumnCatalog.Merge(_catalog, preferences.Data!);
+        _columnsLoaded = true;
+
+
+
+        var tags = ((await SharedCatalogAuthorization.AuthorizeAsync((await SharedCatalogAuthentication.GetAuthenticationStateAsync()).User, Constants.Permissions.TagView)).Succeeded ? await TagService.GetAsync() : ServiceResult<List<Tag>>.Ok([]));
+        if (tags.Success) Tags = tags.Data ?? [];
+        else Snackbar.Add(Loc[tags.Error.Code, tags.Error.Args], Severity.Error);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _searchString = null;
+        _selectedCategories = new HashSet<Tag>();
+        await LoadComputers();
+    }
+    
+    private async Task LoadComputers()
+    {
+        // Early filter changes are retained and loaded by OnParametersSetAsync once
+        // initialization completes. Never render rows against an incomplete column catalog.
+        if (_disposed || !_columnsLoaded) return;
+        var generation = ++_loadGeneration;
+        _isLoading = true;
+        ++_activityGeneration;
+        _activitySubscription?.Dispose();
+        _activitySubscription = null;
+        await _loadGate.WaitAsync();
+        try
+        {
+            if (_disposed || generation != _loadGeneration) return;
+            bool isActive;
+            bool isUnmanaged;
+
+            switch (_computerSelection)
+            {
+                case "Active":
+                    isActive = true;
+                    isUnmanaged = false;
+                    break;
+
+                case "Unmanaged":
+                    isActive = false;
+                    isUnmanaged = true;
+                    break;
+
+                default:
+                    isActive = false;
+                    isUnmanaged = false;
+                    break;
+            }
+
+            var deviceFilter = new DeviceFilterDto
+            {
+                CategoryType = _selectedCategoryType,
+                SearchText = _searchString,
+                IsActive = isActive,
+                IsUnmanaged = isUnmanaged,
+                Limit = _selectedLimit is not null
+                    ? int.Parse(_selectedLimit)
+                    : 100,
+                TagIds = _selectedCategories
+                    .Select(x => x.Id)
+                    .ToList()
+            };
+
+            var search = await DeviceService.SearchDevices(deviceFilter);
+            if (_disposed || generation != _loadGeneration) return;
+            if (!search.Success)
+            {
+                Snackbar.Add(Loc[search.Error.Code, search.Error.Args], Severity.Error);
+                _initialResultsLoaded = true;
+                return;
+            }
+            // MudDataGrid keys rows by the item itself. Live fields must not change that identity.
+            var rows = (search.Data ?? []).Select(row => (DeviceSearchResultDto)new DeviceListRow(row)).ToList();
+            var selectedKeys = _columns.Where(x => x.Visible).Select(x => x.ColumnKey).ToHashSet();
+            var attributeIds = _catalog.Where(x => selectedKeys.Contains(x.Key) && x.AttributeId.HasValue)
+                .Select(x => x.AttributeId!.Value).ToArray();
+            var values = await DeviceService.LoadAttributeValuesAsync(rows, attributeIds);
+            if (_disposed || generation != _loadGeneration) return;
+            if (!values.Success) Snackbar.Add(Loc[values.Error.Code, values.Error.Args], Severity.Error);
+            var selectedIds = _selectedDevices.Select(x => x.Id).ToHashSet();
+            Devices = rows;
+            _selectedDevices = rows.Where(x => selectedIds.Contains(x.Id)).ToHashSet();
+            try { await WatchActivityAsync(); }
+            catch
+            {
+                if (!_disposed && generation == _loadGeneration)
+                    Snackbar.Add(UiText.Get(LocKeys.Ui.ManageDevicePage.LiveDeviceActivityIsUnavailableReloadToRetry), Severity.Warning);
+            }
+
+            if (_disposed || generation != _loadGeneration) return;
+            _initialResultsLoaded = true;
+        }
+        finally
+        {
+            if (!_disposed && generation == _loadGeneration) _isLoading = false;
+            _loadGate.Release();
+        }
+    }
+
+
+    private Task OnSearchChanged(string searchText)
+    {
+        _searchString = searchText;
+        return LoadComputers();
+    }
+
+    private Task FilterUpdated(string? selection)
+    {
+        _computerSelection = selection;
+        return LoadComputers();
+    }
+
+    private Task LimitUpdated(string limit)
+    {
+        _selectedLimit = limit;
+        return LoadComputers();
+    }
+
+    private Task<IEnumerable<Tag>> SearchTags(string? text, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(Tags.Where(tag => !_selectedCategories.Any(selected => selected.Id == tag.Id) &&
+            (string.IsNullOrWhiteSpace(text) || tag.Name.Contains(text.Trim(), StringComparison.OrdinalIgnoreCase))));
+    }
+
+    private async Task OnAddTag(Tag? tag)
+    {
+        if (tag is null || _selectedCategories.Any(selected => selected.Id == tag.Id)) return;
+        _selectedCategories = _selectedCategories.Append(tag).ToArray();
+        await _tagPicker.ClearAsync();
+        await LoadComputers();
+    }
+
+    private Task OnCategoryChanged(IReadOnlyCollection<Tag> selection)
+    {
+        _selectedCategories = selection;
+        return LoadComputers();
+    }
+
+    private Task OnCategoryFilterTypeChanged(IEnumerable<string?> categoryFilterType)
+    {
+        _selectedCategoryType = categoryFilterType.FirstOrDefault();
+        return LoadComputers();
+    }
+
+    private Task OnRowActionClicked(DeviceRowAction action, DeviceSearchResultDto device) => action switch
+    {
+        DeviceRowAction.Connect => OpenConnectionPanel(device),
+        DeviceRowAction.Archive => ConfirmDeviceActionAsync("Archive", [device]),
+        DeviceRowAction.Restore => ConfirmDeviceActionAsync("Restore", [device]),
+        DeviceRowAction.Delete => ConfirmDeviceActionAsync("Delete", [device]),
+        _ => throw new ArgumentOutOfRangeException(nameof(action))
+    };
+
+    private Task OpenConnectionPanel(DeviceSearchResultDto device)
+    {
+        // A new instance also reopens the drawer after closing it for the same device.
+        _connectionDevice = new Device
+        {
+            Id = device.Id,
+            Name = device.Name ?? UiText.Get(LocKeys.Ui.ManageDevicesPage.Device0, (device.Id)),
+            LastKnownIp = device.LastIp,
+            LastCheckinAtUtc = device.LastCheckinTime,
+            ClientVersion = device.ClientVersion,
+            AgentPlatform = device.AgentPlatform
+        };
+        return Task.CompletedTask;
+    }
+
+    private Task OnArchiveOrDeleteSelectedClicked(string type) => ConfirmDeviceActionAsync(type, _selectedDevices.ToList());
+
+    private async Task ConfirmDeviceActionAsync(string type, IReadOnlyList<DeviceSearchResultDto> targets)
+    {
+        if (targets.Count == 0)
+        {
+            Snackbar.Add(UiText.Get(LocKeys.Ui.ManageDevicesPage.SelectAtLeastOneDeviceBeforeContinuing), Severity.Warning);
+            return;
+        }
+
+        var contentText = UiText.Get(LocKeys.Ui.ManageDevicesPage.Confirm0ForTheFollowingDevices, UiText.Label(type));
+        foreach (var computer in targets)
+            contentText += $"\n{computer.Name}";
+
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, contentText },
+            { x => x.ButtonText, UiText.Label(type) },
+            { x => x.Color, Color.Error }
+        };
+
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(UiText.Label(type), parameters, Constants.UI.StandardDialogBox);
+        var result = await dialog.Result;
+
+        var errorCount = 0;
+        var successCount = 0;
+        if (result is { Canceled: false, Data: true })
+        {
+            foreach (var computer in targets)
+            {
+                var success = type switch
+                {
+                    "Archive" => await DeviceService.ArchiveDeviceAsync(computer.Id),
+                    "Restore" => await DeviceService.RestoreDeviceAsync(computer.Id),
+                    "Delete" => await DeviceService.DeleteDeviceAsync(computer.Id),
+                    _ => throw new ArgumentOutOfRangeException(nameof(type))
+                };
+                if (success.Success) successCount++;
+                else errorCount++;
+            }
+
+            string message;
+            Severity severity;
+
+            if (errorCount == 0)
+            {
+                message = UiText.Get(LocKeys.Ui.ManageDevicesPage.OperationCompletedFor0DeviceS, successCount);
+                severity = Severity.Success;
+            }
+            else if (successCount == 0)
+            {
+                message = UiText.Get(LocKeys.Ui.ManageDevicesPage.OperationFailedFor0DeviceS, errorCount);
+                severity = Severity.Error;
+            }
+            else
+            {
+                message = UiText.Get(LocKeys.Ui.ManageDevicesPage.CompletedFor0DeviceSFailedFor1, successCount, errorCount);
+                severity = Severity.Warning;
+            }
+
+            Snackbar.Add(message, severity);
+            _selectedDevices.ExceptWith(targets);
+            await LoadComputers();
+        }
+    }
+}

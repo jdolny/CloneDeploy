@@ -1,0 +1,205 @@
+<MudStack Class="device-general device-system-information" Spacing="8">
+<div class="device-inventory-timestamp"><MudIcon Icon="@Icons.Material.Outlined.Schedule" Size="Size.Small" aria-hidden="true" /><MudText Typo="Typo.body2">@UiText.Get(LocKeys.Ui.DeviceSystemInformationTab.LastInventory0, ((Device.LastInventoryAtUtc is DateTime displayDate1 && displayDate1 != default ? displayDate1.ToLocalTime().ToString("g") : "—")))</MudText></div>
+
+<section>
+    <DeviceInventoryHeading Title="@Loc[LocKeys.Device.ComputerSystem]" Icon="@Icons.Material.Outlined.Computer" />
+    @if (Device.ComputerSystem is null)
+    {
+        <MudText Typo="Typo.body2">@Loc[LocKeys.Device.NoComputerSystemInventoryHasBeenCollected]</MudText>
+    }
+    else
+    {
+        <MudGrid Spacing="0">
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.Manufacturer]" Value="@(Device.ComputerSystem.Manufacturer)"/>
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.Model]" Value="@(Device.ComputerSystem.Model)"/>
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Common.Name]" Value="@(Device.ComputerSystem.Name)"/>
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.Domain]" Value="@(Device.ComputerSystem.Domain)"/>
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.Workgroup]" Value="@(Device.ComputerSystem.Workgroup)"/>
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.MemoryMB]" Value="@(Device.ComputerSystem.Memory)"/>
+        </MudGrid>
+    }
+</section>
+
+<section>
+    <DeviceInventoryHeading Title="@Loc[LocKeys.Device.OsName]" Icon="@Icons.Material.Outlined.Settings" />
+    @if (Device.Os is null)
+    {
+        <MudText Typo="Typo.body2">@Loc[LocKeys.Device.NoOperatingSystemInventoryHasBeenCollected]</MudText>
+    }
+    else
+    {
+        <MudGrid Spacing="0">
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.OsName]" Value="@(Device.Os.Caption)"/>
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.Version]" Value="@(Device.Os.Version)"/>
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.Build]" Value="@(Device.Os.BuildNumber)"/>
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.Architecture]" Value="@(Device.Os.NativeArchitecture ?? Device.Os.OSArchitecture)"/>
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.Release]" Value="@(Device.Os.ReleaseId)"/>
+            @if (!IsMac)
+            {
+                <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.UACStatus]" Value="@(Device.Os.UacStatus)"/>
+            }
+
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.TimeZone]" Value="@(Device.Os.LocalTimeZone)"/>
+            @if (!IsMac)
+            {
+                <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.UpdateServer]" Value="@(Device.Os.UpdateServer)"/>
+            }
+
+        </MudGrid>
+    }
+</section>
+
+@if (!IsMac)
+{
+    <DeviceWindowsUpdateConfiguration Device="Device" />
+}
+
+<section>
+    <DeviceInventoryHeading Title="@Loc[LocKeys.Device.BIOS]" Icon="@Icons.Material.Outlined.DeveloperBoard" />
+    @if (Device.Bios is null)
+    {
+        <MudText Typo="Typo.body2">@Loc[LocKeys.Device.NoBiosInventoryHasBeenCollected]</MudText>
+    }
+    else
+    {
+        <MudGrid Spacing="0">
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.SerialNumber]" Value="@(Device.Bios.SerialNumber)"/>
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.Version]" Value="@(Device.Bios.Version)"/>
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.SMBIOSVersion]" Value="@(Device.Bios.SMBIOSBIOSVersion)"/>
+        </MudGrid>
+    }
+</section>
+
+<section>
+    <DeviceInventoryHeading Title="@Loc[LocKeys.Device.Processor]" Icon="@Icons.Material.Outlined.Memory" />
+    @if (Device.Processor is null)
+    {
+        <MudText Typo="Typo.body2">@Loc[LocKeys.Device.NoProcessorInventoryHasBeenCollected]</MudText>
+    }
+    else
+    {
+        <MudGrid Spacing="0">
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.Processor]" Value="@(Device.Processor.Name)"/>
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.SpeedMHz]" Value="@(Device.Processor.Speed)"/>
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.Cores]" Value="@(Device.Processor.Cores)"/>
+        </MudGrid>
+    }
+</section>
+
+<section>
+    <DeviceInventoryHeading Title="@Loc[LocKeys.Device.Graphics]" Icon="@Icons.Material.Outlined.Monitor" />
+    @if (Device.Gpu is null)
+    {
+        <MudText Typo="Typo.body2">@Loc[LocKeys.Device.NoGraphicsInventoryHasBeenCollected]</MudText>
+    }
+    else
+    {
+        <MudGrid Spacing="0">
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.GraphicsAdapter]" Value="@(Device.Gpu.Name)"/>
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.MemoryMB]" Value="@(Device.Gpu.Memory)"/>
+        </MudGrid>
+    }
+</section>
+
+@if (!IsMac)
+{
+    <section>
+        <DeviceInventoryHeading Title="@Loc[LocKeys.Device.Antivirus]" Icon="@Icons.Material.Outlined.VerifiedUser" />
+        @if (Device.AntiVirus is null)
+        {
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Device.NoAntivirusInventoryHasBeenCollected]</MudText>
+        }
+        else
+        {
+            <MudGrid Spacing="0">
+                <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.Product]" Value="@(Device.AntiVirus.DisplayName)"/>
+                <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.Provider]" Value="@(Device.AntiVirus.Provider)"/>
+                <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.RealTimeScanner]" Value="@(Device.AntiVirus.RealtimeScanner)"/>
+                <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.Definitions]" Value="@(Device.AntiVirus.DefinitionStatus)"/>
+            </MudGrid>
+        }
+    </section>
+
+    <section>
+        <DeviceInventoryHeading Title="@Loc[LocKeys.Device.Firewall]" Icon="@Icons.Material.Outlined.Security" />
+        @if (Device.Firewall is null)
+        {
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Device.NoFirewallInventoryHasBeenCollected]</MudText>
+        }
+        else
+        {
+            <MudGrid Spacing="0">
+                <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.DomainProfileEnabled]" Value="@(Device.Firewall.DomainEnabled)"/>
+                <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.PrivateProfileEnabled]" Value="@(Device.Firewall.PrivateEnabled)"/>
+                <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.PublicProfileEnabled]" Value="@(Device.Firewall.PublicEnabled)"/>
+            </MudGrid>
+        }
+    </section>
+
+    <section>
+        <DeviceInventoryHeading Title="@Loc[LocKeys.Device.BitLocker]" Icon="@Icons.Material.Outlined.Lock" />
+        @if (Device.BitLocker is null)
+        {
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Device.NoBitlockerInventoryHasBeenCollected]</MudText>
+        }
+        else
+        {
+            <MudGrid Spacing="0">
+                <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.Drive]" Value="@(Device.BitLocker.DriveLetter)"/>
+                <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Device.ReportedStatusCode]" Value="@(Device.BitLocker.Status)"/>
+            </MudGrid>
+        }
+    </section>
+
+}
+<DeviceInventoryTable Pageable="false" Filterable="false" TItem="DeviceNic" TitleIcon="@Icons.Material.Outlined.Router" Title="@Loc[LocKeys.Device.NetworkAdapters]" Items="Device.Nics">
+    <Columns>
+        <PropertyColumn T="DeviceNic" TProperty="string" Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]"/>
+        <PropertyColumn T="DeviceNic" TProperty="string" Property="x => x.Mac" Title="@Loc[LocKeys.Device.MACAddress]"/>
+        <PropertyColumn T="DeviceNic" TProperty="string" Property="x => x.Ips" Title="@Loc[LocKeys.Device.IPAddresses]"/>
+        <PropertyColumn T="DeviceNic" TProperty="string" Property="x => x.Gateways" Title="@Loc[LocKeys.Device.Gateways]"/>
+        <PropertyColumn T="DeviceNic" TProperty="string" Property="x => x.Status" Title="@Loc[LocKeys.Device.StatusLabel]"/>
+        <PropertyColumn T="DeviceNic" TProperty="long" Property="x => x.Speed" Title="@Loc[LocKeys.Device.SpeedBitsS]"/>
+    </Columns>
+</DeviceInventoryTable>
+
+<DeviceInventoryTable Pageable="false" Filterable="false" TItem="DeviceHardDrive" TitleIcon="@Icons.Material.Outlined.Storage" Title="@Loc[LocKeys.Device.PhysicalDisks]" Items="Device.HardDrives">
+    <Columns>
+        <PropertyColumn T="DeviceHardDrive" TProperty="string" Property="x => x.Model" Title="@Loc[LocKeys.Device.Model]"/>
+        <PropertyColumn T="DeviceHardDrive" TProperty="string" Property="x => x.SerialNumber" Title="@Loc[LocKeys.Device.SerialNumber]"/>
+        <PropertyColumn T="DeviceHardDrive" TProperty="string" Property="x => x.FirmwareRevision" Title="@Loc[LocKeys.Device.Firmware]"/>
+        <PropertyColumn T="DeviceHardDrive" TProperty="int" Property="x => x.SizeMb" Title="@Loc[LocKeys.Device.SizeMB]"/>
+        <PropertyColumn T="DeviceHardDrive" TProperty="string" Property="x => x.Status" Title="@Loc[LocKeys.Device.StatusLabel]"/>
+    </Columns>
+</DeviceInventoryTable>
+
+<DeviceInventoryTable Pageable="false" Filterable="false" TItem="DeviceLogicalVolume" TitleIcon="@Icons.Material.Outlined.Dns" Title="@Loc[LocKeys.Device.Volumes]" Items="Device.LogicalVolumes">
+    <Columns>
+        <PropertyColumn T="DeviceLogicalVolume" TProperty="string" Property="x => x.Drive" Title="@Loc[LocKeys.Device.Drive]"/>
+        <PropertyColumn T="DeviceLogicalVolume" TProperty="int" Property="x => x.SizeGB" Title="@Loc[LocKeys.Device.SizeGB]"/>
+        <PropertyColumn T="DeviceLogicalVolume" TProperty="int" Property="x => x.FreeSpaceGB" Title="@Loc[LocKeys.Device.FreeSpaceGB]"/>
+        <PropertyColumn T="DeviceLogicalVolume" TProperty="int" Property="x => x.FreeSpacePercent" Title="@Loc[LocKeys.Device.FreeSpace]"/>
+    </Columns>
+</DeviceInventoryTable>
+
+@if (!IsMac)
+{
+    <DeviceInventoryTable Pageable="false" Filterable="false" TItem="DevicePrinter" TitleIcon="@Icons.Material.Outlined.Print" Title="@Loc[LocKeys.Device.Printers]" Items="Device.Printers">
+        <Columns>
+            <PropertyColumn T="DevicePrinter" TProperty="string" Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]"/>
+            <PropertyColumn T="DevicePrinter" TProperty="string" Property="x => x.DriverName" Title="@Loc[LocKeys.Device.Driver]"/>
+            <PropertyColumn T="DevicePrinter" TProperty="bool" Property="x => x.Local" Title="@Loc[LocKeys.Device.Local]"/>
+            <PropertyColumn T="DevicePrinter" TProperty="bool" Property="x => x.Network" Title="@Loc[LocKeys.Device.Network]"/>
+            <PropertyColumn T="DevicePrinter" TProperty="string" Property="x => x.ShareName" Title="@Loc[LocKeys.Device.Share]"/>
+        </Columns>
+    </DeviceInventoryTable>
+}
+
+
+</MudStack>
+
+@code {
+    private bool IsMac => Device.AgentPlatform == CloneDeploy_Agent.Contracts.AgentPlatform.MacOS;
+
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+}

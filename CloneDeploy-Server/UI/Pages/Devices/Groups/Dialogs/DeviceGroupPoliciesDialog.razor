@@ -1,0 +1,150 @@
+@inject PolicyService PolicyService
+
+<MudDialog>
+    <DialogContent>
+        <MudText Class="mb-3">@UiText.Get(LocKeys.Ui.DeviceGroupPoliciesDialog.DragPoliciesBetweenPanelsOrUseAddAndRemove_d6c559f6, ((Options is null ? UiText.Get(LocKeys.Ui.DeviceGroupPoliciesDialog.SavePoliciesToApplyYourChanges) : UiText.Get(LocKeys.Ui.DeviceGroupPoliciesDialog.ApplyTheSelectionThenArrangeTheExecutionOrderAnd))))</MudText>
+        @if (_loading) { <MudProgressLinear Indeterminate="true"/> }
+        @if (_loadFailed) { <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.DeviceGroupPoliciesDialog.UnableToLoadPoliciesCloseAndReopenTheEditor]</MudAlert> }
+        <MudDropContainer T="TargetPolicyOptionDto" @ref="_container" Items="_items" ItemsSelector="InZone" ItemDropped="OnPolicyDropped" ItemDisabled="@(_ => _saving)">
+            <ChildContent>
+                <div class="member-panels">
+                    <MudPaper Outlined="true" Elevation="0" Class="pa-3">
+                        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DeviceGroupPoliciesDialog.AvailablePolicies]</MudText>
+                        <MudTextField T="string" Value="_search" ValueChanged="OnSearchChanged" Label="@Loc[LocKeys.Ui.ManagePoliciesPage.SearchPolicies_3d8d234e]" DebounceInterval="300"
+                                      Clearable="true" Disabled="_saving" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"/>
+                        <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.DeviceGroupPoliciesDialog.SearchTheAvailablePoliciesByName]</MudText>
+                        <MudDropZone T="TargetPolicyOptionDto" Identifier="available" Class="member-drop-zone">
+                            <ChildContent>
+                                @if (!_items.Any(x => InZone(x, "available"))) { <MudText Class="pa-3">@Loc[LocKeys.Ui.DeviceGroupPoliciesDialog.NoMatchingAvailablePolicies]</MudText> }
+                            </ChildContent>
+                        </MudDropZone>
+                    </MudPaper>
+                    <MudPaper Outlined="true" Elevation="0" Class="pa-3">
+                        <MudText Typo="Typo.h6">@UiText.Get(LocKeys.Ui.TargetPolicies.AssignedPolicies0, (_selected.Count))</MudText>
+                        <MudDropZone T="TargetPolicyOptionDto" Identifier="assigned" Class="member-drop-zone">
+                            <ChildContent>
+                                @if (_selected.Count == 0) { <MudText Class="pa-3">@Loc[LocKeys.Ui.DeviceGroupPoliciesDialog.DropPoliciesHereToAssignThem]</MudText> }
+                            </ChildContent>
+                        </MudDropZone>
+                    </MudPaper>
+                </div>
+            </ChildContent>
+            <ItemRenderer Context="policy">
+                <MudPaper Outlined="true" Elevation="0" Class="pa-2 my-2 d-flex align-center gap-2">
+                    <MudDragHandle T="TargetPolicyOptionDto"><MudIcon Icon="@Icons.Material.Filled.DragIndicator"/></MudDragHandle>
+                    <div style="min-width:0; overflow-wrap:anywhere;">
+                        <MudText>@policy.Name</MudText>
+                        @if (Options is null)
+                        {
+                            <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.DeviceGroupPoliciesDialog.Priority0, (policy.ExecutionPriority))</MudText>
+                        }
+                        @if (_state?.Key.IsOu == true && _selected.Contains(policy.Id))
+                        {
+                            <MudCheckBox T="bool" @bind-Value="_scopes[policy.Id]" Label="@Loc[LocKeys.Ui.DeviceGroupPoliciesDialog.IncludeDescendantLocations]" Disabled="_saving"/>
+                        }
+                    </div>
+                    <MudSpacer/>
+                    @if (_selected.Contains(policy.Id))
+                    {
+                        <MudButton Size="Size.Small" Disabled="_saving" OnClick="@(() => OnRemoveClicked(policy))" aria-label="@(UiText.Get(LocKeys.Group.RemoveDevice, (policy.Name)))">@Loc[LocKeys.Ui.DeviceGroupPowerSchedulesTab.Remove]</MudButton>
+                    }
+                    else
+                    {
+                        <MudButton Size="Size.Small" Disabled="_saving" OnClick="@(() => OnAddClicked(policy))" aria-label="@(UiText.Get(LocKeys.Ui.DeviceReportColumnsDialog.Add0, (policy.Name)))">@Loc[LocKeys.Ui.HelpConfigurationNamesTab.Add]</MudButton>
+                    }
+                </MudPaper>
+            </ItemRenderer>
+        </MudDropContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked" Disabled="_saving">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _loading || _loadFailed || _saving, UiText.Get(LocKeys.Ui.DeviceGroupPoliciesDialog.AssignedPoliciesCouldNotBeLoadedReopenTheEditor), OnSaveClicked)" Disabled="@(_saving || _loading)" Variant="Variant.Filled" Color="Color.Primary">@(Options is null ? Loc[LocKeys.Group.SavePolicies].Value : UiText.Get(LocKeys.Ui.DeviceGroupPoliciesDialog.ApplySelection))</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int GroupId { get; set; }
+    [Parameter] public PolicyTargetKeyDto? Target { get; set; }
+    [Parameter] public List<TargetPolicyOptionDto>? Options { get; set; }
+    [Parameter] public HashSet<int> SelectedIds { get; set; } = [];
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private MudDropContainer<TargetPolicyOptionDto>? _container;
+    private TargetPolicyStateDto? _state;
+    private List<TargetPolicyOptionDto> _items = [];
+    private HashSet<int> _selected = [];
+    private Dictionary<int, bool> _scopes = [];
+    private string? _search;
+    private bool _loading = true, _loadFailed, _saving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Options is not null)
+        {
+            _items = Options.DistinctBy(x => x.Id).OrderBy(x => x.Name).ToList();
+            _selected = SelectedIds.ToHashSet();
+            _loading = false;
+            return;
+        }
+
+        var result = await PolicyService.GetTargetPoliciesAsync(Target ?? PolicyTargetKeyDto.Group(GroupId));
+        if (!result.Success)
+        {
+            _loadFailed = true;
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        else
+        {
+            _state = result.Data!;
+            _selected = _state.Assignments.Select(x => x.PolicyId).ToHashSet();
+            _items = _state.AvailablePolicies.Concat(_state.Assignments.Select(x => new TargetPolicyOptionDto(x.PolicyId, x.Name)
+                { ExecutionPriority = x.ExecutionPriority })).DistinctBy(x => x.Id).OrderBy(x => x.ExecutionPriority).ThenBy(x => x.Name).ToList();
+        }
+        _scopes = _items.ToDictionary(x => x.Id, x => _state!.Assignments.FirstOrDefault(a => a.PolicyId == x.Id)?.IncludeDescendants ?? true);
+        _loading = false;
+        _container?.Refresh();
+    }
+
+    private bool InZone(TargetPolicyOptionDto policy, string zone) => zone == "assigned"
+        ? _selected.Contains(policy.Id)
+        : !_selected.Contains(policy.Id) && (string.IsNullOrWhiteSpace(_search) || policy.Name.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    private void OnSearchChanged(string? search) { _search = search; _container?.Refresh(); }
+    private void OnAddClicked(TargetPolicyOptionDto policy) { if (_saving) return; _selected.Add(policy.Id); _container?.Refresh(); }
+    private void OnRemoveClicked(TargetPolicyOptionDto policy) { if (_saving) return; _selected.Remove(policy.Id); _container?.Refresh(); }
+    private void OnPolicyDropped(MudItemDropInfo<TargetPolicyOptionDto> drop)
+    {
+        if (drop.Item is null || _saving) return;
+        if (drop.DropzoneIdentifier == "assigned") OnAddClicked(drop.Item);
+        else if (drop.DropzoneIdentifier == "available") OnRemoveClicked(drop.Item);
+    }
+    private void OnCancelClicked() => MudDialog.Cancel();
+    private async Task OnSaveClicked()
+    {
+        if (_saving || _loading || _loadFailed) return;
+        if (Options is not null)
+        {
+            MudDialog.Close(DialogResult.Ok(_items.Where(x => _selected.Contains(x.Id)).Select(x => x.Id).ToList()));
+            return;
+        }
+        if (_state is null) return;
+        _saving = true;
+        try
+        {
+            var existing = _state.Assignments.ToDictionary(x => x.PolicyId);
+            _state.Assignments = _items.Where(x => _selected.Contains(x.Id)).Select(x => existing.GetValueOrDefault(x.Id)
+                ?? new TargetPolicyAssignmentDto { PolicyId = x.Id, Name = x.Name, ExecutionPriority = x.ExecutionPriority }).ToList();
+            if (_state.Key.IsOu)
+                foreach (var assignment in _state.Assignments)
+                    assignment.IncludeDescendants = _scopes[assignment.PolicyId];
+            var result = await PolicyService.SaveTargetPoliciesAsync(_state);
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[LocKeys.Group.PoliciesUpdated], Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _saving = false; }
+    }
+}

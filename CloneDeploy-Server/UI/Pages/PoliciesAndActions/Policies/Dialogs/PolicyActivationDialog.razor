@@ -1,0 +1,31 @@
+<MudDialog>
+    <DialogContent>
+        @if (Active)
+        {
+            <MudText>@Loc[LocKeys.Ui.PolicyActivationDialog.DeactivateThisPolicyItWillBeExcludedFromSubsequent]</MudText>
+        }
+        @if (!Active)
+        {
+            <MudStack Spacing="3" Class="mt-4">
+                <PolicyReview PolicyId="PolicyId" PreviewReady="OnPreviewReady"/>
+            </MudStack>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => !Active && _preview is null, UiText.Get(LocKeys.Ui.PolicyActivationDialog.CompleteThePolicyReviewBeforeActivatingIt), OnConfirmClicked)" Color="Color.Primary" Variant="Variant.Filled">@(Active ? UiText.Get(LocKeys.Ui.PolicyActivationDialog.Deactivate) : UiText.Get(LocKeys.Ui.PolicyActivationDialog.ActivateSavedPolicy))</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    private void OnConfirmClicked()
+    {
+        if (!Active && _preview is null) return;
+        MudDialog.Close(DialogResult.Ok((false, _preview?.Hash ?? "")));
+    }
+    private void OnPreviewReady(PolicyActivationPreviewDto? preview) => _preview = preview;
+    private void OnCancelClicked() => MudDialog.Cancel();
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public bool Active { get; set; }
+    [Parameter] public int PolicyId { get; set; }
+    private PolicyActivationPreviewDto? _preview;
+}

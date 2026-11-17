@@ -1,0 +1,197 @@
+@page "/users/manage"
+
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+
+@inject AppUserService AppUserService
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.AdministrationNavigationGroup.ApplicationUsers]" />
+
+<ActionButtons>
+    <MainButton>
+        <MudButton Disabled="_saving" OnClick="@OnNewClicked" StartIcon="@Icons.Material.Filled.Add">@Loc[LocKeys.User.NewUser]</MudButton>
+    </MainButton>
+</ActionButtons>
+
+<MudPaper Class="device-list-filters device-search-panel" Elevation="0">
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudTextField T="string" ValueChanged="OnSearchChanged" DebounceInterval="300" Placeholder="@($"{Loc[LocKeys.Common.Search]}...")"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Immediate="false"
+                          HelperText="@Loc[LocKeys.User.SearchHint]" Variant="Variant.Outlined" Class="mt-0"/>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_loading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true"/>
+}
+
+<MudDataGrid T="AppUser" Items="@_appUsers" Dense="true" Elevation="0" MultiSelection="true" @bind-SelectedItems="_selectedAppUsers"
+             RowsPerPage="@Constants.UI.DefaultPageSize" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu"
+             ColumnResizeMode="ResizeMode.Column" Hover="true" Class="device-list-grid mb-8" Outlined="true" SelectOnRowClick="false">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.People" Color="Color.Primary"/>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.AdministrationNavigationGroup.ApplicationUsers]</MudText>
+        <MudSpacer/>
+        <div class="grid-toolbar-actions">
+            <GridSelectionCount Count="_selectedAppUsers.Count"/>
+            @if (_selectedAppUsers.Count > 0)
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="@(_saving || _loading)" OnClick="@OnDeleteSelectedClicked" StartIcon="@Icons.Material.Filled.Delete">
+                @Loc[LocKeys.Common.DeleteSelected]
+            </MudButton>
+        }
+        </div>
+    </ToolBarContent>
+
+    <Columns>
+        <SelectColumn T="AppUser"/>
+        <PropertyColumn Property="x => x.UserName" Title="@Loc[LocKeys.Auth.UserName]"><CellTemplate><button type="button" class="resource-name-link" @onclick="@(() => OnEditClicked(context.Item))">@context.Item.UserName</button></CellTemplate></PropertyColumn>
+        <PropertyColumn Property="x => x.Email" Title="@Loc[LocKeys.User.Email]"/>
+        <PropertyColumn Property='x => x.AccountType' Title="@Loc[LocKeys.Ui.AppUserGeneralTab.AccountType]"/>
+        <PropertyColumn Property="x => x.Membership" Title="@Loc[LocKeys.User.Membership]"/>
+        <PropertyColumn Property="x => x.AccessFailedCount" Title="@Loc[LocKeys.User.AccessFailedCount]"/>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.NewUserGroupDialog.RequireWebMFA]">
+            <CellTemplate>
+                <MudIcon Icon="@(MfaPolicy.RequiresWeb(context.Item) ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)"
+                         Color="@(MfaPolicy.RequiresWeb(context.Item) ? Color.Success : Color.Default)"/>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Ui.NewUserGroupDialog.RequireImagingMFA]">
+            <CellTemplate>
+                <MudIcon Icon="@(context.Item.EnableImagingMfa ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)"
+                         Color="@(context.Item.EnableImagingMfa ? Color.Success : Color.Default)"/>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+            <CellTemplate>
+
+                <MudTooltip Text="@($"{Loc[LocKeys.Common.Delete]} - {context.Item.UserName}")" Placement="Placement.Left"
+                            Arrow="true" Delay="200">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Medium"
+                                   Color="Color.Primary"
+                                   Disabled="@(_saving || _loading)" OnClick="@(() => OnDeleteClicked(context.Item))"/>
+                </MudTooltip>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+    <PagerContent><MudDataGridPager T="AppUser"/></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.User.NoUsersFound]</MudText></NoRecordsContent>
+</MudDataGrid>
+
+@code {
+    private bool _saving;
+    private List<AppUser> _appUsers = [];
+    private HashSet<AppUser> _selectedAppUsers = [];
+    private bool _loading = true;
+    private string? _search;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        var result = await AppUserService.GetAsync(_search);
+        if (!result.Success)
+        {
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+            _loading = false;
+            return;
+        }
+        _appUsers = result.Data!;
+
+        _selectedAppUsers.Clear();
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task OnSearchChanged(string? value)
+    {
+        _search = value;
+        await LoadAsync();
+    }
+
+    private async Task OnNewClicked()
+    {
+        var dialog = await Dialog.ShowAsync<NewUserDialog>(Constants.UI.StandardDialogBox);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: true })
+            await LoadAsync();
+    }
+
+    private void OnEditClicked(AppUser item)
+    {
+        Navigation.NavigateTo($"/users/manage/{item.Id}");
+    }
+
+    private async Task OnDeleteClicked(AppUser item)
+    {
+        if (_saving || _loading) return;
+        _saving = true;
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, Loc[LocKeys.User.ConfirmDelete, item.UserName!] },
+            { x => x.ButtonText, Loc[LocKeys.Common.Delete] },
+            { x => x.Color, Color.Error }
+        };
+
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        var dialogResult = await dialog.Result;
+
+        if (dialogResult is { Canceled: false, Data: true })
+        {
+            var result = await AppUserService.DeleteAsync(item.Id);
+
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[LocKeys.Common.Deleted, item.UserName!], Severity.Success);
+                await LoadAsync();
+            }
+            else
+                Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+
+        _saving = false;
+    }
+
+    private async Task OnDeleteSelectedClicked()
+    {
+        if (_saving || _loading) return;
+        _saving = true;
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, Loc[LocKeys.User.ConfirmDeleteMany] },
+            { x => x.ButtonText, Loc[LocKeys.Common.Delete] },
+            { x => x.Color, Color.Error }
+        };
+
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        var dialogResult = await dialog.Result;
+
+        if (dialogResult is { Canceled: false, Data: true })
+        {
+            var result = await AppUserService.DeleteManyAsync(_selectedAppUsers.Select(x => x.Id).ToList());
+
+            await LoadAsync();
+            if (result.Success)
+                Snackbar.Add(Loc[LocKeys.Common.DeletedMany], Severity.Success);
+            else
+            {
+                Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+                Snackbar.Add(Loc[LocKeys.User.DeleteStopped], Severity.Warning);
+            }
+        }
+
+        _saving = false;
+    }
+}

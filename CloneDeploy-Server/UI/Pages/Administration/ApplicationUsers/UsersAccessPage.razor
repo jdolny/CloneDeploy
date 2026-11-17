@@ -1,0 +1,17 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@page "/administration/users"
+@page "/administration/users/{Tab}"
+
+@code {
+    [Parameter] public string? Tab { get; set; }
+    protected override void OnParametersSet()
+    {
+        var destination = Tab?.ToLowerInvariant() switch
+        {
+            "groups" => "/usergroups/manage",
+            "directory" => "/administration/server/directories",
+            _ => "/users/manage"
+        };
+        Navigation.NavigateTo(destination, replace: true);
+    }
+}

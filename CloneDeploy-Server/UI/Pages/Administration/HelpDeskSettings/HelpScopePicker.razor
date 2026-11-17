@@ -1,0 +1,38 @@
+<MudAutocomplete T="Option" @ref="_picker" Label="@Label" Variant="Variant.Outlined" Margin="Margin.Dense"
+                 SearchFunc="SearchAsync" ToStringFunc="@(option => option?.Name ?? "")" ValueChanged="AddAsync"
+                 Clearable="true" ResetValueOnEmptyText="true" MaxItems="20" Disabled="Disabled"
+                 AdornmentIcon="@Icons.Material.Filled.Search">
+    <NoItemsTemplate><MudText Class="pa-3">@Loc["HelpDesk.NoMatchingScopeOptions"]</MudText></NoItemsTemplate>
+    <MoreItemsTemplate><MudText Class="pa-3" Typo="Typo.caption">@Loc[LocKeys.Ui.PolicyGeneral.KeepTypingToNarrowTheResults]</MudText></MoreItemsTemplate>
+</MudAutocomplete>
+<MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-2">
+    @foreach (var id in SelectedIds)
+    {
+        <MudChip T="int" @key="id" Value="id" Variant="Variant.Outlined" Color="Color.Primary"
+                 Disabled="Disabled" OnClose="@(() => RemoveAsync(id))">
+            @(Options.FirstOrDefault(x => x.Id == id)?.Name ?? Loc["HelpDesk.UnavailableScopeOption", id].Value)
+        </MudChip>
+    }
+</MudStack>
+
+@code {
+    public sealed record Option(int Id, string Name);
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public IEnumerable<Option> Options { get; set; } = [];
+    [Parameter] public int[] SelectedIds { get; set; } = [];
+    [Parameter] public EventCallback<int[]> SelectedIdsChanged { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    private MudAutocomplete<Option>? _picker;
+    private Task<IEnumerable<Option>> SearchAsync(string? text, CancellationToken ct) =>
+        Task.FromResult(Options.Where(x => !SelectedIds.Contains(x.Id) &&
+            (string.IsNullOrWhiteSpace(text) || x.Name.Contains(text.Trim(), StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).AsEnumerable());
+    private async Task AddAsync(Option? option)
+    {
+        if (Disabled || option is null) return;
+        await SelectedIdsChanged.InvokeAsync(SelectedIds.Append(option.Id).Distinct().ToArray());
+        if (_picker is not null) await _picker.ClearAsync();
+    }
+    private Task RemoveAsync(int id) => Disabled ? Task.CompletedTask :
+        SelectedIdsChanged.InvokeAsync(SelectedIds.Where(x => x != id).ToArray());
+}

@@ -1,0 +1,262 @@
+@inject AuthenticationStateProvider SharedAuthentication
+@inject IAuthorizationService SharedAuthorization
+@inject ScheduleService ScheduleService
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Outlined.Schedule" Color="Color.Primary"/>
+            <MudText Typo="Typo.h6">
+                @(_isNew ? Loc[LocKeys.Schedule.NewSchedule] : Loc[LocKeys.Schedule.EditSchedule])
+            </MudText>
+        </MudStack>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm Disabled="@(!_canEditShared)" @ref="_form">
+            <MudStack Spacing="3" Class="pt-2">
+                <MudTextField @bind-Value="_schedule.Name" Label="@Loc[LocKeys.Common.Name]" Variant="Variant.Outlined"
+                              Required="true"/>
+                <MudTextField @bind-Value="_schedule.Description" Label="@Loc[LocKeys.Common.Description]"
+                              Lines="4" Variant="Variant.Outlined"/>
+
+                <MudSelect T="ScheduleType" @bind-Value="_schedule.Type" Label="@Loc[LocKeys.Ui.ScheduleDialog.ScheduleType]" Variant="Variant.Outlined">
+                    <MudSelectItem Value="ScheduleType.Weekly">@Loc[LocKeys.Ui.ScheduleDialog.Weekly]</MudSelectItem>
+                    <MudSelectItem Value="ScheduleType.Interval">@Loc[LocKeys.Ui.ScheduleDialog.Interval]</MudSelectItem>
+                </MudSelect>
+
+                @if (_schedule.Type == ScheduleType.Interval)
+                {
+                    <MudGrid>
+                        <MudItem xs="6">
+                            <MudNumericField T="int?" @bind-Value="_intervalValue" Label="@Loc[LocKeys.Ui.ScheduleDialog.Every]" Min="@(_intervalUnit == 1 ? 5 : 1)" Max="@(int.MaxValue / _intervalUnit)" Required="true" Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudSelect T="int" @bind-Value="_intervalUnit" Label="@Loc[LocKeys.Ui.ScheduleDialog.Unit]" Variant="Variant.Outlined">
+                                <MudSelectItem Value="1">@Loc[LocKeys.Ui.ScheduleDialog.Minutes]</MudSelectItem>
+                                <MudSelectItem Value="60">@Loc[LocKeys.Ui.ScheduleDialog.Hours]</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudDatePicker @bind-Date="_startDate" Label="@Loc[LocKeys.Ui.ScheduleDialog.StartingOn]" Required="true" Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudTimePicker @bind-Time="_startTime" Label="@Loc[LocKeys.Common.At]" Required="true" AmPm="true" Variant="Variant.Outlined" />
+                        </MudItem>
+                    </MudGrid>
+                }
+                else
+                {
+                    <MudText>@Loc[LocKeys.Common.OccursOn]</MudText>
+                    <MudToggleGroup T="string"
+                                    SelectionMode="SelectionMode.MultiSelection"
+                                    @bind-Values="_dayValues"
+                                    Color="Color.Primary"
+                                    Style="flex-wrap: wrap"
+                                    CheckMark>
+
+                        <MudToggleItem Value="@nameof(DayOfWeek.Monday)">@Loc[LocKeys.Common.Monday]</MudToggleItem>
+                        <MudToggleItem Value="@nameof(DayOfWeek.Tuesday)">@Loc[LocKeys.Common.Tuesday]</MudToggleItem>
+                        <MudToggleItem Value="@nameof(DayOfWeek.Wednesday)">@Loc[LocKeys.Common.Wednesday]</MudToggleItem>
+                        <MudToggleItem Value="@nameof(DayOfWeek.Thursday)">@Loc[LocKeys.Common.Thursday]</MudToggleItem>
+                        <MudToggleItem Value="@nameof(DayOfWeek.Friday)">@Loc[LocKeys.Common.Friday]</MudToggleItem>
+                        <MudToggleItem Value="@nameof(DayOfWeek.Saturday)">@Loc[LocKeys.Common.Saturday]</MudToggleItem>
+                        <MudToggleItem Value="@nameof(DayOfWeek.Sunday)">@Loc[LocKeys.Common.Sunday]</MudToggleItem>
+                    </MudToggleGroup>
+
+                    <MudGrid>
+                        <MudItem xs="12" lg="6">
+                            <MudText>@Loc[LocKeys.Common.At]</MudText>
+                            <MudTimePicker @ref="_timePicker"
+                                           @bind-Time="_schedule.Time"
+                                           PickerVariant="PickerVariant.Dialog"
+                                           Required="true"
+                                           MinuteSelectionStep="15"
+                                           AutoClose="false"
+                                           Variant="Variant.Outlined"
+                                           AmPm="@_timeDisplayFormat">
+                                <PickerActions>
+                                    <MudButton OnClick="OnCancelTimeClicked">
+                                        @Loc[LocKeys.Common.Cancel]
+                                    </MudButton>
+                                    <MudButton Color="Color.Primary"
+                                               OnClick="OnConfirmTimeClicked">
+                                        @Loc[LocKeys.Common.Ok]
+                                    </MudButton>
+                                </PickerActions>
+                            </MudTimePicker>
+                        </MudItem>
+                        <MudItem xs="12" lg="6">
+                            <MudGrid>
+                                <MudItem xs="3">
+                                    <MudText>@Loc[LocKeys.Common.TimeFormat]</MudText>
+                                </MudItem>
+                                <MudItem xs="3">
+                                    <MudTooltip Text="@Loc[LocKeys.Tooltip.TimeFormat]" Arrow="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.Help"></MudIcon>
+                                    </MudTooltip>
+                                </MudItem>
+                            </MudGrid>
+                            <MudToggleGroup T="bool"
+                                            SelectionMode="SelectionMode.ToggleSelection"
+                                            @bind-Value="_timeDisplayFormat"
+                                            Color="Color.Primary"
+                                            CheckMark>
+                                <MudToggleItem Value="@(true)" Text="@Loc[LocKeys.Common.TwelveHour]"/>
+                                <MudToggleItem Value="@(false)" Text="@Loc[LocKeys.Common.TwentyFourHour]"/>
+                            </MudToggleGroup>
+                        </MudItem>
+                    </MudGrid>
+                }
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="@OnCancelClicked">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="@(!_canEditShared)" OnClick="@OnSaveClicked">
+            @(_isNew ? Loc[LocKeys.Common.Create] : Loc[LocKeys.Common.Save])
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private bool _canEditShared;
+    protected override async Task OnParametersSetAsync()
+    {
+        _canEditShared = (await SharedAuthorization.AuthorizeAsync((await SharedAuthentication.GetAuthenticationStateAsync()).User, Constants.Permissions.ScheduleEdit)).Succeeded;
+    }
+
+    private Task OnCancelTimeClicked() => _timePicker.CloseAsync(false);
+    private Task OnConfirmTimeClicked() => _timePicker.CloseAsync();
+
+    [Parameter] public Schedule? Schedule { get; set; }
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private Schedule _schedule = null!;
+    private bool _isNew => Schedule is null || Schedule.Id == 0;
+    private MudForm _form = null!;
+    private MudTimePicker _timePicker = null!;
+    private bool _timeDisplayFormat;
+    private int? _intervalValue = 1;
+    private int _intervalUnit = 60;
+    private DateTime? _startDate = DateTime.Today;
+    private TimeSpan? _startTime = new TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, 0);
+
+    private IEnumerable<string> _dayValues
+    {
+        get
+        {
+            var days = new List<string>();
+
+            if (_schedule.Monday) days.Add(nameof(DayOfWeek.Monday));
+            if (_schedule.Tuesday) days.Add(nameof(DayOfWeek.Tuesday));
+            if (_schedule.Wednesday) days.Add(nameof(DayOfWeek.Wednesday));
+            if (_schedule.Thursday) days.Add(nameof(DayOfWeek.Thursday));
+            if (_schedule.Friday) days.Add(nameof(DayOfWeek.Friday));
+            if (_schedule.Saturday) days.Add(nameof(DayOfWeek.Saturday));
+            if (_schedule.Sunday) days.Add(nameof(DayOfWeek.Sunday));
+
+            return days;
+        }
+        set
+        {
+            _schedule.Monday = value.Contains(nameof(DayOfWeek.Monday));
+            _schedule.Tuesday = value.Contains(nameof(DayOfWeek.Tuesday));
+            _schedule.Wednesday = value.Contains(nameof(DayOfWeek.Wednesday));
+            _schedule.Thursday = value.Contains(nameof(DayOfWeek.Thursday));
+            _schedule.Friday = value.Contains(nameof(DayOfWeek.Friday));
+            _schedule.Saturday = value.Contains(nameof(DayOfWeek.Saturday));
+            _schedule.Sunday = value.Contains(nameof(DayOfWeek.Sunday));
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        _schedule = Schedule is null
+            ? new Schedule()
+            : new Schedule
+            {
+                Id = Schedule.Id,
+                Name = Schedule.Name,
+                Description = Schedule.Description,
+                Sunday = Schedule.Sunday,
+                Monday = Schedule.Monday,
+                Tuesday = Schedule.Tuesday,
+                Wednesday = Schedule.Wednesday,
+                Thursday = Schedule.Thursday,
+                Friday = Schedule.Friday,
+                Saturday = Schedule.Saturday,
+                Time = Schedule.Time,
+                Type = Schedule.Type,
+                IntervalMinutes = Schedule.IntervalMinutes,
+                StartsAtUtc = Schedule.StartsAtUtc,
+            };
+
+        if (_schedule.Type == ScheduleType.Interval)
+        {
+            var minutes = _schedule.IntervalMinutes ?? 60;
+            _intervalUnit = minutes % 60 == 0 ? 60 : 1;
+            _intervalValue = minutes / _intervalUnit;
+            var start = _schedule.StartsAtUtc?.ToLocalTime();
+            _startDate = start?.Date;
+            _startTime = start?.TimeOfDay;
+        }
+    }
+
+    private void OnCancelClicked()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task OnSaveClicked()
+    {
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+            return;
+
+        if (_schedule.Type == ScheduleType.Interval)
+        {
+            if (_intervalValue is null or < 1 || _intervalValue > int.MaxValue / _intervalUnit ||
+                _startDate is null || _startTime is null)
+                return;
+
+            _schedule.IntervalMinutes = _intervalValue.Value * _intervalUnit;
+            var localStart = DateTime.SpecifyKind(_startDate.Value.Date + _startTime.Value, DateTimeKind.Unspecified);
+            if (TimeZoneInfo.Local.IsInvalidTime(localStart))
+            {
+                Snackbar.Add(UiText.Get(LocKeys.Ui.ScheduleDialog.ThisStartTimeIsSkippedByDaylightSavingTime), Severity.Error);
+                return;
+            }
+
+            // Match weekly schedules: use the first occurrence of a repeated local time.
+            _schedule.StartsAtUtc = TimeZoneInfo.Local.IsAmbiguousTime(localStart)
+                ? new DateTimeOffset(localStart, TimeZoneInfo.Local.GetAmbiguousTimeOffsets(localStart).Max()).UtcDateTime
+                : TimeZoneInfo.ConvertTimeToUtc(localStart, TimeZoneInfo.Local);
+        }
+
+        if (!ScheduleService.IsValid(_schedule))
+        {
+            Snackbar.Add(_schedule.Type == ScheduleType.Interval
+                ? UiText.Get(LocKeys.Ui.ScheduleDialog.EnterAnIntervalOfAtLeast5MinutesAnd)
+                : UiText.Get(LocKeys.Ui.ScheduleDialog.SelectAtLeastOneDayAndATimeIn), Severity.Error);
+            return;
+        }
+
+        ServiceResult<Schedule> result;
+
+        if (_isNew)
+            result = await ScheduleService.CreateAsync(_schedule);
+        else
+            result = await ScheduleService.UpdateAsync(_schedule);
+
+        if (result.Success)
+        {
+            Snackbar.Add(_isNew ? Loc[LocKeys.Common.Created, _schedule.Name] : Loc[LocKeys.Common.Updated, _schedule.Name], Severity.Success);
+            MudDialog.Close(DialogResult.Ok(result.Data));
+        }
+        else
+            Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+    }
+}

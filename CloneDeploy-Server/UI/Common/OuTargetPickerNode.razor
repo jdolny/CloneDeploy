@@ -1,0 +1,53 @@
+@using CloneDeploy_Server.Backend.Services
+<div class="py-1">
+    <div style="display:flex;align-items:center;min-width:0">
+        @if (Children.Any())
+        {
+            <MudIconButton Size="Size.Small" Icon="@(Expanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" OnClick="@(() => _expanded = !Expanded)" aria-label="@($"{(Expanded ? UiText.Get(LocKeys.MudBlazor.MudTreeView_CollapseItem) : UiText.Get(LocKeys.MudBlazor.MudTreeView_ExpandItem))} {Node.Name}")" />
+        }
+        else { <span style="width:32px;flex-shrink:0"></span> }
+        @if (Node.IsOu)
+        {
+            <MudCheckBox T="bool" Value="@(Assigned.Contains(Key) || Selected.ContainsKey(Key))" ValueChanged="Toggle" Disabled="@(!Node.Available || Assigned.Contains(Key))" Label="@Node.Name" />
+        }
+        else { <MudText><MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small" /> @Node.Name</MudText> }
+        @if (Assigned.Contains(Key)) { <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.OuTargetPickerNode.Assigned]</MudText> }
+        else if (!Node.Available) { <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.OuTargetPickerNode.Unavailable]</MudText> }
+    </div>
+    @if (Expanded)
+    {
+        <div style="margin-left:16px;border-left:1px solid var(--mud-palette-lines-default);padding-left:4px">
+            @foreach (var child in Children)
+            {
+                <OuTargetPickerNode @key="child.Guid" Node="child" Nodes="Nodes" Visible="Visible" Assigned="Assigned" Selected="Selected" Changed="Changed" Searching="Searching" SingleSelection="SingleSelection" Ancestors="NextAncestors" />
+            }
+        </div>
+    }
+</div>
+@code {
+    [Parameter, EditorRequired] public PolicyTargetDirectoryNodeDto Node { get; set; } = null!;
+    [Parameter] public List<PolicyTargetDirectoryNodeDto> Nodes { get; set; } = [];
+    [Parameter] public HashSet<Guid> Visible { get; set; } = [];
+    [Parameter] public HashSet<Guid> Ancestors { get; set; } = [];
+    [Parameter] public HashSet<PolicyTargetKeyDto> Assigned { get; set; } = [];
+    [Parameter] public Dictionary<PolicyTargetKeyDto, PolicyTargetSelectionDto> Selected { get; set; } = [];
+    [Parameter] public EventCallback Changed { get; set; }
+    [Parameter] public bool SingleSelection { get; set; }
+    [Parameter] public bool Searching { get; set; }
+    private bool? _expanded;
+    private bool Expanded => Searching || (_expanded ?? Ancestors.Count == 0);
+    private PolicyTargetKeyDto Key => PolicyTargetKeyDto.Ou(Node.SourceId, Node.Guid);
+    private HashSet<Guid> NextAncestors => [.. Ancestors, Node.Guid];
+    private IEnumerable<PolicyTargetDirectoryNodeDto> Children => Nodes.Where(x => x.ParentGuid == Node.Guid && Visible.Contains(x.Guid) && x.Guid != Node.Guid && !Ancestors.Contains(x.Guid));
+    private async Task Toggle(bool value)
+    {
+        if (!Node.Available || Assigned.Contains(Key)) return;
+        if (value)
+        {
+            if (SingleSelection) Selected.Clear();
+            Selected.TryAdd(Key, new PolicyTargetSelectionDto { Key = Key });
+        }
+        else Selected.Remove(Key);
+        await Changed.InvokeAsync();
+    }
+}

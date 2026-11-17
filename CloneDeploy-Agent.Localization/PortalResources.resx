@@ -1,0 +1,1247 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <data xml:space="preserve" name="Admin.BackToMenuHint">
+    <value>Return to the tool menu. Running tasks continue.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.BackToTools">
+    <value>← Admin tools</value>
+  </data>
+  <data xml:space="preserve" name="Admin.ConnectBeforeSignIn">
+    <value>Sign in as an administrator after connecting to the agent service.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.EndSessionAgentUnavailable">
+    <value>Could not contact the agent to end the session. Administrator tools remain unavailable here.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.InvalidSessionResponse">
+    <value>Invalid administrator session response.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.SessionExpiresAt">
+    <value>Session expires at {0:t}.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.SignInDescription">
+    <value>Administrator tools for this computer. Sign in with your CloneDeploy account.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.SignInWithCloneDeploy">
+    <value>Sign in with your CloneDeploy administrator account.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.SignedInAs">
+    <value>Administrator tools — signed in as {0}</value>
+  </data>
+  <data xml:space="preserve" name="Admin.StartBrowserSignInFailed">
+    <value>Could not start browser sign-in. Check the agent service and server connection, then try again.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.VerifyAccessFailed">
+    <value>Could not verify administrator access. Check the agent service and server connection.</value>
+  </data>
+  <data xml:space="preserve" name="Admin.VerifyEndSessionFailed">
+    <value>Could not verify and end the administrator session. Sign in again to close the UI.</value>
+  </data>
+  <data xml:space="preserve" name="Common.Acknowledge">
+    <value>Acknowledge</value>
+  </data>
+  <data xml:space="preserve" name="Common.AdminTools">
+    <value>Admin tools</value>
+  </data>
+  <data xml:space="preserve" name="Common.AdministratorTools">
+    <value>Administrator tools</value>
+  </data>
+  <data xml:space="preserve" name="Common.AgentVersionConnecting">
+    <value>Agent version: connecting…</value>
+  </data>
+  <data xml:space="preserve" name="Common.AgentVersionNotReported">
+    <value>Agent version: not reported</value>
+  </data>
+  <data xml:space="preserve" name="Common.AgentVersionUnavailable">
+    <value>Agent version: unavailable</value>
+  </data>
+  <data xml:space="preserve" name="Common.AllCategories">
+    <value>All categories</value>
+  </data>
+  <data xml:space="preserve" name="Common.Allow">
+    <value>Allow</value>
+  </data>
+  <data xml:space="preserve" name="Common.AssignedPolicies">
+    <value>Assigned policies</value>
+  </data>
+  <data xml:space="preserve" name="Common.AvailableSelfServicePolicies">
+    <value>Available self-service policies</value>
+  </data>
+  <data xml:space="preserve" name="Common.Cancel">
+    <value>Cancel</value>
+  </data>
+  <data xml:space="preserve" name="Common.CancelSignIn">
+    <value>Cancel sign-in</value>
+  </data>
+  <data xml:space="preserve" name="Common.CancelUSBCreation">
+    <value>Cancel USB creation</value>
+  </data>
+  <data xml:space="preserve" name="Common.Category">
+    <value>Category</value>
+  </data>
+  <data xml:space="preserve" name="Common.CloneDeployLogo">
+    <value>CloneDeploy logo</value>
+  </data>
+  <data xml:space="preserve" name="Common.CloseAgentUI">
+    <value>Close agent UI</value>
+  </data>
+  <data xml:space="preserve" name="Common.Completed">
+    <value>Completed</value>
+  </data>
+  <data xml:space="preserve" name="Common.CreateBootableUSB">
+    <value>Create bootable USB</value>
+  </data>
+  <data xml:space="preserve" name="Common.CreateDriverPack">
+    <value>Create driver pack</value>
+  </data>
+  <data xml:space="preserve" name="Common.Deny">
+    <value>Deny</value>
+  </data>
+  <data xml:space="preserve" name="Common.Device">
+    <value>Device</value>
+  </data>
+  <data xml:space="preserve" name="Common.DeviceServiceUnavailable">
+    <value>Device service unavailable</value>
+  </data>
+  <data xml:space="preserve" name="Common.Dismiss">
+    <value>Dismiss</value>
+  </data>
+  <data xml:space="preserve" name="Common.DownloadISO">
+    <value>Download ISO</value>
+  </data>
+  <data xml:space="preserve" name="Common.DriverPackName">
+    <value>Driver pack name</value>
+  </data>
+  <data xml:space="preserve" name="Common.Enrolled">
+    <value>Enrolled</value>
+  </data>
+  <data xml:space="preserve" name="Common.EraseAndCreateUSB">
+    <value>Erase and create USB</value>
+  </data>
+  <data xml:space="preserve" name="Common.ExternalUSBDisk">
+    <value>External USB disk</value>
+  </data>
+  <data xml:space="preserve" name="Common.Failed">
+    <value>Failed</value>
+  </data>
+  <data xml:space="preserve" name="Common.Finished">
+    <value>Finished</value>
+  </data>
+  <data xml:space="preserve" name="Common.ImagePrepProfile">
+    <value>Image prep profile</value>
+  </data>
+  <data xml:space="preserve" name="Common.LabelAndTimestamp">
+    <value>{0} {1:g}</value>
+  </data>
+  <data xml:space="preserve" name="Common.Later">
+    <value>Later</value>
+  </data>
+  <data xml:space="preserve" name="Common.MessageHistory">
+    <value>Message history</value>
+  </data>
+  <data xml:space="preserve" name="Common.NotApplicable">
+    <value>Not applicable</value>
+  </data>
+  <data xml:space="preserve" name="Common.Notifications">
+    <value>Notifications</value>
+  </data>
+  <data xml:space="preserve" name="Common.Open">
+    <value>Open</value>
+  </data>
+  <data xml:space="preserve" name="Common.OrganizationLogo">
+    <value>Organization logo</value>
+  </data>
+  <data xml:space="preserve" name="Common.Other">
+    <value>Other</value>
+  </data>
+  <data xml:space="preserve" name="Common.Policy">
+    <value>Policy</value>
+  </data>
+  <data xml:space="preserve" name="Common.PoweredBy">
+    <value>Powered by</value>
+  </data>
+  <data xml:space="preserve" name="Common.PrepareAndShutDown">
+    <value>Prepare and shut down</value>
+  </data>
+  <data xml:space="preserve" name="Common.Priority">
+    <value>Priority</value>
+  </data>
+  <data xml:space="preserve" name="Common.ReadyToRun">
+    <value>Ready to run?</value>
+  </data>
+  <data xml:space="preserve" name="Common.Refresh">
+    <value>Refresh</value>
+  </data>
+  <data xml:space="preserve" name="Common.RefreshBootEnvironments">
+    <value>Refresh boot environments</value>
+  </data>
+  <data xml:space="preserve" name="Common.RefreshDrives">
+    <value>Refresh drives</value>
+  </data>
+  <data xml:space="preserve" name="Common.RefreshPortal">
+    <value>Refresh portal</value>
+  </data>
+  <data xml:space="preserve" name="Common.RefreshProfiles">
+    <value>Refresh profiles</value>
+  </data>
+  <data xml:space="preserve" name="Common.Result">
+    <value>Result</value>
+  </data>
+  <data xml:space="preserve" name="Common.ResultPending">
+    <value>Result pending</value>
+  </data>
+  <data xml:space="preserve" name="Common.RunImagePrep">
+    <value>Run image prep</value>
+  </data>
+  <data xml:space="preserve" name="Common.RunNow">
+    <value>Run now</value>
+  </data>
+  <data xml:space="preserve" name="Common.Running">
+    <value>Running…</value>
+  </data>
+  <data xml:space="preserve" name="Common.SelfService">
+    <value>Self Service</value>
+  </data>
+  <data xml:space="preserve" name="Common.SelfServiceCategory">
+    <value>Self-service category</value>
+  </data>
+  <data xml:space="preserve" name="Common.SelfServiceMessage">
+    <value>Self service</value>
+  </data>
+  <data xml:space="preserve" name="Common.Skipped">
+    <value>Skipped</value>
+  </data>
+  <data xml:space="preserve" name="Common.StopSharing">
+    <value>Stop sharing</value>
+  </data>
+  <data xml:space="preserve" name="Common.TargetArchitecture">
+    <value>Target architecture</value>
+  </data>
+  <data xml:space="preserve" name="Common.USBTargetArchitecture">
+    <value>USB target architecture</value>
+  </data>
+  <data xml:space="preserve" name="Common.UnableToRefresh">
+    <value>Unable to refresh</value>
+  </data>
+  <data xml:space="preserve" name="Common.UnknownResult">
+    <value>Unknown result</value>
+  </data>
+  <data xml:space="preserve" name="Common.WinPEBootEnvironment">
+    <value>WinPE boot environment</value>
+  </data>
+  <data xml:space="preserve" name="Common.WorkAccount">
+    <value>Work account</value>
+  </data>
+  <data xml:space="preserve" name="Common.WorkAccountSignIn">
+    <value>Work account sign-in</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentClosedWithoutResponse">
+    <value>The agent closed the portal connection without a response. Check the agent log for 'Portal connection ended'.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentNotAcceptingConnections">
+    <value>The local agent's portal did not accept a connection. Check that the installed CloneDeploy Agent service is running.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentResponseTimeout">
+    <value>The local agent did not respond in time. Check its server connection, then refresh.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentServiceQueryFailed">
+    <value>Cannot query the installed agent service</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentServiceUnavailable">
+    <value>Could not connect to the CloneDeployAgent Windows service. Check that it is running, then refresh.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.AgentStatusReadFailed">
+    <value>Cannot read the agent service status</value>
+  </data>
+  <data xml:space="preserve" name="Connection.ConnectingToDeviceService">
+    <value>Connecting to the device service…</value>
+  </data>
+  <data xml:space="preserve" name="Connection.ConnectingToLocalAgent">
+    <value>Connecting to the local agent…</value>
+  </data>
+  <data xml:space="preserve" name="Connection.ContactAgentFailed">
+    <value>Could not contact the agent. Please try again.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.DeviceServiceStarting">
+    <value>The device service is starting</value>
+  </data>
+  <data xml:space="preserve" name="Connection.InvalidPortalResponse">
+    <value>Invalid portal response.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.InvalidResponseSize">
+    <value>Invalid portal response size.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.OrganizationConnected">
+    <value>Connected to your organization</value>
+  </data>
+  <data xml:space="preserve" name="Connection.PipeOwnerUnknown">
+    <value>Cannot identify the portal pipe owner</value>
+  </data>
+  <data xml:space="preserve" name="Connection.RetryingSoon">
+    <value>The service will try again shortly</value>
+  </data>
+  <data xml:space="preserve" name="Connection.ServiceRestartingHint">
+    <value>It may be restarting. Please try again shortly.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.UnsupportedServiceVersion">
+    <value>Unsupported device service version.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.UntrustedPipeOwner">
+    <value>The portal connection does not belong to the running CloneDeploy Agent service.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WaitForAgentStartup">
+    <value>The agent service is not running yet. Wait for it to start, then refresh.</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WaitingForApproval">
+    <value>Waiting for administrator approval</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WaitingForFirstCheckIn">
+    <value>Waiting for the first check-in</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WaitingForIdentityReset">
+    <value>Waiting for identity reset approval</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WaitingForOrganization">
+    <value>Waiting for a connection to your organization</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WindowsError">
+    <value>{0}: {1} (Windows error {2}).</value>
+  </data>
+  <data xml:space="preserve" name="Connection.WindowsServiceQueryFailed">
+    <value>Cannot query Windows services</value>
+  </data>
+  <data xml:space="preserve" name="Device.AccountDescription">
+    <value>This computer and your work account.</value>
+  </data>
+  <data xml:space="preserve" name="Device.AgentServiceVersion">
+    <value>Connected agent service version</value>
+  </data>
+  <data xml:space="preserve" name="Device.AgentVersion">
+    <value>Agent version {0}</value>
+  </data>
+  <data xml:space="preserve" name="Device.AgentVersionDescription">
+    <value>Version of the connected CloneDeployAgent Windows service.</value>
+  </data>
+  <data xml:space="preserve" name="Device.AgentVersionNotReportedHint">
+    <value>This service does not report its version. Reinstall the current development agent and refresh.</value>
+  </data>
+  <data xml:space="preserve" name="Device.AgentVersionPrefix">
+    <value>Agent version </value>
+  </data>
+  <data xml:space="preserve" name="Device.LastCheckIn">
+    <value>Last check-in: {0:g}</value>
+  </data>
+  <data xml:space="preserve" name="Device.LocalWindowsUser">
+    <value>Local Windows user</value>
+  </data>
+  <data xml:space="preserve" name="Device.Overview">
+    <value>DEVICE OVERVIEW</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.CancelFailed">
+    <value>Could not request cancellation. Check the agent service.</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.DefaultPackName">
+    <value>{0} drivers {1}</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.ExportDescription">
+    <value>Export installed third-party drivers and upload them as a new pack for this computer's model.</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.ExportHeading">
+    <value>Export installed third-party drivers for this model</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.InvalidCollectionResponse">
+    <value>Invalid driver collection response.</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.ReadProgressFailed">
+    <value>Could not read collection progress. Check the agent service.</value>
+  </data>
+  <data xml:space="preserve" name="Drivers.StartCollectionFailed">
+    <value>Could not start driver collection. Check administrator sign-in and the agent service.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AboutSupportRequests">
+    <value>About support requests</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ActualSize">
+    <value>Actual size</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AllMyRequests">
+    <value>All my requests</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AttachScreenshot">
+    <value>Attach screenshot</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AutomaticReplies">
+    <value>New replies appear automatically. You can close this window and return later to view updates.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AutomaticRepliesWhileOpen">
+    <value>New replies appear automatically while this tab is open. You can close the portal and return later to view updates.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.AwaitingReview">
+    <value>Awaiting review</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.BriefDescription">
+    <value>Brief description</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ChooseRequestDescription">
+    <value>Choose a request to see the conversation, or start a new request.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ChooseScreenshot">
+    <value>Choose screenshot</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Close">
+    <value>Close</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Closed">
+    <value>Closed</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ConfirmDiscardDraft">
+    <value>Discard the unsent description or reply?</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DefaultSupportResponse">
+    <value>Our support team will respond when available.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DescriptionOrReply">
+    <value>Description or reply</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DescriptionRequired">
+    <value>Enter a brief and detailed description.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DetailedDescription">
+    <value>Detailed description</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DetailedDescriptionRequired">
+    <value>Enter the required description.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.DisabledByAdministrator">
+    <value>{0} is disabled by your administrator.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.FilterRequestsByStatus">
+    <value>Filter requests by status</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.FitToWindow">
+    <value>Fit to window</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.GetYourScreenshotReady">
+    <value>Get your screenshot ready</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.HowCanWeHelp">
+    <value>How can we help?</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.InProgress">
+    <value>In progress</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.InvalidResponse">
+    <value>Invalid help response.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.LoadEarlierMessages">
+    <value>Load earlier messages</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.MessageSent">
+    <value>Your message was sent.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.MyHelpRequests">
+    <value>My help requests</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NamedUpdate">
+    <value>{0} update</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NewHelpRequest">
+    <value>New Help request</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NewNamedRequest">
+    <value>New {0} request</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Next">
+    <value>Next</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NoMatchingRequestsHint">
+    <value>No requests match this view. Select Request help to get started.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NoRequestsWithStatus">
+    <value>No requests with this status</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.NoRequestsYet">
+    <value>No requests yet</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.OpenNamed">
+    <value>Open {0}</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.PreviewAttachedScreenshot">
+    <value>Preview attached screenshot</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Previous">
+    <value>Previous</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RefreshFailedDraftSaved">
+    <value>Unable to refresh requests. Your draft is still here; try Refresh again.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RemoveAttachedScreenshot">
+    <value>Remove attached screenshot</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RemoveScreenshot">
+    <value>Remove screenshot</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ReopenRequest">
+    <value>Reopen request</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ReplyPlaceholder">
+    <value>Type your reply here…</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ReplyRequired">
+    <value>Type your reply first.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RequestReopened">
+    <value>Your request was reopened.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RequestUpdated">
+    <value>#{0} · Updated {1:g}</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.RetakeScreenshot">
+    <value>Retake screenshot</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Screenshot">
+    <value>Screenshot</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ScreenshotAttached">
+    <value>Screenshot attached</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SendOrClearDraftFirst">
+    <value>Send your draft, or clear its text and remove any screenshot before selecting another request.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SendReply">
+    <value>Send reply</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SendUnconfirmed">
+    <value>Sending was not confirmed. Retry to check the same request without duplicating it.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SignInOnDeviceTab">
+    <value>Sign in with your work account on the Device tab to view your requests.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SubmitRequest">
+    <value>Submit request</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SupportUnavailable">
+    <value>Unable to reach support. Please try again shortly.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.SupportUnavailableDraftSaved">
+    <value>Unable to reach support. Your draft is still here; try Refresh or send again.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.TakeScreenshot">
+    <value>Take screenshot</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.TheScreenshotCouldNotBeLoaded">
+    <value>The screenshot could not be loaded.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.TicketScreenshot">
+    <value>Ticket screenshot</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.Title">
+    <value>Help</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.UnavailableRetry">
+    <value>Help is unavailable. Check your connection and try again.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.UnreadCount">
+    <value>{0} unread {1} request(s)</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.UnreadIndicator">
+    <value>● Unread</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.UpdatesCount">
+    <value>You have updates on {0} request(s). Open {1} to view them.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.ViewScreenshot">
+    <value>View screenshot</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.WaitingOnYou">
+    <value>Waiting on you</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.WorkAccountChanged">
+    <value>Work account changed. Refresh to continue.</value>
+  </data>
+  <data xml:space="preserve" name="HelpDesk.You">
+    <value>You</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.AgentUninstallWarning">
+    <value>The CloneDeploy agent will be uninstalled before capture. </value>
+  </data>
+  <data xml:space="preserve" name="Imaging.CaptureDestination">
+    <value>Capture destination</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.CaptureDestinationDescription">
+    <value>Capture a new version into an existing image, or create a new image.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.CaptureDestinationPermissionRequired">
+    <value>View images or Create image permission is required to choose a capture destination.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.ConfirmRunPreparation">
+    <value>Run '{0}' on this computer?
+
+Save all work first. The selected settings and scripts will run as SYSTEM. {1} Preparation continues if this window closes.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.Continue">
+    <value>Continue</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.CreateNewImage">
+    <value>Create new image</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.FFUWholeGPTDisk">
+    <value>FFU — whole GPT disk</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.ImageName">
+    <value>Image name</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.ImageType">
+    <value>Image type</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.InvalidImageName">
+    <value>Enter a valid image name.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.InvalidPreparationResponse">
+    <value>Invalid image prep response.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.LoadProfilesFailed">
+    <value>Could not load image prep profiles. Check administrator sign-in and the server connection.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.NoEnabledProfiles">
+    <value>No enabled profiles. Create one under Imaging → Image Prep Profiles in the web UI.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.PreparationDescription">
+    <value>Prepare this computer for image capture. The profile can shut down or restart into WinPE to capture automatically. Save your work before starting.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.PreparationStartUnconfirmed">
+    <value>Could not confirm image prep started. Check progress and the agent log before retrying.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.PrepareAndCapture">
+    <value>Prepare and capture</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.PrepareComputerForImageCapture">
+    <value>Prepare computer for image capture</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.PrepareThisComputer">
+    <value>Prepare this computer for image capture</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.ReadProgressFailed">
+    <value>Could not read image prep progress. Check the agent service and log.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.RestartAndCaptureDescription">
+    <value>After successful preparation, the computer will restart into WinPE and capture a new image version. Keep Ethernet connected.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.SelectAnImage">
+    <value>Select an image.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.ShutdownAfterPreparationDescription">
+    <value>After successful preparation, the computer will shut down. Boot into your capture environment afterward.</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.UseExistingImage">
+    <value>Use existing image</value>
+  </data>
+  <data xml:space="preserve" name="Imaging.WIMWindowsPartition">
+    <value>WIM — Windows partition</value>
+  </data>
+  <data xml:space="preserve" name="LoginPolicies.ExecutionError">
+    <value>Login policies: {0}</value>
+  </data>
+  <data xml:space="preserve" name="LoginPolicies.FileChecksumMismatch">
+    <value>Login file checksum mismatch.</value>
+  </data>
+  <data xml:space="preserve" name="LoginPolicies.InvalidCommand">
+    <value>Invalid login policy command.</value>
+  </data>
+  <data xml:space="preserve" name="LoginPolicies.InvalidFile">
+    <value>Invalid login policy file.</value>
+  </data>
+  <data xml:space="preserve" name="LoginPolicies.ServerCredentialsUnavailable">
+    <value>Login actions cannot access the agent's server credentials.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgeMessageFailed">
+    <value>This message could not be acknowledged. Refresh the message history and try again.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgeNotificationFailed">
+    <value>This notification could not be acknowledged. It may have expired; refresh and try again.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgedAt">
+    <value>Acknowledged {0:g}</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgedLabel">
+    <value>Acknowledged: {0:g}</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgementRequired">
+    <value>Acknowledgement required</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.AcknowledgmentNotSaved">
+    <value>Acknowledgement was not saved. Please try again.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.CloneDeployMessage">
+    <value>CloneDeploy message</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.CloneDeployRemoteAccessRequest">
+    <value>CloneDeploy remote access request</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.CloneDeployRemoteSharing">
+    <value>CloneDeploy remote sharing</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.CloseMessage">
+    <value>Close message</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Critical">
+    <value>Critical</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Expired">
+    <value>Expired</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.ExpiresAt">
+    <value>Expires: {0:g}</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.HistoryDescription">
+    <value>Recent notices from your organization for this device. Kept for up to 7 days.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Information">
+    <value>Information</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.InvalidSnapshot">
+    <value>Invalid message snapshot.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.NoNotificationsYet">
+    <value>No notifications yet.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.NoRecentMessages">
+    <value>No recent messages for this device.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Notification">
+    <value>Notification</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.OpenDetails">
+    <value>Open details</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.OpenDetailsDescription">
+    <value>{0}. {1}. Open details.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.OpenHelp">
+    <value>Open Help</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.OpenNotifications">
+    <value>Open notifications</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.RefreshFailedAcknowledgmentsRetained">
+    <value>Unable to refresh notifications. Your saved acknowledgements will be retried automatically.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.RemoteAccessRequest">
+    <value>Remote access request</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.RemoteSharingIsActive">
+    <value>Remote sharing is active</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.SaveAcknowledgmentFailed">
+    <value>Could not save acknowledgment. Please try again when the agent service is available.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Success">
+    <value>Success</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.UnavailableRetry">
+    <value>Notifications are unavailable. Please try again shortly.</value>
+  </data>
+  <data xml:space="preserve" name="Notifications.Warning">
+    <value>Warning</value>
+  </data>
+  <data xml:space="preserve" name="Policies.AssignedDescription">
+    <value>Active policies assigned to this device. Managed by your organization.</value>
+  </data>
+  <data xml:space="preserve" name="Policies.LastStarted">
+    <value>Last started</value>
+  </data>
+  <data xml:space="preserve" name="Policies.LatestRunDescription">
+    <value>Latest server-reported run of each published policy on this device. Times are local.</value>
+  </data>
+  <data xml:space="preserve" name="Policies.NoReportedRun">
+    <value>No reported run</value>
+  </data>
+  <data xml:space="preserve" name="Policies.NoneAssigned">
+    <value>No active policies are assigned to this device.</value>
+  </data>
+  <data xml:space="preserve" name="Policies.NotRunYet">
+    <value>Not run yet</value>
+  </data>
+  <data xml:space="preserve" name="Policies.StartedResultPending">
+    <value>Started {0:g} · result pending</value>
+  </data>
+  <data xml:space="preserve" name="Policies.ViewResultsDescription">
+    <value>View device policies and their latest reported run results</value>
+  </data>
+  <data xml:space="preserve" name="Portal.CloseDescription">
+    <value>Close the portal and tray icon for this session. Notifications resume when the UI is opened again.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.ExecutableUnavailable">
+    <value>The portal executable is unavailable. Reopen it from Applications.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.LoadFailed">
+    <value>Could not load the portal: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Portal.Navigation">
+    <value>Portal navigation</value>
+  </data>
+  <data xml:space="preserve" name="Portal.Open">
+    <value>Open Portal</value>
+  </data>
+  <data xml:space="preserve" name="Portal.OpenBrowserManually">
+    <value>Could not open your browser. Try opening the address in your browser manually.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.OpenLowercase">
+    <value>Open portal</value>
+  </data>
+  <data xml:space="preserve" name="Portal.RefreshDescription">
+    <value>Reload portal policies and categories. Help requests refresh automatically.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.RegisterUpdateRestartFailed">
+    <value>Could not register portal for update restart: HRESULT 0x{0:X8}</value>
+  </data>
+  <data xml:space="preserve" name="Portal.RestartFailed">
+    <value>Portal restart failed: {0}</value>
+  </data>
+  <data xml:space="preserve" name="Portal.RestartManually">
+    <value>The portal cannot restart right now. Close and reopen it from Applications.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.RestartUnavailable">
+    <value>The portal cannot restart right now.</value>
+  </data>
+  <data xml:space="preserve" name="Portal.Title">
+    <value>Self Service Portal</value>
+  </data>
+  <data xml:space="preserve" name="Portal.UpdatedAt">
+    <value>Updated {0:t}</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.AccessibilityPermission">
+    <value>Accessibility permission</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.AccessibilityRequired">
+    <value>Accessibility permission is required.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.AttachmentRejected">
+    <value>Remote attachment was rejected.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.CaptureDisplayFailed">
+    <value>macOS could not capture this display. Check Screen Recording permission and restart the portal.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.CaptureSurfaceFailed">
+    <value>Could not create the capture surface.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ClipboardTextExceedsTheLimit">
+    <value>Clipboard text exceeds the limit.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ClipboardTextSent">
+    <value>Text sent to remote clipboard.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ClipboardUnavailable">
+    <value>Clipboard unavailable.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ConnectedToScreen">
+    <value>{0} is connected to your screen.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ConsentDescription">
+    <value>{0} is requesting to view and control your computer. Allow access? This request expires after 60 seconds.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ConsentRequest">
+    <value>{0} would like to view and control your screen.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ConsoleSessionUnavailable">
+    <value>Console session unavailable.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.CtrlAltDeleteWindowsOnly">
+    <value>Ctrl+Alt+Delete is available only on Windows.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.DesktopUnavailable">
+    <value>The Mac desktop is locked, switched, or Screen Recording permission was removed.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.DisplaysUnavailable">
+    <value>Displays are unavailable.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.EndedPrefix">
+    <value>Remote support ended: </value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.FrameRateUpdated">
+    <value>Frame rate updated.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.FrameTooLarge">
+    <value>Desktop frame exceeds the limit.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.InputEventFailed">
+    <value>macOS could not create an input event.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.InvalidCommand">
+    <value>Invalid remote command.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.InvalidResponse">
+    <value>Invalid remote access response.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.MessageQueued">
+    <value>Message queued for this user.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.MonitorSelected">
+    <value>Monitor selected.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.MonitorUnavailable">
+    <value>Monitor unavailable.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.NoDisplay">
+    <value>No display available.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.NoDisplayAvailable">
+    <value>No display is available.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.QualityUpdated">
+    <value>Viewing quality updated.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.RemoteSupport">
+    <value>Remote support</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.RemoteSupportConnected">
+    <value>Remote support connected</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.RemoteSupportRequest">
+    <value>Remote support request</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.RequestExpired">
+    <value>The remote request expired.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.RestartPortal">
+    <value>Restart Portal</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ScreenRecordingPermission">
+    <value>Screen Recording permission</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.SendDecisionFailed">
+    <value>Could not send your remote access decision. Please try again.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.SharingActiveDescription">
+    <value>{0} can view and control your computer. You can stop sharing at any time.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.StartFailed">
+    <value>Remote support could not start.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.UnsupportedDisplaySize">
+    <value>Unsupported display dimensions.</value>
+  </data>
+  <data xml:space="preserve" name="RemoteSupport.ViewOnlyAccessibilityRequired">
+    <value>View only: Accessibility permission has not been granted.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.CaptureFailed">
+    <value>The screenshot could not be captured.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.CaptureFailedPermissionHint">
+    <value>Screenshot capture failed. Check Screen Recording permission and try again.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.ImageTooLargeHint">
+    <value>The screenshot could not fit. Try showing just the app you need help with.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.MacPermissionInstructions">
+    <value>Allow CloneDeploy Portal in System Settings → Privacy &amp; Security → Screen Recording, then restart the portal and try again.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.MultipleMonitorsHint">
+    <value>Using multiple monitors? Make sure the app is on the same monitor as this support window.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.PrepareMacInstructions">
+    <value>Open the window or page you'd like support to see. Then click Choose Screenshot, and click and drag to select the area you want to capture.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.PrepareWindowsInstructions">
+    <value>Open the app or window you'd like support to see, then click Take Screenshot. We'll temporarily hide this window to capture your screen.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.PreviewHint">
+    <value>Click to preview · Sent with your message</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.PrivacyReminder">
+    <value>Check for passwords, personal information, and other sensitive content. Nothing is sent until you submit the request.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.RequiresMacOS">
+    <value>Screenshot capture requires macOS.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.ReviewBeforeAttaching">
+    <value>Review screenshot before attaching</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.ReviewBeforeSendingHint">
+    <value>You'll be able to review your screenshot before attaching it to your request.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.SelectSmallerArea">
+    <value>This screenshot is too large. Try selecting a smaller area.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.StartFailed">
+    <value>Screenshot capture could not start.</value>
+  </data>
+  <data xml:space="preserve" name="Screenshot.Unavailable">
+    <value>Screenshot unavailable.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.AvailableDescription">
+    <value>Available to you on this device. Each policy runs using its configured permissions.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.CheckingRequestAccepted">
+    <value>Checking whether the request was accepted. Please wait before trying again.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.CompletedAt">
+    <value>Completed {0:g}</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.CompletionUnconfirmed">
+    <value>Completion not confirmed · refresh for result</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.CompletionVerificationFailed">
+    <value>Could not confirm successful completion: {0} Review policy history before running again.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Confirm">
+    <value>Confirm</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.ConfirmRunOnMac">
+    <value>Run {0} on this Mac?</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.LastRun">
+    <value>Last run: {0:g} · {1}</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.LatestRunDescription">
+    <value>Latest reported run of the published policy version. User policies show your runs on this device; SYSTEM policies show device runs.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Loading">
+    <value>Loading self service…</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.NoAvailablePolicies">
+    <value>No self-service policies are available to your account on this device.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.NoMatchingPolicies">
+    <value>No self-service policies match your account, device, or filters.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.NoSearchMatches">
+    <value>No policies match your search or category.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.PolicyCompleted">
+    <value>{0} completed successfully.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.PolicyUnsuccessful">
+    <value>Policy did not complete successfully. Check policy history for details.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.RefreshFailed">
+    <value>Unable to refresh. Try again when connected.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.RequestFailed">
+    <value>Request could not be completed. Check agent connectivity, version and policy access. Review history before retrying.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.RequestingPolicy">
+    <value>Requesting {0}…</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Run">
+    <value>Run</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Running">
+    <value>Running</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.RunningPolicy">
+    <value>Running {0}…</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SaveWorkReminder">
+    <value>Save your work before continuing. Your computer may restart.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Search">
+    <value>Search self service</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SearchDescription">
+    <value>Search policy names and descriptions</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SearchPlaceholder">
+    <value>Search self service…</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SelectRunHint">
+    <value>Select Run to start a policy.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SelfServiceIsDisabledByYourAdministrator">
+    <value>Self service is disabled by your administrator.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.SignInRequired">
+    <value>Sign in with your work account to use self service.</value>
+  </data>
+  <data xml:space="preserve" name="SelfService.Unavailable">
+    <value>Self service is unavailable.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.AccountCheckFailed">
+    <value>Could not check your work account. Refresh to try again.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.AvailableAfterEnrollment">
+    <value>Sign-in will be available after the device enrolls.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.BrowserPageTitle">
+    <value>Portal sign-in</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.BrowserVerificationHint">
+    <value>Your browser will handle sign-in and any required verification.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.CancelledOrExpired">
+    <value>Sign-in cancelled or expired.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.CancelledOrExpiredRetry">
+    <value>Sign-in was cancelled or expired. You can try again.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.CheckEnrollmentAndVersion">
+    <value>Sign-in is unavailable. Check the server version and device enrollment.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.CompleteInBrowser">
+    <value>Finish signing in in your browser.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.CompleteReturnToPortal">
+    <value>Signed in. You can close this tab and return to the portal.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.ConnectActiveDirectory">
+    <value>Connect your Active Directory account to this portal.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.ConnectWorkAccountDescription">
+    <value>Connect your work account to access support and receive notifications and policies assigned to you.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.ConnectionFailed">
+    <value>Unable to complete sign-in. Check your connection and try again.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.DirectoryAccountAmbiguous">
+    <value>Your account matches multiple directory sources. Contact your administrator.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.DirectoryAccountDisabled">
+    <value>Your directory account is disabled.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.DirectoryAccountMissing">
+    <value>Your account is no longer present in the directory sync scope.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.DirectoryUserDetails">
+    <value>Directory user: {0}
+{1}
+{2}</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.ExpiredOrRejected">
+    <value>Sign-in expired or was rejected. Please try again.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.IncompleteRetry">
+    <value>Sign-in did not complete. Try again.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.InvalidSavedSession">
+    <value>Invalid saved portal session.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.InvalidWorkAccountResponse">
+    <value>Invalid work-account response.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.KeychainRequiredToRemember">
+    <value>Signed in for now. macOS Keychain access is needed to remember your session.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.KeychainUnavailable">
+    <value>macOS Keychain access was not available. Please allow access or unlock your login keychain.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.NoWorkAccount">
+    <value>No work account signed in</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.OpenBrowserFailed">
+    <value>Could not open your browser.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.OrganizationConnected">
+    <value>Signed in to your organization.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.RestartFromPortal">
+    <value>Sign-in did not complete. Please start again from the portal.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.RestoreSessionFailed">
+    <value>Unable to restore your session. Check your connection and allow macOS Keychain access if prompted.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SessionEndedDeviceTab">
+    <value>Your session ended. Sign in again on the Device tab.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SessionEndedReconnect">
+    <value>Your session ended. Sign in again to reconnect your work account.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SessionRevokedKeychainEntryRetained">
+    <value>Signed out. The saved Keychain entry could not be removed, but its session has been revoked.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SignIn">
+    <value>Sign in</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SignOut">
+    <value>Sign out</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SignOutFailed">
+    <value>Unable to sign out. Reconnect and try again.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SignOutIncomplete">
+    <value>Could not complete sign-out. Refresh to check your account.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.SignedInAs">
+    <value>Signed in as {0}</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.UserSignedIn">
+    <value>{0} • Signed in</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.VerifySessionFailed">
+    <value>Unable to verify your session. Please try Refresh when connected.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WindowsAccountLinked">
+    <value>Your Windows account is linked to your organization automatically.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WindowsAccountNotLinked">
+    <value>This Windows account is not linked to a synced directory user.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WindowsAccountNotMatched">
+    <value>Your Windows account could not be matched. Sign in to access your work account on this device.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WithWorkAccount">
+    <value>Sign in with a work account</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WithYourWorkAccount">
+    <value>Sign in with your work account</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WorkAccountBanner">
+    <value>Sign in with your work account for support, personal notifications, and assigned policies.</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WorkAccountHeading">
+    <value>Sign in to your work account</value>
+  </data>
+  <data xml:space="preserve" name="SignIn.WorkAccountUnavailable">
+    <value>Work-account sign-in is unavailable. Contact your administrator.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.AdministratorPermissionRequired">
+    <value>This administrator session does not allow USB creation. Check the server version and sign in again.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.ConfirmEraseDisk">
+    <value>Permanently erase ALL partitions and files on:
+
+{0}
+
+Create {1} WinPE boot media on this disk?</value>
+  </data>
+  <data xml:space="preserve" name="Usb.CreateMediaDescription">
+    <value>Create WinPE media for deployment and recovery</value>
+  </data>
+  <data xml:space="preserve" name="Usb.DownloadAndEraseDescription">
+    <value>Download a WinPE boot environment, then select an external disk to erase and make bootable.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.DownloadAndVerifyDescription">
+    <value>Download and verify the selected WinPE ISO.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.EraseExternalDisk">
+    <value>Erase external disk</value>
+  </data>
+  <data xml:space="preserve" name="Usb.ExternalDiskEraseWarning">
+    <value>External disk (all partitions will be erased)</value>
+  </data>
+  <data xml:space="preserve" name="Usb.InvalidResponse">
+    <value>Invalid USB tool response.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.OperationInProgress">
+    <value>Finish or cancel the current USB operation before downloading another ISO.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.ReadProgressFailed">
+    <value>Could not read USB progress. Check the agent service.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.RequestFailed">
+    <value>Could not complete the USB request. Check the agent service and administrator sign-in.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.SelectBootEnvironment">
+    <value>Select a WinPE boot environment to download.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.SelectReadyBuildFirst">
+    <value>Refresh boot environments and select a ready WinPE build before downloading.</value>
+  </data>
+  <data xml:space="preserve" name="Usb.WaitingForAgent">
+    <value>Waiting for the agent to finish this request.</value>
+  </data>
+</root>

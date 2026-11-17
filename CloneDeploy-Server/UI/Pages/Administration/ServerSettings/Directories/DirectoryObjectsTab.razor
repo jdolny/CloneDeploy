@@ -1,0 +1,70 @@
+@inject DirectoryService Directories
+
+<MudStack Class="py-4">
+    <MudText Typo="Typo.caption">@(_state is null ? UiText.Get(LocKeys.Ui.OuBrowserPage.NoCompletedSyncYet) : UiText.Get(LocKeys.Ui.DirectoryObjectsTab.LastSuccessfulSync0G, (_state.LastSuccessfulSyncAtUtc.ToLocalTime())))</MudText>
+    @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+    <MudDataGrid T="DirectoryObject" Items="_objects" Loading="_loading" QuickFilter="Matches" Dense="true" Outlined="true" Elevation="0" Class="device-list-grid" HorizontalScrollbar="true"
+                 Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" RowsPerPage="@Constants.UI.DefaultPageSize">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">@UiText.Get(LocKeys.Ui.DirectoryObjectsTab.Synced01, (Label), (_objects.Count))</MudText><MudSpacer />
+            <MudTextField T="string" @bind-Value="_search" Immediate="true" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="Load" Disabled="_loading" aria-label="@Loc[LocKeys.Ui.DirectoryObjectsTab.RefreshSyncedData]" />
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]">
+                <CellTemplate>
+                    @if (context.Item.Kind == DirectoryObjectKind.User)
+                    {
+                        <MudLink Href="@($"/directory-users/{context.Item.DirectorySourceId}/{context.Item.ObjectGuid}")">@context.Item.Name</MudLink>
+                    }
+                    else { @context.Item.Name }
+                </CellTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ObjectGuid" Title="@(Source.Provider == DirectoryProvider.EntraId ? UiText.Get(LocKeys.Ui.DirectoryObjectsTab.EntraObjectID) : UiText.Get(LocKeys.Ui.DirectoryObjectsTab.ObjectGUID))" />
+            <PropertyColumn Property="x => x.AccountName" Title="@Loc[LocKeys.Ui.OuBrowserPage.Account]" />
+            @if (Kind == DirectoryObjectKind.User)
+            {
+                <PropertyColumn Property="x => x.UserPrincipalName" Title="@Loc[LocKeys.Ui.DirectoryObjectsTab.UserPrincipalName]" />
+                <PropertyColumn Property="x => x.Email" Title="@Loc[LocKeys.User.Email]" />
+            }
+            @if (Kind == DirectoryObjectKind.Computer) { <PropertyColumn Property="x => x.DnsHostName" Title="@Loc[LocKeys.Ui.DirectoryObjectsTab.DNSHostname]" /> }
+            <PropertyColumn Property="x => x.ObjectSid" Title="@Loc[LocKeys.Ui.DirectoryObjectsTab.SID]" />
+            <TemplateColumn Title="@Loc[LocKeys.Ui.DirectoryObjectsTab.SIDType]"><CellTemplate>@SidType(context.Item)</CellTemplate></TemplateColumn>
+            <PropertyColumn Property="x => x.Disabled" Title="@Loc[LocKeys.Ui.CertificateAuthorityTab.Disabled]" />
+            <PropertyColumn Property="x => x.DistinguishedName" Title="@Loc[LocKeys.Device.DirectoryPath]" />
+        </Columns>
+        <PagerContent><MudDataGridPager T="DirectoryObject" /></PagerContent>
+        <NoRecordsContent><MudText Class="pa-4">@UiText.Get(LocKeys.Ui.DirectoryObjectsTab.NoSynced0ConfigureAndRunDirectorySyncThen, (Label))</MudText></NoRecordsContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public DirectorySource Source { get; set; } = null!;
+    [Parameter] public DirectoryObjectKind Kind { get; set; }
+    private List<DirectoryObject> _objects = [];
+    private DirectorySyncState? _state;
+    private string? _search, _error;
+    private bool _loading;
+    private string Label => Kind == DirectoryObjectKind.User ? "users" : Kind == DirectoryObjectKind.Group ? "groups" : "devices";
+    protected override Task OnInitializedAsync() => Load();
+    private string SidType(DirectoryObject item) => string.IsNullOrEmpty(item.ObjectSid) ? "" :
+        Source.Provider == DirectoryProvider.EntraId && item.ObjectSid.StartsWith("S-1-12-1-", StringComparison.Ordinal) ? UiText.Get(LocKeys.Ui.DirectoryObjectsTab.EntraDerived) : "AD";
+    private bool Matches(DirectoryObject item) => string.IsNullOrWhiteSpace(_search) ||
+        new[] { item.Name, item.ObjectGuid.ToString(), item.AccountName, item.Email, item.UserPrincipalName, item.ObjectSid, item.DnsHostName, item.DistinguishedName }
+            .Any(x => x?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true);
+    private async Task Load()
+    {
+        if (_loading) return;
+        _loading = true; _error = null;
+        try
+        {
+            var result = await Directories.GetObjectsAsync(Source.Id);
+            if (result.Success) _objects = result.Data!.Where(x => x.Kind == Kind).ToList();
+            else { _objects = []; _error = Loc[result.Error!.Code, result.Error.Args]; }
+            var state = await Directories.GetSyncStateAsync(Source.Id);
+            if (state.Success) _state = state.Data;
+            else _error = Loc[state.Error!.Code, state.Error.Args];
+        }
+        finally { _loading = false; }
+    }
+}

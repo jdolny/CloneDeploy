@@ -1,0 +1,42 @@
+@using CloneDeploy_Server.UI.Pages.Tasks.ActionDeployments
+@inject IAuthorizationService Authorization
+@inject AuthenticationStateProvider Authentication
+@if (_canDeploy && !Archived && !IsCondition)
+{
+    @if (Compact)
+    {
+        <MudTooltip Placement="Placement.Left" Text="@Loc[LocKeys.Ui.DeployActionPage.DeployNow]"><MudIconButton Icon="@Icons.Material.Filled.Send" Color="Color.Primary"
+            OnClick="OnDeployClicked" Disabled="@(Disabled || _opening)" aria-label="@Loc[LocKeys.Ui.DeployActionButton.DeployAction]" /></MudTooltip>
+    }
+    else
+    {
+        <MudButton OnClick="OnDeployClicked" Disabled="@(Disabled || _opening)" StartIcon="@Icons.Material.Filled.Send"
+            Variant="Variant.Outlined" Color="Color.Primary">@Loc[LocKeys.Ui.DeployActionPage.DeployNow]</MudButton>
+    }
+}
+@code {
+    private bool _canDeploy, _opening;
+    private async Task OnDeployClicked()
+    {
+        if (_opening || Disabled) return;
+        _opening = true;
+        var parameters = new DialogParameters<DeployActionDialog> { { x => x.ActionGuid, ActionGuid } };
+        var options = new DialogOptions
+        {
+            FullWidth = true, MaxWidth = MaxWidth.Large,
+            BackdropClick = false, CloseOnEscapeKey = false
+        };
+        var dialog = await Dialog.ShowAsync<DeployActionDialog>(UiText.Get(LocKeys.Ui.DeployActionButton.DeployAction), parameters, options);
+        await dialog.Result;
+        _opening = false;
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        _canDeploy = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.ActionDeploy)).Succeeded;
+    }
+    [Parameter] public Guid ActionGuid { get; set; }
+    [Parameter] public bool Archived { get; set; }
+    [Parameter] public bool IsCondition { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool Compact { get; set; }
+}

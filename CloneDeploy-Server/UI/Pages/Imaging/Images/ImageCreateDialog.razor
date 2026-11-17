@@ -1,0 +1,54 @@
+@inject ImagingService ImagingService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Image.NewImage]</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="Image.Name" Label="@Loc[LocKeys.Common.Name]" Variant="Variant.Outlined" Required="true" MaxLength="200"/>
+            <MudTextField @bind-Value="Image.Description" Label="@Loc[LocKeys.Common.Description]" Variant="Variant.Outlined" Lines="3"/>
+            <MudSelect @bind-Value="Image.Format" Label="@Loc[LocKeys.Ui.ImageCreateDialog.ImageType]" Variant="Variant.Outlined">
+                <MudSelectItem Value="ImageFormat.Wim">@Loc[LocKeys.Ui.ImageCreateDialog.WIMWindowsPartition]</MudSelectItem>
+                <MudSelectItem Value="ImageFormat.Ffu">@Loc[LocKeys.Ui.ImageCreateDialog.FFUWholeDisk]</MudSelectItem>
+            </MudSelect>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_saving" OnClick="OnCancelClicked">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="_saving" OnClick="@OnCreateClicked">@Loc[LocKeys.Common.Create]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private void OnCancelClicked() => MudDialog.Cancel();
+    [Parameter] public Image Image { get; set; } = new() { Name = string.Empty };
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private MudForm _form = null!;
+    private bool _saving;
+
+    private async Task OnCreateClicked()
+    {
+        if (_saving) return;
+        _saving = true;
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+        {
+            _saving = false;
+            return;
+        }
+
+        var result = await ImagingService.CreateImageAsync(Image.Name, Image.Description, Image.Format);
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        else if (result.HasData)
+        {
+            Snackbar.Add(Loc[LocKeys.Common.Created, result.Data.Name], Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+
+        _saving = false;
+    }
+}

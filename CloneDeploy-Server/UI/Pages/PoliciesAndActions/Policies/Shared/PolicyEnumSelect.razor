@@ -1,0 +1,14 @@
+@typeparam T where T : struct, System.Enum
+<MudSelect T="T" Value="Value" ValueChanged="ValueChanged" Label="@Label" Variant="Variant.Outlined">
+    @foreach (var option in Options ?? System.Enum.GetValues<T>())
+    {
+        <MudSelectItem T="T" Value="option">@Display(option)</MudSelectItem>
+    }
+</MudSelect>
+@code {
+    [Parameter] public T Value { get; set; }
+    [Parameter] public EventCallback<T> ValueChanged { get; set; }
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public IEnumerable<T>? Options { get; set; }
+    private static string Display(T value) => UiText.Label(value);
+}

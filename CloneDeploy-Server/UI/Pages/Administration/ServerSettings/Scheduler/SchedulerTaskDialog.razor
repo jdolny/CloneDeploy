@@ -1,0 +1,148 @@
+@using CloneDeploy_Server.Backend.Services.Scheduler
+@using CloneDeploy_Server.UI.Pages.SharedResources.Schedules
+@inject SchedulerService Tasks
+@inject ScheduleService Schedules
+@implements IAsyncDisposable
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText>@TaskInfo.Description</MudText>
+            @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+            @if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+            <MudText Typo="Typo.h6">@Loc[LocKeys.Common.Schedule]</MudText>
+                <MudSwitch T="bool" @bind-Value="_enabled" Label="@Loc[LocKeys.Scheduler.Automatic]" Color="Color.Primary" Disabled="@(_busy || _loading)" />
+                @if (_enabled)
+                {
+                    <MudSelect T="int?" @bind-Value="_scheduleId" Label="@Loc[LocKeys.Common.Schedule]" Variant="Variant.Outlined" Clearable="true" Disabled="@(_busy || _loading)">
+                        @foreach (var schedule in _schedules)
+                        {
+                            <MudSelectItem T="int?" Value="@((int?)schedule.Id)">@schedule.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudButton OnClick="NewScheduleAsync" Disabled="@(_busy || _loading)" StartIcon="@Icons.Material.Filled.Add" Style="align-self:flex-start">@Loc[LocKeys.Schedule.New]</MudButton>
+                }
+            <MudDivider Class="my-2" />
+            <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.SchedulerTaskDialog.RunNowQueuesATaskImmediatelyUseSaveChanges]</MudText>
+            <MudText Typo="Typo.h6">@Loc[LocKeys.Scheduler.Activity]</MudText>
+            @if (_activityError is not null) { <MudAlert Severity="Severity.Error">@_activityError</MudAlert> }
+                <MudText>@UiText.Get(LocKeys.Ui.SchedulerTaskDialog.NextRun0, ((_activity?.NextRunUtc is { } next ? Format(next) : UiText.Get(LocKeys.Scheduler.NotScheduled))))</MudText>
+                <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.SchedulerTaskDialog.TenMostRecentRunsUpdatesAutomatically]</MudText>
+                <MudDataGrid T="ScheduledTaskExecution" Items="_activity?.RecentRuns" Dense="true" Outlined="true" Elevation="0" HorizontalScrollbar="true">
+                    <Columns>
+                        <PropertyColumn Property="x => x.Status" Title="@Loc[LocKeys.Image.VersionStatus]" />
+                        <PropertyColumn Property="x => x.QueuedAtUtc" Title="@Loc[LocKeys.Scheduler.StatusQueued]"><CellTemplate>@Format(context.Item.QueuedAtUtc)</CellTemplate></PropertyColumn>
+                        <PropertyColumn Property="x => x.TargetName" Title="@Loc[LocKeys.Ui.PolicyTargetingTab.Target]"><CellTemplate>@(context.Item.TargetName ?? UiText.Get(LocKeys.Ui.ManageDevicesPage.All))</CellTemplate></PropertyColumn>
+                        <PropertyColumn Property="x => x.StartedAtUtc" Title="@Loc[LocKeys.Device.Started]"><CellTemplate>@Format(context.Item.StartedAtUtc)</CellTemplate></PropertyColumn>
+                        <PropertyColumn Property="x => x.FinishedAtUtc" Title="@Loc[LocKeys.Dashboard.FinishedAt]"><CellTemplate>@Format(context.Item.FinishedAtUtc)</CellTemplate></PropertyColumn>
+                        <PropertyColumn Property="x => x.Summary" Title="@Loc[LocKeys.Ui.SchedulerTaskDialog.Summary]"><CellTemplate><span style="white-space:pre-wrap;overflow-wrap:anywhere">@context.Item.Summary</span></CellTemplate></PropertyColumn>
+                    </Columns>
+                    <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.SchedulerTaskDialog.NoRunsRecorded]</MudText></NoRecordsContent>
+                </MudDataGrid>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())" Disabled="_busy">@Loc[LocKeys.Ui.ActionFiles.Close]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _busy || _loading || _activity is null || _activity.LastRun?.Status is ScheduledTaskStatus.Running or ScheduledTaskStatus.Queued, _activity is null ? UiText.Get(LocKeys.Ui.SchedulerTaskDialog.TaskStatusCouldNotBeLoadedRefreshAndTry) : UiText.Get(LocKeys.Ui.SchedulerTaskDialog.ThisTaskIsAlreadyQueuedOrRunning), RunNowAsync)" Disabled="@(_busy || _loading)" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow">@Loc[LocKeys.Ui.SchedulerTaskDialog.RunNow]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _busy || _loading || !_loaded || (_enabled && _scheduleId is null), !_loaded ? UiText.Get(LocKeys.Ui.SchedulerTaskDialog.TaskSettingsCouldNotBeLoadedReopenTheTask) : UiText.Get(LocKeys.Ui.SchedulerTaskDialog.SelectAScheduleBeforeEnablingThisTask), SubmitAsync)" Disabled="@(_busy || _loading)" Color="Color.Primary" Variant="Variant.Filled">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter, EditorRequired] public SchedulerTaskDto TaskInfo { get; set; } = null!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private bool _enabled, _busy, _loading = true, _loaded;
+    private int? _scheduleId;
+    private string? _error, _activityError;
+    private List<Schedule> _schedules = [];
+    private SchedulerTaskDto? _activity;
+    private readonly CancellationTokenSource _stop = new();
+    private Task? _poll;
+    private static string Format(DateTime? value) => value?.ToLocalTime().ToString("g") ?? "—";
+    protected override async Task OnInitializedAsync()
+    {
+        _enabled = TaskInfo.Enabled;
+        _scheduleId = TaskInfo.ScheduleId;
+        _activity = TaskInfo;
+        await LoadSchedulesAsync();
+        await RefreshAsync();
+        _loading = false;
+    }
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender) _poll = PollAsync();
+    }
+    private async Task LoadSchedulesAsync()
+    {
+        var result = await Schedules.GetAllAsync();
+        _loaded = result.Success;
+        if (result.Success) { _schedules = result.Data ?? []; _error = null; }
+        else _error = Loc[result.Error.Code, result.Error.Args];
+    }
+    private async Task NewScheduleAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var dialog = await Dialog.ShowAsync<ScheduleDialog>(Constants.UI.StandardDialogBox);
+            if (await dialog.Result is { Canceled: false, Data: Schedule schedule })
+            {
+                await LoadSchedulesAsync();
+                if (_loaded) _scheduleId = schedule.Id;
+            }
+        }
+        finally { _busy = false; }
+    }
+    private async Task SubmitAsync()
+    {
+        if (_busy || !_loaded) return;
+        _busy = true;
+        try
+        {
+            _error = null;
+            var result = await Tasks.SaveAsync(TaskInfo.Id, _scheduleId, _enabled);
+            if (!result.Success) { Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error); return; }
+            Snackbar.Add(Loc[LocKeys.Scheduler.SettingsSaved], Severity.Success);
+            await RefreshAsync();
+        }
+        finally { _busy = false; }
+    }
+    private async Task RunNowAsync()
+    {
+        if (_busy || _loading) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var result = await Tasks.RunNowAsync(TaskInfo.Id);
+            if (!result.Success) { Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error); return; }
+            Snackbar.Add(Loc[LocKeys.Scheduler.TaskQueued], Severity.Success);
+            await RefreshAsync();
+        }
+        finally { _busy = false; }
+    }
+    private async Task RefreshAsync()
+    {
+        var result = await Tasks.GetScheduledTaskViews(_stop.Token);
+        if (_stop.IsCancellationRequested) return;
+        if (result.Success) { _activity = result.Data?.FirstOrDefault(t => t.Id == TaskInfo.Id); _activityError = null; }
+        else _activityError = Loc[result.Error.Code, result.Error.Args];
+    }
+    private async Task PollAsync()
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(3));
+            while (await timer.WaitForNextTickAsync(_stop.Token))
+                await InvokeAsync(async () => { if (_busy || _stop.IsCancellationRequested) return; await RefreshAsync(); if (!_stop.IsCancellationRequested) StateHasChanged(); });
+        }
+        catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
+    }
+    public async ValueTask DisposeAsync()
+    {
+        await _stop.CancelAsync();
+        if (_poll is not null) await _poll;
+        _stop.Dispose();
+    }
+}

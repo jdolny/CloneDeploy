@@ -1,0 +1,156 @@
+@page "/actions/script/{Id:int}"
+@page "/actions/script/{Id:int}/{Tab}"
+
+@attribute [Authorize(Policy = Constants.Permissions.PolicyView)]
+@inject ActionService Service
+
+@if (_loading) { <MudProgressLinear Color="Color.Primary" Indeterminate="true" /> }
+else if (_action is not null)
+{
+    <PageTitle>@(UiText.Get(LocKeys.Ui.ManageScriptActionPage.ScriptAction0, (_action.Name)))</PageTitle>
+    <SectionContent SectionName="page-title">
+        <div class="device-page-heading"><div class="device-heading-row">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Href="/actions/script" aria-label="@Loc[LocKeys.Ui.ManageScriptActionPage.BackToScriptActions]"/>
+            <div class="device-heading-icon"><MudIcon Icon="@Icons.Material.Outlined.Code" Size="Size.Large"/></div>
+            <div class="device-heading-copy">
+                <div class="device-heading-name"><h1>@_action.Name</h1>
+                    @if (_action.ActionReference?.ArchivedAtUtc is not null) { <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@Loc[LocKeys.Device.ArchivedText]</MudChip> }
+                </div>
+                
+            </div>
+        </div></div>
+    </SectionContent>
+    @if (_action.ActionReference?.ArchivedAtUtc is not null)
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-3">@Loc[LocKeys.Ui.ManageCommandActionPage.ThisActionIsArchivedRestoreItFromTheAction]</MudAlert>
+    }
+    <ActionButtons>
+        <MainButton><DeployActionButton ActionGuid="_action.Guid" Archived="@(_action.ActionReference?.ArchivedAtUtc is not null)" IsCondition="_action.IsCondition" Disabled="_busy" /></MainButton>
+        <Content>
+            <PermissionView Policy="@Constants.Permissions.PolicyEdit"><MudMenuItem Label="@(_action.ActionReference?.ArchivedAtUtc is null ? UiText.Get(LocKeys.Policy.Archive) : UiText.Get(LocKeys.Policy.Restore))" Icon="@Icons.Material.Filled.Archive" OnClick="@(() => OnConfirmClicked(_action.ActionReference?.ArchivedAtUtc is null ? UiText.Get(LocKeys.Policy.Archive) : UiText.Get(LocKeys.Policy.Restore)))" Disabled="_busy"/></PermissionView>
+            <PermissionView Policy="@Constants.Permissions.PolicyEdit"><MudMenuItem Label="@Loc[LocKeys.Common.Delete]" Icon="@Icons.Material.Filled.Delete" OnClick="@(() => OnConfirmClicked(UiText.Get(LocKeys.Common.Delete)))" Disabled="_busy"/></PermissionView>
+        </Content>
+    </ActionButtons>
+    <div class="device-detail device-workspace" @key="_action.Guid">
+        <ResponsiveTabs PanelOrder="@(new int[] { 0, 1, 2, 4, 3 })" ActivePanelIndex="_activePanelIndex" ActivePanelIndexChanged="OnTabChanged" KeepPanelsAlive="true" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.Action.General]" Icon="@Icons.Material.Outlined.Info">
+                <TabHelp Href="ui/policies-actions/script-actions-general.html" Title="@Loc[LocKeys.Action.General]" />
+                @if (_activePanelIndex == 0)
+                {
+                    <MudStack Class="pb-4"><ScriptActionGeneralTab ScriptAction="_action" OnSaved="RefreshHeaderAsync" /></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Action.Configuration]" Icon="@Icons.Material.Outlined.Settings">
+                <TabHelp Href="ui/policies-actions/script-actions-configuration.html" Title="@Loc[LocKeys.Action.Configuration]" />
+                @if (_activePanelIndex == 1)
+                {
+                    <MudStack Class="pb-4"><ScriptActionConfigurationTab ScriptAction="_action" OnSaved="RefreshHeaderAsync"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Action.Files]" Icon="@Icons.Material.Outlined.AttachFile">
+                <TabHelp Href="ui/policies-actions/script-actions-files.html" Title="@Loc[LocKeys.Action.Files]" />
+                @if (_activePanelIndex == 2)
+                {
+                    <MudStack Class="py-4"><ActionFiles ActionGuid="_action.Guid" @key="_action.Guid" /></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Class="page-tab-divider" Text="@Loc[LocKeys.Policy.Activity]" Icon="@Icons.Material.Outlined.History">
+                <TabHelp Href="ui/policies-actions/script-actions-audit.html" Title="@Loc[LocKeys.Policy.Activity]" />
+                @if (_activePanelIndex == 4)
+                {
+                    <MudStack Class="py-4"><ActionHistoryTab ActionGuid="_action.Guid" LoadAudit="Service.GetAuditScriptAsync" InitialSection="@_historySection" /></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Device.Relations]" Icon="@Icons.Material.Outlined.AccountTree">
+                <TabHelp Href="ui/policies-actions/script-actions-used-by.html" Title="@Loc[LocKeys.Device.Relations]" />
+                @if (_activePanelIndex == 3)
+                {
+                    <MudStack Class="py-4"><ActionRelationsTab ActionGuid="_action.Guid" /></MudStack>
+                }
+            </MudTabPanel>
+        </ResponsiveTabs>
+    </div>
+}
+
+else
+{
+    <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.ManageCommandActionPage.UnableToLoadThisActionReloadThePageTo]</MudAlert>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [Parameter] public string? Tab { get; set; }
+
+    private static readonly string[] TabRoutes = ["general", "configuration", "files", "relations", "history"];
+    private ScriptAction? _action;
+    private bool _loading = true, _busy;
+    private int _activePanelIndex;
+    private string _historySection = "audit";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var route = Tab?.ToLowerInvariant() switch { "used-by" => "relations", "audit" or "deployments" => "history", _ => Tab };
+        _historySection = string.Equals(Tab, "deployments", StringComparison.OrdinalIgnoreCase) ? "deployments" : "audit";
+        var index = Math.Max(0, Array.FindIndex(TabRoutes, x => string.Equals(x, route, StringComparison.OrdinalIgnoreCase)));
+        _activePanelIndex = index;
+        if (_action?.Id == Id) return;
+        await LoadAsync();
+    }
+
+    private void OnTabChanged(int index)
+    {
+        if (_busy || index == _activePanelIndex || index < 0 || index >= TabRoutes.Length) return;
+        _activePanelIndex = index;
+    }
+
+    private async Task RefreshHeaderAsync()
+    {
+        var result = await Service.GetScriptAsync(Id);
+        if (result.Success && result.HasData) _action = result.Data;
+        else if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _action = null;
+        var result = await Service.GetScriptAsync(Id);
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        else if (result.HasData)
+            _action = result.Data;
+        _loading = false;
+    }
+    private async Task OnConfirmClicked(string operation)
+    {
+        if (_busy) return;
+        _busy = true;
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, UiText.Get(LocKeys.Policy.ConfirmOperation, UiText.Label(operation), _action!.Name) + (operation == "Delete" ? UiText.Get(LocKeys.Ui.ManageCommandActionPage.ThisPermanentlyDeletesTheActionAndItsUnsharedFiles) : "") },
+            { x => x.ButtonText, UiText.Label(operation) }, { x => x.Color, operation == "Delete" ? Color.Error : Color.Primary }
+        };
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        if (await dialog.Result is { Canceled: false, Data: true })
+        {
+            var result = operation switch
+            {
+                "Archive" => await Service.ArchiveAsync(_action!.Guid),
+                "Restore" => await Service.RestoreAsync(_action!.Guid),
+                _ => await Service.DeleteAsync(_action!.Guid)
+            };
+            if (result.Success)
+            {
+                Snackbar.Add(operation == "Archive" ? UiText.Get(LocKeys.Ui.ManageCommandActionPage.ActionArchived) : operation == "Restore" ? UiText.Get(LocKeys.Ui.CommandPage.ActionRestored) : UiText.Get(LocKeys.Ui.ManageCommandActionPage.ActionDeleted), Severity.Success);
+                if (operation == "Restore")
+                {
+                    if (_action!.ActionReference is not null) _action!.ActionReference.ArchivedAtUtc = null;
+                    await RefreshHeaderAsync();
+                }
+                else Navigation.NavigateTo("/actions/script");
+            }
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        _busy = false;
+    }
+}

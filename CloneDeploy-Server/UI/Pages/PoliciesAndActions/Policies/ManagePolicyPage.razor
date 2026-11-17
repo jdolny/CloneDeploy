@@ -1,0 +1,280 @@
+@page "/policies/{Id:int}"
+@page "/policies/{Id:int}/{Tab}"
+@using CloneDeploy_Agent.Contracts
+@attribute [Authorize(Policy = Constants.Permissions.PolicyView)]
+@inject PolicyService PolicyService
+
+@inject IAuthorizationService Authorization
+@inject AuthenticationStateProvider Authentication
+
+@if (_loading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true"/>
+}
+else if (_details is not null)
+{
+    <PageTitle>@UiText.Get(LocKeys.Ui.ManagePolicyPage.Policy0, (_details.Policy.Name))</PageTitle>
+    <SectionContent SectionName="page-title">
+        <div class="device-page-heading"><div class="device-heading-row">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Href="/policies/manage" aria-label="@Loc[LocKeys.Policy.BackToPolicies]"/>
+            <div class="device-heading-icon"><MudIcon Icon="@Icons.Material.Outlined.VerifiedUser" Size="Size.Large"/></div>
+            <div class="device-heading-copy">
+                <div class="device-heading-name"><h1>@_details.Policy.Name</h1>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(_details.Active ? Color.Success : Color.Default)">@Loc[Archived ? LocKeys.Device.Archived : _details.Active ? LocKeys.Policy.Active : LocKeys.Policy.Inactive]</MudChip>
+                </div>
+                
+            </div>
+        </div></div>
+    </SectionContent>
+    @if (Archived)
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-3">@Loc[LocKeys.Policy.ArchivedHint]</MudAlert>
+    }
+    @if (_canEdit || _canActivate || _canDeactivate)
+    {
+        <ActionButtons>
+            <MainButton>
+                @if (_details.Active ? _canDeactivate : _canActivate)
+                {
+                <MudButton OnClick="@Snackbar.GuardAction(() => _saving || Archived, UiText.Get(LocKeys.Ui.ManagePolicyPage.RestoreThisPolicyBeforeUsingThisAction), OnChangeActivationClicked)" Disabled="@(_saving)"
+                           StartIcon="@(_details.Active ? Icons.Material.Filled.Pause : Icons.Material.Filled.PlayArrow)">@Loc[_details.Active ? LocKeys.Policy.Deactivate : LocKeys.Policy.Activate]</MudButton>
+                }
+            </MainButton>
+            <Content>
+                @if (_canActivate && SupportsReRun)
+                {
+                    <MudMenuItem Label="@Loc[LocKeys.Policy.ReRun]" Icon="@Icons.Material.Filled.Replay" OnClick="@Snackbar.GuardAction(() => _saving || Archived, UiText.Get(LocKeys.Ui.ManagePolicyPage.RestoreThisPolicyBeforeUsingThisAction), OnReRunClicked)" Disabled="@(_saving)"/>
+                    <MudDivider/>
+                }
+                @if (_canEdit)
+                {
+                <MudMenuItem Label="@Loc[Archived ? LocKeys.Policy.Restore : LocKeys.Policy.Archive]" Icon="@Icons.Material.Filled.Archive"
+                             OnClick="@(() => OnConfirmClicked(Archived ? UiText.Get(LocKeys.Policy.Restore) : UiText.Get(LocKeys.Policy.Archive)))" Disabled="_saving"/>
+                <MudMenuItem Label="@Loc[LocKeys.Common.Delete]" Icon="@Icons.Material.Filled.Delete"
+                             OnClick="@(() => OnConfirmClicked("Delete"))" Disabled="_saving"/>
+                }
+            </Content>
+        </ActionButtons>
+    }
+    @if (_details.Active)
+    {
+        <MudText Typo="Typo.body2" Class="mb-3">@Loc[LocKeys.Policy.ActiveHint]</MudText>
+    }
+    <div class="device-detail device-workspace">
+        <ResponsiveTabs PanelOrder="@(new int[] { 0, 2, 4, 5, 3, 1, 7, 6 })" ActivePanelIndex="_activePanelIndex" ActivePanelIndexChanged="OnTabChanged" KeepPanelsAlive="true" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.Policy.General]" Disabled="_saving" Icon="@Icons.Material.Outlined.Info">
+                <TabHelp Href="ui/policies-actions/policies-general.html" Title="@Loc[LocKeys.Policy.General]" />
+                @if (_activePanelIndex == 0)
+                {
+                    <MudStack Class="pb-4"><PolicyGeneralTab Details="_details" CanEdit="_canEdit" OnStateChanged="GetPolicy" @key="Id"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Policy.Actions]" Disabled="_saving" Icon="@Icons.Material.Outlined.PlaylistPlay">
+                <TabHelp Href="ui/policies-actions/policies-actions.html" Title="@Loc[LocKeys.Policy.Actions]" />
+                @if (_activePanelIndex == 2)
+                {
+                    <MudStack Class="pb-4"><PolicyActionsTab PolicyId="Id" ReadOnly="ReadOnly"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Policy.Execution]" Disabled="_saving" Icon="@Icons.Material.Outlined.Settings">
+                <TabHelp Href="ui/policies-actions/policies-execution.html" Title="@Loc[LocKeys.Policy.Execution]" />
+                @if (_activePanelIndex == 4)
+                {
+                    <MudStack Class="pb-4"><PolicyExecutionTab PolicyId="Id" ReadOnly="ReadOnly"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ManagePolicyPage.SelfService]" Disabled="_saving" Icon="@Icons.Material.Outlined.Apps">
+                <TabHelp Href="ui/policies-actions/policies-self-service.html" Title="@Loc[LocKeys.Ui.ManagePolicyPage.SelfService]" />
+                @if (_activePanelIndex == 5)
+                {
+                    <MudStack Class="pb-4"><PolicyAudiencesTab PolicyId="Id" ReadOnly="@(!_canEdit || Archived)"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Policy.Targets]" Disabled="_saving" Icon="@Icons.Material.Outlined.AccountTree">
+                <TabHelp Href="ui/policies-actions/policies-targeting.html" Title="@Loc[LocKeys.Policy.Targets]" />
+                @if (_activePanelIndex == 3)
+                {
+                    <MudStack Class="pb-4"><PolicyTargetingTab PolicyId="Id"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Policy.Schedule]" Disabled="_saving" Icon="@Icons.Material.Outlined.Schedule">
+                <TabHelp Href="ui/policies-actions/policies-schedule.html" Title="@Loc[LocKeys.Policy.Schedule]" />
+                @if (_activePanelIndex == 1)
+                {
+                    <MudStack Class="pb-4"><PolicyScheduleTab PolicyId="Id" ReadOnly="ReadOnly" FrequencySaved="@((PolicyFrequency frequency) => _details.Policy.Frequency = frequency)"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Class="page-tab-divider" Text="@Loc[LocKeys.Policy.Activity]" Disabled="_saving" Icon="@Icons.Material.Outlined.History">
+                <TabHelp Href="ui/policies-actions/policies-activity.html" Title="@Loc[LocKeys.Policy.Activity]" />
+                @if (_activePanelIndex == 7)
+                {
+                    <MudStack Class="py-4"><PolicyActivityTab PolicyId="Id" InitialSection="@_activitySection"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Device.Relations]" Disabled="_saving" Icon="@Icons.Material.Outlined.AccountTree">
+                <TabHelp Href="ui/policies-actions/policy-relations.html" Title="@Loc[LocKeys.Device.Relations]" />
+                @if (_activePanelIndex == 6)
+                {
+                    <MudStack Class="py-4"><PolicyRelationsTab PolicyId="Id" @key="Id"/></MudStack>
+                }
+            </MudTabPanel>
+        </ResponsiveTabs>
+    </div>
+}
+
+else
+{
+    <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.ManagePolicyPage.UnableToLoadThisPolicyReloadThePageTo]</MudAlert>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [Parameter] public string? Tab { get; set; }
+
+    private static readonly string[] TabRoutes = ["general", "schedule", "actions", "targeting", "execution", "self-service", "relations", "activity"];
+    private PolicyDetailsDto? _details;
+    private string _activitySection = "client-history";
+    private int _activePanelIndex;
+    private bool _loading = true, _saving, _canEdit, _canActivate, _canDeactivate;
+    private bool Archived => _details!.Policy.Archived || _details.Policy.ArchivedAtUtc.HasValue;
+    private bool ReadOnly => !_canEdit || Archived || _details!.Active;
+    private bool SupportsReRun => _details?.Policy.Frequency is PolicyFrequency.OncePerComputer or PolicyFrequency.OncePerUserPerComputer;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var route = Tab?.ToLowerInvariant() switch
+        {
+            "assigned-actions" or "available-actions" or "specialties" => "actions",
+            "conditions" => "execution",
+            "used-by" => "targeting",
+            "triggers" => "schedule",
+            "client-history" or "policy-history" or "audit" => "activity",
+            _ => Tab
+        };
+        _activitySection = Tab?.ToLowerInvariant() is "client-history" or "policy-history" or "audit" ? Tab.ToLowerInvariant() : "client-history";
+        var index = Array.FindIndex(TabRoutes, x => string.Equals(x, route, StringComparison.OrdinalIgnoreCase));
+        var nextIndex = index < 0 ? 0 : index;
+        _activePanelIndex = nextIndex;
+        if (_details?.Policy.Id == Id) return;
+        await GetPolicy();
+    }
+
+    private void OnTabChanged(int index)
+    {
+        if (_saving || index == _activePanelIndex) return;
+        _activePanelIndex = index;
+    }
+
+    private async Task GetPolicy()
+    {
+        _loading = true;
+        _details = null;
+        _canEdit = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.PolicyEdit)).Succeeded;
+        _canActivate = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.PolicyActivate)).Succeeded;
+        _canDeactivate = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.PolicyDeactivate)).Succeeded;
+        var result = await PolicyService.GetDetailsAsync(Id);
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        else if (result.HasData)
+            _details = result.Data;
+        _loading = false;
+    }
+
+    private async Task OnChangeActivationClicked()
+    {
+        if (_saving || _details is null || Archived || !(_details.Active ? _canDeactivate : _canActivate)) return;
+        var details = _details;
+        _saving = true;
+        var parameters = new DialogParameters<PolicyActivationDialog>
+        {
+            { x => x.Active, details.Active },
+            { x => x.PolicyId, details.Policy.Id }
+        };
+        var dialog = await Dialog.ShowAsync<PolicyActivationDialog>(details.Active ? UiText.Get(LocKeys.Policy.Deactivate) : UiText.Get(LocKeys.Policy.Activate), parameters, new DialogOptions { FullWidth = true, MaxWidth = details.Active ? MaxWidth.Small : MaxWidth.Large, BackdropClick = false });
+        if (await dialog.Result is not { Canceled: false, Data: ValueTuple<bool, string> activation } || !ReferenceEquals(details, _details))
+        {
+            _saving = false;
+            return;
+        }
+        var result = details.Active ? await PolicyService.DeactivateAsync(details.Policy.Id) : await PolicyService.ActivateAsync(details.Policy.Id, activation.Item1, activation.Item2);
+        if (result.Success)
+        {
+            Snackbar.Add(details.Active ? UiText.Get(LocKeys.Ui.ManagePolicyPage.PolicyDeactivated) : UiText.Get(LocKeys.Ui.ManagePolicyPage.PolicyActivated), Severity.Success);
+            await GetPolicy();
+        }
+        else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args].Value, Severity.Error);
+        _saving = false;
+    }
+    private async Task OnReRunClicked()
+    {
+        if (_saving || !_canActivate || _details is null || Archived || !SupportsReRun) return;
+        var details = _details;
+        _saving = true;
+        var hash = details.Policy.Hash;
+        if (!details.Active)
+        {
+            var preview = await PolicyService.PreviewActivationAsync(details.Policy.Id);
+            if (!preview.Success)
+            {
+                Snackbar.Add(Loc[preview.Error!.Code, preview.Error.Args].Value, Severity.Error);
+                _saving = false;
+                return;
+            }
+            hash = preview.Data!.Hash;
+        }
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, (details.Active
+                ? UiText.Get(LocKeys.Ui.ManagePolicyPage.RequestAnotherRunOfTheCurrentlyPublishedPolicyIts)
+                : UiText.Get(LocKeys.Ui.ManagePolicyPage.ActivateTheSavedPolicyAndRequestAnotherRunSave)) +
+                UiText.Get(LocKeys.Ui.ManagePolicyPage.ThisCreatesANewExecutionRevisionSoPreviouslyCompleted) },
+            { x => x.ButtonText, UiText.Get(LocKeys.Policy.ReRun) },
+            { x => x.Color, Color.Primary }
+        };
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(UiText.Get(LocKeys.Ui.ManagePolicyPage.ReRunPolicy), parameters, Constants.UI.StandardDialogBox);
+        if (await dialog.Result is not { Canceled: false, Data: true } || !ReferenceEquals(details, _details))
+        {
+            _saving = false;
+            return;
+        }
+        var result = await PolicyService.ReRunAsync(details.Policy.Id, hash);
+        if (result.Success)
+        {
+            Snackbar.Add(UiText.Get(LocKeys.Ui.ManagePolicyPage.PolicyRerunRequestedForTheNextEligibleTrigger), Severity.Success);
+            await GetPolicy();
+        }
+        else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args].Value, Severity.Error);
+        _saving = false;
+    }
+
+    private async Task OnConfirmClicked(string operation)
+    {
+        if (_saving || !_canEdit || _details is null) return;
+        _saving = true;
+        var label = Loc[operation == "Delete" ? LocKeys.Common.Delete : operation == "Archive" ? LocKeys.Policy.Archive : LocKeys.Policy.Restore];
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, Loc[LocKeys.Policy.ConfirmOperation, label, _details.Policy.Name] },
+            { x => x.ButtonText, label },
+            { x => x.Color, operation == "Delete" ? Color.Error : Color.Primary }
+        };
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        if (await dialog.Result is { Canceled: false, Data: true })
+        {
+            var result = operation switch
+            {
+                "Archive" => await PolicyService.ArchiveManyAsync([_details.Policy.Guid]),
+                "Restore" => await PolicyService.RestoreAsync(_details.Policy.Guid),
+                _ => await PolicyService.DeleteManyAsync([_details.Policy.Guid])
+            };
+            if (result.Success)
+            {
+                if (operation == "Delete") Navigation.NavigateTo("/policies/manage");
+                else await GetPolicy();
+            }
+            else
+                Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        _saving = false;
+    }
+}

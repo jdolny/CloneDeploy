@@ -1,0 +1,47 @@
+.navbar .navbar-nav {
+    display: none;
+}
+
+.navbar-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navbar-brand #logo {
+    width: 46px;
+    height: 32px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+:root {
+    --cd-primary: #0961C7;
+}
+
+[data-bs-theme="dark"] {
+    --cd-primary: #82B1F4;
+}
+
+[data-bs-theme="dark"] #logo {
+    content: url("../assets/CloneDeploy-on-dark.svg");
+}
+
+h1,h2 { color: var(--cd-primary); }
+/* UI reference controls: compact labels, with space between descriptions. */
+article:has(> .ui-controls-spacer) > p:has(> strong:only-child) {
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+}
+article > .ui-controls-spacer {
+    height: 1.5rem;
+}
+article:has(> .ui-controls-spacer) > .ui-controls-spacer + p {
+    margin-top: 1rem;
+}
+h4 { color: #ed901e; padding-top:5px; text-indent:5px; }
+.toc span.name-only {
+    font-size: 16px;
+    text-transform: uppercase;
+    margin-left: -10px;
+}

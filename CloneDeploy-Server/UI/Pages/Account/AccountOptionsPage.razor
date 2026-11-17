@@ -1,0 +1,12 @@
+@page "/account/options"
+@attribute [Authorize]
+@using System.Security.Claims
+@inject AuthenticationStateProvider Authentication
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        if (int.TryParse((await Authentication.GetAuthenticationStateAsync()).User.FindFirstValue(ClaimTypes.NameIdentifier), out var id))
+            Navigation.NavigateTo($"/users/manage/{id}/options", replace: true);
+    }
+}

@@ -1,0 +1,54 @@
+@using CloneDeploy_Server.Backend.Services.Files
+@inject DeviceService Attachments
+
+<MudDialog>
+    <DialogContent>
+        <ChunkedFileUpload OnUploaded="OnUploaded" BusyChanged="OnBusyChanged" />
+        @foreach (var pending in _pending.Values.ToArray())
+        {
+            <MudButton OnClick="@(() => OnRetryAttachClicked(pending.Upload))" Disabled="@(_busy || _attaching)">@UiText.Get(LocKeys.Ui.DeviceAttachmentUploadDialog.RetryAttaching0, (pending.Upload.FileName))</MudButton>
+        }
+        @if (_attachedCount > 0)
+        {
+            <MudAlert Severity="Severity.Success" Class="mt-3">@UiText.Get(LocKeys.Ui.DeviceAttachmentUploadDialog.Text0FileSAttachedToThisDevice, (_attachedCount))</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCloseClicked" Disabled="@(_busy || _attaching)">@Loc[LocKeys.Ui.ActionFiles.Close]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public int DeviceId { get; set; }
+    [Parameter] public EventCallback<Attachment> Attached { get; set; }
+    private bool _busy, _attaching;
+    private int _attachedCount;
+    private readonly Dictionary<Guid, (UploadResultDto Upload, string Error)> _pending = [];
+    private void OnBusyChanged(bool busy) => _busy = busy;
+    private void OnCloseClicked() => MudDialog.Close();
+    private Task OnUploaded(UploadResultDto upload) => OnRetryAttachClicked(upload);
+
+    private async Task OnRetryAttachClicked(UploadResultDto upload)
+    {
+        if (_attaching) return;
+        _attaching = true;
+        try
+        {
+            var result = await Attachments.AttachmentAttachUploadAsync(DeviceId, upload.Id);
+            if (result.Success)
+            {
+                _pending.Remove(upload.Id);
+                _attachedCount++;
+                await Attached.InvokeAsync(result.Data!);
+            }
+            else
+            {
+                var error = $"{upload.FileName}: {Loc[result.Error!.Code, result.Error.Args]}";
+                _pending[upload.Id] = (upload, error);
+                Snackbar.Add(error, Severity.Error);
+            }
+        }
+        finally { _attaching = false; }
+    }
+}

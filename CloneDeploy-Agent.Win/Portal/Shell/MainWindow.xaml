@@ -1,0 +1,349 @@
+<!-- ReSharper disable once ObsoleteElementError -->
+<Window x:Class="CloneDeploy_Agent.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:CloneDeploy_Agent.UI"
+        Title="CloneDeploy" Icon="/CloneDeploy-Agent.UI;component/Assets/CloneDeploy.ico" Height="800" Width="1080" MinHeight="540" MinWidth="820"
+        ThemeMode="System" Background="{DynamicResource PortalSurface}" Foreground="{DynamicResource PortalText}"
+        WindowStartupLocation="CenterScreen" Loaded="WindowLoaded">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/CloneDeploy-Agent.UI;component/Assets/Branding.xaml"/><ResourceDictionary Source="/CloneDeploy-Agent.UI;component/Assets/Accent.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="NavigationItem" TargetType="ListBoxItem">
+                <Setter Property="Padding" Value="14,13"/>
+                <Setter Property="Margin" Value="0,3"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="Foreground" Value="{DynamicResource PortalMuted}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <Border x:Name="Tile" Background="Transparent" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Tile" Property="Background" Value="{DynamicResource PortalHover}"/></Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="Tile" Property="Background" Value="{DynamicResource BrandAccentTint}"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource BrandAccentText}"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Tile" Property="BorderBrush" Value="{DynamicResource BrandAccentText}"/><Setter TargetName="Tile" Property="BorderThickness" Value="1"/></Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="AdminToolCard" TargetType="Button">
+                <Setter Property="Background" Value="{DynamicResource PortalRaised}"/><Setter Property="Foreground" Value="{DynamicResource PortalText}"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Margin" Value="0,0,12,12"/><Setter Property="Padding" Value="16"/>
+                <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+                    <Border x:Name="Card" Background="{TemplateBinding Background}" BorderBrush="{DynamicResource PortalBorder}" BorderThickness="1" CornerRadius="9" Padding="{TemplateBinding Padding}"><ContentPresenter/></Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Card" Property="Background" Value="{DynamicResource PortalHover}"/></Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource BrandAccentText}"/></Trigger>
+                        <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Card" Property="Opacity" Value="0.5"/></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate></Setter.Value></Setter>
+            </Style>
+            <Style x:Key="NavIcon" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/><Setter Property="FontSize" Value="17"/>
+                <Setter Property="Width" Value="30"/><Setter Property="VerticalAlignment" Value="Center"/>
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid Background="{DynamicResource PortalSurface}">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="240"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Border x:Name="PortalHeader" Grid.ColumnSpan="2" Background="{DynamicResource PortalSurface}" BorderBrush="{DynamicResource PortalBorder}" BorderThickness="0,0,0,1" Padding="32,6" MinHeight="60">
+            <DockPanel>
+                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Image x:Name="OrganizationLogo" Height="38" MaxWidth="160" Stretch="Uniform" Margin="0,0,20,0" Visibility="Collapsed" AutomationProperties.Name="{local:Loc Common.OrganizationLogo}"/>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock x:Name="OrganizationNameText" FontSize="11" Visibility="Collapsed" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="PortalHeading" Text="{local:Loc Portal.Title}" FontSize="25" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                </Grid>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Background="{DynamicResource PortalSurface}" BorderBrush="{DynamicResource PortalBorder}" BorderThickness="0,0,1,0">
+            <Grid Margin="18,28,18,20">
+                <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <Border Grid.Row="1" BorderBrush="{DynamicResource PortalBorder}" BorderThickness="0,1,0,0" Padding="8,14,8,0" Margin="0,16,0,0">
+                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock x:Name="DeviceIdentityText" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                            <TextBlock x:Name="IdentityText" FontSize="11" Foreground="{DynamicResource PortalMuted}" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                        <Button x:Name="RefreshButton" Grid.Column="1" Content="&#xE72C;" FontFamily="Segoe MDL2 Assets" Click="RefreshClick" Padding="8" Margin="8,0,0,0" VerticalAlignment="Center"
+                                ToolTip="{local:Loc Portal.RefreshDescription}" AutomationProperties.Name="{local:Loc Common.RefreshPortal}"/>
+                        <TextBlock x:Name="StatusText" Grid.Row="1" Grid.ColumnSpan="2" Margin="0,6,0,0" Foreground="{DynamicResource PortalMuted}" FontSize="11" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                    </Grid>
+                </Border>
+                <ListBox x:Name="Navigation" Background="Transparent" BorderThickness="0"
+                         ItemContainerStyle="{StaticResource NavigationItem}" SelectionChanged="NavigationChanged"
+                         AutomationProperties.Name="{local:Loc Portal.Navigation}" VerticalAlignment="Stretch" FontSize="14" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate><DataTemplate><StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource NavIcon}" Text="{Binding Glyph}"/>
+                        <TextBlock Text="{Binding Title}" TextWrapping="Wrap"/>
+                    </StackPanel></DataTemplate></ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Border>
+        <Grid Grid.Row="1" Grid.Column="1" Margin="32,24,32,20">
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <DockPanel x:Name="PageHeader" Grid.Row="1" Margin="0,0,0,24">
+                <StackPanel>
+                    <TextBlock x:Name="PageTitle" FontSize="28" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="PageDescription" Margin="0,8,0,0" Foreground="{DynamicResource PortalMuted}" TextWrapping="Wrap" LineHeight="20"/>
+                </StackPanel>
+            </DockPanel>
+            <Border Grid.Row="2" Background="{DynamicResource PortalSurface}" CornerRadius="12">
+                <Border.Style><Style TargetType="Border"><Setter Property="BorderBrush" Value="{DynamicResource PortalBorder}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="20"/>
+                    <Style.Triggers><DataTrigger Binding="{Binding Visibility, ElementName=HelpPanel}" Value="Visible"><Setter Property="BorderThickness" Value="0"/><Setter Property="Padding" Value="0"/></DataTrigger></Style.Triggers>
+                </Style></Border.Style>
+                <Grid>
+                    <local:HelpDeskPanel x:Name="HelpPanel" Visibility="Collapsed" />
+                    <StackPanel x:Name="DevicePanel" Visibility="Collapsed">
+                        <TextBlock x:Name="DeviceDetailsText" Margin="0,0,0,24" TextWrapping="Wrap" Foreground="{DynamicResource PortalMuted}"/>
+                        <TextBlock Text="{local:Loc Common.WorkAccount}" FontSize="20" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="WorkAccountName" Margin="0,12,0,0" FontSize="16" TextWrapping="Wrap"/>
+                        <TextBlock x:Name="WorkAccountMessage" Margin="0,8,0,16" Foreground="{DynamicResource PortalMuted}" TextWrapping="Wrap"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="WorkSignIn" Content="{local:Loc SignIn.WithWorkAccount}" Click="WorkSignInClick" Padding="14,8" Visibility="Collapsed"/>
+                            <Button x:Name="WorkSignOut" Content="{local:Loc SignIn.SignOut}" Click="WorkSignOutClick" Padding="14,8" Visibility="Collapsed"/>
+                        </StackPanel>
+                        <TextBlock Text="{local:Loc Device.LocalWindowsUser}" Margin="0,28,0,8" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="LocalUserText" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <ScrollViewer x:Name="AdminPanel" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <Border Background="{DynamicResource PortalRaised}" CornerRadius="8" Padding="14" Margin="0,0,0,16">
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
+                                        <Button x:Name="AdminSignInButton" Style="{StaticResource BrandPrimaryButton}" Content="{local:Loc SignIn.SignIn}" Click="AdminSignInClick" Padding="14,8"/>
+                                        <Button x:Name="AdminSignOutButton" Content="{local:Loc SignIn.SignOut}" Click="AdminSignOutClick" Padding="14,8" Visibility="Collapsed"/>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock x:Name="AdminIdentityText" Text="{local:Loc Admin.SignInWithCloneDeploy}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                        <TextBlock x:Name="AdminStatusText" Text="{local:Loc SignIn.BrowserVerificationHint}" Margin="0,5,0,0" FontSize="12" Foreground="{DynamicResource PortalMuted}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+                            <StackPanel x:Name="AdminToolsPanel" Visibility="Collapsed">
+                                <UniformGrid x:Name="AdminToolMenu" Columns="2" Margin="0,0,-12,0">
+                                    <Button x:Name="DriverPackToolCard" Tag="drivers" Click="OpenAdminToolClick" Style="{StaticResource AdminToolCard}" ToolTip="{local:Loc Drivers.ExportHeading}" ToolTipService.ShowOnDisabled="True" AutomationProperties.Name="{local:Loc Common.CreateDriverPack}">
+                                        <StackPanel MinHeight="115">
+                                            <TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets" FontSize="22" Foreground="{DynamicResource BrandAccentText}"/>
+                                            <TextBlock Text="{local:Loc Common.CreateDriverPack}" FontWeight="SemiBold" FontSize="15" Margin="0,12,0,8" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{local:Loc Drivers.ExportHeading}" Foreground="{DynamicResource PortalMuted}" FontSize="12" TextWrapping="Wrap"/>
+                                            <TextBlock Text="→" HorizontalAlignment="Right" Margin="0,8,0,0"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button x:Name="ImagePrepToolCard" Tag="imageprep" Click="OpenAdminToolClick" Style="{StaticResource AdminToolCard}" ToolTip="{local:Loc Imaging.PrepareThisComputer}" ToolTipService.ShowOnDisabled="True" AutomationProperties.Name="{local:Loc Common.RunImagePrep}">
+                                        <StackPanel MinHeight="115">
+                                            <TextBlock Text="&#xE7F4;" FontFamily="Segoe MDL2 Assets" FontSize="22" Foreground="{DynamicResource BrandAccentText}"/>
+                                            <TextBlock Text="{local:Loc Common.RunImagePrep}" FontWeight="SemiBold" FontSize="15" Margin="0,12,0,8" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{local:Loc Imaging.PrepareThisComputer}" Foreground="{DynamicResource PortalMuted}" FontSize="12" TextWrapping="Wrap"/>
+                                            <TextBlock Text="→" HorizontalAlignment="Right" Margin="0,8,0,0"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button x:Name="UsbToolCard" Tag="usb" Click="OpenAdminToolClick" Style="{StaticResource AdminToolCard}" ToolTip="{local:Loc Usb.CreateMediaDescription}" ToolTipService.ShowOnDisabled="True" AutomationProperties.Name="{local:Loc Common.CreateBootableUSB}">
+                                        <StackPanel MinHeight="115">
+                                            <TextBlock Text="&#xE88E;" FontFamily="Segoe MDL2 Assets" FontSize="22" Foreground="{DynamicResource BrandAccentText}"/>
+                                            <TextBlock Text="{local:Loc Common.CreateBootableUSB}" FontWeight="SemiBold" FontSize="15" Margin="0,12,0,8" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{local:Loc Usb.CreateMediaDescription}" Foreground="{DynamicResource PortalMuted}" FontSize="12" TextWrapping="Wrap"/>
+                                            <TextBlock Text="→" HorizontalAlignment="Right" Margin="0,8,0,0"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button x:Name="AssignedPoliciesToolCard" Tag="assigned" Click="OpenAdminToolClick" Style="{StaticResource AdminToolCard}" AutomationProperties.Name="{local:Loc Common.AssignedPolicies}">
+                                        <StackPanel MinHeight="115">
+                                            <TextBlock Text="&#xE9D5;" FontFamily="Segoe MDL2 Assets" FontSize="22" Foreground="{DynamicResource BrandAccentText}"/>
+                                            <TextBlock Text="{local:Loc Common.AssignedPolicies}" FontWeight="SemiBold" FontSize="15" Margin="0,12,0,8" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{local:Loc Policies.ViewResultsDescription}" Foreground="{DynamicResource PortalMuted}" FontSize="12" TextWrapping="Wrap"/>
+                                            <TextBlock Text="→" HorizontalAlignment="Right" Margin="0,8,0,0"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button x:Name="CloseUiToolCard" IsEnabled="False" Click="CloseUiClick" Style="{StaticResource AdminToolCard}" AutomationProperties.Name="{local:Loc Common.CloseAgentUI}">
+                                        <StackPanel MinHeight="115">
+                                            <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets" FontSize="22" Foreground="{DynamicResource BrandAccentText}"/>
+                                            <TextBlock Text="{local:Loc Common.CloseAgentUI}" FontWeight="SemiBold" FontSize="15" Margin="0,12,0,8" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{local:Loc Portal.CloseDescription}" Foreground="{DynamicResource PortalMuted}" FontSize="12" TextWrapping="Wrap"/>
+                                            <TextBlock Text="→" HorizontalAlignment="Right" Margin="0,8,0,0"/>
+                                        </StackPanel>
+                                    </Button>
+                                </UniformGrid>
+                                <Button x:Name="AdminToolBackButton" Content="{local:Loc Admin.BackToTools}" Click="AdminToolBackClick" HorizontalAlignment="Left" Padding="10,6" Margin="0,0,0,16" Visibility="Collapsed" ToolTip="{local:Loc Admin.BackToMenuHint}"/>
+                                <StackPanel x:Name="PoliciesPanel" Visibility="Collapsed">
+                                    <TextBlock Text="{local:Loc Common.AssignedPolicies}" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12"/>
+                                    <TextBlock Text="{local:Loc Policies.LatestRunDescription}" TextWrapping="Wrap" Foreground="{DynamicResource PortalMuted}" Margin="0,0,0,12"/>
+                                    <Button Content="{local:Loc Common.Refresh}" Click="RefreshClick" HorizontalAlignment="Right" Padding="12,6" Margin="0,0,0,12"/>
+                                    <DataGrid x:Name="PoliciesGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                                    CanUserDeleteRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                                    MaxHeight="460" MinHeight="100" HorizontalGridLinesBrush="{DynamicResource PortalBorder}" RowHeight="52" ColumnHeaderHeight="42"
+                                    Background="{DynamicResource PortalSurface}" BorderThickness="0" SelectionMode="Single" AutomationProperties.Name="{local:Loc Common.AssignedPolicies}">
+                                    <DataGrid.Columns><DataGridTextColumn Header="{local:Loc Common.Policy}" Binding="{Binding Name}" Width="*"/>
+                                            <DataGridTextColumn Header="{local:Loc Common.Priority}" Binding="{Binding Priority}" Width="70"/>
+                                            <DataGridTextColumn Header="{local:Loc Policies.LastStarted}" Binding="{Binding LastStarted}" Width="160"/>
+                                            <DataGridTextColumn Header="{local:Loc Common.Result}" Binding="{Binding Result}" Width="150"/></DataGrid.Columns>
+                                    </DataGrid>
+                                    <TextBlock x:Name="EmptyText" Text="{local:Loc Policies.NoneAssigned}"
+                                    Foreground="{DynamicResource PortalMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" Visibility="Collapsed"/>
+                                </StackPanel>
+                                <Border x:Name="DriverPackToolPanel" Visibility="Collapsed" Background="{DynamicResource PortalRaised}" CornerRadius="8" Padding="16" Margin="0,0,0,12"><StackPanel>
+                                    <TextBlock Text="{local:Loc Common.CreateDriverPack}" FontSize="16" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{local:Loc Drivers.ExportDescription}" TextWrapping="Wrap" Foreground="{DynamicResource PortalMuted}" Margin="0,7,0,10"/>
+                                    <TextBlock Text="{local:Loc Common.DriverPackName}" Foreground="{DynamicResource PortalMuted}"/>
+                                    <TextBox x:Name="DriverPackName" MaxLength="200" Margin="0,5,0,10" Padding="10,7" AutomationProperties.Name="{local:Loc Common.DriverPackName}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button x:Name="CreateDriverPackButton" Style="{StaticResource BrandPrimaryButton}" Content="{local:Loc Common.CreateDriverPack}" Click="CreateDriverPackClick" Padding="14,8"/>
+                                        <Button x:Name="CancelDriverPackButton" Content="{local:Loc Common.Cancel}" Click="CancelDriverPackClick" Padding="14,8" Margin="10,0,0,0" Visibility="Collapsed"/>
+                                    </StackPanel>
+                                    <ProgressBar x:Name="DriverPackProgress" Minimum="0" Maximum="100" Height="5" Margin="0,12,0,0" Visibility="Collapsed"/>
+                                    <TextBlock x:Name="DriverPackStatusText" Margin="0,10,0,0" Foreground="{DynamicResource PortalMuted}" TextWrapping="Wrap"/>
+                                </StackPanel></Border>
+                                <Border x:Name="ImagePrepToolPanel" Visibility="Collapsed" Background="{DynamicResource PortalRaised}" CornerRadius="8" Padding="16" Margin="0,0,0,12"><StackPanel>
+                                    <TextBlock Text="{local:Loc Common.RunImagePrep}" FontSize="16" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{local:Loc Imaging.PreparationDescription}" TextWrapping="Wrap" Foreground="{DynamicResource PortalMuted}" Margin="0,7,0,10"/>
+                                    <ComboBox x:Name="ImagePrepProfiles" DisplayMemberPath="Name" Margin="0,5,0,10" AutomationProperties.Name="{local:Loc Common.ImagePrepProfile}" SelectionChanged="ImagePrepSelectionChanged"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button x:Name="ImagePrepRefresh" Content="{local:Loc Common.RefreshProfiles}" Click="ImagePrepRefreshClick" Padding="14,8"/>
+                                        <Button x:Name="ImagePrepStart" Style="{StaticResource BrandPrimaryButton}" Content="{local:Loc Common.PrepareAndShutDown}" Click="ImagePrepStartClick" Padding="14,8" Margin="10,0,0,0"/>
+                                    </StackPanel>
+                                    <ProgressBar x:Name="ImagePrepProgress" Minimum="0" Maximum="100" Height="5" Margin="0,12,0,0" Visibility="Collapsed"/>
+                                    <TextBlock x:Name="ImagePrepStatusText" Margin="0,10,0,0" Foreground="{DynamicResource PortalMuted}" TextWrapping="Wrap"/>
+                                </StackPanel></Border>
+                                <Border x:Name="UsbToolPanel" Visibility="Collapsed" Background="{DynamicResource PortalRaised}" CornerRadius="8" Padding="16"><StackPanel>
+                                    <TextBlock Text="{local:Loc Common.CreateBootableUSB}" FontSize="16" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{local:Loc Usb.DownloadAndEraseDescription}" TextWrapping="Wrap" Foreground="{DynamicResource PortalMuted}" Margin="0,7,0,10"/>
+                                    <TextBlock Text="{local:Loc Common.TargetArchitecture}"/>
+                                    <ComboBox x:Name="UsbArchitecture" SelectionChanged="UsbArchitectureChanged" Margin="0,5,0,10" AutomationProperties.Name="{local:Loc Common.USBTargetArchitecture}"/>
+                                    <TextBlock Text="{local:Loc Common.WinPEBootEnvironment}"/>
+                                    <ComboBox x:Name="UsbVariants" DisplayMemberPath="DisplayName" SelectionChanged="UsbSelectionChanged" Margin="0,5,0,10" AutomationProperties.Name="{local:Loc Common.WinPEBootEnvironment}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button x:Name="UsbRefreshVariants" Content="{local:Loc Common.RefreshBootEnvironments}" Click="UsbRefreshVariantsClick" Padding="14,8"/>
+                                        <Button x:Name="UsbDownload" Content="{local:Loc Common.DownloadISO}" Click="UsbDownloadClick" Padding="14,8" Margin="10,0,0,0" ToolTipService.ShowOnDisabled="True"/>
+                                    </StackPanel>
+                                    <StackPanel x:Name="UsbDrivePanel" Visibility="Collapsed" Margin="0,14,0,0">
+                                        <TextBlock Text="{local:Loc Usb.ExternalDiskEraseWarning}"/>
+                                        <ComboBox x:Name="UsbDrives" DisplayMemberPath="DisplayName" SelectionChanged="UsbSelectionChanged" Margin="0,5,0,10" AutomationProperties.Name="{local:Loc Common.ExternalUSBDisk}"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button x:Name="UsbRefreshDrives" Content="{local:Loc Common.RefreshDrives}" Click="UsbRefreshDrivesClick" Padding="14,8"/>
+                                            <Button x:Name="UsbWrite" Content="{local:Loc Common.EraseAndCreateUSB}" Click="UsbWriteClick" Padding="14,8" Margin="10,0,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Button x:Name="UsbCancel" Content="{local:Loc Common.CancelUSBCreation}" Click="UsbCancelClick" Padding="14,8" Margin="0,10,0,0" HorizontalAlignment="Left" Visibility="Collapsed"/>
+                                    <ProgressBar x:Name="UsbProgress" Minimum="0" Maximum="100" Height="5" Margin="0,12,0,0" Visibility="Collapsed"/>
+                                    <TextBlock x:Name="UsbStatusText" Margin="0,10,0,0" Foreground="{DynamicResource PortalMuted}" TextWrapping="Wrap"/>
+                                </StackPanel></Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                    <Grid x:Name="NotificationsPanel" Visibility="Collapsed">
+                        <ListBox x:Name="NotificationsList" BorderThickness="0" Background="{DynamicResource PortalSurface}" HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="{local:Loc Common.MessageHistory}">
+                            <ListBox.ItemTemplate><DataTemplate>
+                                <Border BorderBrush="{DynamicResource PortalBorder}" BorderThickness="0,0,0,1" Padding="8,14">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="17" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding CreatedAt.LocalDateTime, StringFormat=g}" Foreground="{DynamicResource PortalMuted}" FontSize="11" Margin="0,5,0,10"/>
+                                        <TextBlock local:NotificationText.Text="{Binding Body}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding ExpiresAt.LocalDateTime, StringFormat={local:Loc Notifications.ExpiresAt}}" Foreground="{DynamicResource PortalMuted}" Margin="0,8,0,0"/>
+                                        <TextBlock Text="{Binding AcknowledgedAt.LocalDateTime, StringFormat={local:Loc Notifications.AcknowledgedLabel}}" Foreground="{DynamicResource PortalMuted}" Margin="0,8,0,0"/>
+                                        <Button Content="{local:Loc Common.Acknowledge}" Click="AcknowledgeNotification" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="12,6">
+                                            <Button.Style><Style TargetType="Button" BasedOn="{StaticResource BrandPrimaryButton}"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers>
+                                                <DataTrigger Binding="{Binding PendingAcknowledgment}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger>
+                                            </Style.Triggers></Style></Button.Style>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate></ListBox.ItemTemplate>
+                        </ListBox>
+                        <TextBlock Text="{local:Loc Notifications.NoRecentMessages}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource PortalMuted}">
+                            <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers>
+                                <DataTrigger Binding="{Binding Items.Count, ElementName=NotificationsList}" Value="0"><Setter Property="Visibility" Value="Visible"/></DataTrigger>
+                            </Style.Triggers></Style></TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                    <Grid x:Name="SelfServicePanel" Visibility="Collapsed">
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <Grid Margin="4,0,4,16">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="180"/></Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{local:Loc SelfService.Search}" Foreground="{DynamicResource PortalMuted}" Margin="0,0,0,6"/>
+                                <TextBox x:Name="PolicySearch" TextChanged="SearchChanged" Padding="12,9"
+                                         AutomationProperties.Name="{local:Loc SelfService.Search}" ToolTip="{local:Loc SelfService.SearchDescription}">
+                                    <TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Style.Triggers>
+                                        <Trigger Property="Text" Value=""><Setter Property="Background" Value="{DynamicResource PortalRaised}"/></Trigger>
+                                    </Style.Triggers></Style></TextBox.Style>
+                                </TextBox>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="{local:Loc Common.Category}" Foreground="{DynamicResource PortalMuted}" Margin="0,0,0,6"/>
+                                <ComboBox x:Name="PolicyCategory" DisplayMemberPath="Name" SelectionChanged="CategoryChanged"
+                                          Padding="12,9" HorizontalAlignment="Stretch" AutomationProperties.Name="{local:Loc Common.SelfServiceCategory}"/>
+                            </StackPanel>
+                        </Grid>
+                        <Grid Grid.Row="1">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl x:Name="AvailablePolicies" AutomationProperties.Name="{local:Loc Common.AvailableSelfServicePolicies}">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate><DataTemplate>
+                                        <Border Width="220" Height="274" Margin="4,4,12,12" Padding="18" Background="{DynamicResource PortalSurface}" BorderBrush="{DynamicResource PortalBorder}" BorderThickness="1" CornerRadius="10">
+                                            <Grid>
+                                                <Grid.RowDefinitions><RowDefinition Height="64"/><RowDefinition Height="48"/><RowDefinition Height="*"/><RowDefinition Height="34"/><RowDefinition Height="36"/></Grid.RowDefinitions>
+                                                <Grid HorizontalAlignment="Center" Width="52" Height="52">
+                                                    <TextBlock Text="{Binding Glyph}" FontFamily="Segoe MDL2 Assets" FontSize="36" Foreground="{DynamicResource BrandAccentText}" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                        <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><DataTrigger Binding="{Binding HasImage}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                                                    </TextBlock>
+                                                    <Image Source="{Binding Image}" Stretch="Uniform"/>
+                                                </Grid>
+                                                <TextBlock Grid.Row="1" Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}" TextAlignment="Center" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Row="2" Visibility="{Binding DetailsVisibility}" Text="{Binding Description}" FontSize="12" Foreground="{DynamicResource PortalMuted}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding Description}" TextAlignment="Center" Margin="0,4"/>
+                                                <TextBlock Grid.Row="3" Visibility="{Binding DetailsVisibility}" Text="{Binding Status}" FontSize="11" Foreground="{DynamicResource PortalMuted}" TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" ToolTip="{local:Loc SelfService.LatestRunDescription}"/>
+                                                <Button Grid.Row="4" Visibility="{Binding DetailsVisibility}" Content="{Binding ButtonText}" Style="{StaticResource BrandPrimaryButton}" Click="RunPolicyClick" Tag="{Binding}" Padding="12,5"/>
+                                                <Grid Grid.Row="2" Grid.RowSpan="3" Visibility="{Binding ConfirmationVisibility}">
+                                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="36"/></Grid.RowDefinitions>
+                                                    <TextBlock Text="{local:Loc Common.ReadyToRun}" FontWeight="SemiBold" TextAlignment="Center" Margin="0,2,0,4"/>
+                                                    <TextBlock Grid.Row="1" Text="{local:Loc SelfService.SaveWorkReminder}" FontSize="12" TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource PortalMuted}" VerticalAlignment="Center" Margin="0,0,0,6"/>
+                                                    <Grid Grid.Row="2">
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                        <Button Content="{local:Loc Common.RunNow}" HorizontalAlignment="Stretch" Style="{StaticResource BrandPrimaryButton}" Click="ConfirmPolicyClick" Tag="{Binding}" Padding="6,5"/>
+                                                        <Button Grid.Column="2" Content="{local:Loc Common.Cancel}" HorizontalAlignment="Stretch" Click="CancelPolicyClick" Tag="{Binding}" Padding="6,5"/>
+                                                    </Grid>
+                                                </Grid>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate></ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                            <TextBlock x:Name="CatalogEmpty" Text="{local:Loc SelfService.NoSearchMatches}" Foreground="{DynamicResource PortalMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                        </Grid>
+                        <TextBlock x:Name="SelfServiceStatus" Grid.Row="2" Margin="8,10" TextWrapping="Wrap" Foreground="{DynamicResource PortalMuted}"/>
+                    </Grid>
+
+
+                </Grid>
+            </Border>
+        </Grid>
+        <Border Grid.Row="2" Grid.ColumnSpan="2" Background="{DynamicResource PortalSurface}" BorderBrush="{DynamicResource PortalBorder}" BorderThickness="0,1,0,0" Padding="32,12">
+            <DockPanel>
+                <Button x:Name="AdminToolsButton" DockPanel.Dock="Right" Click="AdminToolsClick" Padding="8,5" Margin="10,0,0,0" ToolTip="{local:Loc Common.AdministratorTools}" AutomationProperties.Name="{local:Loc Common.AdministratorTools}">
+                    <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers>
+                        <DataTrigger Binding="{Binding Visibility, ElementName=AdminPanel}" Value="Visible"><Setter Property="Background" Value="{DynamicResource BrandAccentTint}"/><Setter Property="BorderBrush" Value="{DynamicResource BrandAccentText}"/></DataTrigger>
+                    </Style.Triggers></Style></Button.Style>
+                    <Grid><TextBlock x:Name="AdminLockIcon" Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="15"/>
+                        <Ellipse x:Name="AdminSignedInIndicator" Width="6" Height="6" Fill="{DynamicResource BrandAccentText}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-3,-2" Visibility="Collapsed"/>
+                    </Grid>
+                </Button>
+                <TextBlock x:Name="AgentVersionText" DockPanel.Dock="Right" Text="{local:Loc Common.AgentVersionConnecting}" Foreground="{DynamicResource PortalMuted}" FontSize="11" VerticalAlignment="Center" Margin="20,0,0,0" AutomationProperties.Name="{local:Loc Device.AgentServiceVersion}"/>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{local:Loc Common.PoweredBy}" Foreground="{DynamicResource PortalMuted}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <Image Source="{StaticResource CloneDeployLogo}" Width="26" Height="22" Stretch="Uniform" Margin="0,0,7,0" AutomationProperties.Name="{local:Loc Common.CloneDeployLogo}"/>
+                    <TextBlock Text="CloneDeploy" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

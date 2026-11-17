@@ -1,0 +1,50 @@
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" @bind-Value="_search" Label="@(UiText.Get(LocKeys.Device.SearchInventory, (MemberLabel)))" Immediate="true" Clearable="true"
+                      Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-3" />
+        <MudDataGrid T="PolicyAudienceOption" Items="AvailableOptions" MultiSelection="true" SelectOnRowClick="false"
+                     @bind-SelectedItems="_selected" QuickFilter="Matches" Dense="true" Hover="true" Elevation="0"
+                     Outlined="true" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize">
+            <Columns>
+                <SelectColumn T="PolicyAudienceOption" />
+                <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]" />
+                <PropertyColumn Property="x => x.DirectoryName" Title="@Loc[LocKeys.Ui.OuBrowserPage.Directory]" />
+            </Columns>
+            <NoRecordsContent><MudText Class="pa-4">@UiText.Get(LocKeys.Ui.UserAudienceMemberPickerDialog.NoAvailable0MatchYourSearch, (MemberLabel))</MudText></NoRecordsContent>
+            <PagerContent><MudDataGridPager T="PolicyAudienceOption" /></PagerContent>
+        </MudDataGrid>
+        <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.UserAudienceMemberPickerDialog.EntriesAlreadyInThisListAreOmitted]</MudText>
+        <MudText Class="mt-3">@UiText.Get(LocKeys.Ui.GridSelectionCount.Text0Selected, (_selected.Count))</MudText>
+        @if (Kind == DirectoryObjectKind.OrganizationalUnit)
+        {
+            <MudCheckBox @bind-Value="_includeDescendants" Label="@Loc[LocKeys.Ui.PolicyTargetingTab.IncludeDescendantOUs]" />
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="MudDialog.Cancel">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _selected.Count == 0, UiText.Get(LocKeys.Ui.UserAudienceMemberPickerDialog.SelectAtLeastOneMember), AddSelected)" Color="Color.Primary" Variant="Variant.Filled">@UiText.Get(LocKeys.Ui.UserAudienceMemberPickerDialog.AddSelected0, (MemberLabel))</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public List<PolicyAudienceOption> Options { get; set; } = [];
+    [Parameter] public HashSet<(int SourceId, Guid ObjectGuid)> Assigned { get; set; } = [];
+    [Parameter] public DirectoryObjectKind Kind { get; set; }
+    [Parameter] public bool Exclude { get; set; }
+    private string? _search;
+    private bool _includeDescendants = true;
+    private HashSet<PolicyAudienceOption> _selected = [];
+    private string MemberLabel => Kind == DirectoryObjectKind.User ? "users" : Kind == DirectoryObjectKind.Group ? "groups" : UiText.Get(LocKeys.Ui.ManageDirectoryPage.OUs);
+    private IEnumerable<PolicyAudienceOption> AvailableOptions => Options.Where(x => x.Available && x.Kind == Kind && !Assigned.Contains((x.SourceId, x.ObjectGuid)));
+    private bool Matches(PolicyAudienceOption item) => string.IsNullOrWhiteSpace(_search)
+        || $"{item.Name} {item.DirectoryName}".Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+    private void AddSelected() => MudDialog.Close(DialogResult.Ok(AvailableOptions.Where(_selected.Contains).Select(x => new UserAudienceMember
+    {
+        DirectorySourceId = x.SourceId,
+        ObjectGuid = x.ObjectGuid,
+        Exclude = Exclude,
+        IncludeDescendants = Kind == DirectoryObjectKind.OrganizationalUnit && _includeDescendants,
+        DisplayName = $"{x.Name} · {x.Kind} · {x.DirectoryName}"
+    }).ToList()));
+}

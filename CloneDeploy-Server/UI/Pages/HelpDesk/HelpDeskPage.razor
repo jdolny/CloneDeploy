@@ -1,0 +1,130 @@
+@page "/helpdesk"
+@attribute [Authorize(Policy = Constants.Permissions.HelpDeskAccess)]
+@using CloneDeploy_Agent.Contracts
+@inject HelpDeskUiService Service
+@inject AuthenticationStateProvider Authentication
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.AdministrationNavigationGroup.HelpDesk]" />
+@if (_overview is not null)
+{
+    <div class="help-stats">
+        @foreach (var card in new[] { (UiText.Get(LocKeys.Ui.HelpDeskPage.NewRequests), _overview.New, "new", Icons.Material.Outlined.Description), (UiText.Get(LocKeys.Ui.HelpDeskPage.InProgress), _overview.InProgress, "progress", Icons.Material.Outlined.Schedule), (UiText.Get(LocKeys.Ui.HelpDeskPage.WaitingOnUser), _overview.Waiting, "waiting", Icons.Material.Outlined.ChatBubbleOutline), (UiText.Get(LocKeys.Ui.HelpDeskPage.Closed30Days), _overview.Closed, "closed", Icons.Material.Outlined.CheckCircle), (UiText.Get(LocKeys.Ui.HelpDeskPage.AssignedToMeOpen), _overview.Assigned, "assigned", Icons.Material.Outlined.Person) })
+        {
+            <div class="help-stat @card.Item3"><MudIcon Icon="@card.Item4" /><div><strong>@card.Item2</strong><span>@card.Item1</span></div></div>
+        }
+    </div>
+}
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+<MudPaper Outlined="true" Elevation="0" Class="help-list">
+    <div class="help-toolbar">
+        <div class="help-queues">
+            @foreach (var queue in Queues())
+            {
+                <MudButton Color="@(_queue == queue.Key ? Color.Primary : Color.Default)" Variant="@(_queue == queue.Key ? Variant.Outlined : Variant.Text)" OnClick="@(() => Queue(queue.Key))" Disabled="_busy">@queue.Label</MudButton>
+            }
+        </div>
+        <div class="help-filters">
+            <MudTextField T="string" Value="_search" ValueChanged="SearchChanged" Placeholder="@Loc[LocKeys.Ui.HelpDeskPage.SearchTickets]" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Immediate="true" DebounceInterval="350" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
+            <MudSelect T="int" MultiSelection="true" SelectAll="true" SelectedValues="_queueIds" SelectedValuesChanged="QueueFilterChanged" ToStringFunc="QueueName" MultiSelectionTextFunc="@(_ => Loc[LocKeys.Ui.HelpDeskPage.Queue].ToString())" Placeholder="@Loc[LocKeys.Ui.HelpDeskPage.Queue]" aria-label="@Loc[LocKeys.Ui.HelpDeskPage.Queue]" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                @foreach (var queue in _routing.Queues) { <MudSelectItem T="int" Value="queue.Id">@queue.Name</MudSelectItem> }
+            </MudSelect>
+            <MudSelect T="int" MultiSelection="true" SelectAll="true" SelectedValues="_categoryIds" SelectedValuesChanged="CategoryFilterChanged" ToStringFunc="CategoryName" MultiSelectionTextFunc="@(_ => Loc[LocKeys.Device.Category].ToString())" Placeholder="@Loc[LocKeys.Device.Category]" aria-label="@Loc[LocKeys.Device.Category]" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                <MudSelectItem T="int" Value="0">@Loc[LocKeys.Ui.HelpDeskPage.Uncategorized]</MudSelectItem>
+                @foreach (var category in _routing.Categories) { <MudSelectItem T="int" Value="category.Id">@category.Name</MudSelectItem> }
+            </MudSelect>
+            <MudSelect T="HelpTicketStatus" MultiSelection="true" SelectAll="true" SelectedValues="_statuses" SelectedValuesChanged="StatusChanged" ToStringFunc="HelpDeskUiService.StatusLabel" MultiSelectionTextFunc="@(_ => Loc[LocKeys.Image.VersionStatus].ToString())" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Placeholder="@Loc[LocKeys.Image.VersionStatus]" aria-label="@Loc[LocKeys.Image.VersionStatus]">
+                @foreach (var status in Enum.GetValues<HelpTicketStatus>()) { <MudSelectItem T="HelpTicketStatus" Value="status">@HelpDeskUiService.StatusLabel(status)</MudSelectItem> }
+            </MudSelect>
+        </div>
+    </div>
+    <MudDataGrid T="HelpTicketSummary" Items="_rows" Loading="_busy" Dense="true" Hover="true" Elevation="0" Class="device-list-grid" SortMode="SortMode.None">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="#"><CellTemplate><MudLink Href="@($"/helpdesk/{context.Item.Id}")">#@context.Item.Id</MudLink></CellTemplate></PropertyColumn>
+            <PropertyColumn Property="x => x.Subject" Title="@Loc[LocKeys.Device.Subject]"><CellTemplate><MudLink Href="@($"/helpdesk/{context.Item.Id}")">@context.Item.Subject</MudLink></CellTemplate></PropertyColumn>
+            <PropertyColumn Property="x => x.Requester" Title="@Loc[LocKeys.Ui.HelpDeskPage.Requester]" />
+            <PropertyColumn Property="x => x.DeviceName" Title="@Loc[LocKeys.Dashboard.Device]" />
+            <TemplateColumn Title="@Loc[LocKeys.Image.VersionStatus]"><CellTemplate><HelpStatusBadge Status="context.Item.Status" /></CellTemplate></TemplateColumn>
+            <PropertyColumn Property="x => x.Category" Title="@Loc[LocKeys.Device.Category]" />
+            <PropertyColumn Property="x => x.Queue" Title="@Loc[LocKeys.Ui.HelpDeskPage.Queue]" />
+            <TemplateColumn Title="@Loc[LocKeys.Ui.HelpDeskPage.AssignedTo]"><CellTemplate>@(context.Item.AssignedTo ?? UiText.Get(LocKeys.Ui.HelpTicketPage.Unassigned))</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="@Loc[LocKeys.Ui.HelpDeskPage.Updated]"><CellTemplate>@context.Item.UpdatedAtUtc.ToLocalTime().ToString("g")</CellTemplate></TemplateColumn>
+        </Columns>
+        <NoRecordsContent><MudText Class="pa-6">@Loc[LocKeys.Ui.HelpDeskPage.NoHelpRequestsFoundInThisQueue]</MudText></NoRecordsContent>
+    </MudDataGrid>
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="pa-3">
+        <MudText Typo="Typo.caption">@(_rows.Length == 0 ? UiText.Get(LocKeys.Ui.HelpDeskPage.NoTickets) : UiText.Get(LocKeys.Ui.HelpDeskPage.Showing01, (_offset + 1), (_offset + _rows.Length)))</MudText><MudSpacer />
+        <MudButton Disabled="@(_busy || _offset == 0)" OnClick="Previous">@Loc[LocKeys.Ui.HelpDeskPage.Previous]</MudButton>
+        <MudText Typo="Typo.caption">@UiText.Get(LocKeys.MudBlazor.MudPagination_PageIndex, ((_offset / 50 + 1)))</MudText>
+        <MudButton Disabled="@(_busy || !_more)" OnClick="Next">@Loc[LocKeys.Ui.HelpDeskPage.Next]</MudButton>
+    </MudStack>
+</MudPaper>
+@code {
+    private HelpTicketSummary[] _rows = [];
+    private HelpDeskService.Access? _access;
+    private HelpDeskService.Overview? _overview;
+    private string? _search, _error;
+    private string _queue = "mine";
+    private HashSet<HelpTicketStatus> _statuses = DefaultStatuses("mine");
+    private int _offset, _load;
+    private HashSet<int> _queueIds = [], _categoryIds = [];
+    private bool _filtersInitialized;
+    private string QueueName(int id) => _routing.Queues.FirstOrDefault(x => x.Id == id)?.Name ?? string.Empty;
+    private string CategoryName(int id) => id == 0 ? UiText.Get(LocKeys.Ui.HelpDeskPage.Uncategorized) : _routing.Categories.FirstOrDefault(x => x.Id == id)?.Name ?? string.Empty;
+    private static HashSet<HelpTicketStatus> DefaultStatuses(string queue) => Enum.GetValues<HelpTicketStatus>()
+        .Where(x => queue is not ("mine" or "unassigned" or "myqueues") || x != HelpTicketStatus.Closed).ToHashSet();
+    private HelpRoutingSettings _routing = new([], [], []);
+    private bool _busy, _more;
+    private IEnumerable<(string Key, string Label)> Queues()
+    {
+        if (_access?.ViewAll == true || _access?.ViewAssigned == true) yield return ("mine", UiText.Get(LocKeys.Ui.HelpDeskPage.AssignedToMe));
+        if (_access?.ViewAll == true) yield return ("visible", UiText.Get(LocKeys.Ui.HelpDeskPage.AllTickets));
+        yield return ("unassigned", UiText.Get(LocKeys.Ui.HelpDeskPage.Unclaimed));
+        if (_access?.ViewAll == true || _access?.ViewUnassigned == true) yield return ("fallback", UiText.Label(HelpQueue.UnassignedName));
+        if (_access?.ViewAll == true || _access?.ViewAssigned == true) yield return ("myqueues", UiText.Get(LocKeys.Ui.HelpDeskPage.MyQueues));
+    }
+    protected override Task OnInitializedAsync() => Load();
+    private async Task Queue(string queue) { _queue = queue; _statuses = DefaultStatuses(queue); await Search(); }
+    private async Task QueueFilterChanged(IEnumerable<int> values) { _queueIds = values.ToHashSet(); await Search(); }
+    private async Task CategoryFilterChanged(IEnumerable<int> values) { _categoryIds = values.ToHashSet(); await Search(); }
+    private async Task SearchChanged(string? value) { _search = value; await Search(); }
+    private async Task StatusChanged(IEnumerable<HelpTicketStatus> values) { _statuses = values.ToHashSet(); await Search(); }
+    private async Task Search() { _offset = 0; await Load(); }
+    private async Task Previous() { _offset = Math.Max(0, _offset - 50); await Load(); }
+    private async Task Next() { _offset += 50; await Load(); }
+    private async Task Load()
+    {
+        var load = ++_load;
+        _busy = true;
+        try
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            var access = await Service.AccessAsync(user);
+            if ((_queue is "mine" or "myqueues") && !access.ViewAll && !access.ViewAssigned ||
+                _queue == "visible" && !access.ViewAll ||
+                _queue == "fallback" && !access.ViewAll && !access.ViewUnassigned)
+            {
+                _queue = access.ViewAll || access.ViewAssigned ? "mine" : "fallback";
+                _statuses = DefaultStatuses(_queue);
+            }
+            var routing = await Service.RoutingOptionsAsync(user);
+            if (load != _load) return;
+            _routing = routing;
+            if (!_filtersInitialized)
+            {
+                _queueIds = routing.Queues.Select(x => x.Id).ToHashSet();
+                _categoryIds = routing.Categories.Select(x => x.Id).Append(0).ToHashSet();
+                _filtersInitialized = true;
+            }
+            var assigned = _queue == "unassigned" ? 0 : _queue == "mine" ? access.UserId : (int?)null;
+            // Selecting every queue also includes tickets without a queue.
+            int[]? queues = _queueIds.Count > 0 && _queueIds.SetEquals(routing.Queues.Select(x => x.Id)) ? null : _queueIds.ToArray();
+            if (_queue == "fallback") queues = queues is null ? [HelpQueue.UnassignedId] : queues.Where(x => x == HelpQueue.UnassignedId).ToArray();
+            var result = await Service.ListFilteredAsync(user, _search, new(queues, _categoryIds.ToArray(), _statuses.ToArray()), assigned, _offset, _queue == "myqueues");
+            var overview = await Service.OverviewAsync(user);
+            if (load != _load) return;
+            _access = access; _routing = routing; _overview = overview; _rows = result.Tickets; _more = result.HasMore; _error = null;
+        }
+        catch { if (load == _load) { _rows = []; _overview = null; _error = UiText.Get(LocKeys.Ui.HelpDeskPage.HelpRequestsCouldNotBeLoaded); } }
+        finally { if (load == _load) _busy = false; }
+    }
+}

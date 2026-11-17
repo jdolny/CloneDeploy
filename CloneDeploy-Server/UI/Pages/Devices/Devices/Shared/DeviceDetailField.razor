@@ -1,0 +1,30 @@
+<MudItem xs="12" md="6">
+    @if (Plain)
+    {
+        <dl class="device-property">
+            <dt>@Label</dt>
+            <dd>@DisplayValue</dd>
+        </dl>
+    }
+    else
+    {
+        <MudTextField T="string" Value="@DisplayValue" Label="@Label" ReadOnly="true" Variant="Variant.Outlined" Margin="Margin.Dense"/>
+    }
+</MudItem>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter] public object? Value { get; set; }
+    [Parameter] public bool Plain { get; set; }
+
+    private string DisplayValue => Value switch
+    {
+        null => "—",
+        DateTime date when date == default => "—",
+        DateTime date => date.ToLocalTime().ToString("g"),
+        System.Enum item => UiText.Label(item),
+        bool flag => flag ? UiText.Get(LocKeys.User.Yes) : UiText.Get(LocKeys.User.No),
+        string text when string.IsNullOrWhiteSpace(text) => "—",
+        _ => Value.ToString() ?? "—"
+    };
+}

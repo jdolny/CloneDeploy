@@ -1,0 +1,39 @@
+.directory-browser {
+    display: grid;
+    grid-template-columns: minmax(260px, 29%) minmax(0, 1fr);
+    gap: 16px;
+    align-items: stretch;
+    min-height: 70vh;
+}
+.directory-navigation, .directory-details {
+    min-width: 0;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: var(--mud-default-borderradius);
+    background: var(--mud-palette-surface);
+}
+.directory-navigation { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
+.directory-connection { flex: 0 0 auto; min-width: 0; }
+.directory-search { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.directory-search ::deep .mud-input-control { min-width: 0; }
+.directory-tree { flex: 1; overflow: auto; max-height: 65vh; min-height: 240px; }
+.directory-details { padding: 12px; display: flex; flex-direction: column; gap: 16px; background: var(--mud-palette-background-grey); }
+.directory-location, .directory-card {
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: var(--mud-default-borderradius);
+    background: var(--mud-palette-surface);
+}
+.directory-location { padding: 16px; }
+.directory-location-heading { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.directory-location-name { flex: 1; min-width: 160px; overflow-wrap: anywhere; }
+.directory-location-action { margin-inline-start: auto; }
+.directory-metadata { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 16px; margin-top: 16px; background: var(--mud-palette-background-grey); border-radius: var(--mud-default-borderradius); overflow-wrap: anywhere; }
+.directory-card { min-width: 0; }
+.directory-card ::deep .mud-table { border: 0; }
+.directory-card ::deep .mud-table-toolbar { flex-wrap: wrap; gap: 8px; height: auto; min-height: 64px; padding-top: 8px; padding-bottom: 8px; }
+@media (max-width: 959px) {
+    .directory-browser { grid-template-columns: minmax(0, 1fr); }
+    .directory-tree { max-height: 40vh; min-height: 160px; }
+}
+@media (max-width: 599px) {
+    .directory-metadata { grid-template-columns: minmax(0, 1fr); }
+}

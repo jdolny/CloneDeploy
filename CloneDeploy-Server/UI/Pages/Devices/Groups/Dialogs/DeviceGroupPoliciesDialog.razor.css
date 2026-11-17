@@ -1,0 +1,3 @@
+.member-panels { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; }
+.member-panels ::deep .member-drop-zone { min-height:280px; max-height:55vh; overflow:auto; padding:8px; border:1px dashed var(--mud-palette-lines-default); border-radius:4px; margin-top:12px; }
+@media (max-width:600px) { .member-panels { grid-template-columns:minmax(0,1fr); } }

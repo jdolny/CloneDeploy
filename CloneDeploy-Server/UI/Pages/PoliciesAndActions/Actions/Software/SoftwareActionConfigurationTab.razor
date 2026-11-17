@@ -1,0 +1,318 @@
+@using CloneDeploy_Agent.Contracts
+@inject ActionService SoftwareActionService
+
+<PolicyActionEditScope Context="canEdit">
+@if (_model is null)
+{
+    @if (_loadingAction) { <MudProgressLinear Indeterminate="true"/> }
+    else { <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.CommandActionConfigurationTab.UnableToLoadActionSettingsReopenThisTabTo]</MudAlert> }
+}
+else
+{
+    <div class="section-action-bar"><MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save"
+                       Disabled="@(!canEdit || (_loading || _saving))" OnClick="OnSaveClicked">
+                @Loc[LocKeys.Ui.ActionFiles.SaveChanges]
+            </MudButton></div>
+    <MudForm @ref="_form" Disabled="@(!canEdit || (_saving))">
+            <MudStack Spacing="6">
+                <MudSelect T="bool" Value="_model.Uninstall" ValueChanged="OnOperationChanged" Label="@Loc[LocKeys.Image.AuditType]" Variant="Variant.Outlined">
+                    <MudSelectItem Value="false">@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.Install]</MudSelectItem><MudSelectItem Value="true">@Loc[LocKeys.Ui.DeviceSoftwareTab.Uninstall]</MudSelectItem>
+                </MudSelect>
+                @if (_model.Uninstall)
+                {
+                    <MudAutocomplete T="SoftwareUninstallChoice" Label="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.InstalledApplication]" Value="_selectedSoftware" ValueChanged="OnSoftwareChanged"
+                        SearchFunc="SearchSoftwareAsync" ToStringFunc="SoftwareLabel"
+                        Variant="Variant.Outlined" Required="true" CoerceText="true" MaxItems="100"/>
+                    <MudCheckBox T="bool" Value="@(_model.UninstallVersion is null)" ValueChanged="OnAllVersionsChanged" Label="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.UninstallAllVersions]"/>
+                    <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.EachDeviceRemovesExactMatchesForTheSelectedApplication]</MudText>
+                    <MudTextField @bind-Value="_model.Arguments" Label="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.SilentArgumentsOptional]" Variant="Variant.Outlined"
+                        HelperText="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.OnlyNeededWhenAnApplicationHasNoQuietUninstall]"/>
+                }
+                else
+                {
+                <div>
+                    <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.Installation]</MudText>
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <MudSelect T="SoftwareActionType" @bind-Value="InstallerType" Label="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.InstallerType]"
+                                       Variant="Variant.Outlined">
+                                <MudSelectItem Value="SoftwareActionType.Exe">@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.EXE]</MudSelectItem>
+                                <MudSelectItem Value="SoftwareActionType.Msi">@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.MSI]</MudSelectItem>
+                                <MudSelectItem Value="SoftwareActionType.WinGet">@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.WinGet]</MudSelectItem>
+                                <MudSelectItem Value="SoftwareActionType.Pkg">@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.PKGMacOS]</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        @if (_model.Type == SoftwareActionType.WinGet)
+                        {
+                            <MudItem xs="12" md="6">
+                                <MudSelect @bind-Value="_model.WinGetInstallType" Label="@Loc[LocKeys.Image.AuditType]"
+                                           Variant="Variant.Outlined">
+                                    @foreach (var operation in Enum.GetValues<WinGetInstallType>().Where(x => x != WinGetInstallType.Uninstall))
+                                    {
+                                        <MudSelectItem Value="@operation">@OperationLabel(operation)</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            @if (_model.WinGetInstallType is WinGetInstallType.Install or WinGetInstallType.Uninstall or WinGetInstallType.Update)
+                            {
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="_model.PackageId" Label="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.PackageID]"
+                                              Variant="Variant.Outlined" Required="true"
+                                              HelperText="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.ForExampleGoogleChrome]"/>
+                                <MudButton OnClick="OnBrowsePackagesClicked" StartIcon="@Icons.Material.Filled.Search"
+                                           Variant="Variant.Outlined" Color="Color.Primary" Disabled="@(!canEdit || (_saving))" Class="mt-2">
+                                    @Loc[LocKeys.Ui.SoftwareActionConfigurationTab.BrowsePackages]
+                                </MudButton>
+                            </MudItem>
+                            }
+                            @if (_model.WinGetInstallType != WinGetInstallType.UpdateManaged)
+                            {
+                                <MudItem xs="12" md="6">
+                                    <MudSelect T="WinGetScope" @bind-Value="_model.WinGetScope" Label="@Loc[LocKeys.Ui.TargetPolicies.Scope]" Variant="Variant.Outlined"
+                                               HelperText="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.ThePackageMustSupportTheSelectedScopeUserScope]">
+                                        <MudSelectItem Value="WinGetScope.Default">@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.DefaultLetWinGetDecide]</MudSelectItem>
+                                        <MudSelectItem Value="WinGetScope.Machine">@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.Machine]</MudSelectItem>
+                                        <MudSelectItem Value="WinGetScope.User">@Loc[LocKeys.User.UserMembership]</MudSelectItem>
+                                    </MudSelect>
+                                </MudItem>
+                            }
+                            @if (_model.WinGetInstallType == WinGetInstallType.Install)
+                            {
+                                <MudItem xs="12" md="6">
+                                    <MudTextField @bind-Value="_model.PackageVersion" Label="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.PackageVersion]"
+                                                  Variant="Variant.Outlined" Disabled="_model.InstallLatest"/>
+                                    <MudCheckBox @bind-Value="_model.InstallLatest" Label="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.InstallLatestVersion]"
+                                                 Color="Color.Primary"/>
+                                    <MudCheckBox @bind-Value="_model.KeepUpdated" Label="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.EligibleForManagedUpdates]"
+                                                 Color="Color.Primary"/>
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudTextField @bind-Value="_model.Override" Label="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.InstallerArgumentOverride]"
+                                                  Variant="Variant.Outlined"/>
+                                </MudItem>
+                            }
+                            <MudItem xs="12">
+                                <MudCheckBox @bind-Value="_model.UseDownloadQueue" Label="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.UseServerDownloadQueue]" />
+                                @if (_model.WinGetInstallType == WinGetInstallType.UpdateManaged)
+                                {
+                                    <MudAlert Severity="Severity.Info">@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.UpdatesInstalledPackagesMarkedEligibleInThisDeviceS]</MudAlert>
+                                }
+                                @if (_model.WinGetInstallType == WinGetInstallType.UpdateAll)
+                                { <MudAlert Severity="Severity.Warning">@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.UpdatesAllApplicationsRecognizedByWinGetIncludingApplicationsNot]</MudAlert> }
+                            </MudItem>
+                        }
+                        else
+                        {
+                            @if (_model.Type == SoftwareActionType.Msi)
+                            {
+                                <MudItem xs="12" md="6">
+                                    <MudSelect @bind-Value="_model.MsiInstallType" Label="@Loc[LocKeys.Image.AuditType]"
+                                               Variant="Variant.Outlined">
+                                        @foreach (var operation in Enum.GetValues<MsiInstallType>().Where(x => x != MsiInstallType.Uninstall))
+                                        {
+                                            <MudSelectItem Value="@operation">@operation</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                            }
+
+                            <MudItem xs="12">
+                                <SoftwareInstallerEditor SoftwareAction="_model" Disabled="_saving"/>
+                            </MudItem>
+                        }
+                        @if (_model.Type != SoftwareActionType.Pkg && !(!_model.Uninstall && _model.Type == SoftwareActionType.WinGet && _model.WinGetInstallType == WinGetInstallType.UpdateManaged))
+                        {
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="_model.Arguments" Label="@Loc[LocKeys.Ui.CommandActionConfigurationTab.Arguments]"
+                                          Variant="Variant.Outlined" Lines="2"/>
+                        </MudItem>
+                        }
+                    </MudGrid>
+                </div>
+
+                }
+                <div>
+                    <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.Policy.Execution]</MudText>
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <MudNumericField T="int" @bind-Value="_model.Timeout" Label="@Loc[LocKeys.Ui.CommandActionConfigurationTab.Timeout]" Min="0"
+                                             Variant="Variant.Outlined"/>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            @if (!_model.Uninstall && _model.Type == SoftwareActionType.WinGet && _model.WinGetInstallType == WinGetInstallType.UpdateManaged)
+                            { <MudText>@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.SuccessExitCodes03010RestartRequired]</MudText> }
+                            else
+                            {
+                            <MudTextField @bind-Value="_model.SuccessCodes" Label="@Loc[LocKeys.Ui.CommandActionConfigurationTab.SuccessExitCodes]"
+                                          Variant="Variant.Outlined"
+                                          Required="true" Validation="@(new Func<string, string?>(ValidateSuccessCodes))"
+                                          HelperText="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.CommaSeparatedExitCodes]"/>
+                            }
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudSelect T="int?" @bind-Value="_model.ManagedCredentialId" Label="@Loc[LocKeys.Ui.CommandActionConfigurationTab.RunAs]" Disabled="@(_model.Type == SoftwareActionType.Pkg || !_model.Uninstall && _model.Type == SoftwareActionType.WinGet && _model.WinGetInstallType == WinGetInstallType.UpdateManaged)"
+                                       Variant="Variant.Outlined" Clearable="true">
+                                @foreach (var credential in _credentials)
+                                {
+                                    <MudSelectItem T="int?"
+                                                   Value="@((int?)credential.Id)">@credential.Name (@credential.Username)
+                                    </MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudCheckBox @bind-Value="_model.RedirectStdOut" Label="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.CaptureStandardOutput]"
+                                         Color="Color.Primary"/>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudCheckBox @bind-Value="_model.RedirectStdError" Label="@Loc[LocKeys.Ui.SoftwareActionConfigurationTab.CaptureStandardError]"
+                                         Color="Color.Primary"/>
+                        </MudItem>
+                    </MudGrid>
+                </div>
+            </MudStack>
+        </MudForm>
+
+
+}
+
+
+</PolicyActionEditScope>
+
+@code {
+    private SoftwareAction _model = null!;
+    private SoftwareActionType InstallerType
+    {
+        get => _model.Type;
+        set
+        {
+            _model.Type = value;
+            if (value == SoftwareActionType.Pkg)
+            {
+                _model.ManagedCredentialId = null; _model.Arguments = null; _model.AdditionalArguments = null;
+                _model.SuccessCodes = "0"; _model.MsiInstallType = MsiInstallType.Install; _model.WinGetInstallType = WinGetInstallType.Install;
+            }
+        }
+    }
+
+    private bool _loadingAction = true;
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await SoftwareActionService.GetSoftwareAsync(SoftwareAction.Id);
+        if (result.Success && result.HasData)
+        {
+            await LoadCatalogsAsync();
+            _model = result.Data;
+            if (_model.Uninstall && _model.UninstallName is not null)
+            {
+                _selectedSoftware = new(_model.UninstallName, _model.UninstallVersion, 0);
+                _hasSelectedVersion = _model.UninstallVersion is not null;
+            }
+        }
+        else if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loadingAction = false;
+    }
+
+    [Parameter, EditorRequired] public SoftwareAction SoftwareAction { get; set; } = null!;
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private static string OperationLabel(WinGetInstallType operation) => operation switch
+    {
+        WinGetInstallType.UpdateManaged => UiText.Get(LocKeys.Ui.SoftwareActionConfigurationTab.UpdateManagedApplications),
+        WinGetInstallType.UpdateAll => UiText.Get(LocKeys.Ui.SoftwareActionConfigurationTab.UpdateAllInstalledApplications),
+        WinGetInstallType.Update => UiText.Get(LocKeys.Ui.SoftwareActionConfigurationTab.UpdateInstalledPackage),
+        _ => UiText.Label(operation)
+    };
+    private SoftwareUninstallChoice? _selectedSoftware;
+    private bool _hasSelectedVersion;
+    private static string SoftwareLabel(SoftwareUninstallChoice? choice) => choice is null ? "" :
+        $"{choice.Name} — {choice.Version ?? UiText.Get(LocKeys.Ui.SoftwareActionConfigurationTab.AllVersions)}" + (choice.Devices > 0 ? UiText.Get(LocKeys.Ui.SoftwareActionConfigurationTab.Text0Devices, (choice.Devices)) : "");
+    private void OnOperationChanged(bool uninstall)
+    {
+        _model.Uninstall = uninstall;
+        _model.Arguments = null;
+        _model.Type = SoftwareActionType.Exe;
+        _model.MsiInstallType = MsiInstallType.Install;
+        _model.WinGetInstallType = WinGetInstallType.Install;
+        if (uninstall) _model.SuccessCodes = "0,3010";
+    }
+    private void OnSoftwareChanged(SoftwareUninstallChoice? choice)
+    {
+        if (_selectedSoftware?.Name == choice?.Name && _selectedSoftware?.Version == choice?.Version) return;
+        _selectedSoftware = choice;
+        _hasSelectedVersion = choice is not null;
+        _model.UninstallName = choice?.Name;
+        _model.UninstallVersion = null;
+    }
+    private void OnAllVersionsChanged(bool all)
+    {
+        if (!all && !_hasSelectedVersion) { Snackbar.Add(UiText.Get(LocKeys.Ui.SoftwareActionConfigurationTab.ChooseAnInventoriedApplicationVersionFirst), Severity.Info); return; }
+        _model.UninstallVersion = all ? null : _selectedSoftware?.Version ?? "";
+    }
+    private async Task<IEnumerable<SoftwareUninstallChoice>> SearchSoftwareAsync(string? text, CancellationToken ct)
+    {
+        var result = await SoftwareActionService.SearchSoftwareInventoryAsync(text);
+        if (result.Success) return result.Data!;
+        Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        return [];
+    }
+    private MudForm _form = null!;
+
+    private List<ManagedCredential> _credentials = [];
+    private bool _loading = true;
+    private bool _saving;
+
+
+    private async Task LoadCatalogsAsync()
+    {
+        _loading = true;
+        var result = await SoftwareActionService.GetCredentialsAsync();
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        else if (result.HasData)
+            _credentials = result.Data;
+        _loading = false;
+    }
+
+    private async Task OnBrowsePackagesClicked()
+    {
+        var parameters = new DialogParameters<WinGetPackageDialog>
+        {
+            { x => x.CurrentPackageId, _model.PackageId },
+            { x => x.CurrentVersion, _model.PackageVersion },
+            { x => x.InstallLatest, _model.InstallLatest },
+            { x => x.AllowVersionSelection, _model.WinGetInstallType == WinGetInstallType.Install }
+        };
+        var dialog = await Dialog.ShowAsync<WinGetPackageDialog>(parameters,
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, CloseButton = true });
+        if (await dialog.Result is { Canceled: false, Data: WinGetPackageSelectionDto selection })
+            selection.ApplyTo(_model);
+    }
+
+
+    private static string? ValidateSuccessCodes(string? value) =>
+        !string.IsNullOrWhiteSpace(value) && value.Split(',').All(code => int.TryParse(code.Trim(), out _))
+            ? null
+            : UiText.Get(LocKeys.Ui.CommandActionConfigurationTab.EnterCommaSeparatedIntegerExitCodes);
+
+    private async Task OnSaveClicked()
+    {
+        if (_saving || _loading) return;
+        _saving = true;
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            _saving = false;
+            return;
+        }
+        var result = await SoftwareActionService.UpdateSoftwareAsync(_model);
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        else
+        {
+            Snackbar.Add(Loc[LocKeys.Action.ConfigurationSaved], Severity.Success);
+            await OnSaved.InvokeAsync();
+        }
+        _saving = false;
+    }
+}

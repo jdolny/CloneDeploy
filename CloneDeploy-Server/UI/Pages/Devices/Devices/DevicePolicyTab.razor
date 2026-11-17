@@ -1,0 +1,38 @@
+
+<MudTabs @bind-ActivePanelIndex="_activePanelIndex" KeepPanelsAlive="false"
+         TabPanelsClass="pt-4 detail-tab-content" Class="device-subtabs device-overview-tabs">
+    <Header>
+        @if (IsActive)
+        {
+            <div class="device-overview-save"><SectionOutlet SectionId="@ActiveActionSection"/></div>
+        }
+    </Header>
+    <ChildContent>
+    <MudTabPanel Text="@Loc[LocKeys.Device.EffectivePolicyText]">
+        <TabHelp Href="ui/devices/device-policies-effective-policy.html" Title="@Loc[LocKeys.Device.EffectivePolicyText]" />
+        @if (IsActive && _activePanelIndex == 0)
+        {
+            <MudStack Class="stack-full">
+                <DeviceEffectivePolicyTab Device="Device" ActionSectionId="_effectiveActionSection"/>
+            </MudStack>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Loc[LocKeys.Ui.DevicePolicyTab.DirectAssignments]">
+        <TabHelp Href="ui/devices/device-policies-direct-assignments.html" Title="@Loc[LocKeys.Ui.DevicePolicyTab.DirectAssignments]" />
+        @if (IsActive && _activePanelIndex == 1)
+        {
+            <TargetPolicies Target="@PolicyTargetKeyDto.Device(Device.Id)" ActionSectionId="_assignmentsActionSection"/>
+        }
+    </MudTabPanel>
+    </ChildContent>
+</MudTabs>
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+    [Parameter] public bool IsActive { get; set; } = true;
+    private int _activePanelIndex;
+    private readonly object _effectiveActionSection = new();
+    private readonly object _assignmentsActionSection = new();
+    private object ActiveActionSection => _activePanelIndex == 1 ? _assignmentsActionSection : _effectiveActionSection;
+
+}

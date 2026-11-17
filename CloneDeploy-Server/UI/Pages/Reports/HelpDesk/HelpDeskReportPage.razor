@@ -1,0 +1,191 @@
+@page "/reports/helpdesk"
+@attribute [Authorize(Policy = Constants.Permissions.ReportHelpDesk)]
+@using CloneDeploy_Agent.Contracts
+@using CloneDeploy_Server.UI.Pages.Administration.HelpDeskSettings.QueuesAndCategories
+@using CloneDeploy_Server.UI.Pages.Administration.HelpDeskSettings.RoutingRules
+@using CloneDeploy_Server.UI.Pages.HelpDesk
+@inject HelpDeskUiService Reports
+@inject AuthenticationStateProvider Authentication
+@inject IJSRuntime JS
+@inject ILogger<HelpDeskReportPage> Logger
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.HelpDeskReportPage.HelpDeskReport]" />
+<div class="section-action-bar">
+    <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+        <MudButton OnClick="Run" Disabled="_busy" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow">@Loc[LocKeys.Ui.DevicesReportPage.RunReport]</MudButton>
+        <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Style="align-self: auto;" Disabled="_busy" aria-label="@Loc[LocKeys.Ui.ActionButtons.MoreActions]">
+            <MudMenuItem OnClick="Export" Disabled="@(_busy || _applied is null)">@Loc[LocKeys.Ui.HelpDeskReportPage.ExportCSV]</MudMenuItem>
+        </MudMenu>
+    </MudButtonGroup>
+</div>
+<MudPaper Outlined="true" Elevation="0" Class="pa-4 mb-4">
+    <div class="report-filters">
+        <MudDatePicker @bind-Date="_from" Label="@Loc[LocKeys.Ui.HelpDeskReportPage.FromUTC]" DateFormat="yyyy-MM-dd" Variant="Variant.Outlined" Margin="Margin.Dense" />
+        <MudDatePicker @bind-Date="_through" Label="@Loc[LocKeys.Ui.HelpDeskReportPage.ThroughUTC]" DateFormat="yyyy-MM-dd" Variant="Variant.Outlined" Margin="Margin.Dense" />
+        <MudSelect T="int?" @bind-Value="_queue" Label="@Loc[LocKeys.Ui.HelpDeskPage.Queue]" Placeholder="@Loc[LocKeys.Ui.HelpDeskReportPage.AllQueues]" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelectItem T="int?" Value="@((int?)0)">@Loc[LocKeys.Ui.HelpDeskPage.NoQueue]</MudSelectItem>
+            @foreach (var x in _options.Queues) { <MudSelectItem T="int?" Value="x.Id">@x.Name</MudSelectItem> }
+        </MudSelect>
+        <MudSelect T="int?" @bind-Value="_staff" Label="@Loc[LocKeys.Ui.HelpDeskReportPage.Technician]" Placeholder="@Loc[LocKeys.Ui.HelpDeskReportPage.AllTechnicians]" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelectItem T="int?" Value="@((int?)0)">@Loc[LocKeys.Ui.HelpTicketPage.Unassigned]</MudSelectItem>
+            @foreach (var x in _options.Staff) { <MudSelectItem T="int?" Value="x.Id">@x.Name</MudSelectItem> }
+        </MudSelect>
+        <MudSelect T="int?" @bind-Value="_category" Label="@Loc[LocKeys.Device.Category]" Placeholder="@Loc[LocKeys.Ui.HelpDeskReportPage.AllCategories]" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelectItem T="int?" Value="@((int?)0)">@Loc[LocKeys.Ui.HelpDeskPage.Uncategorized]</MudSelectItem>
+            @foreach (var x in _options.Categories) { <MudSelectItem T="int?" Value="x.Id">@x.Name</MudSelectItem> }
+        </MudSelect>
+        <MudSelect T="HelpTicketStatus?" @bind-Value="_status" Label="@Loc[LocKeys.Ui.HelpDeskReportPage.CurrentStatus]" Placeholder="@Loc[LocKeys.Ui.HelpDeskPage.AllStatuses]" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+            @foreach (var x in Enum.GetValues<HelpTicketStatus>()) { <MudSelectItem T="HelpTicketStatus?" Value="x">@HelpDeskUiService.StatusLabel(x)</MudSelectItem> }
+        </MudSelect>
+    </div>
+</MudPaper>
+@if (_busy) { <MudProgressLinear Indeterminate="true" Class="mb-3" /> }
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert> }
+@if (_summary is { } summary && _applied is not null)
+{
+    <div class="report-cards">
+        @foreach (var card in new[] { (UiText.Get(LocKeys.Ui.HelpDeskReportPage.CreatedInPeriod), summary.Created), (UiText.Get(LocKeys.Ui.HelpDeskReportPage.ClosuresInPeriod), summary.Closures), (UiText.Get(LocKeys.Ui.HelpDeskReportPage.OpenNow), summary.Open), (UiText.Get(LocKeys.Ui.HelpDeskReportPage.UnassignedOpenNow), summary.Unassigned) })
+        { <MudPaper Outlined="true" Elevation="0" Class="pa-4"><MudText Typo="Typo.body2">@card.Item1</MudText><MudText Typo="Typo.h4">@card.Item2.ToString("N0")</MudText></MudPaper> }
+    </div>
+    <MudPaper Outlined="true" Elevation="0" Class="pa-4 my-4">
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.HelpDeskReportPage.CreatedAndClosedOverTime]</MudText>
+        <div class="trend-legend"><span>@Loc[LocKeys.Ui.HelpDeskReportPage.Created]</span><span>@Loc[LocKeys.Ui.HelpDeskReportPage.Closed]</span></div>
+        <div class="trend-chart">
+            @foreach (var bucket in Trend())
+            {
+                var max = Math.Max(1, Trend().Max(x => Math.Max(x.Created, x.Closures)));
+                <div class="trend-column" title="@(UiText.Get(LocKeys.Ui.HelpDeskReportPage.Text01Created2Closures, (bucket.Label), (bucket.Created), (bucket.Closures)))" tabindex="0" aria-label="@(UiText.Get(LocKeys.Ui.HelpDeskReportPage.Text01Created2Closures, (bucket.Label), (bucket.Created), (bucket.Closures)))">
+                    <div class="trend-bars"><span style="height:@Percent(bucket.Created, max)%"></span><span style="height:@Percent(bucket.Closures, max)%"></span></div>
+                    <small>@bucket.Label</small>
+                </div>
+            }
+        </div>
+    </MudPaper>
+    <div class="report-panels">
+        <HelpReportBreakdown Title="@Loc[LocKeys.Ui.HelpDeskReportPage.OpenNowByQueue]" Items="summary.Queues" />
+        <HelpReportBreakdown Title="@Loc[LocKeys.Ui.HelpDeskReportPage.OpenNowByTechnician]" Items="summary.Staff" />
+        <HelpReportBreakdown Title="@Loc[LocKeys.Ui.HelpDeskReportPage.CreatedInPeriodByCategory]" Items="summary.Categories" />
+        <HelpReportBreakdown Title="@Loc[LocKeys.Ui.HelpDeskReportPage.OpenNowByAge]" Items="summary.Aging" />
+    </div>
+    <MudPaper Outlined="true" Elevation="0" Class="mt-4">
+        <MudDataGrid T="HelpRequesterReportRow" Items="_requesters" Dense="true" Hover="true" SortMode="SortMode.Single" RowsPerPage="25" Class="device-list-grid">
+            <ToolBarContent><MudText Typo="Typo.h6">@Loc["HelpReport.Requesters"]</MudText></ToolBarContent>
+            <Columns>
+                <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Ui.HelpDeskPage.Requester]">
+                    <CellTemplate><button type="button" class="resource-name-link" @onclick="@(() => SelectRequester(context.Item))">@context.Item.Name</button></CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="x => x.Username" Title="@Loc["HelpReport.Username"]" />
+                <PropertyColumn Property="x => x.Total" Title="@Loc["HelpReport.TotalTickets"]" InitialDirection="SortDirection.Descending" />
+                <PropertyColumn Property="x => x.Open" Title="@Loc["HelpReport.OpenTickets"]" />
+                <PropertyColumn Property="x => x.Closed" Title="@Loc["HelpReport.ClosedTickets"]" />
+                <PropertyColumn Property="x => x.Percentage" Title="@Loc["HelpReport.Share"]" Format="0.0'%'" />
+            </Columns>
+            <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.HelpDeskReportPage.NoTicketsMatchThisReport]</MudText></NoRecordsContent>
+            <PagerContent><MudDataGridPager T="HelpRequesterReportRow" PageSizeOptions="@(new[] { 25, 50, 100 })" /></PagerContent>
+        </MudDataGrid>
+    </MudPaper>
+    <MudPaper Outlined="true" Elevation="0" Class="mt-4">
+        <MudDataGrid T="HelpReportRow" @key="_revision" ServerData="LoadPage" Dense="true" Hover="true" SortMode="SortMode.None" RowsPerPage="50" Class="device-list-grid">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.HelpDeskReportPage.TicketsCreatedInPeriod]</MudText>
+                @if (_selectedRequester is { } requester)
+                {
+                    <MudText Class="ml-3">@requester.Name</MudText>
+                    <MudSpacer />
+                    <MudButton OnClick="ClearRequester" Disabled="_busy">@Loc["HelpReport.AllRequesters"]</MudButton>
+                }
+            </ToolBarContent>
+            <Columns>
+                <PropertyColumn Property="x => x.Id" Title="#"><CellTemplate><MudLink Href="@($"/helpdesk/{context.Item.Id}")">#@context.Item.Id</MudLink></CellTemplate></PropertyColumn>
+                <PropertyColumn Property="x => x.Subject" Title="@Loc[LocKeys.Device.Subject]" />
+                <PropertyColumn Property="x => x.Requester" Title="@Loc[LocKeys.Ui.HelpDeskPage.Requester]" />
+                <PropertyColumn Property="x => x.Device" Title="@Loc[LocKeys.Dashboard.Device]" />
+                <PropertyColumn Property="x => x.Queue" Title="@Loc[LocKeys.Ui.HelpDeskPage.Queue]" />
+                <PropertyColumn Property="x => x.Assignee" Title="@Loc[LocKeys.Ui.HelpDeskReportPage.Technician]" />
+                <PropertyColumn Property="x => x.Category" Title="@Loc[LocKeys.Device.Category]" />
+                <TemplateColumn Title="@Loc[LocKeys.Image.VersionStatus]"><CellTemplate><HelpStatusBadge Status="context.Item.Status" /></CellTemplate></TemplateColumn>
+                <TemplateColumn Title="@Loc[LocKeys.Ui.HelpDeskReportPage.CreatedUTC]"><CellTemplate>@context.Item.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm")</CellTemplate></TemplateColumn>
+                <TemplateColumn Title="@Loc[LocKeys.Ui.HelpDeskReportPage.LastClosedUTC]"><CellTemplate>@(context.Item.ClosedAtUtc?.ToString("yyyy-MM-dd HH:mm") ?? "—")</CellTemplate></TemplateColumn>
+            </Columns>
+            <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.HelpDeskReportPage.NoTicketsMatchThisReport]</MudText></NoRecordsContent>
+            <PagerContent><MudDataGridPager T="HelpReportRow" PageSizeOptions="@(new[] { 25, 50, 100 })" /></PagerContent>
+        </MudDataGrid>
+    </MudPaper>
+}
+
+@code {
+    private DateTime? _from = DateTime.UtcNow.Date.AddDays(-29), _through = DateTime.UtcNow.Date;
+    private int? _queue, _staff, _category;
+    private HelpTicketStatus? _status;
+    private HelpReportOptions _options = new([], [], []);
+    private HelpReportFilter? _applied;
+    private HelpReportSummary? _summary;
+    private HelpRequesterReportRow[] _requesters = [];
+    private HelpRequesterReportRow? _selectedRequester;
+    private HelpReportFilter? DetailFilter => _applied is null || _selectedRequester is null ? _applied
+        : _applied with { RequesterKeys = _selectedRequester.Keys, RequesterTicketId = _selectedRequester.FallbackTicketId };
+    private void SelectRequester(HelpRequesterReportRow row) { if (_busy) return; _selectedRequester = row; _revision++; }
+    private void ClearRequester() { _selectedRequester = null; _revision++; }
+    private int _revision;
+    private string? _error;
+    private bool _busy;
+    protected override Task OnInitializedAsync() => Run();
+    private async Task Run()
+    {
+        if (_busy) return;
+        _busy = true; _error = null;
+        try
+        {
+            if (_from is null || _through is null || _through.Value.Date == DateTime.MaxValue.Date) throw new InvalidOperationException(UiText.Get(LocKeys.Ui.HelpDeskReportPage.SelectBothDates));
+            var filter = new HelpReportFilter(DateTime.SpecifyKind(_from.Value.Date, DateTimeKind.Utc),
+                DateTime.SpecifyKind(_through.Value.Date.AddDays(1), DateTimeKind.Utc), _queue, _staff, _category, _status);
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            var options = await Reports.ReportOptionsAsync(user);
+            var summary = await Reports.ReportSummaryAsync(user, filter);
+            var requesters = await Reports.ReportRequestersAsync(user, filter);
+            _options = options; _summary = summary; _applied = filter; _requesters = requesters; _selectedRequester = null;
+            _revision++;
+        }
+        catch (Exception ex) { Error(ex); }
+        finally { _busy = false; }
+    }
+    private async Task<GridData<HelpReportRow>> LoadPage(GridState<HelpReportRow> state, CancellationToken ct)
+    {
+        var filter = DetailFilter;
+        if (filter is null) return new() { Items = [], TotalItems = 0 };
+        try
+        {
+            var page = await Reports.ReportPageAsync((await Authentication.GetAuthenticationStateAsync()).User, filter, state.Page, state.PageSize, ct);
+            return new() { Items = page.Rows, TotalItems = page.Total };
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { return new() { Items = [], TotalItems = 0 }; }
+        catch (Exception ex) { Error(ex); return new() { Items = [], TotalItems = 0 }; }
+    }
+    private async Task Export()
+    {
+        if (_busy || _applied is null) return;
+        _busy = true; _error = null;
+        try
+        {
+            using var stream = await Reports.ExportReportAsync((await Authentication.GetAuthenticationStateAsync()).User, DetailFilter!);
+            using var reference = new DotNetStreamReference(stream);
+            await using var module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/device-report.js");
+            await module.InvokeVoidAsync("downloadStream", reference, "help-desk-report.csv");
+        }
+        catch (Exception ex) { Error(ex); }
+        finally { _busy = false; }
+    }
+    private void Error(Exception ex)
+    {
+        Logger.LogWarning(ex, "Help Desk report failed");
+        _error = ex is UnauthorizedAccessException ? UiText.Get(LocKeys.Ui.HelpDeskReportPage.YouNoLongerHaveAccessToThisReport) : ex is InvalidOperationException && ex.Message.StartsWith(UiText.Get(LocKeys.Ui.HelpDeskReportPage.ChooseAValid)) || ex.Message == UiText.Get(LocKeys.Ui.HelpDeskReportPage.SelectBothDates) ? ex.Message : UiText.Get(LocKeys.Ui.HelpDeskReportPage.UnableToLoadOrExportTheReportPleaseTry);
+        _applied = null; _summary = null; _requesters = []; _selectedRequester = null;
+    }
+    private static string Percent(int count, int max) => (100d * count / max).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    private IEnumerable<(string Label, int Created, int Closures)> Trend()
+    {
+        var days = _summary!.Trend;
+        var size = days.Length > 120 ? 30 : days.Length > 45 ? 7 : 1;
+        return days.Chunk(size).Select(chunk => (chunk.Length == 1 ? chunk[0].Day.ToString("MMM d") : $"{chunk[0].Day:MMM d}–{chunk[^1].Day:MMM d}", chunk.Sum(x => x.Created), chunk.Sum(x => x.Closures)));
+    }
+}

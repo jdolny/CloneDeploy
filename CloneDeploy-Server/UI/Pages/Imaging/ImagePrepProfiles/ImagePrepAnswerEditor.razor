@@ -1,0 +1,32 @@
+@using CloneDeploy_Agent.Contracts
+
+<MudStack Spacing="3">
+    <MudButton OnClick="GenerateAsync" Disabled="Disabled" StartIcon="@Icons.Material.Outlined.Code" Variant="Variant.Outlined" Style="width: 33.333%;">@UiText.Label("Generate answer file")</MudButton>
+    <MudText>@Loc[LocKeys.Ui.ImagePrepAnswerEditor.PasteOrEditAnAnswerFileLeaveBlankTo]</MudText>
+    <MudTextField @bind-Value="Model.AnswerFile" Immediate="true" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.SysprepAnswerFileXML]" Lines="20" MaxLength="@ImagePrepAnswerFile.MaximumContentLength" Disabled="Disabled" Variant="Variant.Outlined" />
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public ImagePrepProfile Model { get; set; } = null!;
+    [Parameter] public bool Disabled { get; set; }
+
+    private async Task GenerateAsync()
+    {
+        if (Disabled) return;
+        var model = Model;
+        var parameters = new DialogParameters<ImagePrepAnswerGeneratorDialog>
+        {
+            { x => x.Options, model.GeneratorOptions }
+        };
+        var dialog = await Dialog.ShowAsync<ImagePrepAnswerGeneratorDialog>(
+            UiText.Label("Generate answer file"), parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true });
+        var result = await dialog.Result;
+        if (!Disabled && ReferenceEquals(model, Model) && result is { Canceled: false, Data: ImagePrepAnswerGeneratorDialog.GeneratedAnswer answer })
+        {
+            Model.AnswerFile = answer.Xml;
+            Model.GeneratorOptions = answer.Options;
+            Model.GenerateAnswerFile = false;
+        }
+    }
+}

@@ -1,0 +1,30 @@
+@using CloneDeploy_Agent.Contracts
+
+<MudText Typo="Typo.body2" Class="mb-2">@Loc[LocKeys.Ui.ScriptContentsEditor.ScriptContents]</MudText>
+<cd-script-editor language="@Language" readonly="@(Disabled ? "true" : "false")">
+    <textarea class="script-editor-fallback" aria-label="@Loc[LocKeys.Ui.ScriptContentsEditor.ScriptContents_e70c3e7e]" aria-required="true" spellcheck="false"
+              disabled="@Disabled" @bind="Value" @bind:event="oninput" @bind:after="ValueUpdated" rows="16"></textarea>
+    <div class="script-editor-host" data-editor-host></div>
+    <span class="script-editor-status" role="status" data-editor-status></span>
+</cd-script-editor>
+@if (Error)
+{
+    <MudText Color="Color.Error" Typo="Typo.caption">@Loc[LocKeys.Ui.ScriptContentsEditor.EnterScriptContents]</MudText>
+}
+
+@code {
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public ActionScriptType ScriptType { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool Error { get; set; }
+
+    private string Language => ScriptType switch
+    {
+        ActionScriptType.Powershell or ActionScriptType.Powershell7 => "powershell",
+        ActionScriptType.Batch => "bat",
+        _ => "plaintext"
+    };
+
+    private Task ValueUpdated() => ValueChanged.InvokeAsync(Value);
+}

@@ -1,0 +1,29 @@
+<MudPaper Class="device-list-filters device-search-panel device-manage-search" Elevation="0">
+    <div class="device-manage-search-row">
+        @SearchControls
+        <MudButton Class="@($"device-tag-toggle {(_expanded || SelectedCount > 0 ? "device-tag-toggle-active" : "")}")"
+                   Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.FilterAlt"
+                   EndIcon="@(_expanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                   OnClick="@(() => _expanded = !_expanded)"
+                   aria-expanded="@(_expanded ? "true" : "false")" aria-controls="@_panelId">
+            @(SelectedCount > 0 ? UiText.Get(LocKeys.Ui.TagSearchPanel.Tags0, (SelectedCount)) : UiText.Get(LocKeys.Ui.TagSearchPanel.FilterByTags))
+        </MudButton>
+    </div>
+    @if (_expanded)
+    {
+        <div id="@_panelId" class="device-manage-tag-panel" role="region" aria-label="@Loc[LocKeys.Ui.TagSearchPanel.TagFilters]">
+            @TagControls
+            <MudButton Class="device-clear-tags" Color="Color.Primary"
+                       OnClick="@Snackbar.GuardAction(() => SelectedCount == 0, UiText.Get(LocKeys.Ui.TagSearchPanel.NoTagFiltersAreSelected), () => ClearTags.InvokeAsync())">@Loc[LocKeys.Ui.TagSearchPanel.ClearTags]</MudButton>
+        </div>
+    }
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired] public RenderFragment SearchControls { get; set; } = null!;
+    [Parameter, EditorRequired] public RenderFragment TagControls { get; set; } = null!;
+    [Parameter] public int SelectedCount { get; set; }
+    [Parameter] public EventCallback ClearTags { get; set; }
+    private bool _expanded;
+    private readonly string _panelId = "tag-filters-" + Guid.NewGuid().ToString("N");
+}

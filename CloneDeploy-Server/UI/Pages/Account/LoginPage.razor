@@ -1,0 +1,86 @@
+@page "/login"
+@attribute [AllowAnonymous]
+@layout AuthLayout
+@inject IStringLocalizer<LocalizationResources> Loc
+@inject AppUserService AppUserService
+@inject NavigationManager Navigation
+
+<PageTitle>@Loc[LocKeys.Auth.SignIn] @Loc[LocKeys.Ui.LoginPage.CloneDeploy]</PageTitle>
+@if (!_ready)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+<div class="login-form">
+    <MudText Typo="Typo.h5" Class="login-title">@Loc[LocKeys.Auth.SignIn]</MudText>
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@ErrorMessage</MudAlert>
+    }
+
+    @* ReSharper disable once Html.PathError *@
+    <form method="post" action="/auth/login">
+        <AntiforgeryToken />
+        <input type="hidden" name="ReturnUrl" value="@ReturnUrl"/>
+
+        <MudTextField T="string" name="UserName" autocomplete="username" Label="@Loc[LocKeys.Auth.UserName]" Variant="Variant.Outlined"
+                      Required="true" Class="mb-4" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person"/>
+        <MudTextField T="string" name="Password" autocomplete="current-password" Label="@Loc[LocKeys.Auth.Password]" Variant="Variant.Outlined"
+                      InputType="InputType.Password" Required="true" Class="mb-4" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Lock"/>
+
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="login-submit" EndIcon="@Icons.Material.Filled.ArrowForward">
+            @Loc[LocKeys.Auth.SignIn]
+        </MudButton>
+    </form>
+    @if (_entraEnabled)
+    {
+        <MudButton OnClick="SignInWithEntra" Variant="Variant.Outlined" FullWidth="true" Class="mt-4">@Loc[LocKeys.Ui.LoginPage.SignInWithMicrosoft]</MudButton>
+    }
+
+</div>
+}
+
+@code {
+    private void SignInWithEntra() => Navigation.NavigateTo("/auth/entra?returnUrl=" + Uri.EscapeDataString(ReturnUrl ?? "/"), forceLoad: true);
+    private bool _ready;
+    private bool _entraEnabled;
+    // Reuse successful prerender initialization instead of briefly replacing the form on connection.
+    [PersistentState] public bool? InitializedEntraEnabled { get; set; }
+    [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
+    [SupplyParameterFromQuery(Name = "error")] private string? Error { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (InitializedEntraEnabled is { } entraEnabled)
+        {
+            _entraEnabled = entraEnabled;
+            _ready = true;
+            return;
+        }
+
+        var result = await AppUserService.AnyUsersAsync();
+        if (result.Success && !result.Data)
+        {
+            Navigation.NavigateTo("/setup/admin", replace: true);
+            return;
+        }
+        var entra = await AppUserService.IsEntraEnabledAsync();
+        _entraEnabled = entra.Success && entra.Data;
+        _ready = true;
+        if (result.Success && entra.Success) InitializedEntraEnabled = _entraEnabled;
+        if (!result.Success) Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        else if (!entra.Success) Snackbar.Add(Loc[entra.Error!.Code, entra.Error.Args], Severity.Error);
+    }
+
+    private string? ErrorMessage => Error switch
+    {
+        "session-expired" => UiText.Get(LocKeys.Ui.LoginPage.YourSessionHasExpiredPleaseSignInAgain),
+        "entra-group" => UiText.Get(LocKeys.Ui.LoginPage.MicrosoftSignInRequiresAMappedDirectoryGroupAnd),
+        "invalid" => Loc[LocKeys.Auth.InvalidLogin],
+        "locked" => Loc[LocKeys.Auth.LockedOut],
+        "unavailable" => UiText.Get(LocKeys.Ui.LoginPage.SignInCouldNotBeCompletedPleaseTryAgain),
+        _ => null
+    };
+}

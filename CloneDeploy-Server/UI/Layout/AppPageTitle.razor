@@ -1,0 +1,20 @@
+@using Microsoft.AspNetCore.Components.Sections
+
+<PageTitle>@Text</PageTitle>
+<SectionContent SectionName="page-title">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+        @ChildContent
+        <MudText Typo="Typo.h5"
+                 Class="font-weight-bold responsive-title">
+            @Text
+        </MudText>
+    </MudStack>
+</SectionContent>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Text { get; set; } = string.Empty;
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

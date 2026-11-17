@@ -1,0 +1,39 @@
+@inject DeviceService Notifications
+@if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+<MudText Typo="Typo.body2">@Loc[LocKeys.Ui.DeviceNotificationHistoryTab.AcknowledgmentIsSeparateFromActionDeliveryEachDirectoryUser]</MudText>
+<MudDataGrid T="DeviceNotificationReceipt" Items="_receipts" Loading="_loading" Dense="true" Hover="true" Outlined="true" Elevation="0" RowsPerPage="20" Class="device-list-grid" HorizontalScrollbar="true">
+    <ToolBarContent><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DeviceNotificationHistoryTab.NotificationAcknowledgments]</MudText><MudSpacer/><MudButton OnClick="LoadAsync" Disabled="_loading" StartIcon="@Icons.Material.Filled.Refresh">@Loc[LocKeys.Dashboard.Refresh]</MudButton></ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Title" Title="@Loc[LocKeys.Ui.NavMenu.Notification]"/>
+        <TemplateColumn T="DeviceNotificationReceipt" Title="@Loc[LocKeys.User.UserMembership]"><CellTemplate>@(string.IsNullOrEmpty(context.Item.UserSid) ? UiText.Get(LocKeys.Ui.DeviceNotificationHistoryTab.AwaitingAUserSession) : context.Item.UserName)</CellTemplate></TemplateColumn>
+        <PropertyColumn Property="x => x.UserSid" Title="@Loc[LocKeys.Ui.DeviceNotificationHistoryTab.WindowsSID]"/>
+        <TemplateColumn T="DeviceNotificationReceipt" Title="@Loc[LocKeys.Image.VersionStatus]"><CellTemplate>@(context.Item.AcknowledgedAtUtc.HasValue ? (context.Item.AcknowledgedElsewhere ? UiText.Get(LocKeys.Ui.DeviceNotificationHistoryTab.AcknowledgedOnAnotherDevice) : UiText.Get(LocKeys.Ui.DeviceNotificationHistoryTab.Acknowledged)) : context.Item.ExpiresAtUtc <= DateTime.UtcNow ? UiText.Get(LocKeys.Ui.DeviceNotificationHistoryTab.Expired) : UiText.Get(LocKeys.Ui.DeviceNotificationHistoryTab.PendingAcknowledgment))</CellTemplate></TemplateColumn>
+        <TemplateColumn T="DeviceNotificationReceipt" Title="@Loc[LocKeys.Ui.DeviceNotificationHistoryTab.Delivered]"><CellTemplate>@context.Item.DeliveredAtUtc.ToLocalTime().ToString("g")</CellTemplate></TemplateColumn>
+        <TemplateColumn T="DeviceNotificationReceipt" Title="@Loc[LocKeys.Device.Expires]"><CellTemplate>@context.Item.ExpiresAtUtc?.ToLocalTime().ToString("g")</CellTemplate></TemplateColumn>
+        <TemplateColumn T="DeviceNotificationReceipt" Title="@Loc[LocKeys.Ui.DeviceNotificationHistoryTab.Acknowledged]"><CellTemplate>@context.Item.AcknowledgedAtUtc?.ToLocalTime().ToString("g")</CellTemplate></TemplateColumn>
+    </Columns>
+    <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.DeviceNotificationHistoryTab.NoAcknowledgmentReceiptsReported]</MudText></NoRecordsContent>
+    <PagerContent><MudDataGridPager T="DeviceNotificationReceipt"/></PagerContent>
+</MudDataGrid>
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+    private List<DeviceNotificationReceipt> _receipts = [];
+    private int? _loadedId;
+    private bool _loading;
+    private string? _error;
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedId == Device.Id) return;
+        _loadedId = Device.Id; await LoadAsync();
+    }
+    private async Task LoadAsync()
+    {
+        var id = Device.Id;
+        _loading = true; _error = null; _receipts = [];
+        var result = await Notifications.GetNotificationHistoryAsync(id);
+        if (Device.Id != id) return;
+        _loading = false;
+        if (result.Success) _receipts = result.Data!;
+        else _error = Loc[result.Error!.Code, result.Error.Args].Value;
+    }
+}

@@ -1,0 +1,105 @@
+@inject ImagingService Inspection
+
+<MudStack Spacing="3">
+    @if (_error is not null)
+    {
+        <MudAlert Severity="Severity.Error">@_error</MudAlert>
+    }
+    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" aria-label="@Loc[LocKeys.Ui.DeviceRelationsTab.FilterRelationsByType]">
+        @foreach (var kind in Kinds)
+        {
+            <MudChip T="string" Color="@(_kind == kind ? Color.Primary : Color.Default)"
+                     Variant="@(_kind == kind ? Variant.Filled : Variant.Outlined)"
+                     OnClick="@(() => OnFilterClicked(kind))" aria-pressed="@(_kind == kind ? "true" : "false")">
+                @UiText.Label(kind) (@(kind == "All" ? _rows.Count : _rows.Count(x => x.Kind == kind)))
+            </MudChip>
+        }
+    </MudStack>
+    <MudDataGrid T="ImagingRelation" Items="VisibleRows" Dense="true" Hover="true" Elevation="0"
+                 Class="device-list-grid" HorizontalScrollbar="true" Loading="_loading"
+                 RowsPerPage="@Constants.UI.DefaultPageSize" @bind-CurrentPage="_currentPage">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">@Loc[LocKeys.Device.Relations]</MudText>
+
+            <MudSpacer />
+            <MudTextField T="string" Value="_search" ValueChanged="OnSearchChanged" Label="@Loc[LocKeys.Ui.DeviceRelationsTab.SearchRelations]"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" DebounceInterval="300" Clearable="true"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search" />
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.Kind" Title="@Loc[LocKeys.StorageProvider.Type]" />
+            <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Ui.DeviceRelationsTab.RelatedItem]">
+                <CellTemplate>
+                    @if (context.Item.Href is { } href)
+                    {
+                        <MudLink Href="@href">@context.Item.Name</MudLink>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2">@context.Item.Name</MudText>
+                    }
+                </CellTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Details" Title="@Loc[LocKeys.Ui.DeviceRelationsTab.Connection]" />
+        </Columns>
+        <NoRecordsContent>
+            <MudText Class="pa-4">@(_loading ? UiText.Get(LocKeys.Ui.DeviceRelationsTab.LoadingRelations) : _error is not null ? UiText.Get(LocKeys.Ui.DeviceRelationsTab.RelationsAreUnavailableUseRefreshToTryAgain) : (Kind == ImagingItemKind.ImagePrepProfile ? UiText.Get(LocKeys.Ui.ImagingRelationsTab.PrepProfilesAreSelectedWhenPreparationIsRequestedAnd) : UiText.Get(LocKeys.Ui.DeviceRelationsTab.NoRelationsMatchThisViewTryAnotherTypeOr)))</MudText>
+        </NoRecordsContent>
+        <PagerContent><MudDataGridPager T="ImagingRelation" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    [Parameter] public ImagingItemKind Kind { get; set; }
+    [Parameter] public int ItemId { get; set; }
+    private IEnumerable<string> Kinds => new[] { "All" }.Concat(_rows.Select(x => x.Kind).Distinct());
+    private List<ImagingRelation> _rows = [];
+    private string _kind = "All";
+    private string? _search, _error;
+    private bool _loading;
+    private int _currentPage;
+    private (ImagingItemKind, int)? _loadedId;
+    private IEnumerable<ImagingRelation> VisibleRows => _rows.Where(x => (_kind == "All" || x.Kind == _kind) && (string.IsNullOrWhiteSpace(_search) || $"{x.Kind} {x.Name} {x.Details}".Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase)));
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedId == (Kind, ItemId)) return;
+        _loadedId = (Kind, ItemId);
+        _kind = "All";
+        await OnRefreshClicked();
+    }
+
+    private async Task OnRefreshClicked()
+    {
+        if (_loading) return;
+        _loading = true;
+        _rows = [];
+        _error = null;
+        _currentPage = 0;
+        try
+        {
+            var result = await Inspection.GetInspectionRelationsAsync(Kind, ItemId);
+            if (!result.HasData)
+            {
+                _error = Loc[result.Error!.Code, result.Error.Args];
+                return;
+            }
+            _rows = result.Data;
+
+        }
+        catch (Exception) { _error = UiText.Get(LocKeys.Ui.ImagingRelationsTab.RelationsCouldNotBeLoadedUseRefreshToTry); }
+        finally { _loading = false; }
+    }
+
+    private void OnFilterClicked(string kind)
+    {
+        _kind = kind;
+        _currentPage = 0;
+    }
+
+    private void OnSearchChanged(string? value)
+    {
+        _search = value;
+        _currentPage = 0;
+    }
+}

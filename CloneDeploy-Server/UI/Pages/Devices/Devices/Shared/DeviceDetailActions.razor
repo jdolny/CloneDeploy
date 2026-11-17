@@ -1,0 +1,37 @@
+<ActionButtons>
+    <MainButton>
+        <MudButton StartIcon="@Icons.Material.Filled.Power" OnClick="Connect">@Loc[LocKeys.Device.Connect]</MudButton>
+    </MainButton>
+    <Content>
+        <PermissionView Policy="@Constants.Permissions.DeviceWake">
+            <DeviceWakeAction DeviceId="DeviceId" Disabled="Busy" Archived="Archived" />
+        </PermissionView>
+        <PermissionView Policy="@Constants.Permissions.DeviceEdit">
+            <MudMenuItem Label="@Loc[LocKeys.Ui.DeviceDetailActions.RenameDevice]" Icon="@Icons.Material.Filled.Edit" Disabled="@(Busy)" OnClick="@Snackbar.GuardAction(() => Busy || Archived, UiText.Get(LocKeys.Ui.DeviceDetailActions.RestoreThisDeviceBeforeUsingThisAction), () => Rename.InvokeAsync())" />
+        </PermissionView>
+        <PermissionView Policy="@Constants.Permissions.DeviceDeployImage">
+            @if (ShowImaging)
+            {
+                <MudMenuItem Label="@Loc[LocKeys.Device.DeployImage]" Icon="@Icons.Material.Filled.InstallDesktop" Disabled="@(Busy)" OnClick="@Snackbar.GuardAction(() => Busy || Archived, UiText.Get(LocKeys.Ui.DeviceDetailActions.RestoreThisDeviceBeforeUsingThisAction), () => Deploy.InvokeAsync())" />
+            }
+        </PermissionView>
+        <PermissionView Policy="@Constants.Permissions.DeviceEdit">
+            <MudDivider />
+            <MudMenuItem Label="@Loc[LocKeys.Device.Archive]" Icon="@Icons.Material.Filled.Archive" Disabled="@(Busy)" OnClick="@Snackbar.GuardAction(() => Busy || Archived, UiText.Get(LocKeys.Ui.DeviceDetailActions.RestoreThisDeviceBeforeUsingThisAction), () => Archive.InvokeAsync())" />
+            <MudMenuItem Label="@Loc[LocKeys.Common.Delete]" Icon="@Icons.Material.Filled.Delete" Disabled="Busy" OnClick="Delete" />
+        </PermissionView>
+    </Content>
+</ActionButtons>
+
+@code {
+    // Only action-relevant values cross this boundary; activity updates leave the header mounted.
+    [Parameter] public int DeviceId { get; set; }
+    [Parameter] public bool Archived { get; set; }
+    [Parameter] public bool ShowImaging { get; set; } = true;
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback Connect { get; set; }
+    [Parameter] public EventCallback Rename { get; set; }
+    [Parameter] public EventCallback Deploy { get; set; }
+    [Parameter] public EventCallback Archive { get; set; }
+    [Parameter] public EventCallback Delete { get; set; }
+}

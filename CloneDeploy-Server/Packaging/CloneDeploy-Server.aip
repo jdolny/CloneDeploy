@@ -1,0 +1,319 @@
+<?xml version='1.0' encoding='utf-8'?>
+<DOCUMENT Type="Advanced Installer" CreateVersion="15.1" version="15.1" Modules="enterprise" RootPath="." Language="en" Id="{6D5A8B51-A1ED-4898-B450-16DF01F66875}">
+  <COMPONENT cid="caphyon.advinst.msicomp.ProjectOptionsComponent">
+    <ROW Name="HiddenItems" Value="AppXProductDetailsComponent;AppXDependenciesComponent;AppXAppDetailsComponent;AppXVisualAssetsComponent;AppXCapabilitiesComponent;AppXAppDeclarationsComponent;AppXUriRulesComponent" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiPropsComponent">
+    <!-- ServiceControl stops our services before file replacement. Restart Manager's
+         earlier validation can warn about service child processes before that stop.
+         Keep normal MSI file replacement/reboot reporting; disable only RM integration. -->
+    <ROW Property="MSIRESTARTMANAGERCONTROL" Value="Disable" />
+    <ROW Property="MSIRMSHUTDOWN" Value="0" />
+    <ROW Property="MSIDISABLERMRESTART" Value="0" />
+    <ROW Property="AI_BITMAP_DISPLAY_MODE" Value="0" />
+    <ROW Property="ALLUSERS" Value="1" />
+    <ROW Property="ARPPRODUCTICON" Value="CloneDeploy.ico" />
+    <ROW Property="ARPCOMMENTS" Value="This installer database contains the logic and data required to install [|ProductName]." ValueLocId="*" />
+    <ROW Property="Manufacturer" Value="CloneDeploy" />
+    <ROW Property="MsiHiddenProperties" Value="SERVICE_PASSWORD;SERVICE_PASSWORD_CONFIRM;DB_PASSWORD;ConfigureServer;RollbackServer;CommitServer;UninstallServer;SITE_ENROLLMENT_FILE;SITE_ENROLLMENT_SELECTION" />
+    <ROW Property="ProductCode" Value="1033:{7B4F9E2A-4E90-44CB-B4BC-A0E87026CB50} " Type="16" />
+    <ROW Property="ProductLanguage" Value="1033" />
+    <ROW Property="ProductName" Value="CloneDeploy Server" />
+    <ROW Property="ProductVersion" Value="2.0.1" Type="32" />
+    <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND;SERVICE_USER;SERVICE_PASSWORD_OVERRIDE;SERVICE_PASSWORD;SERVICE_PASSWORD_CONFIRM;DB_MODE;DB_HOST;DB_PORT;DB_NAME;DB_USER;DB_PASSWORD;HTTP_PORT;DB_CA;INSTALL_ROLE;INSTALLED_ROLE;SITE_ENROLLMENT_FILE" />
+    <ROW Property="UpgradeCode" Value="{85F5604C-DCEE-4B26-809C-95E4692D5074}" />
+    <ROW Property="WindowsType9X" MultiBuildValue="DefaultBuild:Windows 9x/ME" ValueLocId="-" />
+    <ROW Property="WindowsType9XDisplay" MultiBuildValue="DefaultBuild:Windows 9x/ME" ValueLocId="-" />
+    <ROW Property="WindowsTypeNT40" MultiBuildValue="DefaultBuild:Windows NT 4.0" ValueLocId="-" />
+    <ROW Property="WindowsTypeNT40Display" MultiBuildValue="DefaultBuild:Windows NT 4.0" ValueLocId="-" />
+    <ROW Property="WindowsTypeNT50" MultiBuildValue="DefaultBuild:Windows 2000" ValueLocId="-" />
+    <ROW Property="WindowsTypeNT50Display" MultiBuildValue="DefaultBuild:Windows 2000" ValueLocId="-" />
+    <ROW Property="WindowsTypeNT5X" MultiBuildValue="DefaultBuild:Windows XP/2003 RTM, Windows XP/2003 SP1, Windows XP SP2 x86" ValueLocId="-" />
+    <ROW Property="WindowsTypeNT5XDisplay" MultiBuildValue="DefaultBuild:Windows XP/2003 RTM, Windows XP/2003 SP1, Windows XP SP2 x86" ValueLocId="-" />
+    <ROW Value="CloneDeploySvc" Property="SERVICE_USER" />
+    <ROW Value="Local" Property="DB_MODE" />
+    <ROW Value="127.0.0.1" Property="DB_HOST" />
+    <ROW Value="5433" Property="DB_PORT" />
+    <ROW Value="CloneDeploy-Server" Property="DB_NAME" />
+    <ROW Value="clonedeploy" Property="DB_USER" />
+    <ROW Value="80" Property="HTTP_PORT" />
+    <ROW Property="INSTALL_ROLE" Value="App" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.BootstrOptComponent">
+    <ROW BootstrOptKey="GlobalOptions" DownloadFolder="[AppDataFolder][|Manufacturer]\[|ProductName]\prerequisites" Options="2" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.BuildComponent">
+    <ROW BuildKey="DefaultBuild" BuildName="DefaultBuild" BuildOrder="1" BuildType="1" PackageFolder="." PackageFileName="CloneDeploy-Server-x64" Languages="en" InstallationType="4" UseLargeSchema="true" MsiPackageType="x64" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.DictionaryComponent">
+    <ROW Path="&lt;AI_DICTS&gt;ui.ail" />
+    <ROW Path="&lt;AI_DICTS&gt;ui_en.ail" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.FragmentComponent">
+    <ROW Fragment="CommonUI.aip" Path="&lt;AI_FRAGS&gt;CommonUI.aip" />
+    <ROW Fragment="FolderDlg.aip" Path="&lt;AI_THEMES&gt;classic\fragments\FolderDlg.aip" />
+    <ROW Fragment="MaintenanceTypeDlg.aip" Path="&lt;AI_THEMES&gt;classic\fragments\MaintenanceTypeDlg.aip" />
+    <ROW Fragment="MaintenanceWelcomeDlg.aip" Path="&lt;AI_THEMES&gt;classic\fragments\MaintenanceWelcomeDlg.aip" />
+    <ROW Fragment="SequenceDialogs.aip" Path="&lt;AI_THEMES&gt;classic\fragments\SequenceDialogs.aip" />
+    <ROW Fragment="Sequences.aip" Path="&lt;AI_FRAGS&gt;Sequences.aip" />
+    <ROW Fragment="StaticUIStrings.aip" Path="&lt;AI_FRAGS&gt;StaticUIStrings.aip" />
+    <ROW Fragment="UI.aip" Path="&lt;AI_THEMES&gt;classic\fragments\UI.aip" />
+    <ROW Fragment="Validation.aip" Path="&lt;AI_FRAGS&gt;Validation.aip" />
+    <ROW Fragment="VerifyRemoveDlg.aip" Path="&lt;AI_THEMES&gt;classic\fragments\VerifyRemoveDlg.aip" />
+    <ROW Fragment="VerifyRepairDlg.aip" Path="&lt;AI_THEMES&gt;classic\fragments\VerifyRepairDlg.aip" />
+    <ROW Fragment="WelcomeDlg.aip" Path="&lt;AI_THEMES&gt;classic\fragments\WelcomeDlg.aip" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiBinaryComponent">
+    <ROW Name="aicustact.dll" SourcePath="&lt;AI_CUSTACTS&gt;aicustact.dll" />
+    <ROW Name="ServerCustomActions" SourcePath="CustomActions\bin\Release\net462\CloneDeploy.Server.Setup.CA.dll" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiControlEventComponent">
+    <ROW Dialog_="WelcomeDlg" Control_="Next" Event="NewDialog" Argument="InstallRoleDlg" Condition="AI_INSTALL" Ordering="1" />
+    <ROW Dialog_="FolderDlg" Control_="Next" Event="NewDialog" Argument="ServerAccountDlg" Condition="AI_INSTALL AND INSTALL_ROLE=&quot;App&quot;" Ordering="201" />
+    <ROW Dialog_="FolderDlg" Control_="Back" Event="NewDialog" Argument="InstallRoleDlg" Condition="AI_INSTALL" Ordering="1" />
+    <ROW Dialog_="VerifyReadyDlg" Control_="Install" Event="EndDialog" Argument="Return" Condition="AI_INSTALL" Ordering="197" />
+    <ROW Dialog_="VerifyReadyDlg" Control_="Back" Event="NewDialog" Argument="ServerDatabaseDlg" Condition="AI_INSTALL AND INSTALL_ROLE=&quot;App&quot;" Ordering="201" />
+    <ROW Dialog_="MaintenanceWelcomeDlg" Control_="Next" Event="NewDialog" Argument="MaintenanceTypeDlg" Condition="AI_MAINT" Ordering="99" />
+    <ROW Dialog_="CustomizeDlg" Control_="Next" Event="NewDialog" Argument="VerifyReadyDlg" Condition="AI_MAINT" Ordering="101" />
+    <ROW Dialog_="CustomizeDlg" Control_="Back" Event="NewDialog" Argument="MaintenanceTypeDlg" Condition="AI_MAINT" Ordering="1" />
+    <ROW Dialog_="VerifyReadyDlg" Control_="Install" Event="EndDialog" Argument="Return" Condition="AI_MAINT" Ordering="198" />
+    <ROW Dialog_="VerifyReadyDlg" Control_="Back" Event="NewDialog" Argument="CustomizeDlg" Condition="AI_MAINT" Ordering="202" />
+    <ROW Dialog_="MaintenanceTypeDlg" Control_="ChangeButton" Event="NewDialog" Argument="CustomizeDlg" Condition="AI_MAINT" Ordering="501" />
+    <ROW Dialog_="MaintenanceTypeDlg" Control_="Back" Event="NewDialog" Argument="MaintenanceWelcomeDlg" Condition="AI_MAINT" Ordering="1" />
+    <ROW Dialog_="MaintenanceTypeDlg" Control_="RemoveButton" Event="NewDialog" Argument="VerifyRemoveDlg" Condition="AI_MAINT AND InstallMode=&quot;Remove&quot;" Ordering="601" />
+    <ROW Dialog_="VerifyRemoveDlg" Control_="Back" Event="NewDialog" Argument="MaintenanceTypeDlg" Condition="AI_MAINT AND InstallMode=&quot;Remove&quot;" Ordering="1" />
+    <ROW Dialog_="MaintenanceTypeDlg" Control_="RepairButton" Event="NewDialog" Argument="VerifyRepairDlg" Condition="AI_MAINT AND InstallMode=&quot;Repair&quot;" Ordering="601" />
+    <ROW Dialog_="VerifyRepairDlg" Control_="Back" Event="NewDialog" Argument="MaintenanceTypeDlg" Condition="AI_MAINT AND InstallMode=&quot;Repair&quot;" Ordering="1" />
+    <ROW Dialog_="VerifyRepairDlg" Control_="Repair" Event="EndDialog" Argument="Return" Condition="AI_MAINT AND InstallMode=&quot;Repair&quot;" Ordering="399" Options="1" />
+    <ROW Dialog_="VerifyRemoveDlg" Control_="Remove" Event="EndDialog" Argument="Return" Condition="AI_MAINT AND InstallMode=&quot;Remove&quot;" Ordering="299" Options="1" />
+    <ROW Dialog_="PatchWelcomeDlg" Control_="Next" Event="NewDialog" Argument="VerifyReadyDlg" Condition="AI_PATCH" Ordering="201" />
+    <ROW Dialog_="ResumeDlg" Control_="Install" Event="EndDialog" Argument="Return" Condition="AI_RESUME" Ordering="299" />
+    <ROW Dialog_="VerifyReadyDlg" Control_="Install" Event="EndDialog" Argument="Return" Condition="AI_PATCH" Ordering="199" />
+    <ROW Dialog_="VerifyReadyDlg" Control_="Back" Event="NewDialog" Argument="PatchWelcomeDlg" Condition="AI_PATCH" Ordering="203" />
+    <ROW Argument="CancelDlg" Control_="Cancel" Ordering="1" Dialog_="ServerAccountDlg" Condition="1" Event="SpawnDialog" />
+    <ROW Argument="CancelDlg" Control_="Cancel" Ordering="1" Dialog_="ServerDatabaseDlg" Condition="1" Event="SpawnDialog" />
+    <ROW Argument="FolderDlg" Control_="Back" Ordering="1" Dialog_="ServerAccountDlg" Condition="1" Event="NewDialog" />
+    <ROW Argument="ServerDatabaseDlg" Control_="Next" Ordering="1" Dialog_="ServerAccountDlg" Condition="1" Event="NewDialog" />
+    <ROW Argument="ServerAccountDlg" Control_="Back" Ordering="1" Dialog_="ServerDatabaseDlg" Condition="1" Event="NewDialog" />
+    <ROW Argument="VerifyReadyDlg" Control_="Next" Ordering="1" Dialog_="ServerDatabaseDlg" Condition="1" Event="NewDialog" />
+    <ROW Dialog_="FolderDlg" Control_="Next" Event="NewDialog" Argument="SiteEnrollmentDlg" Condition="AI_INSTALL AND INSTALL_ROLE=&quot;SiteService&quot;" Ordering="202" />
+    <ROW Dialog_="VerifyReadyDlg" Control_="Back" Event="NewDialog" Argument="SiteEnrollmentDlg" Condition="AI_INSTALL AND INSTALL_ROLE=&quot;SiteService&quot;" Ordering="204" />
+    <ROW Dialog_="InstallRoleDlg" Control_="Back" Event="NewDialog" Argument="WelcomeDlg" Condition="1" Ordering="1" />
+    <ROW Dialog_="InstallRoleDlg" Control_="Next" Event="[APPDIR]" Argument="[ProgramFiles64Folder]CloneDeploy\Server" Condition="NOT INSTALLED_ROLE AND INSTALL_ROLE=&quot;App&quot;" Ordering="1" />
+    <ROW Dialog_="InstallRoleDlg" Control_="Next" Event="[APPDIR]" Argument="[ProgramFiles64Folder]CloneDeploy\SiteService" Condition="NOT INSTALLED_ROLE AND INSTALL_ROLE=&quot;SiteService&quot;" Ordering="2" />
+    <ROW Dialog_="InstallRoleDlg" Control_="Next" Event="NewDialog" Argument="FolderDlg" Condition="1" Ordering="3" />
+    <ROW Dialog_="SiteEnrollmentDlg" Control_="Back" Event="NewDialog" Argument="FolderDlg" Condition="1" Ordering="1" />
+    <ROW Dialog_="SiteEnrollmentDlg" Control_="Next" Event="NewDialog" Argument="VerifyReadyDlg" Condition="1" Ordering="1" />
+    <ROW Dialog_="SiteEnrollmentDlg" Control_="Browse" Event="DoAction" Argument="BrowseEnrollment" Condition="1" Ordering="1" />
+    <ROW Dialog_="SiteEnrollmentDlg" Control_="Browse" Event="[SITE_ENROLLMENT_FILE]" Argument="[SITE_ENROLLMENT_SELECTION]" Condition="SITE_ENROLLMENT_SELECTION" Ordering="2" />
+    <ROW Dialog_="InstallRoleDlg" Control_="Cancel" Event="SpawnDialog" Argument="CancelDlg" Condition="1" Ordering="1" />
+    <ROW Dialog_="SiteEnrollmentDlg" Control_="Cancel" Event="SpawnDialog" Argument="CancelDlg" Condition="1" Ordering="1" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiCustActComponent">
+    <ROW Action="AI_DOWNGRADE" Type="19" Target="4010" />
+    <ROW Action="AI_DpiContentScale" Type="1" Source="aicustact.dll" Target="DpiContentScale" />
+    <ROW Action="AI_EnableDebugLog" Type="321" Source="aicustact.dll" Target="EnableDebugLog" />
+    <ROW Action="AI_InstallModeCheck" Type="1" Source="aicustact.dll" Target="UpdateInstallMode" WithoutSeq="true" />
+    <ROW Action="AI_PREPARE_UPGRADE" Type="65" Source="aicustact.dll" Target="PrepareUpgrade" />
+    <ROW Action="AI_RESTORE_LOCATION" Type="65" Source="aicustact.dll" Target="RestoreLocation" />
+    <ROW Action="AI_ResolveKnownFolders" Type="1" Source="aicustact.dll" Target="AI_ResolveKnownFolders" />
+    <ROW Action="AI_SHOW_LOG" Type="65" Source="aicustact.dll" Target="LaunchLogFile" WithoutSeq="true" />
+    <ROW Action="AI_STORE_LOCATION" Type="51" Source="ARPINSTALLLOCATION" Target="[APPDIR]" />
+    <ROW Action="SET_APPDIR" Type="307" Source="APPDIR" Target="[ProgramFilesFolder][Manufacturer]\[ProductName]" MultiBuildTarget="DefaultBuild:[ProgramFiles64Folder]CloneDeploy\Server" />
+    <ROW Action="SET_SHORTCUTDIR" Type="307" Source="SHORTCUTDIR" Target="[ProgramMenuFolder][ProductName]" />
+    <ROW Action="SET_TARGETDIR_TO_APPDIR" Type="51" Source="TARGETDIR" Target="[APPDIR]" />
+    <ROW Source="ServerCustomActions" Type="11265" Target="ConfigureServer" Action="ConfigureServer" />
+    <ROW Source="ServerCustomActions" Type="11521" Target="RollbackServer" Action="RollbackServer" />
+    <ROW Source="ServerCustomActions" Type="11777" Target="CommitServer" Action="CommitServer" />
+    <ROW Source="ServerCustomActions" Type="11265" Target="UninstallServer" Action="UninstallServer" />
+    <ROW Action="PrepareServer" Type="1" Source="ServerCustomActions" Target="PrepareServer" />
+    <ROW Action="ResolveRole" Type="1" Source="ServerCustomActions" Target="ResolveRole" />
+    <ROW Action="ValidateVisualCpp" Type="1" Source="ServerCustomActions" Target="ValidateVisualCpp" />
+    <ROW Action="ValidateDotNet" Type="1" Source="ServerCustomActions" Target="ValidateDotNet" />
+    <ROW Action="SkipUpgradeWizard" Type="51" Source="AI_INSTALL" Target="{}" />
+    <ROW Action="RestoreUpgradeInstallMode" Type="51" Source="AI_INSTALL" Target="1" />
+    <ROW Action="SkipUpgradeExit" Type="51" Source="AiSkipExitDlg" Target="1" />
+    <ROW Action="BrowseEnrollment" Type="1" Source="ServerCustomActions" Target="BrowseEnrollment" WithoutSeq="true" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiInstExSeqComponent">
+    <ROW Action="AI_DOWNGRADE" Condition="AI_NEWERPRODUCTFOUND AND (UILevel &lt;&gt; 5)" Sequence="210" />
+    <ROW Action="AI_RESTORE_LOCATION" Condition="APPDIR=&quot;&quot;" Sequence="749" />
+    <ROW Action="AI_STORE_LOCATION" Condition="(Not Installed) OR REINSTALL" Sequence="1501" />
+    <ROW Action="AI_PREPARE_UPGRADE" Condition="AI_UPGRADE=&quot;No&quot; AND (Not Installed)" Sequence="1399" />
+    <ROW Action="AI_ResolveKnownFolders" Sequence="52" />
+    <ROW Action="AI_EnableDebugLog" Sequence="51" />
+    <ROW Condition="NOT (REMOVE=&quot;ALL&quot;)" Sequence="5900" Action="ConfigureServer" />
+    <ROW Condition="NOT (REMOVE=&quot;ALL&quot;)" Sequence="5898" Action="RollbackServer" />
+    <ROW Condition="NOT (REMOVE=&quot;ALL&quot;)" Sequence="5899" Action="CommitServer" />
+    <ROW Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" Sequence="3490" Action="UninstallServer" />
+    <ROW Action="PrepareServer" Sequence="1502" />
+    <ROW Action="ResolveRole" Sequence="750" />
+    <ROW Action="ValidateVisualCpp" Condition="NOT (REMOVE=&quot;ALL&quot;)" Sequence="751" />
+    <ROW Action="ValidateDotNet" Condition="NOT (REMOVE=&quot;ALL&quot;)" Sequence="752" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiInstallUISequenceComponent">
+    <!-- Suppress only the modal wizard interval; restore the install flag before progress/execution. -->
+    <ROW Action="SkipUpgradeWizard" Condition="OLDPRODUCTS AND AI_INSTALL" Sequence="1229" />
+    <ROW Action="SkipUpgradeExit" Condition="OLDPRODUCTS AND NOT Installed" Sequence="1277" />
+    <ROW Action="RestoreUpgradeInstallMode" Condition="OLDPRODUCTS AND NOT Installed" Sequence="1278" />
+    <ROW Action="AI_RESTORE_LOCATION" Condition="APPDIR=&quot;&quot;" Sequence="749" />
+    <ROW Action="AI_ResolveKnownFolders" Sequence="53" />
+    <ROW Action="AI_DpiContentScale" Sequence="52" />
+    <ROW Action="AI_EnableDebugLog" Sequence="51" />
+    <ROW Action="ResolveRole" Sequence="750" />
+    <ROW Action="ValidateVisualCpp" Condition="NOT Installed AND NOT (REMOVE=&quot;ALL&quot;)" Sequence="751" />
+    <ROW Action="ValidateDotNet" Condition="NOT Installed AND NOT (REMOVE=&quot;ALL&quot;)" Sequence="752" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiLaunchConditionsComponent">
+    <ROW Condition="(VersionNT &lt;&gt; 400)" Description="[ProductName] cannot be installed on [WindowsTypeNT40Display]." DescriptionLocId="AI.LaunchCondition.NoNT40" IsPredefined="true" Builds="DefaultBuild" />
+    <ROW Condition="(VersionNT &lt;&gt; 500)" Description="[ProductName] cannot be installed on [WindowsTypeNT50Display]." DescriptionLocId="AI.LaunchCondition.NoNT50" IsPredefined="true" Builds="DefaultBuild" />
+    <ROW Condition="(VersionNT64 OR ((VersionNT &lt;&gt; 501) OR (ServicePackLevel = 3))) AND ((VersionNT &lt;&gt; 502) OR (ServicePackLevel = 2))" Description="[ProductName] cannot be installed on [WindowsTypeNT5XDisplay]." DescriptionLocId="AI.LaunchCondition.NoNT5X" IsPredefined="true" Builds="DefaultBuild" />
+    <ROW Condition="VersionNT" Description="[ProductName] cannot be installed on [WindowsType9XDisplay]." DescriptionLocId="AI.LaunchCondition.No9X" IsPredefined="true" Builds="DefaultBuild" />
+    <ROW Description="CloneDeploy Server requires 64-bit Windows 10 / Windows Server 2016 or later." Condition="VersionNT64 &gt;= 603" />
+    <ROW Description="Administrator privileges are required." Condition="Privileged" />
+    <ROW Condition="Installed OR WINDOWS_BUILD &gt;= &quot;14393&quot;" Description="CloneDeploy Server requires Windows Server 2016 or a supported Windows 10/11 release." />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiThemeComponent">
+    <ATTRIBUTE name="UsedTheme" value="classic" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiUpgradeComponent">
+    <ROW UpgradeCode="[|UpgradeCode]" VersionMin="0.0.1" VersionMax="[|ProductVersion]" Attributes="257" ActionProperty="OLDPRODUCTS" />
+    <ROW UpgradeCode="[|UpgradeCode]" VersionMin="[|ProductVersion]" Attributes="2" ActionProperty="AI_NEWERPRODUCTFOUND" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiIconsComponent">
+    <ROW Name="CloneDeploy.ico" SourcePath="..\..\Branding\CloneDeploy.ico" Index="0" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiDirsComponent">
+    <ROW Directory="TARGETDIR" DefaultDir="SourceDir" />
+    <ROW Directory="APPDIR" IsPseudoRoot="1" Directory_Parent="TARGETDIR" DefaultDir="APPDIR:." />
+    <ROW Directory="System64Folder" IsPseudoRoot="1" Directory_Parent="TARGETDIR" DefaultDir="System64Folder" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiCompsComponent">
+    <ROW ComponentId="{3AB6BEC3-A9BD-44EA-BD7A-C56073E8B346}" KeyPath="ServerPath" Directory_="APPDIR" Attributes="256" Component="ServerInformation" Condition="INSTALL_ROLE=&quot;App&quot;" />
+    <ROW Component="InstallationInformation" ComponentId="{22B10D28-B0F9-4B29-A2A5-741CBBDE175A}" KeyPath="InstallationRole" Directory_="APPDIR" Attributes="256" />
+    <ROW Component="SiteServiceInformation" ComponentId="{247C6636-13D5-4DE3-B1C4-AE7B62265E49}" KeyPath="SiteServicePath" Directory_="APPDIR" Attributes="256" Condition="INSTALL_ROLE=&quot;SiteService&quot;" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiFeatsComponent">
+    <ROW Attributes="0" Display="1" Title="CloneDeploy Server" Level="1" Components="ServerInformation InstallationInformation SiteServiceInformation" Directory_="APPDIR" Feature="MainFeature" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiRegsComponent">
+    <ROW Root="2" Registry="ServerPath" Value="[APPDIR]" Name="Path" Key="SOFTWARE\CloneDeploy\Server" Component_="ServerInformation" />
+    <ROW Root="2" Registry="InstallationRole" Value="[INSTALL_ROLE]" Name="Role" Key="SOFTWARE\CloneDeploy\Installation" Component_="InstallationInformation" />
+    <ROW Root="2" Registry="InstallationPath" Value="[APPDIR]" Name="Path" Key="SOFTWARE\CloneDeploy\Installation" Component_="InstallationInformation" />
+    <ROW Root="2" Registry="SiteServicePath" Value="[APPDIR]" Name="Path" Key="SOFTWARE\CloneDeploy\SiteService" Component_="SiteServiceInformation" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiServCtrlComponent">
+    <ROW Component_="ServerInformation" Event="34" Name="CloneDeploy-Server" Wait="1" ServiceControl="CloneDeployServer" />
+    <ROW Component_="ServerInformation" Event="34" Name="CloneDeploy WinPE Builder" Wait="1" ServiceControl="CloneDeployPeBuilder" />
+    <ROW Component_="ServerInformation" Event="34" Name="CloneDeploy-PostgreSQL" Wait="1" ServiceControl="CloneDeployPostgreSQL" />
+    <ROW Component_="SiteServiceInformation" Event="34" Name="CloneDeploy-SiteService" Wait="1" ServiceControl="CloneDeploySiteService" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiDialogComponent">
+    <ROW VCentering="50" Height="270" Control_Default="Next" HCentering="50" Width="370" Attributes="39" Title="[ProductName] Setup" Dialog="ServerAccountDlg" Control_Cancel="Cancel" />
+    <ROW VCentering="50" Height="270" Control_Default="Next" HCentering="50" Width="370" Attributes="39" Title="[ProductName] Setup" Dialog="ServerDatabaseDlg" Control_Cancel="Cancel" />
+    <ROW Dialog="InstallRoleDlg" VCentering="50" Height="270" Control_Default="Next" HCentering="50" Width="370" Attributes="39" Title="[ProductName] Setup" Control_Cancel="Cancel" />
+    <ROW Dialog="SiteEnrollmentDlg" VCentering="50" Height="270" Control_Default="Next" HCentering="50" Width="370" Attributes="39" Title="[ProductName] Setup" Control_Cancel="Cancel" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiControlComponent">
+    <ROW Width="56" Order="100" Y="243" Height="17" X="236" Dialog_="ServerAccountDlg" Type="PushButton" Text="Next &gt;" Attributes="3" Control="Next" />
+    <ROW Width="56" Order="200" Y="243" Height="17" X="180" Dialog_="ServerAccountDlg" Type="PushButton" Text="&lt; Back" Attributes="3" Control="Back" />
+    <ROW Width="56" Order="300" Y="243" Height="17" X="304" Dialog_="ServerAccountDlg" Type="PushButton" Text="Cancel" Attributes="3" Control="Cancel" />
+    <ROW Width="56" Order="100" Y="243" Height="17" X="236" Dialog_="ServerDatabaseDlg" Type="PushButton" Text="Next &gt;" Attributes="3" Control="Next" />
+    <ROW Width="56" Order="200" Y="243" Height="17" X="180" Dialog_="ServerDatabaseDlg" Type="PushButton" Text="&lt; Back" Attributes="3" Control="Back" />
+    <ROW Width="56" Order="300" Y="243" Height="17" X="304" Dialog_="ServerDatabaseDlg" Type="PushButton" Text="Cancel" Attributes="3" Control="Cancel" />
+    <ROW Width="330" Order="1500" Y="15" Height="15" X="20" Dialog_="ServerAccountDlg" Type="Text" Text="Server service account" Attributes="3" Control="Title" />
+    <ROW Width="330" Order="4000" Y="40" Height="30" X="20" Dialog_="ServerAccountDlg" Type="Text" Text="Setup creates the CloneDeploySvc local account and generates its password automatically." Attributes="3" Control="Description" />
+    <ROW Dialog_="ServerAccountDlg" Control="PasswordOverride" Type="CheckBox" X="20" Y="80" Width="330" Height="18" Attributes="3" Property="SERVICE_PASSWORD_OVERRIDE" Text="Specify service account password" Order="8000" />
+    <ROW Dialog_="ServerAccountDlg" Control="SERVICE_PASSWORDLabel" Type="Text" X="20" Y="110" Width="110" Height="15" Attributes="3" Text="Password" Order="11000" />
+    <ROW Dialog_="ServerAccountDlg" Control="SERVICE_PASSWORD" Type="Edit" X="135" Y="110" Width="210" Height="18" Attributes="2097155" Property="SERVICE_PASSWORD" Order="11001" />
+    <ROW Dialog_="ServerAccountDlg" Control="SERVICE_PASSWORD_CONFIRMLabel" Type="Text" X="20" Y="140" Width="110" Height="15" Attributes="3" Text="Confirm password" Order="14000" />
+    <ROW Dialog_="ServerAccountDlg" Control="SERVICE_PASSWORD_CONFIRM" Type="Edit" X="135" Y="140" Width="210" Height="18" Attributes="2097155" Property="SERVICE_PASSWORD_CONFIRM" Order="14001" />
+    <ROW Dialog_="ServerAccountDlg" Control="PasswordValidation" Type="Text" X="20" Y="166" Width="330" Height="22" Attributes="3" Text="Enter a password and matching confirmation to continue." Order="16600" />
+    <ROW Dialog_="ServerAccountDlg" Control="HTTP_PORTLabel" Type="Text" X="20" Y="192" Width="110" Height="15" Attributes="3" Text="HTTP port" Order="19200" />
+    <ROW Dialog_="ServerAccountDlg" Control="HTTP_PORT" Type="Edit" X="135" Y="192" Width="210" Height="18" Attributes="3" Property="HTTP_PORT" Order="19201" />
+    <ROW Width="330" Order="21600" Y="216" Height="22" X="20" Dialog_="ServerAccountDlg" Type="Text" Text="Use another port if 80 is occupied. Configure HTTPS later in the application settings." Attributes="3" Control="CertificateNote" />
+    <ROW Width="330" Order="1000" Y="10" Height="15" X="20" Dialog_="ServerDatabaseDlg" Type="Text" Text="PostgreSQL database" Attributes="3" Control="Title" />
+    <ROW Width="330" Order="400" Y="32" Height="35" X="20" Dialog_="ServerDatabaseDlg" Type="RadioButtonGroup" Property="DB_MODE" Attributes="3" Control="Mode" />
+    <ROW Width="110" Order="7200" Y="72" Height="15" X="20" Dialog_="ServerDatabaseDlg" Type="Text" Text="Database server" Attributes="3" Control="DB_HOSTLabel" />
+    <ROW Width="210" Order="7201" Y="72" Height="18" X="135" Dialog_="ServerDatabaseDlg" Type="Edit" Property="DB_HOST" Attributes="3" Control="DB_HOST" />
+    <ROW Width="110" Order="9600" Y="96" Height="15" X="20" Dialog_="ServerDatabaseDlg" Type="Text" Text="Database port" Attributes="3" Control="DB_PORTLabel" />
+    <ROW Width="210" Order="9601" Y="96" Height="18" X="135" Dialog_="ServerDatabaseDlg" Type="Edit" Property="DB_PORT" Attributes="3" Control="DB_PORT" />
+    <ROW Width="110" Order="12000" Y="120" Height="15" X="20" Dialog_="ServerDatabaseDlg" Type="Text" Text="Database name" Attributes="3" Control="DB_NAMELabel" />
+    <ROW Width="210" Order="12001" Y="120" Height="18" X="135" Dialog_="ServerDatabaseDlg" Type="Edit" Property="DB_NAME" Attributes="3" Control="DB_NAME" />
+    <ROW Width="110" Order="14400" Y="144" Height="15" X="20" Dialog_="ServerDatabaseDlg" Type="Text" Text="Database login" Attributes="3" Control="DB_USERLabel" />
+    <ROW Width="210" Order="14401" Y="144" Height="18" X="135" Dialog_="ServerDatabaseDlg" Type="Edit" Property="DB_USER" Attributes="3" Control="DB_USER" />
+    <ROW Width="110" Order="16800" Y="168" Height="15" X="20" Dialog_="ServerDatabaseDlg" Type="Text" Text="Database password" Attributes="3" Control="DB_PASSWORDLabel" />
+    <ROW Width="210" Order="16801" Y="168" Height="18" X="135" Dialog_="ServerDatabaseDlg" Type="Edit" Property="DB_PASSWORD" Attributes="2097155" Control="DB_PASSWORD" />
+    <ROW Width="330" Order="19700" Y="214" Height="24" X="20" Dialog_="ServerDatabaseDlg" Type="Text" Text="Existing database: create its login and citext extension first. Supply a CA file if needed to verify its TLS certificate." Attributes="3" Control="Requirements" />
+    <ROW Property="DB_CA" Dialog_="ServerDatabaseDlg" Control="DB_CA" Order="19201" Width="210" X="135" Type="Edit" Height="18" Attributes="3" Y="192" />
+    <ROW Text="Root CA PEM (optional)" Dialog_="ServerDatabaseDlg" Control="DB_CALabel" Order="19200" Width="110" X="20" Type="Text" Height="18" Attributes="3" Y="192" />
+    <ROW Dialog_="InstallRoleDlg" Control="Next" Width="56" Order="100" Y="243" Height="17" X="236" Type="PushButton" Text="Next &gt;" Attributes="3" />
+    <ROW Dialog_="InstallRoleDlg" Control="Back" Width="56" Order="200" Y="243" Height="17" X="180" Type="PushButton" Text="&lt; Back" Attributes="3" />
+    <ROW Dialog_="InstallRoleDlg" Control="Cancel" Width="56" Order="300" Y="243" Height="17" X="304" Type="PushButton" Text="Cancel" Attributes="3" />
+    <ROW Dialog_="InstallRoleDlg" Control="Title" Width="330" Order="1000" Y="15" Height="20" X="20" Type="Text" Text="Choose what to install" Attributes="3" />
+    <ROW Dialog_="SiteEnrollmentDlg" Control="Next" Width="56" Order="100" Y="243" Height="17" X="236" Type="PushButton" Text="Next &gt;" Attributes="3" />
+    <ROW Dialog_="SiteEnrollmentDlg" Control="Back" Width="56" Order="200" Y="243" Height="17" X="180" Type="PushButton" Text="&lt; Back" Attributes="3" />
+    <ROW Dialog_="SiteEnrollmentDlg" Control="Cancel" Width="56" Order="300" Y="243" Height="17" X="304" Type="PushButton" Text="Cancel" Attributes="3" />
+    <ROW Dialog_="InstallRoleDlg" Control="Role" Width="330" Order="1100" Y="60" Height="65" X="20" Type="RadioButtonGroup" Property="INSTALL_ROLE" Attributes="3" />
+    <ROW Dialog_="InstallRoleDlg" Control="Description" Width="330" Order="1200" Y="145" Height="65" X="20" Type="Text" Text="Install one role. Set up the Main App first, then export a SiteService setup JSON from Admin Settings &gt; Site Services. Repair and upgrades keep the installed role." Attributes="3" />
+    <ROW Dialog_="SiteEnrollmentDlg" Control="Description" Width="330" Order="1100" Y="45" Height="40" X="20" Type="Text" Text="Select the setup JSON downloaded from Admin Settings -&gt; Site Services." Attributes="3" />
+    <ROW Dialog_="SiteEnrollmentDlg" Control="EnrollmentFile" Width="250" Order="1200" Y="110" Height="18" X="20" Type="Edit" Property="SITE_ENROLLMENT_FILE" Attributes="3" />
+    <ROW Dialog_="SiteEnrollmentDlg" Control="Browse" Width="70" Order="1300" Y="110" Height="18" X="280" Type="PushButton" Text="Browse..." Attributes="3" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiRadioButtonComponent">
+    <ROW Property="DB_MODE" X="0" Text="Install a local PostgreSQL database" Value="Local" Width="320" Y="0" Height="15" Order="1" />
+    <ROW Property="DB_MODE" X="0" Text="Use an external PostgreSQL database (TLS required)" Value="Existing" Width="320" Y="18" Height="15" Order="2" />
+    <ROW Property="INSTALL_ROLE" X="0" Text="Main App (web application and database options)" Value="App" Width="325" Y="0" Height="25" Order="1" />
+    <ROW Property="INSTALL_ROLE" X="0" Text="SiteService (requires a setup JSON from the Main App)" Value="SiteService" Width="325" Y="30" Height="25" Order="2" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiCheckBoxComponent">
+    <ROW Property="SERVICE_PASSWORD_OVERRIDE" Value="1" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiControlConditionComponent">
+    <ROW Dialog_="ServerAccountDlg" Control_="SERVICE_PASSWORD" Action="Show" Condition="SERVICE_PASSWORD_OVERRIDE=&quot;1&quot;" />
+    <ROW Dialog_="ServerAccountDlg" Control_="SERVICE_PASSWORD" Action="Hide" Condition="NOT SERVICE_PASSWORD_OVERRIDE" />
+    <ROW Dialog_="ServerAccountDlg" Control_="SERVICE_PASSWORDLabel" Action="Show" Condition="SERVICE_PASSWORD_OVERRIDE=&quot;1&quot;" />
+    <ROW Dialog_="ServerAccountDlg" Control_="SERVICE_PASSWORDLabel" Action="Hide" Condition="NOT SERVICE_PASSWORD_OVERRIDE" />
+    <ROW Dialog_="ServerAccountDlg" Control_="SERVICE_PASSWORD_CONFIRM" Action="Show" Condition="SERVICE_PASSWORD_OVERRIDE=&quot;1&quot;" />
+    <ROW Dialog_="ServerAccountDlg" Control_="SERVICE_PASSWORD_CONFIRM" Action="Hide" Condition="NOT SERVICE_PASSWORD_OVERRIDE" />
+    <ROW Dialog_="ServerAccountDlg" Control_="SERVICE_PASSWORD_CONFIRMLabel" Action="Show" Condition="SERVICE_PASSWORD_OVERRIDE=&quot;1&quot;" />
+    <ROW Dialog_="ServerAccountDlg" Control_="SERVICE_PASSWORD_CONFIRMLabel" Action="Hide" Condition="NOT SERVICE_PASSWORD_OVERRIDE" />
+    <ROW Dialog_="ServerAccountDlg" Control_="Next" Action="Enable" Condition="NOT SERVICE_PASSWORD_OVERRIDE OR (SERVICE_PASSWORD AND SERVICE_PASSWORD = SERVICE_PASSWORD_CONFIRM)" />
+    <ROW Dialog_="ServerAccountDlg" Control_="Next" Action="Disable" Condition="SERVICE_PASSWORD_OVERRIDE AND (NOT SERVICE_PASSWORD OR SERVICE_PASSWORD &lt;&gt; SERVICE_PASSWORD_CONFIRM)" />
+    <ROW Dialog_="ServerAccountDlg" Control_="PasswordValidation" Action="Hide" Condition="NOT SERVICE_PASSWORD_OVERRIDE OR (SERVICE_PASSWORD AND SERVICE_PASSWORD = SERVICE_PASSWORD_CONFIRM)" />
+    <ROW Dialog_="ServerAccountDlg" Control_="PasswordValidation" Action="Show" Condition="SERVICE_PASSWORD_OVERRIDE AND (NOT SERVICE_PASSWORD OR SERVICE_PASSWORD &lt;&gt; SERVICE_PASSWORD_CONFIRM)" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_HOST" Action="Hide" Condition="DB_MODE=&quot;Local&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_HOST" Action="Show" Condition="DB_MODE=&quot;Existing&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_HOSTLabel" Action="Hide" Condition="DB_MODE=&quot;Local&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_HOSTLabel" Action="Show" Condition="DB_MODE=&quot;Existing&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_PORT" Action="Hide" Condition="DB_MODE=&quot;Local&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_PORT" Action="Show" Condition="DB_MODE=&quot;Existing&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_PORTLabel" Action="Hide" Condition="DB_MODE=&quot;Local&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_PORTLabel" Action="Show" Condition="DB_MODE=&quot;Existing&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_NAME" Action="Hide" Condition="DB_MODE=&quot;Local&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_NAME" Action="Show" Condition="DB_MODE=&quot;Existing&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_NAMELabel" Action="Hide" Condition="DB_MODE=&quot;Local&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_NAMELabel" Action="Show" Condition="DB_MODE=&quot;Existing&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_USER" Action="Hide" Condition="DB_MODE=&quot;Local&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_USER" Action="Show" Condition="DB_MODE=&quot;Existing&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_USERLabel" Action="Hide" Condition="DB_MODE=&quot;Local&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_USERLabel" Action="Show" Condition="DB_MODE=&quot;Existing&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_PASSWORD" Action="Hide" Condition="DB_MODE=&quot;Local&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_PASSWORD" Action="Show" Condition="DB_MODE=&quot;Existing&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_PASSWORDLabel" Action="Hide" Condition="DB_MODE=&quot;Local&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_PASSWORDLabel" Action="Show" Condition="DB_MODE=&quot;Existing&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_CA" Action="Hide" Condition="DB_MODE=&quot;Local&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_CA" Action="Show" Condition="DB_MODE=&quot;Existing&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_CALabel" Action="Hide" Condition="DB_MODE=&quot;Local&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="DB_CALabel" Action="Show" Condition="DB_MODE=&quot;Existing&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="Requirements" Action="Hide" Condition="DB_MODE=&quot;Local&quot;" />
+    <ROW Dialog_="ServerDatabaseDlg" Control_="Requirements" Action="Show" Condition="DB_MODE=&quot;Existing&quot;" />
+    <ROW Dialog_="InstallRoleDlg" Control_="Role" Action="Disable" Condition="INSTALLED_ROLE" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiRegLocatorComponent">
+    <ROW Name="CurrentBuildNumber" Key="SOFTWARE\Microsoft\Windows NT\CurrentVersion" Signature_="ServerWindowsBuild" Root="2" Type="18" />
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiAppSearchComponent">
+    <ROW Signature_="ServerWindowsBuild" Property="WINDOWS_BUILD" />
+  </COMPONENT>
+</DOCUMENT>

@@ -1,0 +1,80 @@
+@attribute [Authorize(Policy = Constants.Permissions.AdminOnly)]
+@implements IAsyncDisposable
+@inject DatabaseBackupService Backups
+@inject AuthenticationStateProvider Authentication
+
+<div class="section-action-bar">
+    <MudButton OnClick="StartAsync" Disabled="@(_busy || _status is null || _status.Running)" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.Backup">@Loc[LocKeys.Ui.DatabaseBackupTab.BackUpDatabase]</MudButton>
+</div>
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+@if (_status is not null)
+{
+    @if (_status.Error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_status.Error</MudAlert> }
+    @if (_status.Running)
+    {
+        <MudText Class="mb-2">@Loc[LocKeys.Ui.DatabaseBackupTab.DatabaseBackupIsRunningYouCanLeaveThisPage]</MudText>
+        <MudProgressLinear Indeterminate="true" Class="mb-4" />
+    }
+    <MudDataGrid T="DatabaseBackupFile" Items="_status.Files" Dense="true" Hover="true" Outlined="true" Elevation="0" Class="device-list-grid" RowsPerPage="10">
+        <Columns>
+            <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Ui.DatabaseBackupTab.Filename]" />
+            <PropertyColumn Property="x => x.CompletedUtc" Title="@Loc[LocKeys.Ui.DatabaseBackupTab.Completed]">
+                <CellTemplate>@context.Item.CompletedUtc.ToLocalTime().ToString("g")</CellTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Bytes" Title="@Loc[LocKeys.Image.VersionSize]">
+                <CellTemplate>@UiText.Get(LocKeys.Ui.ImageVersionsTab.Text0MB, (((context.Item.Bytes / 1048576d).ToString("N2"))))</CellTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Path" Title="@Loc[LocKeys.Ui.DatabaseBackupTab.ServerLocation]" />
+        </Columns>
+        <PagerContent><MudDataGridPager T="DatabaseBackupFile" /></PagerContent>
+        <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.DatabaseBackupTab.NoCompletedDatabaseBackups]</MudText></NoRecordsContent>
+    </MudDataGrid>
+}
+
+@code {
+    private DatabaseBackupStatus? _status;
+    private string? _error;
+    private bool _busy;
+    private readonly CancellationTokenSource _stop = new();
+    private Task? _poll;
+    protected override async Task OnInitializedAsync() => await RefreshAsync();
+    protected override void OnAfterRender(bool firstRender) { if (firstRender) _poll = PollAsync(); }
+    private async Task RefreshAsync()
+    {
+        try
+        {
+            var status = await Backups.GetStatusAsync((await Authentication.GetAuthenticationStateAsync()).User);
+            if (_stop.IsCancellationRequested) return;
+            _status = status; _error = null;
+        }
+        catch { if (!_stop.IsCancellationRequested) _error = UiText.Get(LocKeys.Ui.DatabaseBackupTab.UnableToReadDatabaseBackupsCheckAdministratorAccessAnd); }
+    }
+    private async Task StartAsync()
+    {
+        if (_busy || _status?.Running != false || _stop.IsCancellationRequested) return;
+        _busy = true;
+        try
+        {
+            await Backups.StartBackupAsync((await Authentication.GetAuthenticationStateAsync()).User);
+            await RefreshAsync();
+        }
+        catch { _error = UiText.Get(LocKeys.Ui.DatabaseBackupTab.UnableToStartTheDatabaseBackupCheckAdministratorAccess); }
+        finally { _busy = false; }
+    }
+    private async Task PollAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(3));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(_stop.Token))
+                await InvokeAsync(async () => { if (_stop.IsCancellationRequested) return; await RefreshAsync(); if (!_stop.IsCancellationRequested) StateHasChanged(); });
+        }
+        catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
+    }
+    public async ValueTask DisposeAsync()
+    {
+        await _stop.CancelAsync();
+        if (_poll is not null) await _poll;
+        _stop.Dispose();
+    }
+}

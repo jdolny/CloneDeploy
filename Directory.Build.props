@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <!-- Default for the server and supporting apps; agent projects override this. -->
+    <!-- Releases use 2.0.N; increment only the third component. -->
+    <Version>2.0.2</Version>
+  </PropertyGroup>
+</Project>

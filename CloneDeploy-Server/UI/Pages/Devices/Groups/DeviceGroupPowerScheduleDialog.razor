@@ -1,0 +1,83 @@
+@using CloneDeploy_Server.UI.Pages.SharedResources.Schedules
+@inject DeviceGroupService Service
+@inject ScheduleService Schedules
+@inject AuthenticationStateProvider Authentication
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Outlined.Schedule" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">@(Assignment is null ? UiText.Get(LocKeys.Ui.DeviceGroupPowerSchedulesTab.AssignPowerSchedule) : UiText.Get(LocKeys.Ui.DeviceGroupPowerSchedulesTab.EditPowerSchedule))</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3" Class="pt-2">
+            @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+            <MudSelect T="DevicePowerAction" @bind-Value="_edit.Action" Label="@Loc[LocKeys.Dashboard.Action]" Variant="Variant.Outlined" Disabled="_busy">
+                <MudSelectItem Value="DevicePowerAction.Wake">@Loc[LocKeys.Ui.DeviceGroupPowerScheduleDialog.WakeUp]</MudSelectItem>
+                <MudSelectItem Value="DevicePowerAction.Shutdown">@Loc[LocKeys.Ui.DeviceGroupPowerScheduleDialog.ShutDown]</MudSelectItem>
+            </MudSelect>
+            <MudSelect T="int" @bind-Value="_edit.ScheduleId" Label="@Loc[LocKeys.Common.Schedule]" Strict="true" Placeholder="@Loc[LocKeys.Ui.DeviceGroupPowerScheduleDialog.SelectASchedule]" Variant="Variant.Outlined" Disabled="_busy">
+                @foreach (var schedule in _schedules) { <MudSelectItem Value="schedule.Id">@schedule.Name</MudSelectItem> }
+            </MudSelect>
+            <MudButton OnClick="CreateSchedule" Disabled="_busy" StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary">@Loc[LocKeys.Ui.DeviceGroupPowerScheduleDialog.CreateSchedule]</MudButton>
+            <MudSwitch T="bool" @bind-Value="_edit.Enabled" Disabled="_busy" Color="Color.Primary">@Loc[LocKeys.StorageProvider.Enabled]</MudSwitch>
+            @if (_edit.Action == DevicePowerAction.Shutdown)
+            {
+                <MudAlert Severity="Severity.Warning">@Loc[LocKeys.Ui.DeviceGroupPowerScheduleDialog.ConnectedDevicesWillShutDownWithA30Second]</MudAlert>
+            }
+            <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.DeviceGroupPowerScheduleDialog.ExistingSchedulesAreSharedEditTheirTimingUnderShared]</MudText>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_busy">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="Save" Disabled="@(_busy || _edit.ScheduleId == 0)" Color="Color.Primary" Variant="Variant.Filled">@Loc[LocKeys.Common.Save]</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public int GroupId { get; set; }
+    [Parameter] public DeviceGroupPowerSchedule? Assignment { get; set; }
+    private DeviceGroupPowerSchedule _edit = new() { Action = DevicePowerAction.Wake };
+    private List<Schedule> _schedules = [];
+    private bool _busy;
+    private string? _error;
+    protected override async Task OnInitializedAsync()
+    {
+        if (Assignment is { } row) _edit = new() { Id = row.Id, ScheduleId = row.ScheduleId, Action = row.Action, Enabled = row.Enabled };
+        _edit.DeviceGroupId = GroupId;
+        _busy = true;
+        try
+        {
+            var result = await Schedules.GetAllAsync();
+            if (!result.Success) { _error = UiText.Get(LocKeys.Ui.DeviceGroupPowerScheduleDialog.SchedulesCouldNotBeLoaded); return; }
+            _schedules = result.Data!;
+        }
+        finally { _busy = false; }
+    }
+    private void Cancel() => MudDialog.Cancel();
+    private async Task CreateSchedule()
+    {
+        var dialog = await Dialog.ShowAsync<ScheduleDialog>(UiText.Get(LocKeys.Ui.DeviceGroupPowerScheduleDialog.CreateSchedule), Constants.UI.StandardDialogBox);
+        if (await dialog.Result is { Canceled: false, Data: Schedule schedule })
+        {
+            _schedules.Add(schedule);
+            _schedules = _schedules.OrderBy(x => x.Name).ToList();
+            _edit.ScheduleId = schedule.Id;
+        }
+    }
+    private async Task Save()
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            await Service.SavePowerScheduleAsync((await Authentication.GetAuthenticationStateAsync()).User, _edit);
+            Snackbar.Add(UiText.Get(LocKeys.Ui.DeviceGroupPowerScheduleDialog.PowerScheduleSaved), Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (InvalidOperationException ex) { _error = ex.Message; }
+        catch { _error = UiText.Get(LocKeys.Ui.DeviceGroupPowerScheduleDialog.PowerScheduleCouldNotBeSaved); }
+        finally { _busy = false; }
+    }
+}

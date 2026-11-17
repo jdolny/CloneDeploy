@@ -1,0 +1,46 @@
+<DeviceInventoryTable TItem="DeviceWindowsUpdate" Title="@Loc[LocKeys.Device.WindowsUpdatesText]"
+                      Items="@(Device.WindowsUpdates.OrderByDescending(x => x.LastDeploymentChangedAtUtc))"
+                      SearchText="GetSearchText">
+    <Columns>
+        <PropertyColumn T="DeviceWindowsUpdate" TProperty="string" Property="x => x.WindowsUpdate == null ? string.Empty : x.WindowsUpdate.Title"
+                        Title="@Loc[LocKeys.Device.Title]"/>
+        <PropertyColumn T="DeviceWindowsUpdate" TProperty="string" Property="x => x.WindowsUpdate == null ? string.Empty : x.WindowsUpdate.Category"
+                        Title="@Loc[LocKeys.Device.Category]"/>
+        <PropertyColumn T="DeviceWindowsUpdate" TProperty="string" Property="x => x.WindowsUpdate == null ? string.Empty : x.WindowsUpdate.UpdateId"
+                        Title="@Loc[LocKeys.Device.UpdateID]"/>
+        <TemplateColumn T="DeviceWindowsUpdate" Title="@Loc[LocKeys.Device.KBArticles]">
+            <CellTemplate>@string.Join(", ", context.Item.WindowsUpdate?.KBArticleIds?.Select(x => "KB" + x) ?? [])</CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn T="DeviceWindowsUpdate" TProperty="int?" Property="x => x.RevisionNumber" Title="@Loc[LocKeys.Device.ObservedRevision]"/>
+        <PropertyColumn T="DeviceWindowsUpdate" TProperty="string" Property="x => x.WindowsUpdate == null ? null : x.WindowsUpdate.Type"
+                        Title="@Loc[LocKeys.Device.Type]"/>
+        <PropertyColumn T="DeviceWindowsUpdate" TProperty="string" Property="x => x.WindowsUpdate == null ? null : x.WindowsUpdate.MsrcSeverity"
+                        Title="@Loc[LocKeys.Device.Severity]"/>
+        <TemplateColumn T="DeviceWindowsUpdate" Title="@Loc[LocKeys.Device.Downloaded]">
+            <CellTemplate>@Flag(context.Item.IsDownloaded)</CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="DeviceWindowsUpdate" Title="@Loc[LocKeys.Device.Hidden]">
+            <CellTemplate>@Flag(context.Item.IsHidden)</CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="DeviceWindowsUpdate" Title="@Loc[LocKeys.Device.Optional]">
+            <CellTemplate>@Flag(context.Item.BrowseOnly)</CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn T="DeviceWindowsUpdate" TProperty="bool" Property="x => x.IsInstalled" Title="@Loc[LocKeys.Device.Installed]"/>
+        <TemplateColumn T="DeviceWindowsUpdate" Title="@Loc[LocKeys.Device.DeploymentChanged]" Sortable="false" Filterable="false">
+            <CellTemplate>@(context.Item.LastDeploymentChangedAtUtc is DateTime displayDate1 && displayDate1 != default ? displayDate1.ToLocalTime().ToString("g") : "—")</CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</DeviceInventoryTable>
+
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+
+    private string GetSearchText(DeviceWindowsUpdate item) =>
+        $"{item.WindowsUpdate?.Title} {item.WindowsUpdate?.Category} {item.WindowsUpdate?.UpdateId} " +
+        $"{string.Join(" ", item.WindowsUpdate?.KBArticleIds?.Select(x => "KB" + x) ?? [])} " +
+        $"{item.RevisionNumber} {item.WindowsUpdate?.Type} {item.WindowsUpdate?.MsrcSeverity} " +
+        $"{Flag(item.IsDownloaded)} {Flag(item.IsHidden)} {Flag(item.BrowseOnly)} {item.IsInstalled} {(item.LastDeploymentChangedAtUtc is DateTime displayDate2 && displayDate2 != default ? displayDate2.ToLocalTime().ToString("g") : "—")}";
+
+    private string Flag(bool? value) => Loc[value is null ? LocKeys.Common.Unknown : value.Value ? LocKeys.Common.Yes : LocKeys.Common.No];
+}

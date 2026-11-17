@@ -1,0 +1,93 @@
+@inject StorageProviderService Replication
+@implements IAsyncDisposable
+
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert> }
+@if (_status is null && _error is null) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
+@if (_status is not null)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="0" Outlined="true">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" Spacing="3">
+            <MudText Typo="Typo.h6">@UiText.Get(LocKeys.Ui.ReplicationStatusTab.ReportedActivity0, (Activity))</MudText>
+            <MudChip T="string" Color="Color.Primary">@UiText.Get(LocKeys.Ui.ReplicationStatusTab.Text0Active, (Active))</MudChip>
+            <MudChip T="string">@UiText.Get(LocKeys.Ui.ReplicationStatusTab.Text0Waiting, (Count(ImageReplicaState.Pending)))</MudChip>
+            <MudChip T="string" Color="@(Count(ImageReplicaState.Failed) > 0 ? Color.Error : Color.Default)">@UiText.Get(LocKeys.Ui.ReplicationStatusTab.Text0Failed, (Count(ImageReplicaState.Failed)))</MudChip>
+            <MudChip T="string">@UiText.Get(LocKeys.Ui.ReplicationStatusTab.Text0Ready, (Count(ImageReplicaState.Ready)))</MudChip>
+            <MudChip T="string">@UiText.Get(LocKeys.Ui.ReplicationStatusTab.Text0Removing, (Count(ImageReplicaState.Deleting)))</MudChip>
+        </MudStack>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">@UiText.Get(LocKeys.Ui.ReplicationStatusTab.ImagesAndSharedFilesUpdatesEvery5SecondsLast_4cfe9a21, (_status.CheckedAtUtc.ToLocalTime().ToString("g")))</MudText>
+    </MudPaper>
+    <MudDataGrid T="ReplicationActivity" Items="_status.Jobs" Dense="true" Hover="true" Outlined="true" Elevation="0" RowsPerPage="10" Class="device-list-grid">
+        <Columns>
+            <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Ui.DriverFilesTab.File]" />
+            <PropertyColumn Property="x => x.Kind" Title="@Loc[LocKeys.StorageProvider.Type]" />
+            <PropertyColumn Property="x => x.Provider" Title="@Loc[LocKeys.Ui.ImageReplicationTab.Destination]" />
+            <PropertyColumn Property="x => x.Host" Title="@Loc[LocKeys.Ui.SiteServicesPage.Host]" />
+            <TemplateColumn Title="@Loc[LocKeys.Image.VersionStatus]">
+                <CellTemplate>
+                    <MudText>@(context.Item.State == ImageReplicaState.Pending ? UiText.Get(LocKeys.Ui.ReplicationStatusTab.Waiting_6e293a8c) : UiText.Label(context.Item.State))@(!context.Item.Enabled ? UiText.Get(LocKeys.Ui.ReplicationStatusTab.ProviderDisabled) : "")</MudText>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="@Loc[LocKeys.Ui.ImageReplicationTab.LastUpdate]"><CellTemplate>@context.Item.UpdatedAtUtc.ToLocalTime().ToString("g")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="@Loc[LocKeys.User.ObjectJson]">
+                <CellTemplate>
+                    @if (context.Item.Error is not null) { <MudText Color="Color.Error" Typo="Typo.body2">@context.Item.Error</MudText> }
+                    @if (context.Item.RetryAtUtc is { } retry) { <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.ReplicationStatusTab.RetryAfter0, (retry.ToLocalTime().ToString("g")))</MudText> }
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.ReplicationStatusTab.NoReplicationWorkIsCurrentlyQueued]</MudText></NoRecordsContent>
+        <PagerContent><MudDataGridPager T="ReplicationActivity" /></PagerContent>
+    </MudDataGrid>
+    @if (_status.Counts.Where(x => x.State != ImageReplicaState.Ready).Sum(x => x.Count) > _status.Jobs.Count)
+    {
+        <MudText Typo="Typo.caption" Class="mt-2">@Loc[LocKeys.Ui.ReplicationStatusTab.ShowingTheFirst100UnfinishedCopiesWithActiveCopies]</MudText>
+    }
+}
+
+@code {
+    private ReplicationOverview? _status;
+    private string? _error;
+    private readonly CancellationTokenSource _stop = new();
+    private Task? _poll;
+    private int Count(ImageReplicaState state) => _status?.Counts.FirstOrDefault(x => x.State == state)?.Count ?? 0;
+    private int Active => Count(ImageReplicaState.Copying) + Count(ImageReplicaState.Verifying);
+    private string Activity => Active > 0 ? UiText.Get(LocKeys.Scheduler.StatusRunning) : Count(ImageReplicaState.Failed) > 0 ? UiText.Get(LocKeys.Ui.ReplicationStatusTab.WaitingToRetry) :
+        Count(ImageReplicaState.Pending) + Count(ImageReplicaState.Deleting) > 0 ? UiText.Get(LocKeys.Ui.ReplicationStatusTab.Waiting_6e293a8c) : UiText.Get(LocKeys.Ui.ReplicationStatusTab.Idle);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync();
+        if (!_stop.IsCancellationRequested) _poll = PollAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        try
+        {
+            var result = await Replication.ReadReplicationActivityAsync(_stop.Token);
+            if (_stop.IsCancellationRequested) return;
+            if (result.HasData) { _status = result.Data; _error = null; }
+            else _error = Loc[result.Error!.Code, result.Error.Args];
+        }
+        catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
+        catch (Exception) { _error = UiText.Get(LocKeys.Ui.ReplicationStatusTab.UnableToRefreshReplicationStatusRetryingAutomatically); }
+    }
+
+    private async Task PollAsync()
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+            while (await timer.WaitForNextTickAsync(_stop.Token))
+                await InvokeAsync(async () => { await RefreshAsync(); StateHasChanged(); });
+        }
+        catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _stop.Cancel();
+        if (_poll is not null) await _poll;
+        _stop.Dispose();
+    }
+}

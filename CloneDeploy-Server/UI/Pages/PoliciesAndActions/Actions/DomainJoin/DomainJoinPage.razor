@@ -1,0 +1,166 @@
+@inject AuthenticationStateProvider SharedCatalogAuthentication
+@inject IAuthorizationService SharedCatalogAuthorization
+@page "/actions/domainjoin"
+
+@attribute [Authorize(Policy = Constants.Permissions.PolicyView)]
+@inject ActionService Service
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.DomainJoinPage.JoinDomainActions]" />
+<ActionButtons>
+    <MainButton><PermissionView Policy="@Constants.Permissions.PolicyEdit"><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnNewClicked" StartIcon="@Icons.Material.Filled.Add" Disabled="_busy">@Loc[LocKeys.Ui.DomainJoinActionDialog.NewJoinDomainAction]</MudButton></PermissionView></MainButton>
+</ActionButtons>
+<TagSearchPanel SelectedCount="_selectedTags.Count" ClearTags="OnClearTags">
+    <SearchControls>
+        <div class="device-list-search">
+            <MudTextField T="string" Value="_search" ValueChanged="SearchChanged" DebounceInterval="300" Placeholder="@Loc[LocKeys.Ui.CommandPage.SearchActions]" aria-label="@Loc[LocKeys.Ui.DeviceDeployActionsDialog.SearchActions]"
+                          Clearable="true" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Disabled="_busy"/>
+        </div>
+        <div class="device-list-limit"><MudCheckBox T="bool" Value="_includeArchived" ValueChanged="ArchivedChanged" Label="@Loc[LocKeys.Action.IncludeArchived]" Disabled="_busy"/></div>
+    </SearchControls>
+    <TagControls>
+        <div class="device-manage-tags">
+            <MudAutocomplete T="Tag" @ref="_tagPicker" Label="@Loc[LocKeys.Common.Tags]" Placeholder="@Loc[LocKeys.Ui.ManageDevicesPage.FilterByTag]" ShrinkLabel="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                             SearchFunc="SearchTags" ValueChanged="OnAddTag" ToStringFunc="@(tag => tag?.Name ?? string.Empty)" Clearable="true" ResetValueOnEmptyText="true"/>
+            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-2">
+                @foreach (var tag in _selectedTags)
+                {
+                    <MudChip T="int" Value="tag.Id" Color="Color.Primary" Variant="Variant.Filled" OnClose="@(() => OnRemoveTag(tag))">@tag.Name</MudChip>
+                }
+            </MudStack>
+        </div>
+        <div class="device-manage-tag-match">
+            <MudSelect T="bool" Value="_matchAll" ValueChanged="OnMatchChanged" Label="@Loc[LocKeys.Ui.ManageDevicesPage.Match]" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem Value="false">@Loc[LocKeys.Ui.ManageDevicesPage.AnyTagOR]</MudSelectItem><MudSelectItem Value="true">@Loc[LocKeys.Ui.ManageDevicesPage.AllTagsAND]</MudSelectItem>
+            </MudSelect>
+        </div>
+    </TagControls>
+</TagSearchPanel>
+
+<MudDataGrid T="DomainJoinAction" Items="FilteredItems" Loading="_loading" Dense="true" Hover="true" Elevation="0" Outlined="true" SelectOnRowClick="false" MultiSelection="true"
+             @bind-SelectedItems="_selectedItems" RowsPerPage="@Constants.UI.DefaultPageSize" Filterable="true"
+             FilterMode="DataGridFilterMode.ColumnFilterMenu" ColumnResizeMode="ResizeMode.Column" Class="device-list-grid mb-8">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.Domain" Color="Color.Primary"/>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.DomainJoinPage.JoinDomainActions]</MudText>
+        <MudSpacer/>
+        <div class="grid-toolbar-actions">
+            <GridSelectionCount Count="_selectedItems.Count"/>
+            @if (_selectedItems.Count > 0)
+        {
+            <PermissionView Policy="@Constants.Permissions.PolicyEdit"><MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Archive" OnClick="OnArchiveSelectedClicked" Disabled="_busy">@Loc[LocKeys.Action.ArchiveSelected]</MudButton></PermissionView>
+            <PermissionView Policy="@Constants.Permissions.PolicyEdit"><MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Delete" OnClick="OnDeleteSelectedClicked" Disabled="_busy">@Loc[LocKeys.Common.DeleteSelected]</MudButton></PermissionView>
+        }
+        </div>
+    </ToolBarContent>
+    <Columns>
+        <SelectColumn T="DomainJoinAction" DisabledFunc="@(_ => _busy)" />
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]"><CellTemplate><MudLink Class="device-name-link" Href="@($"/actions/domainjoin/{context.Item.Id}")">@context.Item.Name</MudLink></CellTemplate></PropertyColumn>
+        <PropertyColumn Property="x => x.DomainName" Title="@Loc[LocKeys.Device.Domain]" />
+        <TemplateColumn Title="@Loc[LocKeys.Image.VersionStatus]" Sortable="false" Filterable="false">
+            <CellTemplate>@(context.Item.ActionReference?.ArchivedAtUtc is null ? UiText.Get(LocKeys.Policy.Active) : UiText.Get(LocKeys.Device.ArchivedText))</CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <DeployActionButton ActionGuid="context.Item.Guid" Compact="true" Disabled="_busy" Archived="@(context.Item.ActionReference?.ArchivedAtUtc is not null)" />
+                @if (context.Item.ActionReference?.ArchivedAtUtc is null)
+                {
+                    <MudTooltip Placement="Placement.Left" Text="@(UiText.Get(LocKeys.Ui.ManagePoliciesPage.Archive0, (context.Item.Name)))"><PermissionView Policy="@Constants.Permissions.PolicyEdit"><MudIconButton Icon="@Icons.Material.Filled.Archive" Color="Color.Primary" OnClick="@(() => OnConfirmClicked(UiText.Get(LocKeys.Policy.Archive), [context.Item]))" Disabled="_busy" aria-label="@Loc[LocKeys.Ui.CommandPage.ArchiveAction]" /></PermissionView></MudTooltip>
+                }
+                else
+                {
+                    <MudTooltip Placement="Placement.Left" Text="@(UiText.Get(LocKeys.Ui.ManagePoliciesPage.Restore0, (context.Item.Name)))"><PermissionView Policy="@Constants.Permissions.PolicyEdit"><MudIconButton Icon="@Icons.Material.Filled.Restore" Color="Color.Primary" OnClick="@(() => OnConfirmClicked(UiText.Get(LocKeys.Policy.Restore), [context.Item]))" Disabled="_busy" aria-label="@Loc[LocKeys.Ui.CommandPage.RestoreAction]" /></PermissionView></MudTooltip>
+                }
+                <MudTooltip Placement="Placement.Left" Text="@(UiText.Get(LocKeys.Ui.ActionFiles.Delete0, (context.Item.Name)))"><PermissionView Policy="@Constants.Permissions.PolicyEdit"><MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Primary" OnClick="@(() => OnConfirmClicked(UiText.Get(LocKeys.Common.Delete), [context.Item]))" Disabled="_busy" aria-label="@Loc[LocKeys.Ui.CommandPage.DeleteAction]" /></PermissionView></MudTooltip>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent><MudDataGridPager T="DomainJoinAction" /></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Ui.DomainJoinPage.NoJoinDomainActionsFound]</MudText></NoRecordsContent>
+</MudDataGrid>
+
+@code {
+    private List<Tag> _tags = [], _selectedTags = [];
+    private MudAutocomplete<Tag> _tagPicker = null!;
+    private bool _matchAll;
+    private IEnumerable<DomainJoinAction> FilteredItems => _items.Where(item => _selectedTags.Count == 0 || (_matchAll
+        ? _selectedTags.All(tag => item.ActionReference?.Tags.Any(x => x.TagId == tag.Id) == true)
+        : _selectedTags.Any(tag => item.ActionReference?.Tags.Any(x => x.TagId == tag.Id) == true)));
+    private Task<IEnumerable<Tag>> SearchTags(string? text, CancellationToken ct) => Task.FromResult(_tags.Where(tag =>
+        _selectedTags.All(x => x.Id != tag.Id) && (string.IsNullOrWhiteSpace(text) || tag.Name.Contains(text.Trim(), StringComparison.OrdinalIgnoreCase))));
+    private async Task OnAddTag(Tag? tag)
+    {
+        if (tag is null || _selectedTags.Any(x => x.Id == tag.Id)) return;
+        _selectedTags.Add(tag); _selectedItems.Clear(); await _tagPicker.ClearAsync();
+    }
+    private void OnClearTags()
+    {
+        foreach (var tag in _selectedTags.ToArray()) OnRemoveTag(tag);
+    }
+
+    private void OnRemoveTag(Tag tag) { _selectedTags.Remove(tag); _selectedItems.Clear(); }
+    private void OnMatchChanged(bool value) { _matchAll = value; _selectedItems.Clear(); }
+
+    private List<DomainJoinAction> _items = [];
+    private HashSet<DomainJoinAction> _selectedItems = [];
+    private bool _loading = true;
+    private bool _busy;
+    private bool _includeArchived;
+    private string? _search;
+    private int _version;
+    protected override async Task OnInitializedAsync()
+    {
+        var tags = ((await SharedCatalogAuthorization.AuthorizeAsync((await SharedCatalogAuthentication.GetAuthenticationStateAsync()).User, Constants.Permissions.TagView)).Succeeded ? await Service.GetTagsAsync() : ServiceResult<List<Tag>>.Ok([]));
+        _tags = tags.Data ?? [];
+        if (!tags.Success) Snackbar.Add(Loc[tags.Error!.Code, tags.Error.Args], Severity.Error);
+        await LoadAsync();
+    }
+    private async Task LoadAsync()
+    {
+        var version = ++_version;
+        _loading = true;
+        var result = await Service.GetDomainJoinActionsAsync(_search, _includeArchived);
+        if (version != _version) return;
+        _items = result.Data ?? [];
+        _selectedItems.Clear();
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loading = false;
+    }
+    private async Task SearchChanged(string? value) { _search = value; await LoadAsync(); }
+    private async Task ArchivedChanged(bool value) { _includeArchived = value; await LoadAsync(); }
+    private async Task OnNewClicked()
+    {
+        var dialog = await Dialog.ShowAsync<DomainJoinActionDialog>(Constants.UI.StandardDialogBox);
+        if (await dialog.Result is { Canceled: false, Data: int id }) Navigation.NavigateTo($"/actions/domainjoin/{id}");
+    }
+    private Task OnArchiveSelectedClicked() => OnConfirmClicked("Archive", _selectedItems.ToArray());
+    private Task OnDeleteSelectedClicked() => OnConfirmClicked("Delete", _selectedItems.ToArray());
+    private async Task OnConfirmClicked(string operation, DomainJoinAction[] selected)
+    {
+        if (_busy || selected.Length == 0) return;
+        _busy = true;
+        var target = selected.Length == 1 ? selected[0].Name : UiText.Get(LocKeys.Ui.CommandPage.The0SelectedActions, (selected.Length));
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, UiText.Get(LocKeys.Policy.ConfirmOperation, UiText.Label(operation), target) + (operation == "Delete" ? UiText.Get(LocKeys.Ui.CommandPage.ThisPermanentlyDeletesTheActionsAndTheirUnsharedFiles) : "") },
+            { x => x.ButtonText, UiText.Label(operation) }, { x => x.Color, operation == "Delete" ? Color.Error : Color.Primary }
+        };
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        if (await dialog.Result is { Canceled: false, Data: true })
+        {
+            var result = operation switch
+            {
+                "Archive" => await Service.ArchiveManyAsync(selected.Select(x => x.Guid)),
+                "Restore" => await Service.RestoreAsync(selected[0].Guid),
+                _ => await Service.DeleteManyAsync(selected.Select(x => x.Guid))
+            };
+            if (result.Success)
+            {
+                Snackbar.Add(operation == "Archive" ? UiText.Get(LocKeys.Ui.CommandPage.ActionsArchived) : operation == "Restore" ? UiText.Get(LocKeys.Ui.CommandPage.ActionRestored) : UiText.Get(LocKeys.Ui.CommandPage.ActionsDeleted), Severity.Success);
+                await LoadAsync();
+            }
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        _busy = false;
+    }
+}

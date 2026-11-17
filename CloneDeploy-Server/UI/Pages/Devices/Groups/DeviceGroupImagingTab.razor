@@ -1,0 +1,84 @@
+@inject AuthenticationStateProvider Authentication
+@inject IAuthorizationService Authorization
+@inject DeviceGroupService Groups
+@inject ImagingService Imaging
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+    <MudButton OnClick="LoadAsync">@Loc[LocKeys.Common.Retry]</MudButton>
+}
+else
+{
+    <MudStack Spacing="3">
+        <div class="section-action-bar">
+            <MudButton OnClick="SaveAsync" Disabled="@(_saving || !_canEdit)" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Common.SaveChanges]</MudButton>
+        </div>
+        <MudSelect T="int?" @bind-Value="_imageId" Label="@Loc[LocKeys.Device.Image]" Clearable="true" Variant="Variant.Outlined" Disabled="@(_saving || !_canEdit)">
+            @foreach (var image in _images)
+            {
+                <MudSelectItem T="int?" Value="@((int?)image.Id)" Disabled="@(!image.Enabled)">@image.Name</MudSelectItem>
+            }
+        </MudSelect>
+        <MudSelect T="int?" @bind-Value="_profileId" Label="@Loc[LocKeys.Device.DeploymentProfile]" Clearable="true" Variant="Variant.Outlined" Disabled="@(_saving || !_canEdit)">
+            @foreach (var profile in _profiles)
+            {
+                <MudSelectItem T="int?" Value="@((int?)profile.Id)" Disabled="@(!profile.Enabled)">@profile.Name</MudSelectItem>
+            }
+        </MudSelect>
+
+    </MudStack>
+}
+
+@code {
+    private bool _canEdit;
+    [Parameter] public int GroupId { get; set; }
+    private int? _loadedId, _imageId, _profileId;
+    private bool _loading = true, _saving;
+    private string? _error;
+    private List<Image> _images = [];
+    private List<DeploymentProfile> _profiles = [];
+    protected override async Task OnParametersSetAsync()
+    {
+        _canEdit = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.DeviceGroupEdit)).Succeeded;
+        if (_loadedId == GroupId) return;
+        _loadedId = GroupId;
+        await LoadAsync();
+    }
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            var group = await Groups.GetByIdAsync(GroupId);
+            var images = await Imaging.GetImagesAsync(includeDisabled: true);
+            var profiles = await Imaging.GetAllProfilesAsync(includeDisabled: true);
+            if (!group.HasData || !images.HasData || !profiles.HasData)
+            {
+                _error = UiText.Get(LocKeys.Ui.DeviceGroupImagingTab.UnableToLoadImagingSettings);
+                return;
+            }
+            _imageId = group.Data.ImageId;
+            _profileId = group.Data.DeploymentProfileId;
+            _images = images.Data;
+            _profiles = profiles.Data;
+        }
+        finally { _loading = false; }
+    }
+    private async Task SaveAsync()
+    {
+        if (_saving) return;
+        _saving = true;
+        try
+        {
+            var result = await Imaging.SaveGroupDefaultsAsync(GroupId, _imageId, _profileId);
+            Snackbar.Add(result.Success ? UiText.Get(LocKeys.Ui.DeviceGroupImagingTab.GroupImagingSettingsSaved) : Loc[result.Error!.Code, result.Error.Args], result.Success ? Severity.Success : Severity.Error);
+        }
+        finally { _saving = false; }
+    }
+}

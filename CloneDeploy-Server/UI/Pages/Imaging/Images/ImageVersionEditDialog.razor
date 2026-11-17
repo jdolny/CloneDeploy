@@ -1,0 +1,46 @@
+@inject ImagingService ImagingService
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@Loc[LocKeys.Image.EditVersion]</MudText></TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_name" Label="@Loc[LocKeys.Common.Name]" Variant="Variant.Outlined" Required="true" MaxLength="200"/>
+            <MudTextField @bind-Value="_description" Label="@Loc[LocKeys.Common.Description]" Variant="Variant.Outlined" Lines="3" MaxLength="2000"/>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_saving" OnClick="OnCancelClicked">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="_saving" OnClick="OnSaveClicked">@Loc[LocKeys.Image.SaveVersion]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private void OnCancelClicked() => MudDialog.Cancel();
+    [Parameter, EditorRequired] public ImageVersion Version { get; set; } = null!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private MudForm _form = null!;
+    private string _name = "";
+    private string? _description;
+    private bool _saving;
+
+    protected override void OnInitialized() { _name = Version.Name; _description = Version.Description; }
+
+    private async Task OnSaveClicked()
+    {
+        if (_saving) return;
+        _saving = true;
+        try
+        {
+            await _form.ValidateAsync();
+            if (!_form.IsValid) return;
+            var result = await ImagingService.SaveDetailsAsync(Version.ImageId, Version.Id, _name, _description);
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[LocKeys.Common.Updated, _name], Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _saving = false; }
+    }
+}

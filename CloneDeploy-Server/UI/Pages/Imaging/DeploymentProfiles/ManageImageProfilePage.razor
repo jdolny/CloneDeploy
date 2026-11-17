@@ -1,0 +1,110 @@
+@page "/images/deploymentprofiles/{Id:int}"
+@page "/images/deploymentprofiles/{Id:int}/{Tab}"
+@attribute [Authorize(Policy = Constants.Permissions.DeploymentProfileView)]
+@inject ImagingService ImagingService
+<ImagingEditScope Policy="@Constants.Permissions.DeploymentProfileEdit" Context="canEditImage">
+@if (_loading) { <MudProgressLinear Color="Color.Primary" Indeterminate="true" /> }
+else if (_profile is not null)
+{
+    <PageTitle>@(UiText.Get(LocKeys.Ui.ManageImageProfilePage.DeploymentProfile0, (_profile.Name)))</PageTitle>
+    <SectionContent SectionName="page-title">
+        <div class="device-page-heading"><div class="device-heading-row">
+            <MudIconButton Href="/images/deploymentprofiles" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" aria-label="@Loc[LocKeys.Ui.ManageImageProfilePage.BackToDeploymentProfile]"/>
+            <div class="device-heading-icon"><MudIcon Icon="@Icons.Material.Outlined.SettingsSuggest" Size="Size.Large"/></div>
+            <div class="device-heading-copy"><div class="device-heading-name"><h1>@_profile.Name</h1></div></div>
+        </div></div>
+    </SectionContent>
+    <ActionButtons><MainButton><MudButton OnClick="OnDeleteClicked" Color="Color.Error" Disabled="@(!canEditImage || (_deleting))" StartIcon="@Icons.Material.Filled.Delete">@Loc[LocKeys.Common.Delete]</MudButton></MainButton></ActionButtons>
+    <div class="device-detail device-workspace">
+        <ResponsiveTabs PanelOrder="@(new int[] { 0, 1, 2, 3, 5, 4 })" KeepPanelsAlive="true" ActivePanelIndex="_tab" ActivePanelIndexChanged="OnTabChanged" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.User.General]" Icon="@Icons.Material.Outlined.Info">
+                <TabHelp Href="ui/imaging/deployment-profiles-general.html" Title="@Loc[LocKeys.User.General]" />
+                @if (_tab == 0)
+                {
+                    <MudStack Class="pb-4"><DeploymentProfileGeneralTab Profile="_profile"  OnSaved="RefreshHeaderAsync"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Image.Configuration]" Icon="@Icons.Material.Outlined.Settings">
+                <TabHelp Href="ui/imaging/deployment-profiles-configuration.html" Title="@Loc[LocKeys.Image.Configuration]" />
+                @if (_tab == 1)
+                {
+                    <MudStack Class="pb-4"><DeploymentProfileConfigurationTab Profile="_profile" /></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.DeploymentDriversTab.Drivers]" Icon="@Icons.Material.Outlined.Memory">
+                <TabHelp Href="ui/imaging/deployment-profiles-drivers.html" Title="@Loc[LocKeys.Ui.DeploymentDriversTab.Drivers]" />
+                @if (_tab == 2)
+                {
+                    <MudStack Class="pb-4"><DeploymentDriversTab Profile="_profile" /></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Ui.ManageImageProfilePage.PostDeploymentPolicies]" Icon="@Icons.Material.Outlined.VerifiedUser">
+                <TabHelp Href="ui/imaging/deployment-profiles-policies.html" Title="@Loc[LocKeys.Ui.ManageImageProfilePage.PostDeploymentPolicies]" />
+                @if (_tab == 3)
+                {
+                    <MudStack Class="pb-4"><DeploymentPoliciesTab ProfileId="Id" /></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Class="page-tab-divider" Text="@Loc[LocKeys.Policy.Activity]" Icon="@Icons.Material.Outlined.History">
+                <TabHelp Href="ui/imaging/deployment-profiles-audit.html" Title="@Loc[LocKeys.Policy.Activity]" />
+                @if (_tab == 5)
+                {
+                    <MudStack Class="py-4"><ImagingHistoryTab Kind="ImagingItemKind.DeploymentProfile" ItemId="Id"/></MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.Device.Relations]" Icon="@Icons.Material.Outlined.Devices">
+                <TabHelp Href="ui/imaging/deployment-profiles-used-by.html" Title="@Loc[LocKeys.Device.Relations]" />
+                @if (_tab == 4)
+                {
+                    <MudStack Class="py-4"><ImagingRelationsTab Kind="ImagingItemKind.DeploymentProfile" ItemId="Id"/></MudStack>
+                }
+            </MudTabPanel>
+        </ResponsiveTabs>
+    </div>
+}
+
+</ImagingEditScope>
+@code {
+    [Parameter] public int Id { get; set; }
+    [Parameter] public string? Tab { get; set; }
+    private DeploymentProfile? _profile;
+    private bool _loading = true;
+    private int _tab;
+    private static readonly string[] Tabs = ["general", "configuration", "drivers", "policies", "relations", "history"];
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.Equals(Tab, "used-by", StringComparison.OrdinalIgnoreCase)) Tab = "relations";
+        if (string.Equals(Tab, "audit", StringComparison.OrdinalIgnoreCase)) Tab = "history";
+        _tab = Math.Max(0, Array.FindIndex(Tabs, x => string.Equals(x, Tab, StringComparison.OrdinalIgnoreCase)));
+        if (_profile?.Id != Id) await Load();
+    }
+    private void OnTabChanged(int index)
+    {
+        if (_deleting || index == _tab) return;
+        _tab = index;
+    }
+    private async Task RefreshHeaderAsync()
+    {
+        var result = await ImagingService.GetProfileByIdAsync(Id);
+        if (result.Success && result.HasData) _profile = result.Data;
+    }
+    private bool _deleting;
+    private async Task OnDeleteClicked()
+    {
+        if (_deleting || _profile is null) return;
+        if (await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.ManageImageProfilePage.DeleteDeploymentProfile), UiText.Get(LocKeys.Ui.ManageImageProfilePage.Delete0, (_profile.Name)), yesText: UiText.Get(LocKeys.Common.Delete), cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+        _deleting = true;
+        var result = await ImagingService.DeleteProfileAsync(Id);
+        if (result.Success) Navigation.NavigateTo("/images/deploymentprofiles");
+        else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        _deleting = false;
+    }
+    private async Task Load()
+    {
+        _loading = true;
+        var result = await ImagingService.GetProfileByIdAsync(Id);
+        _profile = result.Data;
+        if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loading = false;
+    }
+}

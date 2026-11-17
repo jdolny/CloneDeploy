@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="../AgentVersion.props" />
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net10.0-windows</TargetFramework>
+        <AssemblyName>CloneDeploy-Agent.UI</AssemblyName>
+        <RootNamespace>CloneDeploy_Agent.UI</RootNamespace>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UseWPF>true</UseWPF>
+        <UseWindowsForms>true</UseWindowsForms>
+        <ApplicationIcon>../../Branding/CloneDeploy.ico</ApplicationIcon>
+    </PropertyGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="Imaging/ImagePrepProgress.ps1" LogicalName="CloneDeploy.ImagePrepProgress.ps1" />
+        <Resource Include="../../Branding/CloneDeploy.ico" Link="Assets/CloneDeploy.ico" />
+        <Using Remove="System.Windows.Forms" />
+        <Using Remove="System.Drawing" />
+
+        <ProjectReference Include="../../CloneDeploy-Agent.Contracts/CloneDeploy-Agent.Contracts.csproj" />
+        <ProjectReference Include="../CloneDeploy-Agent.Win.csproj" />
+    </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../CloneDeploy-Agent.Localization/CloneDeploy-Agent.Localization.csproj" />
+    <Using Include="CloneDeploy_Agent.Localization.PortalText" Alias="PortalText" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,20 @@
+@inject DriverService Service
+@if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+<MudButton OnClick="OnLoadClicked">@Loc[LocKeys.Dashboard.Refresh]</MudButton>
+<MudDataGrid T="DeploymentProfile" Items="_items" Dense="true" Filterable="true" Elevation="0" Outlined="true" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize" QuickFilter="@(x => string.IsNullOrWhiteSpace(_gridSearch0) || (x.Name).Contains(_gridSearch0.Trim(), StringComparison.OrdinalIgnoreCase))"><ToolBarContent><MudIcon Icon="@Icons.Material.Outlined.AccountTree" Color="Color.Primary"/><MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ImageProfiles.DeploymentProfiles]</MudText><MudSpacer/><MudTextField T="string" @bind-Value="_gridSearch0" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ActionFiles.Search]" aria-label="@Loc[LocKeys.Ui.ImageProfileSearchPage.SearchDeploymentProfiles_37c0b424]" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/></ToolBarContent>
+    <Columns><PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Ui.DriverUsedBy.DeploymentProfile]"><CellTemplate><MudLink Href="@($"/images/deploymentprofiles/{context.Item.Id}/drivers")">@context.Item.Name</MudLink></CellTemplate></PropertyColumn></Columns>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Ui.DriverUsedBy.NoDeploymentProfilesUseThisDriverPack]</MudText></NoRecordsContent>
+<PagerContent><MudDataGridPager T="DeploymentProfile"/></PagerContent></MudDataGrid>
+@code {
+    private string? _gridSearch0;
+
+    [Parameter] public int ProfileId { get; set; }
+    private List<DeploymentProfile> _items = [];
+    private string? _error;
+    protected override Task OnParametersSetAsync() => OnLoadClicked();
+    private async Task OnLoadClicked()
+    {
+        var result = await Service.GetUsedByAsync(ProfileId);
+        _items = result.Data ?? []; _error = result.Success ? null : Loc[result.Error!.Code, result.Error.Args].Value;
+    }
+}

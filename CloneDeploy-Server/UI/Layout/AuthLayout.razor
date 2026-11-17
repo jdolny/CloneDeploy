@@ -1,0 +1,38 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="@_theme" IsDarkMode="true"/>
+<MudPopoverProvider/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
+
+<main class="auth-main">
+    <div class="auth-container">
+        <section class="auth-card">
+            <div class="auth-brand" aria-label="CloneDeploy">
+                <img src="branding/clonedeploy-on-dark.svg" alt="" width="80" height="56"/>
+                <span>Clone<span class="auth-brand-accent">@Loc[LocKeys.Ui.AuthLayout.Deploy]</span></span>
+            </div>
+            @Body
+        </section>
+    </div>
+</main>
+@code {
+    private readonly MudTheme _theme = new()
+    {
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#4785FF",
+            Secondary = "#8DA4C4",
+            Background = "#171E29",
+            Surface = "#252E3D",
+            TextPrimary = "#F3F5F9",
+            TextSecondary = "#C1CAD7",
+            LinesDefault = "#566172",
+            LinesInputs = "#748092",
+            PrimaryContrastText = "#FFFFFF",
+            AppbarBackground = "#111827",
+            AppbarText = "#ffffff"
+        },
+        LayoutProperties = new LayoutProperties()
+    };
+}

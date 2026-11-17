@@ -1,0 +1,58 @@
+@page "/reports/policies"
+@attribute [Authorize(Policy = Constants.Permissions.ReportPolicies)]
+@inject PolicyReportService Reports
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.PolicyReportsPage.PolicyReports]" />
+<div class="pa-4">
+    @if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert> }
+    <MudTable T="PolicyReportRow" Items="_rows" Loading="_loading" Filter="Matches" Hover="true" Dense="true" RowsPerPage="25">
+        <ToolBarContent>
+            <MudTextField @bind-Value="_search" Placeholder="@Loc[LocKeys.Ui.ManagePoliciesPage.SearchPolicies_3d8d234e]" Immediate="true" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
+            <MudCheckBox T="bool" Value="_includeInactive" ValueChanged="IncludeInactive" Disabled="_loading" Label="@Loc[LocKeys.Ui.PolicyReportsPage.IncludeInactiveAndArchived]" />
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel T="PolicyReportRow" SortBy="@(x => x.Name)">@Loc[LocKeys.Group.Policy]</MudTableSortLabel></MudTh>
+            <MudTh>@Loc[LocKeys.Ui.PolicyReportsPage.State]</MudTh><MudTh>@Loc[LocKeys.Ui.PolicyReportsPage.Agents]</MudTh><MudTh>@Loc[LocKeys.Scheduler.StatusSucceeded]</MudTh><MudTh>@Loc[LocKeys.Scheduler.StatusFailed]</MudTh>
+            <MudTh>@Loc[LocKeys.Scheduler.StatusRunning]</MudTh><MudTh>@Loc[LocKeys.Ui.PolicyReportsPage.NoResult]</MudTh><MudTh>@Loc[LocKeys.Device.PolicySkipped]</MudTh><MudTh>@Loc[LocKeys.Device.PolicyNotApplicable]</MudTh><MudTh>@Loc[LocKeys.Policy.Activity]</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="@Loc[LocKeys.Group.Policy]">@context.Name</MudTd>
+            <MudTd DataLabel="@Loc[LocKeys.Ui.PolicyReportsPage.State]">@(context.ReportingDisabled ? UiText.Get(LocKeys.Ui.PolicyReportsPage.ReportingDisabled) : context.State)</MudTd>
+            <MudTd DataLabel="@Loc[LocKeys.Ui.PolicyReportsPage.Agents]"><MudButton Size="Size.Small" Disabled="@(context.Hash is null)" OnClick="@(() => Open(context))">@context.Agents</MudButton></MudTd>
+            @foreach (var count in Counts(context))
+            {
+                <MudTd DataLabel="@UiText.Label(count.Status)"><MudButton Size="Size.Small" Color="@(count.Status == "Failed" && count.Count > 0 ? Color.Error : Color.Default)"
+                    Disabled="@(context.Hash is null || context.ReportingDisabled)" OnClick="@(() => Open(context, count.Status))">@(context.ReportingDisabled || context.Hash is null ? "—" : count.Count.ToString())</MudButton></MudTd>
+            }
+            <MudTd DataLabel="@Loc[LocKeys.Policy.Activity]"><MudButton Size="Size.Small" OnClick="@(() => Open(context, history: true))">@Loc[LocKeys.Ui.PolicyReportsPage.View]</MudButton></MudTd>
+        </RowTemplate>
+        <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.ManagePoliciesPage.NoPoliciesFound]</MudText></NoRecordsContent>
+        <PagerContent><MudTablePager PageSizeOptions="@(new[] { 25, 50, 100 })" /></PagerContent>
+    </MudTable>
+</div>
+
+@code {
+    private List<PolicyReportRow> _rows = [];
+    private bool _loading, _includeInactive;
+    private string? _search, _error;
+    protected override Task OnInitializedAsync() => Reload();
+    private async Task IncludeInactive(bool value) { _includeInactive = value; await Reload(); }
+    private async Task Reload()
+    {
+        _loading = true; _error = null;
+        try
+        {
+            var result = await Reports.ListAsync(_includeInactive);
+            _rows = result.HasData ? result.Data : [];
+            if (!result.Success) _error = Loc[result.Error!.Code, result.Error.Args];
+        }
+        finally { _loading = false; }
+    }
+    private bool Matches(PolicyReportRow row) => string.IsNullOrWhiteSpace(_search) || row.Name.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+    private static (string Status, int Count)[] Counts(PolicyReportRow row) =>
+        [("Succeeded", row.Succeeded), ("Failed", row.Failed), ("Running", row.Running), ("No result", row.NoResult), ("Skipped", row.Skipped), ("Not applicable", row.NotApplicable)];
+    private Task Open(PolicyReportRow row, string? status = null, bool history = false) => Dialog.ShowAsync<PolicyReportDevicesDialog>(
+        $"{row.Name} — {(history ? UiText.Get(LocKeys.Ui.PolicyReportsPage.ExecutionHistory) : status is null ? UiText.Get(LocKeys.Ui.PolicyReportsPage.Agents) : UiText.Label(status))}",
+        new DialogParameters { [nameof(PolicyReportDevicesDialog.PolicyId)] = row.Id, [nameof(PolicyReportDevicesDialog.Status)] = status,
+            [nameof(PolicyReportDevicesDialog.History)] = history }, new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.ExtraLarge, CloseButton = true });
+}

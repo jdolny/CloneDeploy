@@ -1,0 +1,15 @@
+<DeviceInventoryTable TItem="DeviceLogin" Title="@Loc[LocKeys.Device.UserLoginHistory]" Items="@(Device.Logins.OrderByDescending(x => x.LoggedInAtUtc))">
+    <Columns>
+        <PropertyColumn T="DeviceLogin" TProperty="string" Property="x => x.UserName" Title="@Loc[LocKeys.Device.User]"/>
+        <TemplateColumn T="DeviceLogin" Title="@Loc[LocKeys.Device.LoggedIn]" Sortable="false" Filterable="false">
+            <CellTemplate>@(context.Item.LoggedInAtUtc is DateTime displayDate1 && displayDate1 != default ? displayDate1.ToLocalTime().ToString("g") : "—")</CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn T="DeviceLogin" Title="@Loc[LocKeys.Device.LoggedOut]" Sortable="false" Filterable="false">
+            <CellTemplate>@(context.Item.LoggedOutAtUtc == default ? Loc[LocKeys.Device.StillLoggedIn].Value : (context.Item.LoggedOutAtUtc is DateTime displayDate2 && displayDate2 != default ? displayDate2.ToLocalTime().ToString("g") : "—"))</CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</DeviceInventoryTable>
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+}

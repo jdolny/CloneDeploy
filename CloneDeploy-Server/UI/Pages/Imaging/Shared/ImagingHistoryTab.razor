@@ -1,0 +1,100 @@
+@inject ImagingService Inspection
+
+<MudTabs @bind-ActivePanelIndex="_tab" KeepPanelsAlive="false" Class="device-subtabs" TabPanelsClass="pt-4 detail-tab-content">
+    <MudTabPanel Text="@Loc[LocKeys.Ui.ImagingHistoryTab.Audit]">
+        <TabHelp Href="ui/imaging/imaging-history-audit.html" Title="@Loc[LocKeys.Ui.ImagingHistoryTab.Audit]" />
+        @if (_tab == 0)
+        {
+            @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+            <MudDataGrid T="AuditLog" Items="_audit" Loading="_loading" Dense="true" Hover="true" Elevation="0" Class="device-list-grid"
+                         RowsPerPage="@Constants.UI.DefaultPageSize" QuickFilter="MatchesAudit">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ImagingHistoryTab.Audit]</MudText><MudSpacer />
+                    <MudTextField @bind-Value="_auditSearch" Label="@Loc[LocKeys.Ui.ImagingHistoryTab.SearchAudit]" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" DebounceInterval="300" />
+                </ToolBarContent>
+                <Columns>
+                    <PropertyColumn Property="x => x.LoggedAtUtc" Title="@Loc[LocKeys.Image.LoggedAtUtc]" />
+                    <PropertyColumn Property="x => x.UserName" Title="@Loc[LocKeys.User.UserMembership]" />
+                    <PropertyColumn Property="x => x.AuditType" Title="@Loc[LocKeys.Ui.ImagingHistoryTab.Event]" />
+                    <PropertyColumn Property="x => x.ObjectName" Title="@Loc[LocKeys.Common.Name]" />
+                    <PropertyColumn Property="x => x.ObjectJson" Title="@Loc[LocKeys.User.ObjectJson]" />
+                </Columns>
+                <NoRecordsContent><MudText Class="pa-4">@(_error is null ? UiText.Get(LocKeys.Ui.ImagingHistoryTab.NoAuditRecordsMatchThisView) : UiText.Get(LocKeys.Ui.ImagingHistoryTab.AuditRecordsAreUnavailable))</MudText></NoRecordsContent>
+                <PagerContent><MudDataGridPager T="AuditLog" /></PagerContent>
+            </MudDataGrid>
+        }
+    </MudTabPanel>
+    @if (HasHistory)
+    {
+        <MudTabPanel Text="@(Kind == ImagingItemKind.ImagePrepProfile ? UiText.Get(LocKeys.Ui.ImagingHistoryTab.Authorizations) : UiText.Get(LocKeys.Ui.ActionExecutionHistoryTab.Deployments))">
+            <TabHelp Href="@(Kind == ImagingItemKind.ImagePrepProfile ? "ui/imaging/imaging-history-authorizations.html" : "ui/imaging/imaging-history-deployments.html")" Title="@(Kind == ImagingItemKind.ImagePrepProfile ? UiText.Get(LocKeys.Ui.ImagingHistoryTab.Authorizations) : UiText.Get(LocKeys.Ui.ActionExecutionHistoryTab.Deployments))" />
+            @if (_tab == 1)
+            {
+                @if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+                @if (Kind == ImagingItemKind.ImagePrepProfile)
+                {
+                    <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.ImagingHistoryTab.Latest200PreparationAuthorizationsAuthorizationDoesNotConfirmPreparation)</MudText>
+                }
+                <MudDataGrid T="ImagingHistoryEntry" Items="_history" Loading="_loading" Dense="true" Hover="true" Elevation="0" Class="device-list-grid"
+                             RowsPerPage="@Constants.UI.DefaultPageSize" QuickFilter="MatchesHistory">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">@(Kind == ImagingItemKind.ImagePrepProfile ? UiText.Get(LocKeys.Ui.ImagingHistoryTab.Authorizations) : UiText.Get(LocKeys.Ui.ActionExecutionHistoryTab.Deployments))</MudText><MudSpacer />
+                        <MudTextField @bind-Value="_historySearch" Label="@Loc[LocKeys.Ui.AppUserAuditHistoryTab.SearchHistory]" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" DebounceInterval="300" />
+                    </ToolBarContent>
+                    <Columns>
+                        <PropertyColumn Property="x => x.AtUtc" Title="@Loc[LocKeys.Image.LoggedAtUtc]" />
+                        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Dashboard.Device]">
+                            <CellTemplate>
+                                @if (context.Item.Href is { } href) { <MudLink Href="@href">@context.Item.Name</MudLink> }
+                                else { <MudText Typo="Typo.body2">@context.Item.Name</MudText> }
+                            </CellTemplate>
+                        </PropertyColumn>
+                        <PropertyColumn Property="x => x.Status" Title="@Loc[LocKeys.Image.VersionStatus]" />
+                        <PropertyColumn Property="x => x.Details" Title="@(Kind == ImagingItemKind.ImagePrepProfile ? UiText.Get(LocKeys.Dashboard.RequestedBy) : UiText.Get(LocKeys.Ui.DeviceDeployImageDialog.ImageVersion))" />
+                    </Columns>
+                    <NoRecordsContent><MudText Class="pa-4">@(_error is null ? UiText.Get(LocKeys.Ui.ImagingHistoryTab.NoHistoryRecordsMatchThisView) : UiText.Get(LocKeys.Ui.ImagingHistoryTab.HistoryRecordsAreUnavailable))</MudText></NoRecordsContent>
+                    <PagerContent><MudDataGridPager T="ImagingHistoryEntry" /></PagerContent>
+                </MudDataGrid>
+            }
+        </MudTabPanel>
+    }
+</MudTabs>
+
+@code {
+    [Parameter] public ImagingItemKind Kind { get; set; }
+    [Parameter] public int ItemId { get; set; }
+    private int _tab;
+    private (ImagingItemKind, int)? _loaded;
+    private bool _loading;
+    private string? _error, _auditSearch, _historySearch;
+    private List<AuditLog> _audit = [];
+    private List<ImagingHistoryEntry> _history = [];
+    private bool HasHistory => Kind is ImagingItemKind.Image or ImagingItemKind.DeploymentProfile;
+    private bool MatchesAudit(AuditLog x) => string.IsNullOrWhiteSpace(_auditSearch) || $"{x.UserName} {x.AuditType} {x.ObjectName} {x.ObjectJson}".Contains(_auditSearch.Trim(), StringComparison.OrdinalIgnoreCase);
+    private bool MatchesHistory(ImagingHistoryEntry x) => string.IsNullOrWhiteSpace(_historySearch) || $"{x.Name} {x.Status} {x.Details}".Contains(_historySearch.Trim(), StringComparison.OrdinalIgnoreCase);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loaded == (Kind, ItemId)) return;
+        _loaded = (Kind, ItemId);
+        _tab = 0;
+        _loading = true;
+        _error = null;
+        _audit = [];
+        _history = [];
+        try
+        {
+            var audit = await Inspection.GetInspectionAuditAsync(Kind, ItemId);
+            if (audit.HasData) _audit = audit.Data;
+            else _error = Loc[audit.Error!.Code, audit.Error.Args];
+            if (HasHistory)
+            {
+                var history = await Inspection.GetInspectionHistoryAsync(Kind, ItemId);
+                if (history.HasData) _history = history.Data;
+                else _error = Loc[history.Error!.Code, history.Error.Args];
+            }
+        }
+        catch (Exception) { _error = UiText.Get(LocKeys.Ui.ImagingHistoryTab.HistoryCouldNotBeLoadedReopenThisTabTo); }
+        finally { _loading = false; }
+    }
+}

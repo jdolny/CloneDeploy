@@ -1,0 +1,206 @@
+@page "/users/manage/{Id:int}"
+@page "/users/manage/{Id:int}/{Tab}"
+
+@attribute [Authorize]
+@using System.Security.Claims
+@inject AuthenticationStateProvider Authentication
+@inject IAuthorizationService Authorization
+@inject AppUserService AppUserService
+@inject AccountMfaReset MfaReset
+
+@if (_isLoading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true"/>
+}
+else if (_denied)
+{
+    <AppPageTitle Text="@Loc[LocKeys.Ui.ManageUserPage.UserOptions]" />
+    <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.ManageUserPage.YouDoNotHaveAccessToThisUserPage]</MudAlert>
+}
+else if (_appUser is not null && !_isAdmin)
+{
+    <AppPageTitle Text="@Loc[LocKeys.Ui.ManageUserPage.MyOptions]" />
+    <div class="device-detail device-workspace">
+        <ResponsiveTabs Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.User.Options]" Icon="@Icons.Material.Outlined.Tune">
+                <TabHelp Href="ui/administration/users-options.html" Title="@Loc[LocKeys.User.Options]" />
+                <MudStack Class="pb-4"><AppUserOptionsTab AppUser="_appUser" @key="_appUser.Id" /></MudStack>
+            </MudTabPanel>
+        </ResponsiveTabs>
+    </div>
+}
+else if (_appUser is not null)
+{
+    <PageTitle>@_appUser.UserName</PageTitle>
+    <Microsoft.AspNetCore.Components.Sections.SectionContent SectionName="page-title">
+        <div class="device-page-heading"><div class="device-heading-row">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Href="/users/manage" aria-label="@Loc[LocKeys.Ui.ManageUserPage.BackToUsers]"/>
+            <div class="device-heading-icon"><MudIcon Icon="@Icons.Material.Outlined.Person" Size="Size.Large"/></div>
+            <div class="device-heading-copy"><div class="device-heading-name"><h1>@_appUser.UserName</h1></div></div>
+        </div></div>
+    </Microsoft.AspNetCore.Components.Sections.SectionContent>
+    <ActionButtons>
+        <Content>
+            @if (!_isSelf) { @ResetMfaAction }
+            <MudMenuItem OnClick="OnDeleteClicked" Disabled="@(_deleting || _resettingMfa)" Icon="@Icons.Material.Filled.Delete">@Loc[LocKeys.Common.Delete]</MudMenuItem>
+        </Content>
+    </ActionButtons>
+
+    <div class="device-detail device-workspace">
+        <ResponsiveTabs PanelOrder="@(new int[] { 0, 1, 2, 3 })" ActivePanelIndex="_activePanelIndex" ActivePanelIndexChanged="OnTabChanged" Class="device-primary-tabs" TabPanelsClass="device-section-content">
+            <MudTabPanel Text="@Loc[LocKeys.User.General]" Icon="@Icons.Material.Outlined.Info">
+                <TabHelp Href="ui/administration/users-general.html" Title="@Loc[LocKeys.User.General]" />
+                @if (_activePanelIndex == 0)
+                {
+                    <MudStack Class="pb-4">
+                    <AppUserGeneralTab AppUser="@_appUser" @key="(_appUser.Id, _mfaResetVersion)" OnSaved="RefreshHeaderAsync"/>
+                    </MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.User.Options]" Icon="@Icons.Material.Outlined.Tune">
+                <TabHelp Href="ui/administration/users-options.html" Title="@Loc[LocKeys.User.Options]" />
+                @if (_activePanelIndex == 1)
+                {
+                    <MudStack Class="pb-4">
+                    <AppUserOptionsTab AppUser="@_appUser" @key="_appUser.Id"/>
+                    </MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Text="@Loc[LocKeys.User.Permissions]" Icon="@Icons.Material.Outlined.Security">
+                <TabHelp Href="ui/administration/users-permissions.html" Title="@Loc[LocKeys.User.Permissions]" />
+                @if (_activePanelIndex == 2)
+                {
+                    <MudStack Class="pb-4">
+                    <AppUserPermissionsTab AppUser="@_appUser"/>
+                    </MudStack>
+                }
+            </MudTabPanel>
+            <MudTabPanel Class="page-tab-divider" Text="@Loc[LocKeys.User.AuditHistory]" Icon="@Icons.Material.Outlined.History">
+                <TabHelp Href="ui/administration/users-audit.html" Title="@Loc[LocKeys.User.AuditHistory]" />
+                @if (_activePanelIndex == 3)
+                {
+                    <MudStack Class="py-4">
+                    <AppUserAuditHistoryTab AppUser="@_appUser"/>
+                    </MudStack>
+                }
+            </MudTabPanel>
+        </ResponsiveTabs>
+    </div>
+}
+
+@code
+{
+    [Parameter] public int Id { get; set; }
+    [Parameter] public string? Tab { get; set; }
+
+    private static readonly string[] TabRoutes = ["general", "options", "permissions", "audit"];
+    private int _activePanelIndex;
+    private bool _isLoading = true, _isAdmin, _denied, _isSelf, _resettingMfa;
+    private int _mfaResetVersion;
+
+    private AppUser? _appUser;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var user = (await Authentication.GetAuthenticationStateAsync()).User;
+        _isAdmin = (await Authorization.AuthorizeAsync(user, Constants.Permissions.AdminOnly)).Succeeded;
+        var ownOptions = int.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier), out var userId) && userId == Id
+            && string.Equals(Tab, "options", StringComparison.OrdinalIgnoreCase);
+        _isSelf = userId == Id;
+        _denied = !_isAdmin && !ownOptions;
+        if (_denied) { _appUser = null; _isLoading = false; return; }
+        if (!_isAdmin)
+        {
+            // Own preferences need only identity, not the account administration model.
+            _appUser = new AppUser { Id = userId, UserName = user.Identity?.Name };
+            _isLoading = false;
+            return;
+        }
+        var index = Array.FindIndex(TabRoutes, x => string.Equals(x, Tab, StringComparison.OrdinalIgnoreCase));
+        _activePanelIndex = index < 0 ? 0 : index;
+        if (_appUser?.Id == Id) return;
+        await GetAppUser();
+    }
+
+    private void OnTabChanged(int index)
+    {
+        if (!_isAdmin || index == _activePanelIndex || index < 0 || index >= TabRoutes.Length) return;
+        _activePanelIndex = index;
+    }
+    private async Task RefreshHeaderAsync()
+    {
+        var result = await AppUserService.GetByIdAsync(Id);
+        if (result.Success && result.HasData) _appUser = result.Data;
+    }
+    private RenderFragment ResetMfaAction => @<MudMenuItem OnClick="OnResetMfaClicked" Disabled="@(_deleting || _resettingMfa)" Icon="@Icons.Material.Outlined.LockReset">@Loc[LocKeys.Ui.ManageUserPage.ResetMFA]</MudMenuItem>;
+
+    private async Task OnResetMfaClicked()
+    {
+        if (!_isAdmin || _isSelf || _resettingMfa || _deleting || _appUser is null) return;
+        _resettingMfa = true;
+        var targetId = _appUser.Id;
+        try
+        {
+            var parameters = new DialogParameters<ConfirmationDialog>
+            {
+                { x => x.ContentText, UiText.Get(LocKeys.Ui.ManageUserPage.ResetCloneDeployMFAFor0ThisRemovesTheirAuthenticator, (_appUser.UserName)) },
+                { x => x.ButtonText, UiText.Get(LocKeys.Ui.ManageUserPage.ResetMFA) },
+                { x => x.Color, Color.Warning }
+            };
+            var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+            if (await dialog.Result is not { Canceled: false, Data: true }) return;
+            var result = await MfaReset.ResetAsync(targetId);
+            if (result.Success)
+            {
+                Snackbar.Add(UiText.Get(LocKeys.Ui.ManageUserPage.MFAResetTheUserCanSetUpANew), Severity.Success);
+                if (Id == targetId) { await RefreshHeaderAsync(); _mfaResetVersion++; }
+            }
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _resettingMfa = false; }
+    }
+
+    private bool _deleting;
+    private async Task OnDeleteClicked()
+    {
+        if (!_isAdmin || _deleting || _resettingMfa || _appUser is null) return;
+        _deleting = true;
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, Loc[LocKeys.User.ConfirmDelete, _appUser.UserName!] },
+            { x => x.ButtonText, Loc[LocKeys.Common.Delete] },
+            { x => x.Color, Color.Error }
+        };
+
+        var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+        var dialogResult = await dialog.Result;
+
+        if (dialogResult is { Canceled: false, Data: true })
+        {
+            var result = await AppUserService.DeleteAsync(_appUser.Id);
+
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[LocKeys.Common.Deleted, _appUser.UserName!], Severity.Success);
+                Navigation.NavigateTo("/users/manage");
+            }
+            else
+                Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+
+        _deleting = false;
+    }
+    private async Task GetAppUser()
+    {
+        _isLoading = true;
+        _appUser = null;
+
+        var result = await AppUserService.GetByIdAsync(Id);
+        if (!result.Success)
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args],Severity.Error);
+        else if (result.HasData)
+            _appUser = result.Data;
+
+        _isLoading = false;
+    }
+}

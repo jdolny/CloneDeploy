@@ -1,0 +1,112 @@
+@inject ActionService Service
+@using CloneDeploy_Agent.Contracts
+
+<PolicyActionEditScope Context="canEdit">
+@if (_model is null)
+{
+    @if (_loadingAction) { <MudProgressLinear Indeterminate="true"/> }
+    else { <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.CommandActionConfigurationTab.UnableToLoadActionSettingsReopenThisTabTo]</MudAlert> }
+}
+else
+{
+    <div class="section-action-bar"><MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="OnSaveClicked" Disabled="@(!canEdit || (_saving))">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton></div>
+    <MudForm @ref="_form" Disabled="@(!canEdit || (_saving))">
+        <MudStack Spacing="4" >
+            <MudTextField @bind-Value="_model.DomainName" Label="@Loc[LocKeys.Ui.ImagePrepAnswerEditor.DomainDNSName]" Required="true" Variant="Variant.Outlined" HelperText="@Loc[LocKeys.Ui.DomainJoinActionConfigurationTab.ExampleSchoolExampleOrg]" />
+            <MudSelect T="DomainJoinOuMode" @bind-Value="_model.OuMode" Label="@Loc[LocKeys.Ui.DomainJoinActionConfigurationTab.OUSelection]" Variant="Variant.Outlined">
+                <MudSelectItem Value="DomainJoinOuMode.DomainDefault">@Loc[LocKeys.Ui.DomainJoinActionConfigurationTab.DomainDefaultExistingAccountLocation]</MudSelectItem>
+                <MudSelectItem Value="DomainJoinOuMode.SpecificOu">@Loc[LocKeys.Ui.DomainJoinActionConfigurationTab.SpecificOU]</MudSelectItem>
+                <MudSelectItem Value="DomainJoinOuMode.NamingRules">@Loc[LocKeys.Ui.DomainJoinActionConfigurationTab.NamingRules]</MudSelectItem>
+            </MudSelect>
+            @if (_model.OuMode == DomainJoinOuMode.SpecificOu)
+            {
+                <MudTextField @bind-Value="_model.OrganizationalUnit" Label="@Loc[LocKeys.Ui.DomainJoinActionConfigurationTab.OrganizationalUnit]" Required="true" Variant="Variant.Outlined" HelperText="@Loc[LocKeys.Ui.DomainJoinActionConfigurationTab.ExampleOUWorkstationsDCSchoolDCExampleDCOrg]" />
+                @if (_directoryNodes.Any(x => x.IsOu))
+                {
+                    <MudButton OnClick="OnChooseOuClicked" StartIcon="@Icons.Material.Filled.AccountTree" Variant="Variant.Outlined" Disabled="@(!canEdit || (_saving))">@Loc[LocKeys.Ui.DomainJoinActionConfigurationTab.BrowseDirectoryOUs]</MudButton>
+                }
+            }
+            @if (_model.OuMode == DomainJoinOuMode.NamingRules)
+            {
+                <MudSelect T="int?" @bind-Value="_model.OuNamingRuleSetId" Label="@Loc[LocKeys.Ui.DomainJoinActionConfigurationTab.OUNamingRuleSet]" Required="true" Variant="Variant.Outlined">
+                    @foreach (var set in _ruleSets.Where(x => x.Id == _model.OuNamingRuleSetId || x.Enabled && x.DomainName.Equals(_model.DomainName.Trim().TrimEnd('.'), StringComparison.OrdinalIgnoreCase)))
+                    {
+                        <MudSelectItem T="int?" Value="@set.Id" Disabled="@(!set.Enabled || !set.DomainName.Equals(_model.DomainName.Trim().TrimEnd('.'), StringComparison.OrdinalIgnoreCase))">@set.Name (@set.DomainName)@(!set.Enabled ? " — disabled" : "")</MudSelectItem>
+                    }
+                </MudSelect>
+            }
+            <MudSelect T="int?" @bind-Value="_model.ManagedCredentialId" Label="@Loc[LocKeys.Ui.DomainJoinActionConfigurationTab.DomainJoinCredential]" Required="true" Variant="Variant.Outlined">
+                @foreach (var credential in _credentials) { <MudSelectItem T="int?" Value="credential.Id">@credential.Name (@credential.Username)</MudSelectItem> }
+            </MudSelect>
+        </MudStack>
+    </MudForm>
+
+}
+
+
+</PolicyActionEditScope>
+
+@code {
+    [Parameter] public EventCallback OnSaved { get; set; }
+    private DomainJoinAction _model = null!;
+    private bool _loadingAction = true;
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Service.GetDomainJoinAsync(DomainJoinAction.Id);
+        if (result.Success && result.HasData)
+        {
+            await LoadCatalogsAsync();
+            _model = result.Data;
+        }
+        else if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loadingAction = false;
+    }
+
+    [Parameter, EditorRequired] public DomainJoinAction DomainJoinAction { get; set; } = null!;
+    private MudForm _form = null!;
+    private bool _saving;
+    private List<ManagedCredential> _credentials = [];
+    private List<PolicyTargetDirectoryNodeDto> _directoryNodes = [];
+    private List<DomainJoinRuleChoice> _ruleSets = [];
+    private async Task LoadCatalogsAsync()
+    {
+        var rules = await Service.GetDomainJoinRuleSetsAsync();
+        _ruleSets = rules.Data ?? [];
+        if (!rules.Success) Snackbar.Add(Loc[rules.Error!.Code, rules.Error.Args], Severity.Error);
+        var result = await Service.GetCredentialsAsync();
+        _credentials = result.Data ?? [];
+        if (!result.Success) Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        var directory = await Service.GetDomainJoinDirectoryOusAsync();
+        _directoryNodes = directory.Data ?? [];
+        if (!directory.Success) Snackbar.Add(UiText.Get(LocKeys.Ui.DomainJoinActionConfigurationTab.DirectoryOUsCouldNotBeLoadedYouCanStill), Severity.Warning);
+    }
+    private async Task OnChooseOuClicked()
+    {
+        if (_saving) return;
+        var action = _model;
+        var parameters = new DialogParameters<OuTargetPickerDialog>
+        {
+            { x => x.Nodes, _directoryNodes },
+            { x => x.SingleSelection, true }
+        };
+        var dialog = await Dialog.ShowAsync<OuTargetPickerDialog>(UiText.Get(LocKeys.Ui.ManageOuNamingRulePage.ChooseOrganizationalUnit), parameters,
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, CloseButton = true });
+        if (await dialog.Result is not { Canceled: false, Data: List<PolicyTargetSelectionDto> selections } ||
+            selections.Count != 1 || _saving || !ReferenceEquals(action, _model)) return;
+        var key = selections[0].Key;
+        var node = _directoryNodes.SingleOrDefault(x => x.SourceId == key.DirectorySourceId && x.Guid == key.OuGuid && x.IsOu && x.Available);
+        if (node is not null) action.OrganizationalUnit = node.Path;
+    }
+    private async Task OnSaveClicked()
+    {
+        if (_saving) return;
+        _saving = true;
+        try {
+            await _form.ValidateAsync();
+            if (!_form.IsValid) return;
+            var result = await Service.UpdateDomainJoinAsync(_model);
+            if (result.Success) await OnSaved.InvokeAsync();
+        Snackbar.Add(result.Success ? Loc[LocKeys.Action.ConfigurationSaved] : Loc[result.Error!.Code, result.Error.Args], result.Success ? Severity.Success : Severity.Error);
+        } finally { _saving = false; }
+    }
+}

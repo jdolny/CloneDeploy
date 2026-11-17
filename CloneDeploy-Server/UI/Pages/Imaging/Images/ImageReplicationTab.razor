@@ -1,0 +1,59 @@
+@inject ImagingService Replication
+
+<ImagingEditScope Policy="@Constants.Permissions.ImageEdit" Context="canEditImage">
+    <div class="section-action-bar">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!canEditImage || (_busy))" OnClick="SaveAsync">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+    </div>
+<MudStack Spacing="3">
+    @foreach (var provider in _providers)
+    {
+        <MudCheckBox T="bool" Value="@_selected.Contains(provider.Id)" ValueChanged="@(value => Select(provider.Id, value))"
+                     Disabled="@(!canEditImage || (_busy))" Label="@(provider.Name + (provider.IsEnabled ? "" : " (disabled)"))"/>
+    }
+
+    <MudSimpleTable Dense="true" Outlined="true">
+        <thead><tr><th>@Loc[LocKeys.Image.VersionNumber]</th><th>@Loc[LocKeys.Ui.ImageReplicationTab.Destination]</th><th>@Loc[LocKeys.Image.VersionStatus]</th><th>@Loc[LocKeys.Ui.ImageReplicationTab.LastUpdate]</th><th>@Loc[LocKeys.User.ObjectJson]</th></tr></thead>
+        <tbody>
+        @foreach (var copy in _copies)
+        {
+            <tr><td>@_versions.GetValueOrDefault(copy.ImageVersionId, UiText.Get(LocKeys.Ui.ImageReplicationTab.DeletedVersion))</td><td>@(_providers.FirstOrDefault(x => x.Id == copy.StorageProviderId)?.Name ?? copy.StorageProviderId.ToString())</td>
+                <td>@UiText.Label(copy.State)</td><td>@copy.UpdatedAtUtc.ToLocalTime().ToString("g")</td><td>@copy.Error</td></tr>
+        }
+        </tbody>
+    </MudSimpleTable>
+</MudStack>
+
+
+</ImagingEditScope>
+@code {
+    [Parameter, EditorRequired] public Image Image { get; set; } = null!;
+    private List<StorageProvider> _providers = [];
+    private HashSet<int> _selected = [];
+    private List<ImageReplica> _copies = [];
+    private Dictionary<Guid, string> _versions = [];
+    private bool _busy;
+    protected override Task OnInitializedAsync() => LoadAsync();
+    private void Select(int id, bool value) { if (value) _selected.Add(id); else _selected.Remove(id); }
+    private async Task LoadAsync()
+    {
+        _busy = true;
+        try
+        {
+            var result = await Replication.GetReplicationAsync(Image.Id);
+            if (result.HasData) { _providers = result.Data.Providers; _selected = result.Data.Destinations.ToHashSet(); _copies = result.Data.Copies; _versions = result.Data.Versions; }
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _busy = false; }
+    }
+    private async Task SaveAsync()
+    {
+        _busy = true;
+        try
+        {
+            var result = await Replication.SaveReplicationAsync(Image.Id, _selected);
+            if (result.Success) Snackbar.Add(UiText.Get(LocKeys.Ui.ImageReplicationTab.ReplicationDestinationsSavedBackgroundSynchronizationWillPickUpThe), Severity.Success);
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _busy = false; }
+    }
+}

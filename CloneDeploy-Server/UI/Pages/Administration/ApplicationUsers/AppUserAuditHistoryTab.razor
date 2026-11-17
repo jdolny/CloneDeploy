@@ -1,0 +1,52 @@
+@inject AppUserService AppUserService
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    <MudDataGrid RowsPerPage="@Constants.UI.DefaultPageSize" Dense="true" Hideable="false" HorizontalScrollbar="true" ColumnsPanelReordering="false"
+                 ShowMenuIcon="false" T="AuditLog" Class="device-list-grid mb-10" Elevation="0" Items="@AuditLogs" QuickFilter="Matches" ColumnResizeMode="ResizeMode.Column"
+                 Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" Outlined="true">
+        <ToolBarContent>
+            <MudIcon Icon="@Icons.Material.Outlined.History" Color="Color.Primary" Class="mr-2"/>
+            <MudText Typo="Typo.h6">@Loc[LocKeys.User.AuditHistory]</MudText><MudSpacer/>
+            <MudTextField @bind-Value="_search" Immediate="true" Placeholder="@Loc[LocKeys.Ui.AppUserAuditHistoryTab.SearchHistory]" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"/>
+        </ToolBarContent>
+        <PagerContent>
+            <MudDataGridPager T="AuditLog"/>
+        </PagerContent>
+        <Columns>
+            <PropertyColumn Property="x => x.AuditType" Title="@Loc[LocKeys.User.AuditType]"></PropertyColumn>
+            <PropertyColumn Property="x => x.ObjectName" Title="@Loc[LocKeys.User.ObjectName]"></PropertyColumn>
+            <PropertyColumn Property="x => x.ObjectType" Title="@Loc[LocKeys.User.ObjectType]"></PropertyColumn>
+            <PropertyColumn Property="x => x.ObjectJson" Title="@Loc[LocKeys.User.ObjectJson]"></PropertyColumn>
+            <PropertyColumn Property="x => x.LoggedAtUtc" Title="@Loc[LocKeys.User.LoggedAtUtc]"></PropertyColumn>
+            <PropertyColumn Property="x => x.UserName" Title="@Loc[LocKeys.Auth.UserName]"></PropertyColumn>
+        </Columns>
+        <NoRecordsContent>
+            <MudText>@Loc[LocKeys.User.NoAuditLogs]</MudText>
+        </NoRecordsContent>
+    </MudDataGrid>
+}
+
+@code {
+
+    [Parameter, EditorRequired] public AppUser AppUser { get; set; } = null!;
+    private IEnumerable<AuditLog> AuditLogs = [];
+    private bool _loading = true;
+    private string? _search;
+    private bool Matches(AuditLog item) => string.IsNullOrWhiteSpace(_search) || $"{item.ObjectName} {item.ObjectType} {item.UserName} {item.AuditType}".Contains(_search, StringComparison.OrdinalIgnoreCase);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        var result = await AppUserService.GetAuditLogsAsync(AppUser.Id);
+        if (result.Success) AuditLogs = result.Data!;
+        else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+
+        _loading = false;
+    }
+
+}

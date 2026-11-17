@@ -1,0 +1,196 @@
+@inject AuthenticationStateProvider SharedCatalogAuthentication
+@inject IAuthorizationService SharedCatalogAuthorization
+@page "/groups"
+@page "/groups/search"
+@attribute [Authorize(Policy = Constants.Permissions.DeviceGroupView)]
+@inject DeviceGroupService DeviceGroupService
+@inject TagService TagService
+
+<AppPageTitle Text="@Loc[LocKeys.Group.Groups]"/>
+<ActionButtons>
+    <MainButton>
+        <PermissionView Policy="@Constants.Permissions.DeviceGroupEdit">
+        <MudButton OnClick="OnNewClicked" Disabled="_deleting" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">@Loc[LocKeys.Group.NewGroup]</MudButton>
+        </PermissionView>
+    </MainButton>
+</ActionButtons>
+
+
+<TagSearchPanel SelectedCount="_selectedTags.Count" ClearTags="OnClearTags">
+    <SearchControls>
+        <div class="device-list-search">
+            <MudTextField T="string" Value="_search" ValueChanged="OnSearchChanged" DebounceInterval="300" Clearable="true"
+                          Placeholder="@Loc[LocKeys.Ui.GroupsPage.SearchGroups]" aria-label="@Loc[LocKeys.Ui.GroupTargetPickerDialog.SearchGroups]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-list-search-input"/>
+        </div>
+    </SearchControls>
+    <TagControls>
+        <div class="device-manage-tags">
+            <MudAutocomplete T="Tag" @ref="_tagPicker" Label="@Loc[LocKeys.Common.Tags]" Placeholder="@Loc[LocKeys.Ui.ManageDevicesPage.FilterByTag]" ShrinkLabel="true"
+                             Variant="Variant.Outlined" Margin="Margin.Dense" SearchFunc="SearchTags" ValueChanged="OnAddTag"
+                             ToStringFunc="@(tag => tag?.Name ?? string.Empty)" Clearable="true" ResetValueOnEmptyText="true" MaxItems="20"/>
+            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-2">
+                @foreach (var tag in _selectedTags)
+                {
+                    <MudChip T="int" @key="tag.Id" Value="tag.Id" Color="Color.Primary" Variant="Variant.Filled"
+                             OnClose="@(() => OnRemoveTag(tag))">@tag.Name</MudChip>
+                }
+            </MudStack>
+        </div>
+        <div class="device-manage-tag-match">
+            <MudSelect T="bool" Value="_matchAllTags" ValueChanged="OnTagMatchChanged" Label="@Loc[LocKeys.Ui.ManageDevicesPage.Match]" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem Value="false">@Loc[LocKeys.Ui.ManageDevicesPage.AnyTagOR]</MudSelectItem>
+                <MudSelectItem Value="true">@Loc[LocKeys.Ui.ManageDevicesPage.AllTagsAND]</MudSelectItem>
+            </MudSelect>
+        </div>
+    </TagControls>
+</TagSearchPanel>
+
+<MudDataGrid T="DeviceGroupListItemDto" Items="@FilteredGroups" Dense="true" Elevation="0" Outlined="true" Loading="_loading" Hover="true" Class="device-list-grid mb-8"
+             MultiSelection="true" @bind-SelectedItems="_selectedItems" SelectOnRowClick="false"
+             RowsPerPage="@Constants.UI.DefaultPageSize" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu" ColumnResizeMode="ResizeMode.Column">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.Devices" Color="Color.Primary"/>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Group.Groups]</MudText>
+        <MudSpacer/>
+        <div class="grid-toolbar-actions">
+            <GridSelectionCount Count="_selectedItems.Count"/>
+            <PermissionView Policy="@Constants.Permissions.DeviceGroupEdit">
+            @if (_selectedItems.Any(x => x.CanDelete))
+        {
+            <MudButton OnClick="OnDeleteSelectedClicked" Disabled="@(_deleting || _loading)" Variant="Variant.Outlined"
+                       Color="Color.Primary" StartIcon="@Icons.Material.Filled.Delete">@Loc[LocKeys.Common.DeleteSelected]</MudButton>
+        }
+            </PermissionView>
+        </div>
+    </ToolBarContent>
+    <Columns>
+        <SelectColumn T="DeviceGroupListItemDto" DisabledFunc="@(item => !item.CanDelete || _deleting)"/>
+        <PropertyColumn Property="x => x.Name" Title="@Loc[LocKeys.Common.Name]">
+            <CellTemplate><MudLink Class="device-name-link" Href="@($"/groups/manage/{context.Item.Id}")">@context.Item.Name</MudLink></CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Type" Title="@Loc[LocKeys.Group.MembershipMode]">
+            <CellTemplate>@(context.Item.Type == DeviceGroupType.AllDevices ? UiText.Get(LocKeys.Ui.GroupsPage.BuiltIn) : UiText.Label(context.Item.Type))</CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Members" Title="@Loc[LocKeys.Group.Devices]"/>
+        <PropertyColumn Property="x => x.EvaluatedAt" Title="@Loc[LocKeys.Group.LastEvaluated]">
+            <CellTemplate>@(context.Item.Type == DeviceGroupType.AllDevices ? UiText.Get(LocKeys.Ui.GroupsPage.LiveMembership) : context.Item.EvaluatedAt?.ToLocalTime().ToString("g") ?? Loc[LocKeys.Group.NotEvaluated].Value)</CellTemplate>
+        </PropertyColumn>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <PermissionView Policy="@Constants.Permissions.DeviceGroupEdit">
+                @if (context.Item.CanDelete)
+                {
+                    <MudTooltip Placement="Placement.Left" Text="@($"{Loc[LocKeys.Common.Delete]} - {context.Item.Name}")">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Primary" Disabled="@(_deleting || _loading)"
+                                       OnClick="@(() => OnDeleteClicked(context.Item))" aria-label="@($"{Loc[LocKeys.Common.Delete]} {context.Item.Name}")"/>
+                    </MudTooltip>
+                }
+                </PermissionView>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent><MudDataGridPager T="DeviceGroupListItemDto"/></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Group.NoGroups]</MudText></NoRecordsContent>
+</MudDataGrid>
+
+@code {
+    private List<DeviceGroupListItemDto> _groups = [];
+    private List<Tag> _tags = [];
+    private List<Tag> _selectedTags = [];
+    private HashSet<DeviceGroupListItemDto> _selectedItems = [];
+    private MudAutocomplete<Tag> _tagPicker = null!;
+    private bool _matchAllTags, _deleting;
+    private string? _search;
+    private bool _loading = true;
+    private IEnumerable<DeviceGroupListItemDto> FilteredGroups => _groups.Where(x =>
+        (string.IsNullOrWhiteSpace(_search) || x.Name.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase)) &&
+        (_selectedTags.Count == 0 || (_matchAllTags
+            ? _selectedTags.All(t => x.TagIds.Contains(t.Id))
+            : _selectedTags.Any(t => x.TagIds.Contains(t.Id)))));
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _selectedItems = [];
+        StateHasChanged();
+        var result = await DeviceGroupService.GetAsync();
+        if (result.Success)
+            _groups = result.Data!;
+        else
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        var tags = ((await SharedCatalogAuthorization.AuthorizeAsync((await SharedCatalogAuthentication.GetAuthenticationStateAsync()).User, Constants.Permissions.TagView)).Succeeded ? await TagService.GetAsync() : ServiceResult<List<Tag>>.Ok([]));
+        if (tags.Success) _tags = tags.Data ?? [];
+        else Snackbar.Add(Loc[tags.Error.Code, tags.Error.Args], Severity.Error);
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private void OnSearchChanged(string? value) { _search = value; _selectedItems = []; }
+    private void OnTagMatchChanged(bool value) { _matchAllTags = value; _selectedItems = []; }
+    private void OnClearTags()
+    {
+        foreach (var tag in _selectedTags.ToArray()) OnRemoveTag(tag);
+    }
+
+    private void OnRemoveTag(Tag tag) { _selectedTags.Remove(tag); _selectedItems = []; }
+    private Task<IEnumerable<Tag>> SearchTags(string? text, CancellationToken ct) => Task.FromResult(_tags.Where(t =>
+        _selectedTags.All(s => s.Id != t.Id) && (string.IsNullOrWhiteSpace(text) || t.Name.Contains(text.Trim(), StringComparison.OrdinalIgnoreCase))));
+    private async Task OnAddTag(Tag? tag)
+    {
+        if (tag is null || _selectedTags.Any(t => t.Id == tag.Id)) return;
+        _selectedTags.Add(tag);
+        _selectedItems = [];
+        await _tagPicker.ClearAsync();
+    }
+
+    private async Task OnDeleteClicked(DeviceGroupListItemDto group)
+    {
+        if (!group.CanDelete) return;
+        await DeleteGroupsAsync([group]);
+    }
+
+    private async Task OnDeleteSelectedClicked()
+    {
+        await DeleteGroupsAsync(_selectedItems.Where(x => x.CanDelete).ToArray());
+    }
+
+    private async Task DeleteGroupsAsync(IReadOnlyCollection<DeviceGroupListItemDto> groups)
+    {
+        if (_deleting || _loading || groups.Count == 0) return;
+        _deleting = true;
+        try
+        {
+            var names = string.Join(", ", groups.Select(x => x.Name));
+            var parameters = new DialogParameters<ConfirmationDialog>
+            {
+                { x => x.ContentText, UiText.Get(LocKeys.Ui.GroupsPage.Delete0DeviceGroupS1DevicesAndPolicies, (groups.Count), (names)) },
+                { x => x.ButtonText, Loc[LocKeys.Common.Delete].Value },
+                { x => x.Color, Color.Error }
+            };
+            var dialog = await Dialog.ShowAsync<ConfirmationDialog>(parameters, Constants.UI.StandardDialogBox);
+            if (await dialog.Result is not { Canceled: false, Data: true }) return;
+            var result = await DeviceGroupService.DeleteManyAsync(groups.Select(x => x.Id));
+            if (result.Success)
+            {
+                Snackbar.Add(Loc[LocKeys.Common.DeletedMany], Severity.Success);
+                await LoadAsync();
+            }
+            else Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _deleting = false; }
+    }
+
+    private async Task OnNewClicked()
+    {
+        var dialog = await Dialog.ShowAsync<NewDeviceGroupDialog>(Constants.UI.StandardDialogBox);
+        if (await dialog.Result is { Canceled: false, Data: true })
+            await LoadAsync();
+    }
+}

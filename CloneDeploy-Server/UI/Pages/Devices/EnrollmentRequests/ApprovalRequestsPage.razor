@@ -1,0 +1,189 @@
+@page "/devices/approval-and-reset"
+@attribute [Authorize(Policy = Constants.Permissions.DeviceApprove)]
+@inject AgentService Agents
+
+<ActionButtons>
+    <MainButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => ControlsDisabled || PendingApprovals.Length == 0, _error is not null ? UiText.Get(LocKeys.Ui.ApprovalRequestsPage.ApprovalRequestsCouldNotBeLoadedRefreshAndTry) : UiText.Get(LocKeys.Ui.ApprovalRequestsPage.ThereAreNoPendingRequestsToApprove), ApproveAllAsync)" Disabled="@(_busy || _loading)" Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.DoneAll">@UiText.Get(LocKeys.Ui.ApprovalRequestsPage.ApproveAll0, (PendingApprovals.Length))</MudButton>
+        <MudButton OnClick="OnRefreshClicked" Disabled="@(_busy || _loading)" Variant="Variant.Outlined" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Refresh">@Loc[LocKeys.Dashboard.Refresh]</MudButton>
+    </MainButton>
+</ActionButtons>
+
+<AppPageTitle Text="@Loc[LocKeys.Ui.NavMenu.EnrollmentRequests]"/>
+
+<MudGrid Class="mb-4">
+    <MudItem xs="12" md="4">
+        <MudToggleGroup T="bool" @bind-Value="_showDenied" Color="Color.Primary">
+            <MudToggleItem Value="false" Text="Pending" />
+            <MudToggleItem Value="true" Text="Denied" />
+        </MudToggleGroup>
+    </MudItem>
+</MudGrid>
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+}
+<MudDataGrid @ref="_grid" T="AgentProvisioningRowDto" Items="FilteredRequests" Loading="_loading" Dense="true" Hover="true"
+             Elevation="0" Outlined="true" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize"
+             HorizontalScrollbar="true" Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu"
+             FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" ColumnResizeMode="ResizeMode.Column">
+    <ToolBarContent>
+        <MudIcon Icon="@Icons.Material.Outlined.HowToReg" Color="Color.Primary"/>
+        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.ApprovalRequestsPage.EnrollmentRequests]</MudText>
+       
+        <MudSpacer/>
+        <MudTextField T="string" @bind-Value="_search" DebounceInterval="300" Clearable="true" Placeholder="@Loc[LocKeys.Ui.ApprovalRequestsPage.SearchRequests]"
+                      aria-label="@Loc[LocKeys.Ui.ApprovalRequestsPage.SearchEnrollmentRequests]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="device-inventory-search"/>
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.DeviceName" Title="@Loc[LocKeys.Dashboard.Device]"/>
+        <PropertyColumn Property="x => x.IpAddress" Title="@Loc[LocKeys.Device.LastIp]"/>
+        <PropertyColumn Property="x => x.MacDisplay" Title="MAC addresses"/>
+        <PropertyColumn Property="x => x.HardwareUuid" Title="Hardware UUID"/>
+        <PropertyColumn Property="x => x.LastSeenAtUtc" Title="Last contact (UTC)"/>
+        <PropertyColumn Property="x => Status(x.State)" Title="@Loc[LocKeys.Image.VersionStatus]"/>
+        <TemplateColumn Title="@Loc[LocKeys.Common.Actions]" StickyRight="true" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1">
+                    <MudButton OnClick="@(() => ShowIdentifiers(context.Item))" Size="Size.Small">Details</MudButton>
+                    <MudButton OnClick="@(() => DeleteRequestAsync(context.Item))" Disabled="ControlsDisabled" Color="Color.Error" Size="Size.Small">Delete</MudButton>
+                    @if (context.Item.State is AgentProvisioningState.PendingApproval or AgentProvisioningState.PendingPreProvision or AgentProvisioningState.PendingReset)
+                    {
+                        <MudButton OnClick="@(() => DismissAsync(context.Item))" Disabled="ControlsDisabled" Size="Size.Small">Dismiss</MudButton>
+                    }
+                    @if (context.Item.State != AgentProvisioningState.PendingPreProvision)
+                    {
+                    <MudButton OnClick="@Snackbar.GuardAction(() => ControlsDisabled || context.Item.State is AgentProvisioningState.Approved or AgentProvisioningState.ResetApproved, _error is not null ? UiText.Get(LocKeys.Ui.ApprovalRequestsPage.ApprovalRequestsCouldNotBeLoadedRefreshAndTry) : UiText.Get(LocKeys.Ui.ApprovalRequestsPage.ThisRequestIsAlreadyApproved), () => OnApproveOrDenyClicked(context.Item.Id, true))"
+                               Disabled="@(_busy || _loading)"
+                               Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Check">
+                        @(context.Item.State switch
+                        {
+                            AgentProvisioningState.PendingReset or AgentProvisioningState.ResetApproved or AgentProvisioningState.ResetDenied => UiText.Get(LocKeys.Ui.ApprovalRequestsPage.ApproveReset),
+                            _ => UiText.Get(LocKeys.Ui.ImageVersionsTab.Approve)
+                        })
+                    </MudButton>
+                    }
+                    <MudButton OnClick="@Snackbar.GuardAction(() => ControlsDisabled || context.Item.State is AgentProvisioningState.Denied or AgentProvisioningState.ResetDenied, _error is not null ? UiText.Get(LocKeys.Ui.ApprovalRequestsPage.ApprovalRequestsCouldNotBeLoadedRefreshAndTry) : UiText.Get(LocKeys.Ui.ApprovalRequestsPage.ThisRequestIsAlreadyDenied), () => OnApproveOrDenyClicked(context.Item.Id, false))"
+                               Disabled="@(_busy || _loading)"
+                               Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.Close">@Loc[LocKeys.Ui.ApprovalRequestsPage.Deny]</MudButton>
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent><MudDataGridPager T="AgentProvisioningRowDto"/></PagerContent>
+    <NoRecordsContent><MudText Class="pa-4">@(string.IsNullOrWhiteSpace(_search) ? UiText.Get(LocKeys.Ui.ApprovalRequestsPage.NoOutstandingEnrollmentRequests) : UiText.Get(LocKeys.Ui.ApprovalRequestsPage.NoMatchingEnrollmentRequests))</MudText></NoRecordsContent>
+</MudDataGrid>
+
+
+@code {
+    private string? _error, _search;
+    private bool _showDenied;
+    private IEnumerable<AgentProvisioningRowDto> FilteredRequests => _requests.Where(request =>
+        _showDenied == (request.State is AgentProvisioningState.Denied or AgentProvisioningState.ResetDenied))
+        .Where(request => string.IsNullOrWhiteSpace(_search) || new[] { request.DeviceName, request.IpAddress, request.HardwareUuid, request.MacDisplay, request.InstallationId.ToString(), request.PublicKeyHash, Status(request.State) }
+            .Any(value => value?.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase) == true));
+    private Task ShowIdentifiers(AgentProvisioningRowDto request) => Dialog.ShowMessageBoxAsync("Enrollment identifiers",
+        $"Installation ID: {request.InstallationId}\nPublic key SHA-256: {request.PublicKeyHash}", yesText: "Close");
+
+    private async Task DismissAsync(AgentProvisioningRowDto request)
+    {
+        if (ControlsDisabled) return;
+        _busy = true;
+        try
+        {
+            if (await Dialog.ShowMessageBoxAsync("Dismiss enrollment request",
+                $"Dismiss the request from {request.DeviceName}? It can reappear when the agent next requests enrollment.",
+                yesText: "Dismiss", cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+            var result = await Agents.DismissProvisioningAsync(request.Id);
+            if (!result.Success) { Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error); return; }
+            await OnRefreshClicked();
+        }
+        finally { _busy = false; }
+    }
+    private async Task DeleteRequestAsync(AgentProvisioningRowDto request)
+    {
+        if (ControlsDisabled) return;
+        _busy = true;
+        try
+        {
+            if (await Dialog.ShowMessageBoxAsync("Delete enrollment request",
+                $"Delete the request from {request.DeviceName}? This clears its approval or denial and reservation. The device and certificates are kept. The next agent enrollment attempt will be evaluated as a new request under the current enrollment settings.",
+                yesText: "Delete", cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+            var result = await Agents.DeleteProvisioningRequestAsync(request.Id);
+            if (!result.Success) { Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error); return; }
+            await OnRefreshClicked();
+        }
+        finally { _busy = false; }
+    }
+    private bool _busy;
+    private bool _loading = true;
+    private bool ControlsDisabled => _busy || _loading || _error is not null;
+    private List<AgentProvisioningRowDto> _requests = [];
+    private MudDataGrid<AgentProvisioningRowDto>? _grid;
+    private Guid[] PendingApprovals => (_grid?.FilteredItems ?? FilteredRequests)
+        .Where(request => request.State == AgentProvisioningState.PendingApproval).Select(request => request.Id).ToArray();
+
+    private async Task ApproveAllAsync()
+    {
+        if (ControlsDisabled) return;
+        var ids = PendingApprovals;
+        if (ids.Length == 0) return;
+        _busy = true;
+        try
+        {
+            if (await Dialog.ShowMessageBoxAsync(UiText.Get(LocKeys.Ui.ApprovalRequestsPage.ApproveEnrollmentRequests),
+                    UiText.Get(LocKeys.Ui.ApprovalRequestsPage.Approve0PendingEnrollmentRequestSMatchingTheCurrent, (ids.Length)),
+                    yesText: UiText.Get(LocKeys.Ui.ApprovalRequestsPage.ApproveAll_ae067b68), cancelText: UiText.Get(LocKeys.Common.Cancel)) != true) return;
+            var approved = 0;
+            foreach (var id in ids)
+            {
+                var result = await Agents.ApprovePendingProvisioningAsync(id);
+                if (result.Success) approved++;
+            }
+            var failed = ids.Length - approved;
+            Snackbar.Add(failed == 0 ? UiText.Get(LocKeys.Ui.ApprovalRequestsPage.Approved0EnrollmentRequestS, (approved)) :
+                UiText.Get(LocKeys.Ui.ApprovalRequestsPage.Approved0EnrollmentRequestS1CouldNotBe, (approved), (failed)),
+                failed == 0 ? Severity.Success : Severity.Warning);
+            await OnRefreshClicked();
+        }
+        finally { _busy = false; }
+    }
+    protected override Task OnInitializedAsync() => OnRefreshClicked();
+    private static string Status(AgentProvisioningState state) => state switch
+    {
+        AgentProvisioningState.PendingPreProvision => UiText.Get(LocKeys.Ui.ApprovalRequestsPage.WaitingForDeviceRecord),
+        AgentProvisioningState.PendingApproval => UiText.Get(LocKeys.Ui.ApprovalRequestsPage.WaitingForApproval),
+        AgentProvisioningState.PendingReset => UiText.Get(LocKeys.Ui.ApprovalRequestsPage.WaitingForResetApproval),
+        AgentProvisioningState.ResetApproved => UiText.Get(LocKeys.Ui.ApprovalRequestsPage.ResetApprovedWaitingForAgent),
+        AgentProvisioningState.ResetDenied => UiText.Get(LocKeys.Ui.ApprovalRequestsPage.ResetDenied),
+        AgentProvisioningState.Approved => UiText.Get(LocKeys.Ui.ApprovalRequestsPage.ApprovedWaitingForAgent),
+        AgentProvisioningState.Denied => UiText.Get(LocKeys.Ui.ApprovalRequestsPage.Denied),
+        _ => UiText.Label(state)
+    };
+    private async Task OnRefreshClicked()
+    {
+        _loading = true;
+        _error = null;
+        var result = await Agents.GetProvisioningRequestsAsync();
+        _requests = result.HasData ? result.Data : [];
+        if (!result.Success) _error = Loc[result.Error.Code, result.Error.Args];
+        _loading = false;
+    }
+
+    private async Task OnApproveOrDenyClicked(Guid id, bool approve)
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var result = await Agents.DecideProvisioningAsync(id, approve);
+            if (!result.Success) { Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error); return; }
+            await OnRefreshClicked();
+        }
+        finally { _busy = false; }
+    }
+}

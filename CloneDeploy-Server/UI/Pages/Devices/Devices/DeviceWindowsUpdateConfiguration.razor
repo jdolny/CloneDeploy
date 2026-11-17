@@ -1,0 +1,62 @@
+@using System.Text.Json
+@using CloneDeploy_Agent.Contracts
+@using CloneDeploy_Server.UI.Pages.Devices.Devices.Shared
+<section>
+    <DeviceInventoryHeading Title="@Loc[LocKeys.Ui.DeviceWindowsUpdateConfiguration.WindowsUpdateConfiguration]" Icon="@Icons.Material.Outlined.Sync" />
+    <MudGrid Spacing="0">
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.DeviceWindowsUpdateConfiguration.ReportedDefaultUpdateSource]" Value="@(Device.WindowsUpdateScan?.SourceName)" />
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.DeviceWindowsUpdateConfiguration.LastSuccessfulUpdateSearch]" Value="@(Device.WindowsUpdateScan?.LastSuccessfulSearchAtUtc)" />
+        <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.DeviceWindowsUpdateConfiguration.RestartRequired]" Value="@(Device.WindowsUpdateScan?.RebootRequired)" />
+    </MudGrid>
+    @if (_configuration is null)
+    {
+        <MudText Typo="Typo.body2" Class="mt-3">@Loc[LocKeys.Ui.DeviceWindowsUpdateConfiguration.ConfigurationHasNotBeenCollectedRunInventoryWithAn]</MudText>
+    }
+    else
+    {
+        var summary = WindowsUpdateConfigurationSummary.From(_configuration);
+        <MudGrid Spacing="0" Class="mt-3">
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.DeviceWindowsUpdateConfiguration.DownloadBehavior]" Value="@summary.Download" />
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.DeviceWindowsUpdateConfiguration.InstallationSchedule]" Value="@summary.Installation" />
+            <DeviceDetailField Plain="true" Label="@Loc[LocKeys.Ui.DeviceWindowsUpdateConfiguration.AutomaticRestartProtection]" Value="@summary.Restart" />
+        </MudGrid>
+        
+
+        
+        @if (_configuration.Settings.Count == 0)
+        {
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.DeviceWindowsUpdateConfiguration.NoSupportedConfigurationValuesWereReportedWindowsDefaultsOr]</MudText>
+        }
+        else
+        {
+            <DeviceInventoryTable Pageable="false" Filterable="false" TitleIcon="@Icons.Material.Outlined.Settings" TItem="InventoryWindowsUpdateSetting" Items="_configuration.Settings" Title="@Loc[LocKeys.Ui.DeviceWindowsUpdateConfiguration.ReportedSettings]">
+                <Columns>
+                    <PropertyColumn T="InventoryWindowsUpdateSetting" TProperty="string" Property="x => x.Name" Title="@Loc[LocKeys.Ui.DeviceWindowsUpdateConfiguration.Setting]" />
+                    <PropertyColumn T="InventoryWindowsUpdateSetting" TProperty="string" Property="x => x.Value" Title="@Loc[LocKeys.Ui.DeviceWindowsUpdateConfiguration.ReportedValue]" />
+                    <PropertyColumn T="InventoryWindowsUpdateSetting" TProperty="string" Property="x => x.Source" Title="@Loc[LocKeys.Ui.DeviceActionHistoryTab.Source]" />
+                    <PropertyColumn T="InventoryWindowsUpdateSetting" TProperty="string" Property="x => x.GroupPolicy" Title="@Loc[LocKeys.Ui.DeviceWindowsUpdateConfiguration.GroupPolicy]">
+                        <CellTemplate>@(context.Item.GroupPolicy ?? "�")</CellTemplate>
+                    </PropertyColumn>
+                </Columns>
+            </DeviceInventoryTable>
+        }
+        @if (_configuration.UnavailableSources.Count > 0)
+        {
+            <MudText Typo="Typo.caption" Class="mt-3">@UiText.Get(LocKeys.Ui.DeviceWindowsUpdateConfiguration.Unavailable0MissingInformationIsUnknownNotDisabled, (string.Join("; ", _configuration.UnavailableSources)))</MudText>
+        }
+    }
+</section>
+
+<DeviceWindowsUpdateActivity Activity="_configuration?.Activity" />
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+    private InventoryWindowsUpdateConfiguration? _configuration;
+    protected override void OnParametersSet()
+    {
+        _configuration = null;
+        if (Device.WindowsUpdateScan?.ConfigurationJson is not { } json) return;
+        try { _configuration = JsonSerializer.Deserialize<InventoryWindowsUpdateConfiguration>(json); }
+        catch (JsonException) { /* Older or unreadable snapshots should not break System Info. */ }
+    }
+}

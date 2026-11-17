@@ -1,0 +1,170 @@
+@inject PolicyService Audiences
+@inject IAuthorizationService Authorization
+@inject AuthenticationStateProvider Authentication
+
+@if (_state is not null)
+{
+    <MudStack Spacing="3">
+        <div class="section-action-bar">
+            <MudButton OnClick="OnSaveClicked" Disabled="Disabled" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+        </div>
+        @if (LoginTargeting)
+        {
+            <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.PolicyAudiencesTab.UserAudience]</MudText>
+            <MudSelect T="int?" @bind-Value="_state.LoginAudienceId" Label="@Loc[LocKeys.Ui.PolicyAudiencesTab.UserAudienceOptional]" Clearable="true" Disabled="Disabled" Variant="Variant.Outlined">
+                @foreach (var audience in _state.Audiences) { <MudSelectItem T="int?" Value="@((int?)audience.Id)">@audience.Name</MudSelectItem> }
+            </MudSelect>
+        }
+        else
+        {
+            <MudStack Spacing="0">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <MudText Typo="Typo.subtitle2">@Loc[LocKeys.Ui.PolicyAudiencesTab.OfferInSelfService]</MudText>
+                    <MudSwitch T="bool" @bind-Value="_state.SelfServiceEnabled" Color="Color.Primary" Disabled="Disabled" aria-label="@Loc[LocKeys.Ui.PolicyAudiencesTab.OfferInSelfService]" />
+                </MudStack>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">@Loc[LocKeys.Ui.PolicyAudiencesTab.MakeThisPolicyAvailableInTheSelfServicePortal]</MudText>
+            </MudStack>
+            <MudGrid Spacing="4">
+                <MudItem xs="12" md="6">
+                    <MudStack Spacing="3">
+                        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.PolicyAudiencesTab.PortalAppearance]</MudText>
+                        <MudSelect T="int?" @bind-Value="_state.CategoryId" Label="@Loc[LocKeys.Ui.PolicyAudiencesTab.PortalCategory]" Clearable="true" Placeholder="@Loc[LocKeys.Ui.PolicyAudiencesTab.Other]" Disabled="Disabled" Variant="Variant.Outlined">
+                            @foreach (var category in _state.Categories) { <MudSelectItem T="int?" Value="@((int?)category.Id)">@category.Name</MudSelectItem> }
+                        </MudSelect>
+                        <MudTextField T="string" @bind-Value="_state.DisplayName" Label="@Loc[LocKeys.Ui.PolicyAudiencesTab.PortalDisplayNameOptional]" HelperText="@Loc[LocKeys.Ui.PolicyAudiencesTab.UsesThePolicyNameWhenEmpty]" MaxLength="120" Disabled="Disabled" Variant="Variant.Outlined" />
+                        <MudTextField T="string" @bind-Value="_state.Description" Label="@Loc[LocKeys.Ui.PolicyAudiencesTab.PortalDescriptionOptional]" Lines="3" MaxLength="1000" Disabled="Disabled" Variant="Variant.Outlined" />
+                        <div>
+                            <MudText Typo="Typo.subtitle2">@Loc[LocKeys.Ui.PolicyAudiencesTab.PortalIcon]</MudText>
+                            <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.PolicyAudiencesTab.SelectAnIconOrUploadACustomImagePNG]</MudText>
+                            <div class="portal-icon-controls">
+                                <MudSelect T="string" Value="@(_state.Icon ?? CategoryIconValue)" ValueChanged="OnIconChanged" Disabled="Disabled"
+                                           Variant="Variant.Outlined" Margin="Margin.Dense" Class="portal-icon-select" aria-label="@Loc[LocKeys.Ui.PolicyAudiencesTab.PortalIcon]"
+                                           Adornment="Adornment.Start" AdornmentIcon="@SelectedIcon" ToStringFunc="IconLabel">
+                                    <MudSelectItem T="string" Value="@CategoryIconValue">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                            <MudIcon Icon="@CategoryIcon" Size="Size.Small" /><span>@Loc[LocKeys.Ui.PolicyAudiencesTab.UseCategoryIcon]</span>
+                                        </MudStack>
+                                    </MudSelectItem>
+                                    @foreach (var icon in CloneDeploy_Agent.Contracts.PortalCategoryIcons.Keys)
+                                    {
+                                        <MudSelectItem T="string" Value="@icon">
+                                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                                <MudIcon Icon="@SelfServiceCategoryIcon.Get(icon)" Size="Size.Small" /><span>@icon</span>
+                                            </MudStack>
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                                <span class="portal-icon-or">@Loc[LocKeys.Ui.PolicyAudiencesTab.Or]</span>
+                                <label class="@($"portal-icon-upload {(Disabled ? "is-disabled" : "")}")">
+                                    <MudIcon Icon="@Icons.Material.Filled.FileUpload" Size="Size.Small" />
+                                    <span>@Loc[LocKeys.Ui.PolicyAudiencesTab.UploadCustomIcon]</span>
+                                    <InputFile OnChange="UploadIconAsync" accept="image/png" disabled="@Disabled" aria-label="@Loc[LocKeys.Ui.PolicyAudiencesTab.UploadCustomIcon]" />
+                                </label>
+                            </div>
+                            @if (_state.IconPng is { } png)
+                            {
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-3">
+                                    <img src="@($"data:image/png;base64,{Convert.ToBase64String(png)}")" alt="@Loc[LocKeys.Ui.PolicyAudiencesTab.PolicyIconPreview]" class="portal-icon-preview" />
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.PolicyAudiencesTab.CustomImageOverridesTheSelectedIcon]</MudText>
+                                        <MudButton OnClick="OnRemoveIconClicked" Disabled="Disabled" Size="Size.Small">@Loc[LocKeys.Ui.PolicyAudiencesTab.RemoveCustomIcon]</MudButton>
+                                    </MudStack>
+                                </MudStack>
+                            }
+                        </div>
+                    </MudStack>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudStack Spacing="3">
+                        <MudText Typo="Typo.h6">@Loc[LocKeys.Ui.PolicyAudiencesTab.AudienceAndAccess]</MudText>
+                        <MudSelect T="bool" @bind-Value="_state.AnyInteractiveUser" Label="@Loc[LocKeys.Ui.PolicyAudiencesTab.SelfServiceAudience]" Disabled="Disabled" Variant="Variant.Outlined">
+                            <MudSelectItem T="bool" Value="false">@Loc[LocKeys.Ui.PolicyAudiencesTab.SelectedUserAudience]</MudSelectItem>
+                            <MudSelectItem T="bool" Value="true">@Loc[LocKeys.Ui.PolicyAudiencesTab.AnyInteractiveUserOnTargetedDevices]</MudSelectItem>
+                        </MudSelect>
+                        @if (_state.AnyInteractiveUser)
+                        {
+
+                        }
+                        else
+                        {
+                            <MudSelect T="int?" @bind-Value="_state.SelfServiceAudienceId" Label="@Loc[LocKeys.Ui.PolicyAudiencesTab.SelfServiceUserAudience]" Clearable="true" Disabled="Disabled" Variant="Variant.Outlined">
+                                @foreach (var audience in _state.Audiences) { <MudSelectItem T="int?" Value="@((int?)audience.Id)">@audience.Name</MudSelectItem> }
+                            </MudSelect>
+                            <MudCheckBox T="bool" @bind-Value="_state.RestrictSelfServiceToDeviceTargets" Label="@Loc[LocKeys.Ui.PolicyAudiencesTab.RestrictSelfServiceToThePolicySDeviceTargets]" Disabled="Disabled" />
+
+                        }
+
+                    </MudStack>
+                </MudItem>
+            </MudGrid>
+        }
+    </MudStack>
+}
+
+@code {
+    private void OnRemoveIconClicked() { if (!Disabled && _state is not null) _state.IconPng = null; }
+
+    [Parameter] public int PolicyId { get; set; }
+    [Parameter] public bool LoginTargeting { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+    private PolicyAudienceState? _state;
+    private const string CategoryIconValue = "category-default";
+    private string CategoryIcon => SelfServiceCategoryIcon.Get(_state?.Categories.FirstOrDefault(x => x.Id == _state.CategoryId)?.Icon ?? "Software");
+    private string SelectedIcon => _state?.Icon is { } icon ? SelfServiceCategoryIcon.Get(icon) : CategoryIcon;
+    private static string IconLabel(string? icon) => icon is null or CategoryIconValue ? UiText.Get(LocKeys.Ui.PolicyAudiencesTab.UseCategoryIcon) : icon;
+    private void OnIconChanged(string? icon)
+    {
+        if (!Disabled && _state is not null) _state.Icon = icon == CategoryIconValue ? null : icon;
+    }
+    private bool _busy, _canEdit;
+    private bool Disabled => ReadOnly || !_canEdit || _busy;
+    private int? _loadedPolicyId;
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedPolicyId == PolicyId) return;
+        _loadedPolicyId = PolicyId;
+        await OnReloadClicked();
+    }
+    private async Task OnReloadClicked()
+    {
+        _busy = true;
+        try
+        {
+            _canEdit = (await Authorization.AuthorizeAsync((await Authentication.GetAuthenticationStateAsync()).User, Constants.Permissions.PolicyEdit)).Succeeded;
+            var result = await Audiences.GetAudienceAsync(PolicyId);
+            _state = result.Data;
+            if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        }
+        catch { Snackbar.Add(UiText.Get(LocKeys.Ui.PolicyAudiencesTab.CouldNotLoadUserAccess), Severity.Error); }
+        finally { _busy = false; }
+    }
+
+    private async Task UploadIconAsync(InputFileChangeEventArgs e)
+    {
+        if (Disabled || _state is null) return;
+        _busy = true;
+        try
+        {
+            using var stream = e.File.OpenReadStream(PolicyService.MaximumIconBytes);
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer);
+            var bytes = buffer.ToArray();
+            if (!PolicyService.IsValidIcon(bytes)) { Snackbar.Add(UiText.Get(LocKeys.Ui.PolicyAudiencesTab.UseAPNGUpTo64KiBAnd512), Severity.Error); return; }
+            _state.IconPng = bytes;
+        }
+        catch { Snackbar.Add(UiText.Get(LocKeys.Ui.PolicyAudiencesTab.CouldNotReadTheIconUseAPNGUp), Severity.Error); }
+        finally { _busy = false; }
+    }
+    private async Task OnSaveClicked()
+    {
+        if (Disabled || _state is null) return;
+        _busy = true;
+        try
+        {
+            var result = await Audiences.SaveAudienceAsync(_state);
+            Snackbar.Add(result.Success ? UiText.Get(LocKeys.Ui.PolicyAudiencesTab.UserAccessSaved) : Loc[result.Error.Code, result.Error.Args], result.Success ? Severity.Success : Severity.Error);
+        }
+        catch { Snackbar.Add(UiText.Get(LocKeys.Ui.PolicyAudiencesTab.CouldNotSaveUserAccessReloadBeforeTryingAgain), Severity.Error); }
+        finally { _busy = false; }
+    }
+}

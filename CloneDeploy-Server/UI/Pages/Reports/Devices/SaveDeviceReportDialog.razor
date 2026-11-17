@@ -1,0 +1,41 @@
+@using CloneDeploy_Server.Backend.Services.DynamicGroups
+@inject DeviceService Reports
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" @bind-Value="_name" Label="@Loc[LocKeys.Ui.SaveDeviceReportDialog.ReportName]" Variant="Variant.Outlined" Immediate="true" MaxLength="200" Required="true" Disabled="_saving" AutoFocus="true" />
+        @if (ReportId != 0)
+        {
+            <MudCheckBox T="bool" @bind-Value="_copy" Disabled="_saving" Label="@Loc[LocKeys.Ui.SaveDeviceReportDialog.SaveAsANewCopy]" />
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_saving">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _saving || string.IsNullOrWhiteSpace(_name), UiText.Get(LocKeys.Ui.SaveDeviceReportDialog.EnterAReportName), SaveAsync)" Disabled="@(_saving)" Variant="Variant.Filled" Color="Color.Primary">@Loc[LocKeys.Ui.DevicesReportPage.SaveReport]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public int ReportId { get; set; }
+    [Parameter] public Guid Revision { get; set; }
+    [Parameter] public string InitialName { get; set; } = "";
+    [Parameter, EditorRequired] public DeviceQueryDefinitionDto Definition { get; set; } = null!;
+    [Parameter, EditorRequired] public List<string> Columns { get; set; } = [];
+    private string _name = "";
+    private bool _copy, _saving;
+    protected override void OnInitialized() => _name = InitialName;
+    private void Cancel() => MudDialog.Cancel();
+    private async Task SaveAsync()
+    {
+        if (_saving || string.IsNullOrWhiteSpace(_name)) return;
+        _saving = true;
+        try
+        {
+            var result = await Reports.SaveReportAsync(_copy ? 0 : ReportId, Revision, _name, Definition, Columns);
+            if (result.HasData) MudDialog.Close(DialogResult.Ok(result.Data));
+            else Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        }
+        finally { _saving = false; }
+    }
+}

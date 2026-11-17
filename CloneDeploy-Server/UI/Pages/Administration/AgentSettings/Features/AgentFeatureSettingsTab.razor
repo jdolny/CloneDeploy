@@ -1,0 +1,92 @@
+@using CloneDeploy_Agent.Contracts
+@inject ServerSettingsUiService Service
+
+<div class="section-action-bar">
+    <MudButton OnClick="Save" Disabled="@(_busy || _settings is null)" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton>
+</div>
+@if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+@if (_settings is not null)
+{
+    <MudStack Spacing="3">
+        <MudPaper Class="pa-4" Outlined="true" Elevation="0">
+            <MudSwitch T="bool" @bind-Value="_promptForMacSignIn" Disabled="_busy" Color="Color.Primary" Label="@Loc[LocKeys.Ui.AgentFeatureSettingsTab.PromptForMacSignIn]" />
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.AgentFeatureSettingsTab.PromptForMacSignInDescription]</MudText>
+        </MudPaper>
+        <MudPaper Class="pa-4" Outlined="true" Elevation="0">
+            <MudNumericField T="int" @bind-Value="_sessionDays" Min="1" Max="365" Disabled="_busy" Label="@Loc[LocKeys.Ui.AgentFeatureSettingsTab.MacPortalSignInDurationDays]" />
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.AgentFeatureSettingsTab.AppliesToNewSignInsSessionsSurviveServerRestarts]</MudText>
+        </MudPaper>
+        <MudPaper Class="pa-4" Outlined="true" Elevation="0">
+            <MudSwitch T="bool" Value="_help" ValueChanged="SetHelpAsync" Disabled="_busy" Color="Color.Primary" Label="@Loc[LocKeys.Ui.AgentFeatureSettingsTab.EnableHelpDesk]" />
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.AgentFeatureSettingsTab.AllowUsersToSubmitAndFollowSupportRequestsIn]</MudText>
+        </MudPaper>
+        <MudPaper Class="pa-4" Outlined="true" Elevation="0">
+            <MudSwitch T="bool" Value="_selfService" ValueChanged="SetSelfServiceAsync" Disabled="_busy" Color="Color.Primary" Label="@Loc[LocKeys.Ui.AgentFeatureSettingsTab.EnableSelfService]" />
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.AgentFeatureSettingsTab.ShowAvailablePoliciesInTheAgentPortalAndAllow]</MudText>
+        </MudPaper>
+        <MudPaper Class="pa-4" Outlined="true" Elevation="0">
+            <MudSwitch T="bool" @bind-Value="_winGet" Disabled="_busy" Color="Color.Primary" Label="@Loc[LocKeys.Ui.AgentFeatureSettingsTab.EnableWinGetIntegration]" />
+            <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.AgentFeatureSettingsTab.AllowCatalogSynchronizationAndWinGetActionsDisablingBlocksNew]</MudText>
+            @if (_winGet && (!_settings.Features.WinGetEnabled || _settings.WinGetAcknowledgment != ServerSettingsUiService.WinGetAcknowledgment || _settings.WinGetAcceptedAtUtc is null))
+            {
+                <MudAlert Severity="Severity.Info" Class="mt-3">@ServerSettingsUiService.WinGetAcknowledgment</MudAlert>
+                <MudCheckBox T="bool" @bind-Value="_accept" Disabled="_busy" Label="@Loc[LocKeys.Ui.AgentFeatureSettingsTab.IAmAuthorizedToEnableUnattendedDeploymentsAndAcknowledge]" />
+            }
+            <MudStack Row="true" Spacing="3" Class="mt-2">
+                <MudLink Href="https://learn.microsoft.com/en-us/windows/package-manager/winget/install#license-agreements" Target="_blank">@Loc[LocKeys.Ui.AgentFeatureSettingsTab.WinGetAgreementInformation]</MudLink>
+                <MudLink Href="https://aka.ms/microsoft-store-terms-of-transaction" Target="_blank">@Loc[LocKeys.Ui.AgentFeatureSettingsTab.MicrosoftStoreTerms]</MudLink>
+            </MudStack>
+            @if (_settings.WinGetAcceptedAtUtc is { } accepted)
+            {
+                <MudText Typo="Typo.caption">@UiText.Get(LocKeys.Ui.AgentFeatureSettingsTab.LastAcknowledgedBy0On1, (_settings.WinGetAcceptedBy), (accepted.ToLocalTime().ToString("g")))</MudText>
+            }
+        </MudPaper>
+    </MudStack>
+}
+@code {
+    private int _sessionDays = 90;
+    private bool _promptForMacSignIn = true;
+    private AgentFeatureConfiguration? _settings;
+    private bool _help, _selfService, _winGet, _accept, _busy;
+    private string? _error;
+    protected override Task OnInitializedAsync() => Load();
+    private async Task SetHelpAsync(bool value) { if (await CanSetPortalFeatureAsync(value)) _help = value; }
+    private async Task SetSelfServiceAsync(bool value) { if (await CanSetPortalFeatureAsync(value)) _selfService = value; }
+    private async Task<bool> CanSetPortalFeatureAsync(bool value)
+    {
+        if (_busy) return false;
+        if (!value) return true;
+        _busy = true;
+        try
+        {
+            var result = await Service.CheckPortalDirectoryAsync();
+            if (!result.Success) Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+            return result.Success;
+        }
+        finally { _busy = false; }
+    }
+    private async Task Load()
+    {
+        _busy = true;
+        try
+        {
+            var result = await Service.ReadFeaturesAsync();
+            _error = result.Success ? null : Loc[result.Error!.Code, result.Error.Args].Value;
+            _settings = result.Data;
+            if (_settings is not null) { _promptForMacSignIn = _settings.Features.PromptForMacSignIn; _sessionDays = _settings.Features.PortalSessionDays; _help = _settings.Features.HelpDeskEnabled; _selfService = _settings.Features.SelfServiceEnabled; _winGet = _settings.Features.WinGetEnabled; _accept = false; }
+        }
+        finally { _busy = false; }
+    }
+    private async Task Save()
+    {
+        if (_busy || _settings is null) return;
+        _busy = true;
+        try
+        {
+            var result = await Service.SaveFeaturesAsync(new AgentFeatures { PromptForMacSignIn = _promptForMacSignIn, PortalSessionDays = _sessionDays, HelpDeskEnabled = _help, SelfServiceEnabled = _selfService, WinGetEnabled = _winGet }, _settings.Version, _accept);
+            if (result.Success) { _settings = result.Data; _accept = false; _error = null; Snackbar.Add(UiText.Get(LocKeys.Ui.AgentFeatureSettingsTab.AgentFeatureSettingsSaved), Severity.Success); }
+            else { _error = Loc[result.Error!.Code, result.Error.Args]; Snackbar.Add(_error, Severity.Error); }
+        }
+        finally { _busy = false; }
+    }
+}

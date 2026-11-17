@@ -1,0 +1,62 @@
+@inject AppUserService Groups
+@implements IDisposable
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" Value="_search" ValueChanged="SearchAsync" DebounceInterval="300" Clearable="true" Label="@Loc[LocKeys.Ui.UserGroupDirectoryPickerDialog.SearchADOrEntraGroups]" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-3" />
+        @if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert> }
+        <MudDataGrid T="AppUserGroupDirectoryMapping" Items="_options" Loading="_loading" MultiSelection="true" SelectOnRowClick="false" SelectedItems="VisibleSelection" SelectedItemsChanged="SelectionChanged"
+                     Dense="true" Hover="true" Elevation="0" Outlined="true" Class="device-list-grid" RowsPerPage="@Constants.UI.DefaultPageSize">
+            <Columns>
+                <SelectColumn T="AppUserGroupDirectoryMapping" />
+                <PropertyColumn Property="x => x.DisplayName" Title="@Loc[LocKeys.Ui.UserGroupDirectoryPickerDialog.GroupDirectory]" />
+                <PropertyColumn Property="x => x.ObjectGuid" Title="@Loc[LocKeys.Ui.UserGroupDirectoryPickerDialog.ObjectID]" />
+            </Columns>
+            <NoRecordsContent><MudText Class="pa-4">@Loc[LocKeys.Ui.UserGroupDirectoryPickerDialog.NoAvailableDirectoryGroupsMatchYourSearch]</MudText></NoRecordsContent>
+            <PagerContent><MudDataGridPager T="AppUserGroupDirectoryMapping" /></PagerContent>
+        </MudDataGrid>
+        <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.UserGroupDirectoryPickerDialog.AlreadyAssignedGroupsAreOmittedSearchQueriesSynchronizedDirectory]</MudText>
+        <MudText Class="mt-3">@UiText.Get(LocKeys.Ui.UserGroupDirectoryPickerDialog.Text0SelectedSelectionsAreRetainedAcrossSearches, (_selected.Count))</MudText>
+        @if (Assigned.Count + _selected.Count > 100) { <MudAlert Severity="Severity.Warning">@Loc[LocKeys.Ui.UserGroupDirectoryPickerDialog.AnApplicationUserGroupCanHaveAtMost100]</MudAlert> }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="MudDialog.Cancel">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton OnClick="@Snackbar.GuardAction(() => _loading || _selected.Count == 0 || Assigned.Count + _selected.Count > 100 || _error is not null, _error is not null ? UiText.Get(LocKeys.Ui.UserGroupDirectoryPickerDialog.DirectoryGroupsCouldNotBeLoadedSearchAgainOr) : _selected.Count == 0 ? UiText.Get(LocKeys.Ui.UserGroupDirectoryPickerDialog.SelectAtLeastOneDirectoryGroup) : UiText.Get(LocKeys.Ui.UserGroupDirectoryPickerDialog.AnApplicationGroupCanHaveAtMost100Directory), Add)" Color="Color.Primary" Variant="Variant.Filled" Disabled="@(_loading)">@Loc[LocKeys.Ui.GroupTargetPickerDialog.AddSelectedGroups]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public HashSet<(int SourceId, Guid ObjectGuid)> Assigned { get; set; } = [];
+    private List<AppUserGroupDirectoryMapping> _options = [];
+    private readonly Dictionary<(int, Guid), AppUserGroupDirectoryMapping> _selected = new();
+    private string? _search, _error;
+    private bool _loading, _disposed;
+    private CancellationTokenSource? _request;
+    private HashSet<AppUserGroupDirectoryMapping> VisibleSelection => _options.Where(x => _selected.ContainsKey((x.DirectorySourceId, x.ObjectGuid))).ToHashSet();
+    protected override Task OnInitializedAsync() => SearchAsync("");
+    private void SelectionChanged(HashSet<AppUserGroupDirectoryMapping> selection)
+    {
+        foreach (var item in _options) _selected.Remove((item.DirectorySourceId, item.ObjectGuid));
+        foreach (var item in selection) _selected[(item.DirectorySourceId, item.ObjectGuid)] = item;
+    }
+    private async Task SearchAsync(string? text)
+    {
+        if (_disposed) return;
+        _request?.Cancel();
+        using var request = new CancellationTokenSource();
+        _request = request;
+        _search = text; _loading = true; _error = null;
+        try
+        {
+            var result = await Groups.SearchDirectoryGroupsAsync(text, request.Token);
+            if (_disposed || request.IsCancellationRequested) return;
+            if (result.Success) _options = result.Data!.Where(x => !Assigned.Contains((x.DirectorySourceId, x.ObjectGuid))).ToList();
+            else { _options = []; _error = Loc[result.Error!.Code, result.Error.Args]; }
+        }
+        catch (OperationCanceledException) when (request.IsCancellationRequested) { }
+        finally { if (_request == request) { _request = null; _loading = false; } }
+    }
+    private void Add() => MudDialog.Close(DialogResult.Ok(_selected.Values.ToList()));
+    public void Dispose() { _disposed = true; _request?.Cancel(); }
+}

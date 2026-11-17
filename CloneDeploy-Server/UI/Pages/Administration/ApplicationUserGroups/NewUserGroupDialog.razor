@@ -1,0 +1,48 @@
+@inject AppUserService AppUserService
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@Loc[LocKeys.UserGroup.NewGroup]</MudText></TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" Disabled="_saving">
+            <MudTextField @bind-Value="_group.Name" Label="@Loc[LocKeys.Common.Name]" Required="true" MaxLength="200" Variant="Variant.Outlined" />
+            <MudSelect T="bool" @bind-Value="_group.GrantAdministrator" Label="@Loc[LocKeys.User.Membership]" Variant="Variant.Outlined">
+                <MudSelectItem T="bool" Value="false">@Loc[LocKeys.User.UserMembership]</MudSelectItem>
+                <MudSelectItem T="bool" Value="true">@Loc[LocKeys.User.AdminMembership]</MudSelectItem>
+            </MudSelect>
+            <MudCheckBox T="bool" Value="@(_group.RequireWebMfa || _group.GrantAdministrator)" ValueChanged="@(value => _group.RequireWebMfa = value)" Disabled="_group.GrantAdministrator" Label="@Loc[LocKeys.Ui.NewUserGroupDialog.RequireWebMFA]" />
+            <MudCheckBox T="bool" @bind-Value="_group.RequireImagingMfa" Label="@Loc[LocKeys.Ui.NewUserGroupDialog.RequireImagingMFA]" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="_saving" OnClick="MudDialog.Cancel">@Loc[LocKeys.Common.Cancel]</MudButton>
+        <MudButton Disabled="_saving" Color="Color.Primary" Variant="Variant.Filled" OnClick="OnCreateClicked">@Loc[LocKeys.Common.Create]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private AppUserGroup _group = new() { Name = string.Empty };
+    private MudForm _form = null!;
+    private bool _saving;
+
+    private async Task OnCreateClicked()
+    {
+        if (_saving) return;
+        _saving = true;
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            _saving = false;
+            return;
+        }
+        var result = await AppUserService.CreateGroupAsync(_group);
+        if (result.Success)
+        {
+            Snackbar.Add(Loc[LocKeys.Common.Created, _group.Name], Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+            Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _saving = false;
+    }
+}

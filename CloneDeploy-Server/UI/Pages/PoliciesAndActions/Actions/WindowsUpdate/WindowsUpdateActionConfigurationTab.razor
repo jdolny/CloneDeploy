@@ -1,0 +1,55 @@
+@using CloneDeploy_Agent.Contracts
+@inject ActionService Service
+
+<PolicyActionEditScope Context="canEdit">
+@if (_model is null)
+{
+    @if (_loadingAction) { <MudProgressLinear Indeterminate="true"/> }
+    else { <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.CommandActionConfigurationTab.UnableToLoadActionSettingsReopenThisTabTo]</MudAlert> }
+}
+else
+{
+    <div class="section-action-bar"><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnSaveClicked" Disabled="@(!canEdit || (_saving))" StartIcon="@Icons.Material.Filled.Save">@Loc[LocKeys.Ui.ActionFiles.SaveChanges]</MudButton></div>
+    <MudStack  Spacing="4">
+        <MudSelect T="WindowsUpdateMode" @bind-Value="_model.Mode" Label="@Loc[LocKeys.Image.AuditType]" Variant="Variant.Outlined" Disabled="@(!canEdit || _saving)">
+            <MudSelectItem Value="WindowsUpdateMode.InstallAll">@Loc[LocKeys.Ui.WindowsUpdateActionConfigurationTab.InstallAllUpdates]</MudSelectItem>
+            <MudSelectItem Value="WindowsUpdateMode.InstallApproved">@Loc[LocKeys.Ui.WindowsUpdateActionConfigurationTab.InstallApprovedUpdates]</MudSelectItem>
+        </MudSelect>
+        <MudNumericField T="int" @bind-Value="_model.Timeout" Label="@Loc[LocKeys.Ui.WindowsUpdateActionConfigurationTab.TimeoutMinutes]" Min="1" Variant="Variant.Outlined" Disabled="@(!canEdit || _saving)" />
+    </MudStack>
+
+}
+
+
+</PolicyActionEditScope>
+
+@code {
+    [Parameter] public EventCallback OnSaved { get; set; }
+    private WindowsUpdateAction _model = null!;
+    private bool _loadingAction = true;
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Service.GetWindowsUpdateAsync(WindowsUpdateAction.Id);
+        if (result.Success && result.HasData)
+        {
+            await LoadCatalogsAsync();
+            _model = result.Data;
+        }
+        else if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loadingAction = false;
+    }
+
+    private Task LoadCatalogsAsync() => Task.CompletedTask;
+    [Parameter, EditorRequired] public WindowsUpdateAction WindowsUpdateAction { get; set; } = null!;
+    private bool _saving;
+    private async Task OnSaveClicked()
+    {
+        if (_saving) return;
+        _saving = true;
+        try {
+            var result = await Service.UpdateWindowsUpdateAsync(_model);
+            if (result.Success) await OnSaved.InvokeAsync();
+        Snackbar.Add(result.Success ? Loc[LocKeys.Action.ConfigurationSaved] : Loc[result.Error!.Code, result.Error.Args], result.Success ? Severity.Success : Severity.Error);
+        } finally { _saving = false; }
+    }
+}

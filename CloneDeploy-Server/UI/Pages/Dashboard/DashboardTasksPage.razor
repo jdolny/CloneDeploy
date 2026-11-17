@@ -1,0 +1,42 @@
+@using System.Globalization
+@page "/dashboard/tasks"
+@attribute [Authorize]
+@inject DashboardService DashboardService
+@inject TimeProvider Clock
+
+<AppPageTitle Text="@($"{Loc[LocKeys.Dashboard.Results]} | {Loc[$"Dashboard.Status.{_status}"]}")">
+    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Href="/" aria-label="@Loc[LocKeys.Dashboard.Back]" />
+</AppPageTitle>
+
+<MudDataGrid T="DashboardTaskDto" Items="_tasks" Loading="_loading" Dense="true" Hover="true" Elevation="2" RowsPerPage="@Constants.UI.DefaultPageSize"
+             Filterable="true" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <Columns>
+        <TemplateColumn Title="@Loc[LocKeys.Dashboard.Action]"><CellTemplate><MudLink Href="@($"/tasks/deployments/{context.Item.DeploymentId}")">@context.Item.Action</MudLink></CellTemplate></TemplateColumn>
+        <PropertyColumn Property="x => x.Device" Title="@Loc[LocKeys.Dashboard.Device]" />
+        <TemplateColumn Title="@Loc[LocKeys.Dashboard.FinishedAt]"><CellTemplate>@context.Item.FinishedAt?.ToLocalTime().ToString("g")</CellTemplate></TemplateColumn>
+        <PropertyColumn Property="x => x.Result" Title="@Loc[LocKeys.Dashboard.Result]" />
+    </Columns>
+    <PagerContent><MudDataGridPager T="DashboardTaskDto" /></PagerContent>
+    <NoRecordsContent><MudText>@Loc[LocKeys.Dashboard.NoResults]</MudText></NoRecordsContent>
+</MudDataGrid>
+
+@code {
+    [SupplyParameterFromQuery] public string? Status { get; set; }
+    [SupplyParameterFromQuery] public string? From { get; set; }
+    [SupplyParameterFromQuery] public string? To { get; set; }
+    private DeviceTaskStatus _status;
+    private DateTime _from, _to;
+    private List<DashboardTaskDto> _tasks = [];
+    private bool _loading = true;
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _status = Status == nameof(DeviceTaskStatus.Succeeded) ? DeviceTaskStatus.Succeeded : DeviceTaskStatus.Failed;
+        _to = DateTime.TryParse(To, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var to) ? to : Clock.GetUtcNow().UtcDateTime;
+        _from = DateTime.TryParse(From, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var from) ? from : _to.AddHours(-24);
+        var result = await DashboardService.GetTasksAsync(_status, _from, _to);
+        _tasks = result.Success ? result.Data ?? [] : [];
+        if (!result.Success) Snackbar.Add(Loc[result.Error.Code, result.Error.Args], Severity.Error);
+        _loading = false;
+    }
+}

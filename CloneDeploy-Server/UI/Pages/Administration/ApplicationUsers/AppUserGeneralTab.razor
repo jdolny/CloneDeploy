@@ -1,0 +1,113 @@
+@inject AppUserService AppUserService
+@if (_loading) { <MudProgressLinear Indeterminate="true"/> }
+else if (_model is null) { <MudAlert Severity="Severity.Error">@Loc[LocKeys.Ui.UserGroupGeneralTab.UnableToLoadThisRecord]</MudAlert> }
+else
+{
+
+<div class="section-action-bar"><MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" Disabled="_saving" OnClick="@(OnSaveClicked)">
+            @Loc[LocKeys.User.SaveGeneral]
+        </MudButton></div>
+<div>
+    <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.User.General]</MudText>
+    <MudForm @ref="_form">
+        <MudGrid Spacing="3">
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="_model.UserName" Label="@Loc[LocKeys.Auth.UserName]" Variant="Variant.Outlined" Required="true"/>
+                <MudTextField @bind-Value="_model.Email" Label="@Loc[LocKeys.User.Email]" Variant="Variant.Outlined" Required="false"/>
+                <MudTextField Value='@_model.AccountType' Label="@Loc[LocKeys.Ui.AppUserGeneralTab.AccountType]" Variant="Variant.Outlined" ReadOnly="true"/>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudSelect @bind-Value="_model.Membership" Label="@Loc[LocKeys.User.Membership]" Variant="Variant.Outlined"
+                           Required="true" Disabled="_model.IsDirectoryManaged">
+                    <MudSelectItem Value="@Constants.UserMembership.User">@Loc[LocKeys.User.UserMembership]</MudSelectItem>
+                    <MudSelectItem Value="@Constants.UserMembership.Admin">@Loc[LocKeys.User.AdminMembership]</MudSelectItem>
+                </MudSelect>
+                @if (_model.IsDirectoryManaged)
+                {
+                    <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.AppUserGeneralTab.AccessAndAdministratorMembershipAreControlledByDirectoryGroup]</MudText>
+                }
+                @if (_model.IsAdManaged)
+                {
+                    <MudText Typo="Typo.caption">@Loc[LocKeys.Ui.AppUserGeneralTab.UseYourActiveDirectoryPasswordForWebAndImager]</MudText>
+                }
+                else
+                {
+                    <MudTextField @bind-Value="_password" Label='@(_model.IsEntraManaged ? UiText.Get(LocKeys.Ui.AppUserGeneralTab.ImagerPassword) : Loc[LocKeys.Auth.Password])' Variant="Variant.Outlined" InputType="InputType.Password"
+                                  HelperText='@(_model.IsEntraManaged ? UiText.Get(LocKeys.Ui.AppUserGeneralTab.SetALocalPasswordForImagerSignInUsing) : UiText.Get(LocKeys.Ui.AppUserGeneralTab.LeaveBlankToKeepTheCurrentPasswordThisPassword))'/>
+                }
+
+            </MudItem>
+        </MudGrid>
+        <MudCheckBox @bind-Value="_model.LockoutEnabled" Label="@Loc[LocKeys.User.LockoutEnabled]" Color="Color.Primary"/>
+        <MudCheckBox T="bool" Value="@(MfaPolicy.RequiresWeb(_model))" ValueChanged="@(value => _model.EnableMfa = value)" Disabled="@(_model.Membership == Constants.UserMembership.Admin)" Label="@Loc[LocKeys.Ui.NewUserGroupDialog.RequireWebMFA]" Color="Color.Primary"/>
+        <MudCheckBox T="bool" @bind-Value="_model.EnableImagingMfa" Label="@Loc[LocKeys.Ui.NewUserGroupDialog.RequireImagingMFA]" Color="Color.Primary"/>
+        <MudText Typo="Typo.body2">@Loc[LocKeys.Ui.AppUserGeneralTab.GroupMFARequirementsAlsoApplyUncheckingAUserSetting]</MudText>
+    </MudForm>
+</div>
+
+<div>
+    <MudText Typo="Typo.h6" Class="mb-3">@Loc[LocKeys.User.AccountStatus]</MudText>
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="6">
+            <MudTextField Label="@Loc[LocKeys.User.Id]" Value="@_model.Id" ReadOnly="true"/>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudTextField Label="@Loc[LocKeys.User.TwoFactorEnabled]" Value="@_model.TwoFactorEnabled" ReadOnly="true"/>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudTextField Label="@Loc[LocKeys.User.AccessFailedCount]" Value="@_model.AccessFailedCount" ReadOnly="true"/>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudTextField Label="@Loc[LocKeys.User.LockoutEnd]" Value="@_model.LockoutEnd" ReadOnly="true"/>
+        </MudItem>
+    </MudGrid>
+</div>
+
+
+
+}
+@code {
+    [Parameter] public EventCallback OnSaved { get; set; }
+    private AppUser? _model;
+    private bool _loading = true;
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await AppUserService.GetByIdAsync(AppUser.Id);
+        if (result.Success && result.HasData) _model = result.Data;
+        else Snackbar.Add(result.Success ? UiText.Get(LocKeys.Ui.UserGroupGeneralTab.RecordNotFound) : Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+        _loading = false;
+    }
+
+    [Parameter, EditorRequired] public AppUser AppUser { get; set; } = null!;
+
+    private MudForm _form = null!;
+    private string? _password;
+    private bool _saving;
+
+    private async Task OnSaveClicked()
+    {
+        if (_saving || _model is null) return;
+        _saving = true;
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+        {
+            _saving = false;
+            return;
+        }
+
+        var result = await AppUserService.UpdateAsync(_model, _password);
+        if (result.Success)
+        {
+            await OnSaved.InvokeAsync();
+            _password = null;
+            Snackbar.Add(Loc[LocKeys.Common.Updated, _model.UserName!], Severity.Success);
+        }
+        else
+            Snackbar.Add(Loc[result.Error!.Code, result.Error.Args], Severity.Error);
+
+        _saving = false;
+    }
+
+}

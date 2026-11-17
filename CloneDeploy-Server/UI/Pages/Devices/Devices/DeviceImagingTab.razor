@@ -1,0 +1,38 @@
+
+<MudTabs @bind-ActivePanelIndex="_activePanelIndex" KeepPanelsAlive="false"
+         TabPanelsClass="pt-4 detail-tab-content" Class="device-subtabs device-overview-tabs">
+    <Header>
+        @if (IsActive && _activePanelIndex == 0)
+        {
+            <div class="device-overview-save"><SectionOutlet SectionId="_settingsActionSection"/></div>
+        }
+    </Header>
+    <ChildContent>
+    <MudTabPanel Text="@Loc[LocKeys.Device.DeploymentSettings]">
+        <TabHelp Href="ui/devices/device-imaging-deployment-settings.html" Title="@Loc[LocKeys.Device.DeploymentSettings]" />
+        @if (IsActive)
+        {
+            <MudStack Class="stack-full">
+                <DeviceDeploymentSettingsTab DeviceId="Device.Id" ActionSectionId="_settingsActionSection"/>
+            </MudStack>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Loc[LocKeys.Device.ImagingLogsText]">
+        <TabHelp Href="ui/devices/device-imaging-imaging-logs.html" Title="@Loc[LocKeys.Device.ImagingLogsText]" />
+        @if (IsActive)
+        {
+            <MudStack Class="stack-full">
+                <DeviceImagingLogsTab Device="Device"/>
+            </MudStack>
+        }
+    </MudTabPanel>
+    </ChildContent>
+</MudTabs>
+
+@code {
+    [Parameter, EditorRequired] public Device Device { get; set; } = null!;
+    [Parameter] public bool IsActive { get; set; } = true;
+    private int _activePanelIndex;
+    private readonly object _settingsActionSection = new();
+
+}

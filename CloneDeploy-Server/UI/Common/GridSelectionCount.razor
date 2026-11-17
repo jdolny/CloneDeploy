@@ -1,0 +1,8 @@
+@if (Count > 0)
+{
+    <MudText Typo="Typo.body2" Class="grid-selection-count" aria-live="polite">@UiText.Get(LocKeys.Ui.GridSelectionCount.Text0Selected, (Count))</MudText>
+}
+
+@code {
+    [Parameter] public int Count { get; set; }
+}
