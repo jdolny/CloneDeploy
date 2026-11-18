@@ -1,3 +1,4 @@
+@inject UserAudienceService AudienceService
 <MudStack Spacing="3">
 @if (!Disabled)
 {
@@ -50,6 +51,41 @@
         var exclude = Exclude;
         try
         {
+            if (kind == DirectoryObjectKind.OrganizationalUnit)
+            {
+                var nodes = await AudienceService.DirectoryNodesAsync();
+                if (!nodes.Success)
+                {
+                    Snackbar.Add(Loc[nodes.Error.Code, nodes.Error.Args], Severity.Error);
+                    return;
+                }
+                if (Disabled || !ReferenceEquals(model, Model) || exclude != Exclude) return;
+                var ouParameters = new DialogParameters<OuTargetPickerDialog>
+                {
+                    { x => x.Nodes, nodes.Data! },
+                    { x => x.Assigned, model.Members.Where(x => x.Exclude == exclude)
+                        .Select(x => PolicyTargetKeyDto.Ou(x.DirectorySourceId, x.ObjectGuid)).ToHashSet() }
+                };
+                var ouDialog = await Dialog.ShowAsync<OuTargetPickerDialog>(UiText.Get(LocKeys.Ui.PolicyTargetingTab.AddOrganizationalUnits), ouParameters,
+                    new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large, CloseButton = true });
+                if (await ouDialog.Result is not { Canceled: false, Data: List<PolicyTargetSelectionDto> selections } ||
+                    Disabled || !ReferenceEquals(model, Model) || exclude != Exclude) return;
+                foreach (var selection in selections)
+                {
+                    var option = Options.FirstOrDefault(x => x.Available && x.Kind == kind &&
+                        x.SourceId == selection.Key.DirectorySourceId && x.ObjectGuid == selection.Key.OuGuid);
+                    if (option is null || model.Members.Any(x => x.DirectorySourceId == option.SourceId && x.ObjectGuid == option.ObjectGuid && x.Exclude == exclude)) continue;
+                    model.Members.Add(new UserAudienceMember
+                    {
+                        DirectorySourceId = option.SourceId,
+                        ObjectGuid = option.ObjectGuid,
+                        Exclude = exclude,
+                        IncludeDescendants = selection.IncludeDescendants,
+                        DisplayName = $"{option.Name} · {option.Kind} · {option.DirectoryName}"
+                    });
+                }
+                return;
+            }
             var parameters = new DialogParameters<UserAudienceMemberPickerDialog>
             {
                 { x => x.Options, Options },

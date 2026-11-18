@@ -71,6 +71,21 @@ public sealed class UserAudienceService(ICloneDeployDbFactory factory, Authentic
         return ServiceResult<List<PolicyAudienceOption>>.Ok(await ReadOptionsAsync(db));
     }
 
+    public async Task<ServiceResult<List<PolicyTargetDirectoryNodeDto>>> DirectoryNodesAsync()
+    {
+        if (await UserAsync(Constants.Permissions.UserAudienceView) is null)
+            return ServiceResult<List<PolicyTargetDirectoryNodeDto>>.Fail("SharedResource.Forbidden");
+        await using var db = await factory.CreateContextAsync();
+        var nodes = await (from node in db.DirectoryObjects.AsNoTracking()
+            join source in db.DirectorySources on node.DirectorySourceId equals source.Id
+            where source.Provider == DirectoryProvider.ActiveDirectory && source.IsEnabled && !source.ApplicationAccessOnly && !node.IsMissing && !node.Disabled &&
+                  (node.Kind == DirectoryObjectKind.Domain || node.Kind == DirectoryObjectKind.Container || node.Kind == DirectoryObjectKind.OrganizationalUnit)
+            orderby source.Name, node.Name
+            select new PolicyTargetDirectoryNodeDto(source.Id, source.Name, node.ObjectGuid, node.ParentGuid,
+                node.Name, node.DistinguishedName, node.Kind == DirectoryObjectKind.OrganizationalUnit, true)).ToListAsync();
+        return ServiceResult<List<PolicyTargetDirectoryNodeDto>>.Ok(nodes);
+    }
+
     internal static async Task<List<PolicyAudienceOption>> ReadOptionsAsync(CloneDeployDbContext db)
     {
         var objects = await db.DirectoryObjects.AsNoTracking().Include(x => x.DirectorySource).Where(x => !x.DirectorySource.ApplicationAccessOnly &&
