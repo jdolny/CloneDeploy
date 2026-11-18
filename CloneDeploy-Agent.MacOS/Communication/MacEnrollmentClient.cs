@@ -43,6 +43,12 @@ public sealed class MacEnrollmentClient : IDisposable
                 identity.State.RequestReset, HardwareUuid = hardwareUuid, MacAddresses = macs
             }, ct);
             if (response.StatusCode == HttpStatusCode.TooManyRequests) return RateLimited(response);
+            if (response.StatusCode == HttpStatusCode.Conflict && !identity.State.RequestReset)
+            {
+                identity.ResetEnrollment();
+                http.Invalidate();
+                return new("RecoveryRequested", TimeSpan.FromSeconds(1));
+            }
             if (response.StatusCode == HttpStatusCode.Accepted)
             {
                 var pending = await response.Content.ReadFromJsonAsync<Pending>(ct) ?? throw new InvalidDataException("Empty enrollment response.");
@@ -105,7 +111,7 @@ public sealed class MacEnrollmentClient : IDisposable
         {
             HttpStatusCode.Unauthorized => "Check the provisioning key or enrolled device certificate. Identity was retained.",
             HttpStatusCode.Forbidden => "Review the device and approval request on the server. Identity was retained.",
-            HttpStatusCode.Conflict => "Review the existing device. Use --reset-enrollment only when an identity reset is intended.",
+            HttpStatusCode.Conflict => "Review the existing device and reset request on the server. Identity was retained.",
             _ => "Check server availability and configuration."
         };
         // Never echo response bodies or enrollment secrets into the daemon log.

@@ -49,6 +49,30 @@ public sealed class MacIdentity : IDisposable
         if (previous.ServerUrl != options.ServerUrl || previous.SchemaVersion != 1) throw new InvalidDataException("Identity and configuration do not match.");
         store.Save("identity.json", CreateState(options.ServerUrl, options.DeviceName) with { InstallationId = previous.InstallationId, RequestReset = true });
     }
+    public void ResetEnrollment()
+    {
+        lock (identityLock)
+        {
+            var replacement = CreateState(State.ServerUrl, Environment.MachineName) with
+            {
+                InstallationId = State.InstallationId,
+                RequestReset = true
+            };
+            var replacementKey = RSA.Create();
+            try
+            {
+                var bytes = Convert.FromBase64String(replacement.PrivateKeyPkcs8);
+                try { replacementKey.ImportPkcs8PrivateKey(bytes, out _); }
+                finally { CryptographicOperations.ZeroMemory(bytes); }
+                Save(replacement);
+            }
+            catch { replacementKey.Dispose(); throw; }
+            var old = key;
+            key = replacementKey;
+            old.Dispose();
+        }
+    }
+
     public void AcceptCertificate(Guid deviceGuid, string pem, string caPem)
     {
         lock (identityLock)
