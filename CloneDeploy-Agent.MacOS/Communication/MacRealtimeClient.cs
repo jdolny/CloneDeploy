@@ -50,6 +50,7 @@ public sealed class MacRealtimeClient(MacConfiguration configuration, MacIdentit
                 };
                 transport.WebSocketFactory = async (context, token) => await AgentResponseVerification.ConnectSocketAsync(context.Uri, options, certificate, token);
             }).Build();
+            connection.ServerTimeout = TimeSpan.FromSeconds(60);
             var connectionTerminal = terminal = new MacTerminal(options, identity);
             connection.Closed += async _ => { await connectionTerminal.StopAsync(); if (Remote is not null) await Remote.StopAsync(); };
             connection.On<AgentCheckinCommand, AgentCheckinReceipt>(AgentHubProtocol.CheckInNow, request =>
@@ -92,6 +93,11 @@ public sealed class MacRealtimeClient(MacConfiguration configuration, MacIdentit
                     using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
                     timeout.CancelAfter(TimeSpan.FromSeconds(15));
                     await MaintainAsync(timeout.Token);
+                }
+                catch (OperationCanceledException) when (!ct.IsCancellationRequested && connection?.State == HubConnectionState.Connected)
+                {
+                    // Let SignalR detect transport loss instead of closing a session for a slow heartbeat.
+                    Console.Error.WriteLine($"{DateTimeOffset.UtcNow:O} Live connection maintenance timed out; keeping the connected session and retrying.");
                 }
                 catch (Exception ex) when (!ct.IsCancellationRequested)
                 {

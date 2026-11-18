@@ -77,6 +77,7 @@ public sealed class AgentRealtimeClient(
                         transport.WebSocketFactory = async (context, token) => await AgentResponseVerification.ConnectSocketAsync(context.Uri, options, certificate, token);
                     })
                 .Build();
+            connection.ServerTimeout = TimeSpan.FromSeconds(60);
             connection.On<AgentImagingCommand, AgentImagingReply>(
                 AgentHubProtocol.ImagingBoot,
                 request => ImagingBoot?.ReceiveAsync(request, deviceGuid)
@@ -216,6 +217,12 @@ public sealed class AgentRealtimeClient(
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
                 throw;
+            }
+            catch (OperationCanceledException) when (connection?.State == HubConnectionState.Connected)
+            {
+                // A slow maintenance request does not mean the live transport is broken.
+                // Let SignalR's server timeout decide when the connection has been lost.
+                logger.LogWarning("Live connection maintenance timed out; keeping the connected session and retrying shortly.");
             }
             catch (Exception exception)
             {
