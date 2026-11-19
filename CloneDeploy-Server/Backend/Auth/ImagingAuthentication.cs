@@ -17,9 +17,9 @@ public sealed class ImagingAuthentication(IOptionsMonitor<AuthenticationSchemeOp
     public const string PolicyName = "ImagingApi";
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        if (!Request.IsHttps) return AuthenticateResult.Fail("HTTPS is required.");
         var header = Request.Headers.Authorization.ToString();
         if (header.Length == 0) return AuthenticateResult.NoResult();
+        if (!Request.IsHttps) return AuthenticateResult.Fail("HTTPS is required.");
         if (header.Length > 8192 || !AuthenticationHeaderValue.TryParse(header, out var value) ||
             !string.Equals(value.Scheme, "Bearer", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(value.Parameter))
             return AuthenticateResult.Fail("Invalid bearer token.");
