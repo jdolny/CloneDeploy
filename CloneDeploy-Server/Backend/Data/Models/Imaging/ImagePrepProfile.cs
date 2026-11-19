@@ -20,7 +20,8 @@ public sealed class ImagePrepProfile
         set => GeneratorJson = value is null ? null : System.Text.Json.JsonSerializer.Serialize(value);
     }
     public string? SetupComplete { get; set; }
-    public string? PreSysprepScript { get; set; }
+    public string? PreSysprepScript { get; set; } =
+        "Get-AppxPackage -AllUsers -Name Microsoft.OneDrive.Photos | Remove-AppxPackage -AllUsers";
     public bool DisableHibernate { get; set; } = true;
     public bool DisableBitLocker { get; set; } = true;
     public bool ResetAgent { get; set; } = true;
