@@ -46,6 +46,33 @@ function Assert-ManifestSignature([string]$signature, [string]$nonce, [Uri]$uri,
         $message.Value.BodyHash -cne [ImagerBootstrapSignature]::Hash([IO.File]::ReadAllBytes($path))) { throw 'Modified Imager manifest or response does not match this request.' }
 }
 
+function Wait-ImagerNetwork {
+    Write-Host 'Waiting up to 120 seconds for a usable network address...'
+    $timer = [Diagnostics.Stopwatch]::StartNew()
+    do {
+        foreach ($adapter in [Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces()) {
+            if ($adapter.OperationalStatus -ne [Net.NetworkInformation.OperationalStatus]::Up -or
+                $adapter.NetworkInterfaceType -eq [Net.NetworkInformation.NetworkInterfaceType]::Loopback -or
+                $adapter.NetworkInterfaceType -eq [Net.NetworkInformation.NetworkInterfaceType]::Tunnel) { continue }
+            foreach ($unicast in $adapter.GetIPProperties().UnicastAddresses) {
+                $address = $unicast.Address
+                if ([Net.IPAddress]::IsLoopback($address)) { continue }
+                if ($address.AddressFamily -eq [Net.Sockets.AddressFamily]::InterNetwork) {
+                    $bytes = $address.GetAddressBytes()
+                    if ($bytes[0] -eq 0 -or ($bytes[0] -eq 169 -and $bytes[1] -eq 254)) { continue }
+                } elseif ($address.AddressFamily -eq [Net.Sockets.AddressFamily]::InterNetworkV6) {
+                    if ($address.IsIPv6LinkLocal -or $address.IsIPv6Multicast -or $address.Equals([Net.IPAddress]::IPv6Any)) { continue }
+                } else { continue }
+                Write-Host ('Network address ready: ' + $address)
+                return
+            }
+        }
+        if ($timer.Elapsed.TotalSeconds -ge 120) { break }
+        Start-Sleep -Seconds 2
+    } while ($true)
+    throw 'No usable network address was available after 120 seconds. Check the network cable, switch port, DHCP, and network drivers, then retry.'
+}
+
 function Sync-ImagerTime($settings) {
     $timeServers = @('time.windows.com')
     if ($settings.PSObject.Properties['TimeServers']) { $timeServers = @($settings.TimeServers) }
@@ -55,17 +82,25 @@ function Sync-ImagerTime($settings) {
         if ([string]::IsNullOrWhiteSpace([string]$timeServer) -or [Uri]::CheckHostName([string]$timeServer) -eq [UriHostNameType]::Unknown) {
             throw 'WinPE time servers must be host names or IP addresses, without a URL or port.'
         }
-        Write-Host ('Synchronizing time with ' + $timeServer + '...')
-        try {
-            $utc = [ImagerTimeSync]::Query([string]$timeServer)
-            Set-Date -Date $utc.ToLocalTime() -ErrorAction Stop | Out-Null
-            Write-Host ('WinPE clock synchronized: ' + [DateTime]::UtcNow.ToString('u'))
-            return
-        } catch {
-            Write-Warning ('Time sync failed with ' + $timeServer + ': ' + $_.Exception.GetBaseException().Message)
+    }
+    for ($attempt = 1; $attempt -le 2; $attempt++) {
+        foreach ($timeServer in $timeServers) {
+            Write-Host ('Synchronizing time with ' + $timeServer + ' (attempt ' + $attempt + '/2)...')
+            try {
+                $utc = [ImagerTimeSync]::Query([string]$timeServer)
+                Set-Date -Date $utc.ToLocalTime() -ErrorAction Stop | Out-Null
+                Write-Host ('WinPE clock synchronized: ' + [DateTime]::UtcNow.ToString('u'))
+                return
+            } catch {
+                Write-Warning ('Time sync failed with ' + $timeServer + ': ' + $_.Exception.GetBaseException().Message)
+            }
+        }
+        if ($attempt -lt 2 -and $timeServers.Count -gt 0) {
+            Write-Host 'Waiting 5 seconds before retrying time synchronization...'
+            Start-Sleep -Seconds 5
         }
     }
-    Write-Warning 'Time was not synchronized. Trying the download with the current clock and normal certificate validation. If the clock is wrong, correct it with Set-Date or check NTP access (UDP 123), then retry.'
+    Write-Warning 'Time was not synchronized. Trying the download with the current clock and normal certificate validation.'
 }
 
 function Download-File([Uri]$uri, [string]$path, [long]$limit, [switch]$SignedManifest) {
@@ -134,6 +169,7 @@ try {
         $archivePath = Join-Path $bootstrapRoot ('download-' + $id + '.zip')
         $stage = Join-Path $bootstrapRoot ('stage-' + $id)
         try {
+            Wait-ImagerNetwork
             Sync-ImagerTime $settings
             Write-Host 'Downloading the latest CloneDeploy Imager...'
             Download-File ([Uri]::new($server, ('api/imaging/client/win-' + $architecture + '.json'))) $manifestPath 65536 -SignedManifest
