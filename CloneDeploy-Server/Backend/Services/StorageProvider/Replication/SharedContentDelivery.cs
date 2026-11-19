@@ -38,13 +38,23 @@ public sealed class SharedContentDelivery(IServiceScopeFactory scopes, SharedCon
         if (context is null || hash is not { Length: 64 }) return await primary();
         var content = await FindAsync(kind, key, hash, ct);
         if (content is null) return await primary();
-        using (var scope = scopes.CreateScope())
-            if (scope.ServiceProvider.GetService<SiteDownloadDelivery>() is { } site &&
-                await site.TryOpenAsync("shared-" + content.Id, content.SizeBytes, content.Sha256, SharedContentInventory.PurposeFor(content.Kind), ct) is { } marker)
-            { await marker.DisposeAsync(); return SiteDownloadDelivery.PathMarker; }
-        var selected = await ReserveAsync(content, context.Connection.RemoteIpAddress, ct);
-        if (selected.Lease is not null) context.Response.RegisterForDisposeAsync(selected.Lease);
-        return selected.Path;
+        var hadTransfer = context.Items.ContainsKey(SiteDownloadDelivery.TransferKey);
+        try
+        {
+            using (var scope = scopes.CreateScope())
+                if (scope.ServiceProvider.GetService<SiteDownloadDelivery>() is { } site &&
+                    await site.TryOpenAsync("shared-" + content.Id, content.SizeBytes, content.Sha256, SharedContentInventory.PurposeFor(content.Kind), ct) is { } marker)
+                { await marker.DisposeAsync(); return SiteDownloadDelivery.PathMarker; }
+            var selected = await ReserveAsync(content, context.Connection.RemoteIpAddress, ct);
+            if (selected.Lease is not null) context.Response.RegisterForDisposeAsync(selected.Lease);
+            return selected.Path;
+            }
+        finally
+        {
+            // A request can inspect several boot artifacts. Only explicitly pinned
+            // transfers may outlive this content lookup; each artifact needs its own identity.
+            if (!hadTransfer) context.Items.Remove(SiteDownloadDelivery.TransferKey);
+        }
     }
 
     public async Task<Stream> OpenAsync(SharedContentKind kind, string key, string hash, Func<Task<Stream>> primary, IPAddress? client, CancellationToken ct)
