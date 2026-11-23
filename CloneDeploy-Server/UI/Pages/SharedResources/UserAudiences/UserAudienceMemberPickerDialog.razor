@@ -45,6 +45,6 @@
         ObjectGuid = x.ObjectGuid,
         Exclude = Exclude,
         IncludeDescendants = Kind == DirectoryObjectKind.OrganizationalUnit && _includeDescendants,
-        DisplayName = $"{x.Name} · {x.Kind} · {x.DirectoryName}"
+        DisplayName = $"{x.Name} \u00B7 {x.Kind} \u00B7 {x.DirectoryName}"
     }).ToList()));
 }

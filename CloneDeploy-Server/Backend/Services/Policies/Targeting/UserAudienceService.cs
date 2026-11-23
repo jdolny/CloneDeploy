@@ -129,7 +129,7 @@ public sealed class UserAudienceService(ICloneDeployDbFactory factory, Authentic
                     x.Kind == DirectoryObjectKind.OrganizationalUnit && x.DirectorySource.Provider == DirectoryProvider.ActiveDirectory));
                 var previous = stored?.Members.SingleOrDefault(x => x.DirectorySourceId == member.DirectorySourceId && x.ObjectGuid == member.ObjectGuid && x.Exclude == member.Exclude && x.IncludeDescendants == member.IncludeDescendants);
                 if (item is null && previous is null) return ServiceResult.Fail("Policy.Validation", UiText.Get(LocKeys.Ui.UserAudienceService.ASelectedDirectoryObjectIsUnavailableSyncTheDirectory));
-                member.DisplayName = item is null ? previous!.DisplayName : $"{item.Name} · {item.Kind} · {item.DirectorySource.Name}";
+                member.DisplayName = item is null ? previous!.DisplayName : $"{item.Name} \u00B7 {item.Kind} \u00B7 {item.DirectorySource.Name}";
                 if (item is not null && item.Kind != DirectoryObjectKind.OrganizationalUnit) member.IncludeDescendants = false;
             }
             if (stored is null) { stored = new(); db.Add(stored); }

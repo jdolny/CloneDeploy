@@ -41,7 +41,7 @@
     private bool _picking;
     private bool Matches(UserAudienceMember item) => string.IsNullOrWhiteSpace(_search) || Label(item).Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
     private PolicyAudienceOption? Option(UserAudienceMember item) => Options.FirstOrDefault(x => x.SourceId == item.DirectorySourceId && x.ObjectGuid == item.ObjectGuid);
-    private string Label(UserAudienceMember item) => Option(item) is { } option ? $"{option.Name} Â· {option.Kind} Â· {option.DirectoryName}{(option.Available ? "" : " (unavailable)")}"
+    private string Label(UserAudienceMember item) => Option(item) is { } option ? $"{option.Name} \u00B7 {option.Kind} \u00B7 {option.DirectoryName}{(option.Available ? "" : " (unavailable)")}"
         : UiText.Get(LocKeys.Ui.UserAudienceMembersTab.Text0Unavailable1, (item.DisplayName), (item.ObjectGuid));
     private async Task OpenPickerAsync(DirectoryObjectKind kind)
     {
@@ -81,7 +81,7 @@
                         ObjectGuid = option.ObjectGuid,
                         Exclude = exclude,
                         IncludeDescendants = selection.IncludeDescendants,
-                        DisplayName = $"{option.Name} · {option.Kind} · {option.DirectoryName}"
+                        DisplayName = $"{option.Name} \u00B7 {option.Kind} \u00B7 {option.DirectoryName}"
                     });
                 }
                 return;
