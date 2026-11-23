@@ -156,7 +156,6 @@ public static class EntraAuthentication
                 if (context.Principal?.Identity is ClaimsIdentity { IsAuthenticated: true } identity &&
                     !context.Principal.HasClaim(ClaimTypes.AuthenticationMethod, "Entra"))
                     identity.AddClaim(new Claim(ClaimTypes.AuthenticationMethod, "Entra"));
-                context.ShouldRenew = false; // Stamp validation must not extend the Microsoft session lifetime.
             }
         };
         options.Events.OnSigningIn = async context =>
@@ -171,10 +170,8 @@ public static class EntraAuthentication
             {
                 context.Properties.Items["entra.session"] = "true";
                 context.Properties.IsPersistent = false;
-                context.Properties.AllowRefresh = false;
-                var expires = DateTimeOffset.UtcNow.AddHours(1);
-                if (context.Properties.ExpiresUtc is null || context.Properties.ExpiresUtc > expires)
-                    context.Properties.ExpiresUtc = expires;
+                context.Properties.AllowRefresh = true;
+                context.Properties.ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1);
             }
         };
     }

@@ -165,7 +165,7 @@ try
         options.LoginPath = "/login";
         options.AccessDeniedPath = "/access-denied";
         options.SlidingExpiration = true;
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.ExpireTimeSpan = TimeSpan.FromHours(1);
         BrowserSession.ConfigureCookie(options);
     });
     builder.Services.Configure<SecurityStampValidatorOptions>(options =>

@@ -25,13 +25,15 @@ public static class BrowserSession
         options.Events.OnCheckSlidingExpiration = async context =>
         {
             await sliding(context);
-            if (context.Request.Path == Path) context.ShouldRenew = false;
+            if (context.Request.Path == Path && context.Request.Headers["X-CloneDeploy-User-Activity"] != "1")
+                context.ShouldRenew = false;
         };
         var validate = options.Events.OnValidatePrincipal;
         options.Events.OnValidatePrincipal = async context =>
         {
             await validate(context);
-            if (context.Request.Path == Path) context.ShouldRenew = false;
+            if (context.Request.Path == Path && context.Request.Headers["X-CloneDeploy-User-Activity"] != "1")
+                context.ShouldRenew = false;
         };
     }
 }
