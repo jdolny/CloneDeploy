@@ -58,7 +58,6 @@ public sealed partial class EmailDigestBuilder
                 body.AppendLine($"  - {row.LoggedAtUtc:yyyy-MM-dd HH:mm} UTC | {Line(row.UserName)} | {(row.ObjectType == nameof(AppUser) ? "MFA reset" : "Certificate " + row.AuditType)} | {Line(row.ObjectName)}");
             if (auditCount > 20) body.AppendLine($"  ... and {auditCount - 20:N0} more changes");
         }
-        if (attention > 0) body.AppendLine("Security activity warrants review; these events do not establish that an attack occurred. Times are UTC. Identity-provider failures before reaching CloneDeploy are not included.");
         return attention;
     }
 }

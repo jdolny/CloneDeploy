@@ -37,7 +37,7 @@ public sealed partial class EmailDigestBuilder(ICloneDeployDbFactory factory, Ap
         var url = await urls.RequireAsync(ct);
         string Link(string path) => url.TrimEnd('/') + "/" + path.TrimStart('/');
         var since = now.AddDays(weekly ? -7 : -1);
-        var body = new StringBuilder($"CloneDeploy {(weekly ? "weekly summary" : "daily attention report")}\nGenerated {now:yyyy-MM-dd HH:mm} UTC\nFailures: {since:yyyy-MM-dd HH:mm} to {now:yyyy-MM-dd HH:mm} UTC. Pending approvals and device warnings reflect current data.\n");
+        var body = new StringBuilder($"CloneDeploy {(weekly ? "weekly summary" : "daily attention report")}\n");
         var attention = 0;
         if (subscription.Security && admin)
             attention += await AppendSecurityAsync(db, body, since, now, ct);
@@ -94,10 +94,9 @@ public sealed partial class EmailDigestBuilder(ICloneDeployDbFactory factory, Ap
             await Section("Low disk space (10 GiB or 10% free or less)", "/reports/devices", devices.Where(x => x.LogicalVolumes.Any(v => v.SizeGB > 0 && v.FreeSpaceGB >= 0 && v.FreeSpaceGB <= v.SizeGB && v.FreeSpacePercent >= 0 && v.FreeSpacePercent <= 100 && (v.FreeSpaceGB <= 10 || v.FreeSpacePercent <= 10))).Select(x => x.Name));
             var warnings = new[] { "pred fail", "degraded", "error", "nonrecover", "stressed", "failed", "failing" };
             await Section("Reported disk warnings", "/reports/devices", devices.Where(x => x.HardDrives.Any(d => d.Status != null && warnings.Contains(d.Status.Trim().ToLower()))).Select(x => x.Name));
-            await Section("Stale or missing check-ins (over 30 days)", "/reports/devices", devices.Where(x => x.LastCheckinAtUtc == null || x.LastCheckinAtUtc < now.AddDays(-30)).Select(x => x.Name));
-            await Section("Stale or missing inventory (over 30 days)", "/reports/devices", devices.Where(x => x.LastInventoryAtUtc == null || x.LastInventoryAtUtc < now.AddDays(-30)).Select(x => x.Name));
-            body.AppendLine("Disk warnings use reported Windows status, not detailed SMART telemetry. Inventory can be stale; missing data is not proof of health.");
-            body.AppendLine(Link("/reports/devices"));
+            await Section("Never enrolled", "/reports/devices", devices.Where(x => x.ProvisionedAtUtc == null).Select(x => x.Name));
+            await Section("Stale or missing check-ins (over 30 days)", "/reports/devices", devices.Where(x => x.ProvisionedAtUtc != null && (x.LastCheckinAtUtc == null || x.LastCheckinAtUtc < now.AddDays(-30))).Select(x => x.Name));
+            await Section("Stale or missing inventory (over 30 days)", "/reports/devices", devices.Where(x => x.ProvisionedAtUtc != null && (x.LastInventoryAtUtc == null || x.LastInventoryAtUtc < now.AddDays(-30))).Select(x => x.Name));
         }
         if (subscription.ServerUpdates && admin)
         {
