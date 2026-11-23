@@ -104,6 +104,14 @@ public sealed class AgentAdminController(AgentAdminSessions sessions, ICloneDepl
         return result is null ? Unauthorized() : result;
     }
 
+    [HttpPost("api/agent/v1/admin/driver-job"), Authorize(Policy = AgentCertificateAuthentication.PolicyName)]
+    public async Task<ActionResult<AgentAdminSessionResponse>> DriverJob(AgentAdminSessionRequest request, CancellationToken ct)
+    {
+        Response.Headers.CacheControl = "no-store";
+        var result = await sessions.StartDriverJobAsync(DeviceGuid, request, factory, ct);
+        return result is null ? Unauthorized() : result;
+    }
+
     [HttpPost("api/agent/v1/admin/sign-out"), Authorize(Policy = AgentCertificateAuthentication.PolicyName)]
     public IActionResult SignOut(AgentAdminSessionRequest request) { sessions.Revoke(DeviceGuid, request); return NoContent(); }
 }

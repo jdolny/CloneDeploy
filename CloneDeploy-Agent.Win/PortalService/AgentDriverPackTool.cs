@@ -66,11 +66,12 @@ public sealed class AgentDriverPackTool(
         if (string.IsNullOrWhiteSpace(name) || name.Length > MaximumPackNameCharacters || name.Any(char.IsControl))
             return new(PortalToolStatus.Failed, "Enter a pack name between 1 and 200 characters.");
 
-        var lease = await admin.ToolClientAsync(sid, sessionId, "CreateDriverPack", ct);
+        var client = await admin.DriverJobClientAsync(sid, sessionId, ct);
 
         if (!AgentExecutionGate.Gate.Wait(0))
         {
-            lease.Client.Dispose();
+            await AgentAdminSession.EndDriverJobAsync(client);
+            client.Dispose();
 
             return new(PortalToolStatus.Busy, "The agent is busy with another operation. Try again when it finishes.");
         }
@@ -79,19 +80,21 @@ public sealed class AgentDriverPackTool(
 
         try
         {
-            job = new Job { Stop = CancellationTokenSource.CreateLinkedTokenSource(lease.Stop, shutdown.Token) };
+            job = new Job { Stop = CancellationTokenSource.CreateLinkedTokenSource(shutdown.Token) };
+            job.Stop.CancelAfter(TimeSpan.FromHours(24));
 
             lock (gate)
                 jobs[(sid, sessionId)] = job;
 
-            _ = Task.Run(() => RunAsync(job, lease.Client, name));
+            _ = Task.Run(() => RunAsync(job, client, name));
 
             return job.Status;
         }
         catch
         {
             job?.Stop.Dispose();
-            lease.Client.Dispose();
+            await AgentAdminSession.EndDriverJobAsync(client);
+            client.Dispose();
             AgentExecutionGate.Gate.Release();
             throw;
         }
@@ -306,6 +309,7 @@ public sealed class AgentDriverPackTool(
             }
             finally
             {
+                await AgentAdminSession.EndDriverJobAsync(client);
                 client.Dispose();
 
                 lock (gate)

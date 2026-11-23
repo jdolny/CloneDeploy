@@ -68,13 +68,14 @@ public partial class MainWindow
         DriverPackToolCard.IsEnabled = status.Status == "SignedIn" && status.Capabilities.Contains("CreateDriverPack");
         ImagePrepToolCard.IsEnabled = status.Status == "SignedIn" && status.Capabilities.Contains("RunImagePrep");
         UsbToolCard.IsEnabled = status.Status == "SignedIn" && status.Capabilities.Contains("CreateBootableUsb");
-        if (status.Status != "SignedIn" || selectedAdminTool == "drivers" && !DriverPackToolCard.IsEnabled ||
-            selectedAdminTool == "imageprep" && !ImagePrepToolCard.IsEnabled || selectedAdminTool == "usb" && !UsbToolCard.IsEnabled)
+        // Keep job progress and cancellation visible after interactive access expires.
+        if (status.Status != "SignedIn" && selectedAdminTool is not ("drivers" or "imageprep" or "usb"))
             ShowAdminTool(null);
         AdminIdentityText.Text = status.Status == "SignedIn" ? PortalText.Format("SignIn.SignedInAs", status.UserName) : PortalText.Get("Admin.SignInWithCloneDeploy");
         AdminStatusText.Text = status.Message ?? (status.Status == "SignedIn" ? PortalText.Format("Admin.SessionExpiresAt", status.ExpiresAt?.LocalDateTime) :
             PortalText.Get("SignIn.BrowserVerificationHint"));
-        AdminToolsPanel.Visibility = status.Status == "SignedIn" ? Visibility.Visible : Visibility.Collapsed;
+        AdminToolsPanel.Visibility = status.Status == "SignedIn" || selectedAdminTool is "drivers" or "imageprep" or "usb"
+            ? Visibility.Visible : Visibility.Collapsed;
         AdminSignOutButton.Visibility = status.Status is "SignedIn" or "Pending" or "Unavailable" ? Visibility.Visible : Visibility.Collapsed;
         AdminSignOutButton.Content = status.Status == "Pending" ? PortalText.Get("Common.CancelSignIn") : PortalText.Get("SignIn.SignOut");
         AdminSignInButton.Visibility = status.Status is "SignedIn" or "Pending" ? Visibility.Collapsed : Visibility.Visible;

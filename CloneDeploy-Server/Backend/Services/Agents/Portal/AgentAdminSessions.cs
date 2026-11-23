@@ -18,7 +18,7 @@ public sealed class AgentAdminSessions(TimeProvider clock)
         public bool EntraAuthenticated { get; set; }
     }
     private sealed record Session(Guid DeviceGuid, string WindowsSid, int WindowsSessionId, int UserId,
-        string? SecurityStamp, DateTimeOffset ExpiresAt, bool EntraAuthenticated);
+        string? SecurityStamp, DateTimeOffset ExpiresAt, bool EntraAuthenticated, string? JobCapability = null);
     private readonly object gate = new();
     private readonly Dictionary<Guid, Pending> pending = [];
     private readonly Dictionary<string, Session> sessions = [];
@@ -112,8 +112,11 @@ public sealed class AgentAdminSessions(TimeProvider clock)
         return new(token, user.UserName ?? "Administrator", expires, await CapabilitiesAsync(db, user.Id, ct));
     }
 
-    public async Task<AgentAdminSessionResponse?> ValidateAsync(Guid deviceGuid, AgentAdminSessionRequest input,
-        ICloneDeployDbFactory factory, CancellationToken ct)
+    public Task<AgentAdminSessionResponse?> ValidateAsync(Guid deviceGuid, AgentAdminSessionRequest input,
+        ICloneDeployDbFactory factory, CancellationToken ct) => ValidateCoreAsync(deviceGuid, input, factory, ct, false);
+
+    private async Task<AgentAdminSessionResponse?> ValidateCoreAsync(Guid deviceGuid, AgentAdminSessionRequest input,
+        ICloneDeployDbFactory factory, CancellationToken ct, bool allowJob)
     {
         if (!Secret(input.Token)) return null;
         Session session;
@@ -121,7 +124,8 @@ public sealed class AgentAdminSessions(TimeProvider clock)
         {
             Cleanup();
             if (!sessions.TryGetValue(Hash(input.Token), out session!) || session.DeviceGuid != deviceGuid ||
-                session.WindowsSid != input.WindowsSid || session.WindowsSessionId != input.WindowsSessionId) return null;
+                session.WindowsSid != input.WindowsSid || session.WindowsSessionId != input.WindowsSessionId ||
+                (!allowJob && session.JobCapability is not null)) return null;
         }
         await using var db = await factory.CreateContextAsync();
         var user = await db.AppUsers.AsNoTracking().SingleOrDefaultAsync(u => u.Id == session.UserId, ct);
@@ -143,11 +147,29 @@ public sealed class AgentAdminSessions(TimeProvider clock)
     public async Task<int?> AuthorizeToolAsync(Guid deviceGuid, AgentAdminSessionRequest input, string capability,
         ICloneDeployDbFactory factory, CancellationToken ct)
     {
-        var authorized = await ValidateAsync(deviceGuid, input, factory, ct);
+        var authorized = await ValidateCoreAsync(deviceGuid, input, factory, ct, true);
         if (authorized is null || !authorized.Capabilities.Contains(capability, StringComparer.Ordinal)) return null;
         lock (gate)
-            return sessions.TryGetValue(Hash(input.Token), out var session) && session.ExpiresAt > clock.GetUtcNow() ? session.UserId : null;
+            return sessions.TryGetValue(Hash(input.Token), out var session) && session.ExpiresAt > clock.GetUtcNow() &&
+                (session.JobCapability is null || session.JobCapability == capability) ? session.UserId : null;
     }
+    // A separate credential lets an admitted driver export finish without extending interactive access.
+    public async Task<AgentAdminSessionResponse?> StartDriverJobAsync(Guid deviceGuid, AgentAdminSessionRequest input,
+        ICloneDeployDbFactory factory, CancellationToken ct)
+    {
+        var authorized = await ValidateAsync(deviceGuid, input, factory, ct);
+        if (authorized is null || !authorized.Capabilities.Contains("CreateDriverPack")) return null;
+        lock (gate)
+        {
+            Cleanup();
+            if (!sessions.TryGetValue(Hash(input.Token), out var session) || sessions.Count >= 4096) return null;
+            var token = Encode(RandomNumberGenerator.GetBytes(32));
+            var expires = clock.GetUtcNow().AddHours(24);
+            sessions.Add(Hash(token), session with { ExpiresAt = expires, JobCapability = "CreateDriverPack" });
+            return new(token, authorized.UserName, expires, ["CreateDriverPack"]);
+        }
+    }
+
     private void Cleanup()
     {
         var now = clock.GetUtcNow();

@@ -364,6 +364,41 @@ public sealed class AgentAdminSession(AgentOptions options, AgentIdentity identi
         }
     }
 
+    internal async Task<HttpClient> DriverJobClientAsync(string sid, int sessionId, CancellationToken ct)
+    {
+        var lease = await ToolClientAsync(sid, sessionId, "CreateDriverPack", ct);
+        var client = lease.Client;
+        try
+        {
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, lease.Stop);
+            var token = client.DefaultRequestHeaders.GetValues("X-CloneDeploy-Admin-Token").Single();
+            using var response = await client.PostAsJsonAsync("api/agent/v1/admin/driver-job",
+                new AgentAdminSessionRequest(token, sid, sessionId), linked.Token);
+            response.EnsureSuccessStatusCode();
+            var job = await response.Content.ReadFromJsonAsync<AgentAdminSessionResponse>(linked.Token)
+                ?? throw new IOException("The server returned no job authorization.");
+            client.DefaultRequestHeaders.Remove("X-CloneDeploy-Admin-Token");
+            client.DefaultRequestHeaders.Add("X-CloneDeploy-Admin-Token", job.Token);
+            return client;
+        }
+        catch { client.Dispose(); throw; }
+    }
+
+    internal static async Task EndDriverJobAsync(HttpClient client)
+    {
+        try
+        {
+            using var timeout = new CancellationTokenSource(RequestTimeout);
+            using var response = await client.PostAsJsonAsync("api/agent/v1/admin/sign-out",
+                new AgentAdminSessionRequest(
+                    client.DefaultRequestHeaders.GetValues("X-CloneDeploy-Admin-Token").Single(),
+                    client.DefaultRequestHeaders.GetValues("X-CloneDeploy-Windows-Sid").Single(),
+                    int.Parse(client.DefaultRequestHeaders.GetValues("X-CloneDeploy-Windows-Session").Single(),
+                        System.Globalization.CultureInfo.InvariantCulture)), timeout.Token);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException) { }
+    }
+
     public async Task<AgentAdminStatus> SignOutAsync(string sid, int sessionId, CancellationToken ct)
     {
         LocalSession? found;

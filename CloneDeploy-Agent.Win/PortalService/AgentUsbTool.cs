@@ -120,8 +120,9 @@ public sealed class AgentUsbTool(AgentOptions options, AgentAdminSession admin, 
                     sid,
                     session,
                     request.BuildId.Value,
-                    CancellationTokenSource.CreateLinkedTokenSource(lease.Stop, shutdown.Token)) { Architecture = architecture };
+                    CancellationTokenSource.CreateLinkedTokenSource(shutdown.Token)) { Architecture = architecture };
                 job.Status = job.Status with { Architecture = architecture };
+                job.Stop.CancelAfter(TimeSpan.FromHours(24));
                 current = job;
             }
 
@@ -264,7 +265,7 @@ public sealed class AgentUsbTool(AgentOptions options, AgentAdminSession admin, 
                 $"Downloaded and verified {job.Variant.DisplayName}. Select an external drive.",
                 55);
             retain = true;
-            // Keep the ISO only for this administrator session, including while awaiting drive selection.
+            // Retain verified media for this bounded job; writing still requires a current admin session.
             var lifetime = job.Stop.Token;
             _ = Task.Run(async () =>
             {
