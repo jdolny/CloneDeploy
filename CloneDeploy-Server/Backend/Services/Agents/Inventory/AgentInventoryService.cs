@@ -15,6 +15,7 @@ public sealed class AgentInventoryService(ICloneDeployDbFactory factory, TimePro
 {
     public async Task<bool> SaveAsync(int deviceId, AgentInventory inventory, CancellationToken ct = default)
     {
+        InventoryText.RemoveNullCharacters(inventory);
         if (inventory.SchemaVersion != 1 || inventory.ComputerSystem is null || inventory.Os is null
             || inventory.Warnings is null || inventory.Warnings.Count > 30)
             throw new ArgumentException("Inventory requires a supported schema, computer system and operating system.");
