@@ -29,7 +29,7 @@ else if (_stats is not null)
                 <MudText Typo="Typo.h6">@chart.Title</MudText><MudText Typo="Typo.body2" Class="mb-4">@chart.Description</MudText>
                 @foreach (var bucket in chart.Buckets)
                 {
-                    var percent = 100d * bucket.Devices.Count / Math.Max(1, _stats.Devices.Count);
+                    var percent = 100d * bucket.Devices.Count / Math.Max(1, chart.Buckets.Sum(x => x.Devices.Count));
                     <button type="button" class="chart-row" @onclick="@(() => ViewAsync($"{chart.Title}: {bucket.Label}", bucket.Devices))" aria-label="@(UiText.Get(LocKeys.Ui.DeviceStatsTab.Text01Devices2N1Percent, (bucket.Label), (bucket.Devices.Count), (percent)))">
                         <span class="chart-label">@bucket.Label</span><span class="chart-count">@bucket.Devices.Count.ToString("N0") <small>(@percent.ToString("N1")%)</small></span>
                         <span class="chart-track"><span class="chart-fill" style="@($"width:{percent.ToString("0.##", CultureInfo.InvariantCulture)}%")"></span></span>
@@ -62,11 +62,12 @@ else { <MudButton OnClick="LoadAsync">@Loc[LocKeys.Ui.DeviceStatsTab.RetryLoadin
     {
         var data = _stats!;
         yield return (UiText.Get(LocKeys.Group.Devices), UiText.Get(LocKeys.Ui.DeviceStatsTab.InTheNonArchivedFleet), "", data.Devices);
-        yield return (UiText.Get(LocKeys.Ui.DeviceStatsTab.RecentCheckIns), UiText.Get(LocKeys.Ui.DeviceStatsTab.WithinThePast24Hours), "positive", data.Devices.Where(x => x.Checkin >= data.AsOfUtc.AddDays(-1)).ToList());
-        yield return (UiText.Get(LocKeys.Ui.DeviceStatsTab.LowDiskSpace), UiText.Get(LocKeys.Ui.DeviceStatsTab.AtMost10GiBOr10Free), "warning", data.Devices.Where(x => x.LowDisk).ToList());
-        yield return (UiText.Get(LocKeys.Ui.DeviceStatsDevicesDialog.DiskWarnings), UiText.Get(LocKeys.Ui.DeviceStatsTab.ADiskReportsAWarningStatus), "danger", data.Devices.Where(x => x.DiskWarning).ToList());
-        yield return (UiText.Get(LocKeys.Ui.DeviceStatsTab.StaleCheckIns), UiText.Get(LocKeys.Ui.DeviceStatsTab.Over30DaysAgoOrNever), "warning", data.Devices.Where(x => x.Checkin is null || x.Checkin < data.AsOfUtc.AddDays(-30)).ToList());
-        yield return (UiText.Get(LocKeys.Ui.DeviceStatsTab.NoInventory), UiText.Get(LocKeys.Ui.DeviceStatsTab.NoInventoryTimestampReceived), "", data.Devices.Where(x => x.Inventory is null).ToList());
+        yield return (UiText.Get(LocKeys.Ui.DeviceStatsTab.RecentCheckIns), UiText.Get(LocKeys.Ui.DeviceStatsTab.WithinThePast24Hours), "positive", data.Devices.Where(x => x.HasEnrolled && x.Checkin >= data.AsOfUtc.AddDays(-1)).ToList());
+        yield return (UiText.Get(LocKeys.Ui.DeviceStatsTab.LowDiskSpace), UiText.Get(LocKeys.Ui.DeviceStatsTab.AtMost10GiBOr10Free), "warning", data.Devices.Where(x => x.HasEnrolled && x.LowDisk).ToList());
+        yield return (UiText.Get(LocKeys.Ui.DeviceStatsDevicesDialog.DiskWarnings), UiText.Get(LocKeys.Ui.DeviceStatsTab.ADiskReportsAWarningStatus), "danger", data.Devices.Where(x => x.HasEnrolled && x.DiskWarning).ToList());
+        yield return (UiText.Get(LocKeys.Ui.DeviceStatsTab.StaleCheckIns), UiText.Get(LocKeys.Ui.DeviceStatsTab.Over30DaysAgoOrNever), "warning", data.Devices.Where(x => x.HasEnrolled && (x.Checkin is null || x.Checkin < data.AsOfUtc.AddDays(-30))).ToList());
+        yield return (UiText.Get(LocKeys.Ui.DeviceStatsTab.NeverEnrolled), UiText.Get(LocKeys.Ui.DeviceStatsTab.NoEnrollmentRecorded), "", data.Devices.Where(x => !x.HasEnrolled).ToList());
+        yield return (UiText.Get(LocKeys.Ui.DeviceStatsTab.NoInventory), UiText.Get(LocKeys.Ui.DeviceStatsTab.NoInventoryTimestampReceived), "", data.Devices.Where(x => x.HasEnrolled && x.Inventory is null).ToList());
     }
     private static string Size(long gib) => gib >= 1024 ? UiText.Get(LocKeys.Ui.DeviceStatsTab.Text0N1TiB, (gib / 1024d)) : UiText.Get(LocKeys.Ui.DeviceStatsTab.Text0N0GiB, (gib));
     private async Task ViewAsync(string title, List<DeviceStatsRow> devices)

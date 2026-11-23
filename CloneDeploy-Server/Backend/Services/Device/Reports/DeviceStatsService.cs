@@ -17,6 +17,7 @@ public sealed class DeviceStatsRow
 {
     public int Id { get; init; }
     public string Name { get; init; } = "";
+    public bool HasEnrolled { get; init; }
     public DateTime? Checkin { get; init; }
     public DateTime? Inventory { get; init; }
     public string? Os { get; init; }
@@ -51,6 +52,7 @@ public sealed class DeviceStatsService(ICloneDeployDbFactory factory, Authentica
         var devices = await db.Devices.AsNoTracking().Where(x => x.ArchivedAtUtc == null && x.ProvisionStatus != DeviceProvisionStatus.Archived)
             .OrderBy(x => x.Name).ThenBy(x => x.Id).Select(x => new DeviceStatsRow
             {
+                HasEnrolled = x.ProvisionedAtUtc != null,
                 Id = x.Id, Name = x.Name, Checkin = x.LastCheckinAtUtc, Inventory = x.LastInventoryAtUtc, Agent = x.ClientVersion,
                 Os = x.Os == null ? null : x.Os.Caption,
                 Manufacturer = x.ComputerSystem == null ? null : x.ComputerSystem.Manufacturer,
@@ -64,14 +66,15 @@ public sealed class DeviceStatsService(ICloneDeployDbFactory factory, Authentica
 
     public static DeviceStatsSnapshot Summarize(List<DeviceStatsRow> devices, DateTime now)
     {
+        var enrolled = devices.Where(x => x.HasEnrolled).ToList();
         List<DeviceStatsBucket> Group(Func<DeviceStatsRow, string> key, bool limit = false)
         {
-            var groups = devices.GroupBy(key, StringComparer.OrdinalIgnoreCase)
+            var groups = enrolled.GroupBy(key, StringComparer.OrdinalIgnoreCase)
                 .Select(g => new DeviceStatsBucket(g.Key, g.ToList())).OrderByDescending(g => g.Devices.Count).ThenBy(g => g.Label).ToList();
             if (!limit || groups.Count <= 8) return groups;
             return [.. groups.Take(8), new("Other", groups.Skip(8).SelectMany(g => g.Devices).OrderBy(x => x.Name).ToList())];
         }
-        var volumes = devices.SelectMany(x => x.Volumes).Where(x => x.Valid).ToList();
+        var volumes = enrolled.SelectMany(x => x.Volumes).Where(x => x.Valid).ToList();
         return new(now, devices,
         [
             new("Check-in activity", "Last recorded check-in; this is not live online status.", Group(x => x.Checkin is not { } last ? "Never checked in" : last >= now.AddDays(-1) ? "Within 24 hours" : last >= now.AddDays(-7) ? "1–7 days ago" : last >= now.AddDays(-30) ? "7–30 days ago" : "Over 30 days ago")),
@@ -82,7 +85,7 @@ public sealed class DeviceStatsService(ICloneDeployDbFactory factory, Authentica
             new("Manufacturers", "Most common manufacturers from inventory.", Group(x => Label(x.Manufacturer), true)),
             new("Models", "Most common hardware models from inventory.", Group(x => Label(x.Model), true)),
             new("Agent versions", "Reported versions; this does not determine whether an agent is current.", Group(x => Label(x.Agent), true)),
-            new("Installed memory", "Memory reported by inventory, grouped by capacity.", Group(x => x.MemoryMb <= 0 ? "Unknown" : x.MemoryMb < 8 * 1024 ? "Under 8 GiB" : x.MemoryMb < 16 * 1024 ? "8–under 16 GiB" : x.MemoryMb < 32 * 1024 ? "16–under 32 GiB" : "32 GiB or more"))
+            new("Installed memory", "Memory reported by inventory, grouped by capacity in GiB.", Group(x => x.MemoryMb <= 0 ? "Unknown" : x.MemoryMb < 8 * 1024 ? "< 8" : x.MemoryMb < 16 * 1024 ? "8-16" : x.MemoryMb <= 32 * 1024 ? "16-32" : "> 32"))
         ], volumes.Sum(x => (long)x.Size), volumes.Sum(x => (long)x.Free));
     }
     private static string Label(string? text) => string.IsNullOrWhiteSpace(text) ? "Unknown / no inventory" : text.Trim();

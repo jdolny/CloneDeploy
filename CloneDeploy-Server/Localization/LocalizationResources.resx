@@ -5806,4 +5806,6 @@ Please describe your issue:
   <data name="Ui.AgentFeatureSettingsTab.PromptForMacSignInDescription" xml:space="preserve">
     <value>Show a reminder popup when a Mac user is not signed in to their work account. Disabling this keeps manual sign-in available in the agent portal.</value>
   </data>
+  <data name="Ui.DeviceStatsTab.NeverEnrolled" xml:space="preserve"><value>Never enrolled</value></data>
+  <data name="Ui.DeviceStatsTab.NoEnrollmentRecorded" xml:space="preserve"><value>No agent enrollment recorded</value></data>
 </root>
