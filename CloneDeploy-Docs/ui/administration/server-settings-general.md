@@ -6,7 +6,11 @@ Set the addresses published to devices. These settings do not configure DNS, fir
 
 **Public application URL**
 
-HTTPS base URL used by new Imager/WinPE preparations and imaging. The hostname must be covered by the server or proxy certificate. Include the application path if one is used.
+HTTPS base URL whose hostname and application path are shared by management, agent/service and portal URLs. The hostname must be covered by the server or proxy certificate and reachable by all three uses. Include the application path if one is used.
+
+Accepts a custom port, for example `https://clonedeploy.example.org:8445/`. Without an explicit port, HTTPS uses 443. The port shown here is used for management links and management Entra sign-in callbacks; it does not change the management listener port. When using a reverse proxy, enter its externally accessible management URL.
+
+When generating agent/service URLs, including new Imager/WinPE preparations, the server replaces this port with the configured `ServicePort` (default 8443). For portal URLs and portal Entra sign-in callbacks, it replaces the port with `PortalPort` (default 8444). These ports must be reachable on the shared hostname.
 
 **Main server IP**
 

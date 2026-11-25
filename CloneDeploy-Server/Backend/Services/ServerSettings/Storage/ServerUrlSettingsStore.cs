@@ -63,8 +63,8 @@ public sealed class ServerUrlSettingsStore(ICloneDeployDbFactory factory, IConfi
     {
         await using var db = await factory.CreateContextAsync();
         var value = await db.AppSettings.Where(x => x.Name == PublicUrlKey).Select(x => x.Value).SingleOrDefaultAsync(ct);
-        // One hostname, with the configured management port as the advertised UI origin.
-        return WithPort(Normalize(value ?? configuration["Server:PublicUrl"]), CloneDeploy.SiteServices.ListenerPorts.Read(configuration).ManagementPort);
+        // The advertised management origin can differ from the internal listener behind a reverse proxy.
+        return Normalize(value ?? configuration["Server:PublicUrl"]);
     }
 
     public async Task<string> RequireAsync(CancellationToken ct = default) =>
@@ -78,7 +78,7 @@ public sealed class ServerUrlSettingsStore(ICloneDeployDbFactory factory, IConfi
         WithPort(await RequireAsync(ct), CloneDeploy.SiteServices.ListenerPorts.Read(configuration).PortalPort)!;
     public static string? WithPort(string? url, int port) => url is null ? null : new UriBuilder(url) { Port = port }.Uri.AbsoluteUri;
 
-    public string? NormalizeManagementUrl(string? value) => WithPort(Normalize(value), CloneDeploy.SiteServices.ListenerPorts.Read(configuration).ManagementPort);
+    public string? NormalizeManagementUrl(string? value) => Normalize(value);
 
     public static string? Normalize(string? value)
     {

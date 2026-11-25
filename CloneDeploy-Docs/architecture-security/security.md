@@ -15,7 +15,7 @@ The main server uses separate listeners and checks which routes each listener ma
 
 The agent and Site Service APIs reject HTTP requests. Management network restrictions use the actual connection address rather than accepting a caller-supplied forwarding header as proof of private-network access. A reverse proxy can change the address the application sees: restrict access at the proxy as well, and do not publish the management surface through an unrestricted private-address proxy.
 
-The public application URL supplies the hostname and path. Configured listener ports determine the management, service, and portal URLs. Issuing or renewing the web certificate through an installed server's UI also saves enabled HTTPS listeners; a restart applies those settings. DNS records, firewall rules, certificate trust, and client reachability remain deployment responsibilities.
+The public application URL supplies the shared hostname and path, and its port determines management links and management Entra sign-in callbacks (443 when omitted). Service and portal URLs replace that port with the configured `ServicePort` and `PortalPort`, respectively. The public URL does not change listener bindings. Issuing or renewing the web certificate through an installed server's UI also saves enabled HTTPS listeners; a restart applies those settings. DNS records, firewall rules, certificate trust, and client reachability remain deployment responsibilities.
 
 ## Certificate-based trust
 
